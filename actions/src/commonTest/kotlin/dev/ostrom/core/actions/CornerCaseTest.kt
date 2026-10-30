@@ -43,6 +43,9 @@ class CornerCaseTest {
         assertEquals(listOf("\\!", "\u0004"), words("\$'\\!' \$'\\x4"))
         assertEquals(listOf("echo", "x"), words("echo x # a comment\necho y"))
         assertEquals(listOf("echo", ""), words("echo ''>f"))
+        assertEquals(listOf("echo", "a/"), words("echo a/>f"))
+        assertEquals(listOf("echo", "a:"), words("echo a:>f"))
+        assertEquals(listOf("echo"), words("echo 12>f"))
     }
 
     @Test

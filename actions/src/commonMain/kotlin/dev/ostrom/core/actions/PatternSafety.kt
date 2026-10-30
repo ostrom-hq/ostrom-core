@@ -37,7 +37,9 @@ internal object PatternSafety {
             var nextClosed: Group? = null
             when (c) {
                 '\\' -> {
-                    if (pattern.getOrElse(i + 1) { ' ' } in BACK_REFERENCES) return "back-references are not allowed"
+                    if (i + 1 < pattern.length && pattern[i + 1] in BACK_REFERENCES) {
+                        return "back-references are not allowed"
+                    }
                     i++
                 }
                 '[' -> i = classEnd(pattern, i)

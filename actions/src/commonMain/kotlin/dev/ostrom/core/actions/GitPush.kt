@@ -32,7 +32,7 @@ internal fun gitInvocation(words: List<String>, gitIndex: Int): GitInvocation? {
                 if (value == null) return null
                 if (option != "--super-prefix") redirect = redirect ?: option
             }
-            REDIRECT_OPTIONS.any { option.startsWith("$it=") } -> redirect = redirect ?: option
+            option.substringBefore('=', missingDelimiterValue = "") in REDIRECT_OPTIONS -> redirect = redirect ?: option
             else -> {
                 j++
                 continue
@@ -47,7 +47,7 @@ internal fun gitInvocation(words: List<String>, gitIndex: Int): GitInvocation? {
 private val GIT_VALUE_OPTIONS = setOf("--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix")
 
 /** Global options that make git read another repository, configuration or program. */
-private val REDIRECT_OPTIONS = listOf("--git-dir", "--work-tree", "--namespace", "--config-env", "--exec-path")
+private val REDIRECT_OPTIONS = setOf("--git-dir", "--work-tree", "--namespace", "--config-env", "--exec-path")
 
 /** `-c` keys that change where a push goes or what it sends. */
 private val REDIRECT_CONFIG_PREFIXES = listOf(

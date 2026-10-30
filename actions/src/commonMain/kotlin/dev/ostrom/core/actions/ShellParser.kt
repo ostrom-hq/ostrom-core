@@ -78,7 +78,8 @@ public object ShellParser {
             val lexer = Lexer(next, out, queue)
             lexer.run()
             malformed = malformed || lexer.malformed
-            subshells = subshells || (next.depth == 0 && lexer.subshells)
+            // Only the command itself moves the shell; a subshell inside a substitution does not.
+            if (next.depth == 0) subshells = lexer.subshells
         }
         return ShellScript(out, malformed, subshells)
     }
