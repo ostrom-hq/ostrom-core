@@ -469,6 +469,13 @@ Tests also run natively on `linuxX64` on every pull request (`linuxX64Test`), an
 end-to-end tests that run the real binary (`teamcode:AGENTS.md`: "JVM tests alone do not validate TLS, streaming or
 process behavior").
 
+Kover leaves out, in the `ostrom.kmp` template, only code the compiler writes and no test can reach: the
+`$$serializer` classes, the `@Serializable` classes (a deserialization constructor whose missing-field check cannot
+fail for a class without required fields; such a class carries no logic, section 5) and the JVM `DefaultImpls`
+bridges of interface default methods (the default methods themselves are measured). On the JVM test target, a module
+that uses `cryptography-provider-jdk` for Ed25519 keys adds `bouncycastle-bcprov` as `runtimeOnly` in `jvmMain`: without
+it the JDK provider cannot derive a public key from a private key (decision of 30/10/2026, ostrom-server#1).
+
 ### 7.3 Frameworks
 
 - `kotlin.test` (`@Test`, `assertEquals`, `assertFailsWith`) in `commonTest`; JUnit 5 only as the JVM runner
