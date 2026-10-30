@@ -4314,6 +4314,35 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+    post:
+      operationId: createRule
+      x-ostrom-status: planned
+      tags:
+      - rules
+      summary: Write a rule (signed decision)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewRule'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/rules/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4377,6 +4406,17 @@ paths:
                   type: array
                   items:
                     type: string
+                group:
+                  type: string
+                why:
+                  type: string
+                output:
+                  type: string
+                gate:
+                  description: The gate of the rule; JSON null removes it
+                  oneOf:
+                  - $ref: '#/components/schemas/RuleGate'
+                  - type: 'null'
       responses:
         '200':
           description: OK
@@ -4384,6 +4424,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteRule
+      x-ostrom-status: planned
+      tags:
+      - rules
+      summary: Delete a rule (signed decision)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Deleted
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -13392,6 +13457,8 @@ components:
           type: string
         origin:
           type: string
+        gate:
+          $ref: '#/components/schemas/RuleGate'
       required:
       - id
       - statement
@@ -13402,6 +13469,54 @@ components:
       - status
       - foundBy
       - foundAt
+    RuleGate:
+      type: object
+      description: The gate a rule puts on boundary actions. An accepted or edited rule blocks the actions until one of the
+        approvers says yes; a proposed rule only records them (shadow); a rejected rule gates nothing.
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/GateAction'
+        approvers:
+          type: array
+          items:
+            type: string
+          description: GitHub logins
+        reason:
+          type: string
+      required:
+      - actions
+      - approvers
+    NewRule:
+      type: object
+      description: A rule written by the team
+      properties:
+        statement:
+          type: string
+        group:
+          type: string
+        output:
+          type: string
+        scope:
+          type: array
+          items:
+            type: string
+        strength:
+          $ref: '#/components/schemas/RuleStrength'
+        why:
+          type: string
+        status:
+          description: Only proposed or accepted are accepted; accepted by default
+          $ref: '#/components/schemas/RuleStatus'
+        reviewBy:
+          type: string
+        gate:
+          $ref: '#/components/schemas/RuleGate'
+      required:
+      - statement
+      - group
+      x-ostrom-kotlin: pending
     RuleSource:
       type: object
       description: Where a rule or a workflow was found
