@@ -107,6 +107,8 @@ export function buildTree(run, {maxDepth = 8} = {}) {
         return node
     }
     const root = visit([], "")
+    // An empty tree would let every citation pass: a binary whose help lists no command is not the one to check against.
+    if (Object.keys(root.children).length === 0) throw new Error("ostrom --help lists no command: is this the ostrom binary?")
     let plumbing = ""
     try {
         plumbing = run(["help", "plumbing"])
@@ -118,7 +120,9 @@ export function buildTree(run, {maxDepth = 8} = {}) {
         try {
             root.children[name] = {...visit([name], ""), hidden: true}
         } catch {
-            // Listed as plumbing but not registered in this binary: not a command of it.
+            // A plumbing command with no help of its own (`ostrom hook` runs before the parser): a command all the same,
+            // whose options are unknown, so any is accepted.
+            root.children[name] = {comingSoon: false, passThrough: true, options: {}, children: {}, hidden: true}
         }
     }
     return root
@@ -254,12 +258,16 @@ export function segmentsOf(path) {
     return segments
 }
 
-/** The `ostrom …` commands cited in a chunk: its inline code spans, or the lines of a shell code block. */
+/**
+ * The `ostrom …` commands cited in a chunk: its inline code spans, or the lines of a shell code block. A block without
+ * a language is often a table (`ostrom doctor   check this device`): each line is cut at its first run of two spaces.
+ */
 export function commandsIn(chunk) {
     if (chunk.code !== undefined) {
         if (chunk.lang !== "" && !SHELLS.includes(chunk.lang)) return []
         return chunk.code.flatMap((raw, offset) => {
-            const line = raw.replace(/^\s*(\$|>|PS>)\s+/, "").replace(/^\s*(?:[A-Z_][A-Z0-9_]*=\S*\s+)*/, "")
+            let line = raw.replace(/^\s*(\$|>|PS>)\s+/, "").replace(/^\s*(?:[A-Z_][A-Z0-9_]*=\S*\s+)*/, "")
+            if (chunk.lang === "") line = line.split(/\s{2,}/)[0]
             return /^ostrom(\s|$)/.test(line) ? [{line: chunk.line + offset, words: shellWords(line)}] : []
         })
     }

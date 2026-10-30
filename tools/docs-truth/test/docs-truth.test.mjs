@@ -213,14 +213,15 @@ describe("parsePlumbing", () => {
 })
 
 describe("buildTree", () => {
-    it("walks the help depth-first, marks coming-soon and pass-through commands, adds plumbing once and only if registered", () => {
+    it("walks the help depth-first, marks coming-soon and pass-through commands, adds plumbing once, without help or with", () => {
         const tree = buildTree(fakeBinary())
-        assert.deepEqual(Object.keys(tree.children), ["claude", "harness", "login", "help", "wait", "hook"])
+        assert.deepEqual(Object.keys(tree.children), ["claude", "harness", "login", "help", "wait", "hook", "check"])
         assert.equal(tree.children.claude.passThrough, true)
         assert.equal(tree.children.login.passThrough, false)
         assert.equal(tree.children.harness.comingSoon, true)
         assert.equal(tree.children.harness.children.list.comingSoon, true)
         assert.equal(tree.children.wait.hidden, true)
+        assert.deepEqual(tree.children.check, {comingSoon: false, passThrough: true, options: {}, children: {}, hidden: true})
         assert.equal(tree.children.claude.hidden, undefined)
     })
 
@@ -234,8 +235,14 @@ describe("buildTree", () => {
     })
 
     it("tolerates a help without a Usage line", () => {
-        const tree = buildTree((args) => args.length === 1 ? "Options:\n  --version  Print\n" : (() => { throw new Error("no") })())
+        const help = "Options:\n  --version  Print\n\nCommands:\n  a  A\n"
+        const tree = buildTree((args) => args[0] === "help" ? (() => { throw new Error("no") })() : help.replace("Commands:\n  a  A\n", args.length === 1 ? "Commands:\n  a  A\n" : ""))
         assert.deepEqual(tree.options, {"--version": {comingSoon: false}})
+        assert.deepEqual(Object.keys(tree.children), ["a"])
+    })
+
+    it("refuses a binary whose help lists no command, which would let every citation pass", () => {
+        assert.throws(() => buildTree(() => "Usage: x\n"), /ostrom --help lists no command/)
     })
 })
 
@@ -288,6 +295,12 @@ describe("commandsIn", () => {
             {line: 13, words: ["ostrom"]},
         ])
         assert.deepEqual(commandsIn({...chunk, lang: ""}).length, 3)
+    })
+
+    it("cuts each line of a block without a language at two spaces, a table more often than a command", () => {
+        const table = {line: 1, lang: "", code: ["ostrom                 home screen", "ostrom --help          every command"]}
+        assert.deepEqual(commandsIn(table).map(({words}) => words), [["ostrom"], ["ostrom", "--help"]])
+        assert.deepEqual(commandsIn({...table, lang: "sh"}).map(({words}) => words), [["ostrom", "home", "screen"], ["ostrom", "--help", "every", "command"]])
     })
 
     it("reads no command in a block that is not shell", () => {
