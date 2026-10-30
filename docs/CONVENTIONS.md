@@ -191,7 +191,7 @@ fun Route.gatesRoutes(dependencies: GatesRoutesDependencies) = with(dependencies
 - Version the management API under `/api/v1` (`teamcode:docs/architecture.md`).
 - Mappers are extension functions in `presentation/mappers/<feature>/`: `Gate.toGateResponse()`
   (`asonar:presentation/mappers/`).
-- **Every route declares who may call it, and a test proves it**: without a token → 401; another team's resource → 404,
+- **Every route declares who may call it, and a test proves it**: without a token → 401; another organization's resource → 404,
   exactly like an unknown id; a list returns only the caller's rows (`ENG-054`). Identity comes from the credential,
   never from a caller-controlled header (`teamcode:docs/architecture.md`).
 
@@ -227,7 +227,7 @@ Keep native files thin: the logic stays in `commonMain`, where it is unit-tested
  *
  * @param principal The authenticated approver; never the requester, unless they are the only declared approver.
  * @return The gate as it is after the answer.
- * @throws GateNotFoundException When the gate does not exist or belongs to another team.
+ * @throws GateNotFoundException When the gate does not exist or belongs to another organization.
  */
 suspend operator fun invoke(principal: Principal, gateId: Uuid, answer: GateAnswer): Gate
 ```
@@ -384,7 +384,7 @@ Cleanup that must run when the caller is cancelled (kill a child process, close 
   Kotlin/Native (`teamcode` uses `io.ktor.util.logging`). No SLF4J/Logback: they are JVM-only.
 - CLI: human output on stdout, diagnostics on stderr, never both mixed in a machine-readable output (`--json`).
 - **Never log credentials, tokens, prompts, response bodies, or raw provider errors** (`teamcode:AGENTS.md`). Identifiers
-  (team, user, run) are not metric labels.
+  (organization, user, run) are not metric labels.
 - A guard that refuses or skips is **counted** (a counter with a bounded `reason` attribute) rather than logged at each
   hit (`ENG-003`), once metrics exist; until then one `debug` line, never an `info` per request.
 
@@ -562,7 +562,8 @@ Every module also has `jvm()` for tests and coverage only (section 7.2).
 - Queries are written with bound parameters only; never string interpolation of a value into SQL.
 - **Migrations are versioned SQL files**, applied at startup by sqlx4k's migrator; a published migration is never edited
   (`teamcode:AGENTS.md`, the Flyway rule). Each migration exists in a PostgreSQL and a SQLite flavour when the dialects
-  differ, and the contract test suite (section 7.3) runs on both.
+  differ, and the contract test suite (section 7.3) runs on both. Row-Level Security exists only in the PostgreSQL
+  flavour (section 16.1).
 - Every new query on a request path comes with its `EXPLAIN ANALYZE` on a table seeded at production scale, before and
   after, in the pull request (`teamcode:AGENTS.md`, `ENG-004`).
 
@@ -641,6 +642,9 @@ Template: [`docs/conventions/.github/workflows/build.yml`](conventions/.github/w
   (`teamcode:AGENTS.md`). A versioned release requires the full native matrix green.
 - Test tasks always execute in CI: never `FROM-CACHE` or `UP-TO-DATE` (`ENG-032`; the template's init script does it).
 - No secret in clear; publication uses `GITHUB_TOKEN` with `packages: write` on the publishing job only.
+- Package managers: Gradle for Kotlin; **npm** for `ostrom-app` (Expo's default) and **pnpm** for `ostrom-web`. The
+  pnpm variant of `build-ts.yml` adds `pnpm/action-setup` (pinned by SHA) **before** `setup-node`, then uses
+  `cache: pnpm`, `pnpm install --frozen-lockfile` and `pnpm run <script>`.
 
 ---
 
@@ -773,54 +777,90 @@ Each item is something his code avoids or his reviews refused.
 ## 16. Multi-tenancy, security and performance budgets
 
 Product decisions for the public release (30/10/2026) and the findings of the prototype's security audit. They bind
-every repository.
+every repository. "Organization" (`org_id`) is the tenant everywhere: in tables, principals, routes and tests.
 
-### 16.1 Every row belongs to an organization
+### 16.1 Every row belongs to an organization, enforced by PostgreSQL
 
-- Every table holding customer data has an `org_id` column, part of its primary access index (equality column first,
-  `teamcode:AGENTS.md` index rule).
-- **Isolation is enforced by PostgreSQL Row-Level Security**, not only by `WHERE org_id = ?`: each table has
-  `ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY`, a policy on `current_setting('ostrom.org_id')`, and the
-  application connects with a role that does not bypass RLS. The repository sets the organization at the start of each
-  transaction, from the authenticated principal only. `SET LOCAL` takes no bind parameter, so use
-  `SELECT set_config('ostrom.org_id', $1, true)` (the `true` makes it transaction-local), never a string-built `SET`.
-- The migration that creates a table creates its policy in the same file.
-- **One end-to-end test per resource proves another organization neither sees nor changes it** (list, read, update,
-  delete: 404 and nothing changed in the database), on top of the route tests of section 1.6 (`ENG-054`).
-- SQLite (tests, local single-user mode) has no RLS: the same repository code still filters on `org_id`, and the RLS
-  tests run on PostgreSQL in CI.
+- Every table holding an organization's data has an `org_id` column, first in its access indexes (equality column
+  first, `teamcode:AGENTS.md` index rule).
+- **Isolation is enforced by Row-Level Security**, not only by `WHERE org_id = ?`. Each such table has
+  `ENABLE ROW LEVEL SECURITY`, `FORCE ROW LEVEL SECURITY` and a policy that **fails closed**:
+
+```sql
+CREATE POLICY gates_org ON gates
+    USING (org_id = nullif(current_setting('ostrom.org_id', true), '')::uuid)
+    WITH CHECK (org_id = nullif(current_setting('ostrom.org_id', true), '')::uuid);
+```
+
+  Without an organization set, `current_setting(..., true)` gives NULL (or `''`, mapped to NULL): no row matches,
+  nothing errors, nothing leaks.
+- **Two roles.** An owner role runs the migrations (it owns the tables and the policies); the server serves with a
+  runtime role that owns nothing, is neither superuser nor `BYPASSRLS`, and has only `SELECT`/`INSERT`/`UPDATE`/`DELETE`
+  on the tables it needs. The server takes two connection settings, `OSTROM_DATABASE_MIGRATION_URL` and
+  `OSTROM_DATABASE_URL`; migrations run with the first, requests with the second. A CI integration test connects as
+  the runtime role and proves it can neither read another organization's rows nor `ALTER`/`DROP` a policy.
+- **No query outside an organization's transaction.** The infrastructure exposes one entry point,
+  `withOrganization(orgId) { transaction -> ... }`, which opens the transaction and runs
+  `SELECT set_config('ostrom.org_id', $1, true)` first (`true`: transaction-local; `SET LOCAL` takes no bind parameter,
+  and a session-level setting would leak to the next request on the pooled connection). Repositories of tenant tables
+  only receive that transaction; they never see the pool.
+- **Tables read before the organization is known** (tokens, devices and sessions looked up by their secret hash,
+  `organizations`, memberships, sign-in links) have no RLS keyed on `ostrom.org_id`. They are listed in one place
+  (`docs/tenancy.md` of `ostrom-server`) with the reason, reached only through narrow functions that look up one row
+  by a unique secret hash or id and return the principal (owner-defined `SECURITY DEFINER` functions with a fixed
+  `search_path`, or a dedicated read-only role), and each has a test that it cannot enumerate rows.
+- The PostgreSQL flavour of a migration that creates a tenant table creates its policy in the same file; the SQLite
+  flavour has no RLS. SQLite (tests, local single-user mode) relies on the same repository code filtering on `org_id`.
+- **One end-to-end test per resource** proves another organization neither sees nor changes it (list, read, update,
+  delete: 404 and nothing changed), on PostgreSQL and on SQLite, on top of the route tests of section 1.6 (`ENG-054`).
 
 ### 16.2 Credentials and scopes
 
-- A route that creates or replaces an account, a member or a token requires a strong user authentication; it is never
-  reachable without a token, nor with an agent or device token.
-- Console write routes (workflows, policies, gate actions, rules, members) require an authenticated **user session** and
-  the right role. A device or agent-session token never grants them.
+- **Unauthenticated routes are an explicit list** in `ostrom-server`'s `docs/security.md`, each with its test: sign-in
+  start and callback (GitHub, Google, OIDC, SAML), magic-link request and redemption, device authorization (code
+  request, polling, approval page), health and readiness, billing webhooks (verified by signature), public
+  documentation. Every other route requires a credential.
+- Creating an organization, an account, a member or a long-lived token requires a **user session** from one of those
+  sign-ins (or the device flow approved by such a session); an agent or device token never creates or replaces an
+  account, a member or a token. Bootstrap (first account and organization) goes through the same sign-in, never an open
+  "create operator" route.
+- Console write routes (workflows, policies, gate actions, rules, members) require a user session and the right role.
 - The token given to an agent is scoped to its own session: it cannot mark a check as passed, close or reopen another
   session, or set its own cost. Check results are signed or recomputed by the server.
 - What an approver is shown (diff, commits) is computed by the server from the source of truth, never from a ref the
   client can move; a "yes" is bound to what was shown, signed in the receipt, and consumed once in a transaction.
-- Each of these properties has a test that tries to break it (the audit cases `audit-gate.test.ts`,
-  `audit-push.test.mjs` of the prototype are ported as end-to-end tests).
+- Each property has a test that tries to break it; the prototype's audit cases (`audit-gate.test.ts`,
+  `audit-push.test.mjs`) are ported as end-to-end tests.
 
 ### 16.3 Performance budgets, tested in CI
 
-| Budget | Value | Where it is tested |
+| Budget | Value | Measured |
 | --- | --- | --- |
-| CLI hook (start to exit) | < 15 ms | `ostrom-cli` end-to-end, release binary, median and p95 over repeated runs |
-| CLI start-up (`ostrom --version`) | < 30 ms | `ostrom-cli` end-to-end |
-| Server start-up (process start to ready) | < 200 ms | `ostrom-server` end-to-end, against the CI PostgreSQL |
-| API p95 under nominal load | < 50 ms | `ostrom-server` k6 run on every pull request |
+| CLI start-up | < 30 ms | `ostrom --version`, release binary, process start to exit |
+| CLI hook | < 15 ms | one hook invocation with its input on stdin, release binary, process start to exit (the hook path loads less than `--version`'s full command tree: keep it that way) |
+| Server start-up | < 200 ms | process start to the first `200` on the readiness route, against an already migrated database (migrations are measured apart and never block readiness longer than they run) |
+| API p95 | < 50 ms | k6 at the nominal load written in the test, server and PostgreSQL on the same runner |
 
-A budget test fails the job when exceeded; it never retries until green. A pull request that moves a measured value by
-more than 10 % says so in its description with before/after numbers. Section 10.3 lists what makes Kotlin/Native slow;
-start-up is where it shines: keep `main` free of eager work (no global `object` initialization doing IO, Koin modules
-built once, no reflection).
+How the gate stays meaningful on shared runners:
+
+- Each start-up budget is measured over 50 runs after 5 warm-up runs; the job fails when the **median** exceeds the
+  budget, and reports p95. The API test fails on p95 over 50 ms or an error rate over 0.1 %.
+- Runner class: `ubuntu-24.04` (x64), written in the job. A failing budget is investigated, never retried until green;
+  a budget changes only by a pull request that says why, with measurements.
+- Besides the absolute budget, each job compares with the last `main` run (stored artifact) and fails on a regression
+  over 20 % of the median; a pull request that moves a measured value by more than 10 % says so with before/after.
+
+Section 10.3 lists what makes Kotlin/Native slow; start-up is where it shines: keep `main` free of eager work (no global
+`object` initialization doing IO, Koin modules built once, no reflection).
 
 ### 16.4 Observability
 
 OpenTelemetry to Grafana Cloud. `opentelemetry-kotlin` (0.9.0, 09/10/2026) publishes no Linux, macOS or Windows
-artifacts, so the server exports through a thin OTLP/HTTP (JSON) exporter in `infrastructure`, behind domain interfaces
-(`MetricsService`, `TracingService`), as `asonar` keeps OpenTelemetry behind `TelemetryFactory` and
-`OpenTelemetryMetricsService`. Metric attributes are bounded enums, never ids (`ENG-003`); no prompt, token or body in a
-span or a log (section 6.1).
+artifacts, so the server exports through a thin OTLP/HTTP exporter (protobuf, or JSON if the protobuf encoder is not
+ready; both are accepted by the OTLP gateway) in `infrastructure`, behind domain interfaces (`MetricsService`,
+`TracingService`), as `asonar` keeps OpenTelemetry behind `TelemetryFactory` and `OpenTelemetryMetricsService`.
+
+- Export never runs on the request path: spans and metrics go into a bounded in-memory queue, a background coroutine
+  sends batches with a timeout, and on overflow or failure the oldest data is **dropped and counted**; telemetry never
+  slows a request or start-up.
+- Attributes are bounded values, never identifiers (section 6.1); no prompt, token or body in a span or a log.

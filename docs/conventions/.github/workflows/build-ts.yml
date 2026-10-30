@@ -1,4 +1,5 @@
-# Reference CI of ostrom-web and ostrom-app (docs/CONVENTIONS.md sections 11 and 13).
+# Reference CI of ostrom-web and ostrom-app (docs/CONVENTIONS.md sections 11 and 13). npm as in ostrom-app; ostrom-web
+# uses pnpm: see the package manager rule of section 11.
 name: Build
 on:
   push:
