@@ -94,6 +94,24 @@
         "required": false,
         "nullable": false
       },
+      "commitDetails": {
+        "type": {
+          "array": {
+            "ref": "ApprovalCommit"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "checks": {
+        "type": {
+          "array": {
+            "ref": "ApprovalCheck"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
       "requestedFrom": {
         "type": "string",
         "required": true,
@@ -150,6 +168,51 @@
       "approve",
       "reject"
     ]
+  },
+  "ApprovalCheck": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "state": {
+        "type": {
+          "ref": "CheckState"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ApprovalCommit": {
+    "properties": {
+      "sha": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "author": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
   },
   "ApprovalStatus": {
     "enum": [
@@ -469,6 +532,14 @@
         "nullable": false
       }
     }
+  },
+  "CheckState": {
+    "enum": [
+      "success",
+      "failure",
+      "pending",
+      "skipped"
+    ]
   },
   "CompiledHook": {
     "properties": {

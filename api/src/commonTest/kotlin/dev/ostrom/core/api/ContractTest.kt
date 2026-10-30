@@ -3,6 +3,8 @@ package dev.ostrom.core.api
 import dev.ostrom.core.api.models.AnswerApprovalRequest
 import dev.ostrom.core.api.models.ApiError
 import dev.ostrom.core.api.models.Approval
+import dev.ostrom.core.api.models.ApprovalCheck
+import dev.ostrom.core.api.models.ApprovalCommit
 import dev.ostrom.core.api.models.Automation
 import dev.ostrom.core.api.models.AutomationAction
 import dev.ostrom.core.api.models.AutomationTrigger
@@ -101,6 +103,8 @@ class ContractTest {
         AnswerApprovalRequest.serializer(),
         ApiError.serializer(),
         Approval.serializer(),
+        ApprovalCheck.serializer(),
+        ApprovalCommit.serializer(),
         Automation.serializer(),
         AutomationAction.serializer(),
         AutomationTrigger.serializer(),

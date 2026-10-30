@@ -104,9 +104,30 @@ paths:
       operationId: startGithubLogin
       tags:
       - auth
-      summary: Start the GitHub OAuth sign-in
+      summary: 'Start the GitHub OAuth sign-in. Browser: `redirect`. Mobile app: `redirect_uri` (ostrom://auth/callback),
+        `state`, PKCE `code_challenge` and `code_challenge_method=S256`; the server redirects back with a one-time `code`'
       parameters:
       - name: redirect
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: redirect_uri
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: code_challenge
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: code_challenge_method
         in: query
         required: false
         schema:
@@ -115,6 +136,51 @@ paths:
       responses:
         '302':
           description: Redirect
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mobile/token:
+    post:
+      operationId: mobileToken
+      tags:
+      - auth
+      summary: Exchange the one-time code of the mobile sign-in (PKCE) for a token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                codeVerifier:
+                  type: string
+                redirectUri:
+                  type: string
+              required:
+              - code
+              - codeVerifier
+              - redirectUri
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/AuthUser'
+                  expiresAt:
+                    type: string
+                required:
+                - token
+                - user
         '400':
           $ref: '#/components/responses/Error'
         '404':
@@ -628,6 +694,196 @@ paths:
       responses:
         '204':
           description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/push-devices:
+    post:
+      operationId: registerPushDevice
+      tags:
+      - notifications
+      summary: 'Register a phone for push notifications (push data: {kind: "approval", approvalId})'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pushToken:
+                  type: string
+                provider:
+                  type: string
+                platform:
+                  type: string
+                locale:
+                  type: string
+              required:
+              - pushToken
+              - provider
+              - platform
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushDevice'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/push-devices/{id}:
+    delete:
+      operationId: deletePushDevice
+      tags:
+      - notifications
+      summary: Stop push notifications to a phone
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/notifications:
+    get:
+      operationId: getNotificationPreferences
+      tags:
+      - notifications
+      summary: Notification preferences of the caller
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setNotificationPreferences
+      tags:
+      - notifications
+      summary: Set the notification preferences of the caller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferences'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/activity:
+    get:
+      operationId: listActivity
+      tags:
+      - events
+      summary: Activity feed, newest first
+      parameters:
+      - name: before
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: repo
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityItem'
+                  next:
+                    type: string
+                required:
+                - items
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/spending:
+    get:
+      operationId: getSpending
+      tags:
+      - budgets
+      summary: Spending by agent, repository and person
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Spending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -1743,8 +1999,8 @@ paths:
       operationId: answerApproval
       tags:
       - approvals
-      summary: Say yes or no; refused when the shown digest differs, when the caller asked (unless sole approver) or is not
-        an approver
+      summary: Say yes or no; 409 shown_digest_mismatch when the shown digest differs; refused when the caller asked (unless
+        sole approver) or is not an approver
       parameters:
       - name: id
         in: path
@@ -6213,6 +6469,50 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
   schemas:
+    ActivityActor:
+      type: object
+      description: Who did it
+      properties:
+        kind:
+          type: string
+        name:
+          type: string
+      required:
+      - kind
+      - name
+      x-ostrom-kotlin: pending
+    ActivityItem:
+      type: object
+      description: 'A line of the activity feed (kind: session.started, session.ended, gate.requested, gate.decided, check.passed,
+        check.failed, workflow.changed; clients keep an unknown kind as UNKNOWN)'
+      properties:
+        id:
+          type: string
+        at:
+          type: string
+        kind:
+          type: string
+        actor:
+          $ref: '#/components/schemas/ActivityActor'
+        summary:
+          type: string
+        repo:
+          type: string
+        costUsd:
+          type: number
+        approvalId:
+          type: string
+        gateId:
+          type: string
+        sessionId:
+          type: string
+      required:
+      - id
+      - at
+      - kind
+      - actor
+      - summary
+      x-ostrom-kotlin: pending
     AgentEvent:
       type: string
       enum:
@@ -6300,6 +6600,14 @@ components:
           type: array
           items:
             type: string
+        commitDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalCommit'
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalCheck'
         requestedFrom:
           type: string
         channel:
@@ -6332,6 +6640,34 @@ components:
       enum:
       - approve
       - reject
+    ApprovalCheck:
+      type: object
+      description: A CI check shown with an approval
+      properties:
+        name:
+          type: string
+        state:
+          $ref: '#/components/schemas/CheckState'
+        url:
+          type: string
+      required:
+      - name
+      - state
+    ApprovalCommit:
+      type: object
+      description: A commit shown with an approval
+      properties:
+        sha:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        url:
+          type: string
+      required:
+      - sha
+      - title
     ApprovalStatus:
       type: string
       enum:
@@ -6462,6 +6798,19 @@ components:
       - token
       - login
       - scopes
+      x-ostrom-kotlin: pending
+    AuthUser:
+      type: object
+      description: The signed-in person
+      properties:
+        login:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+      required:
+      - login
       x-ostrom-kotlin: pending
     Automation:
       type: object
@@ -6690,6 +7039,13 @@ components:
       - mode
       - exit
       - dev
+    CheckState:
+      type: string
+      enum:
+      - success
+      - failure
+      - pending
+      - skipped
     CloudSession:
       type: object
       description: An agent session run on a runner
@@ -7664,6 +8020,23 @@ components:
       - status
       - text
       - dev
+    NotificationPreferences:
+      type: object
+      description: What the caller is notified of on their phone
+      properties:
+        requests:
+          type: boolean
+        decisions:
+          type: boolean
+        spending:
+          type: boolean
+        quietHours:
+          $ref: '#/components/schemas/QuietHours'
+      required:
+      - requests
+      - decisions
+      - spending
+      x-ostrom-kotlin: pending
     NotificationStatus:
       type: string
       enum:
@@ -7903,6 +8276,41 @@ components:
       - kid
       - alg
       - publicKeyPem
+      x-ostrom-kotlin: pending
+    PushDevice:
+      type: object
+      description: A phone registered for push notifications
+      properties:
+        id:
+          type: string
+        provider:
+          type: string
+        platform:
+          type: string
+        locale:
+          type: string
+        createdAt:
+          type: string
+      required:
+      - id
+      - provider
+      - platform
+      - createdAt
+      x-ostrom-kotlin: pending
+    QuietHours:
+      type: object
+      description: Hours without notifications
+      properties:
+        start:
+          type: string
+        end:
+          type: string
+        timeZone:
+          type: string
+      required:
+      - start
+      - end
+      - timeZone
       x-ostrom-kotlin: pending
     Receipt:
       type: object
@@ -8601,6 +9009,76 @@ components:
       - version
       - pinned
       - assignedTo
+      x-ostrom-kotlin: pending
+    Spending:
+      type: object
+      description: Spending over a week or a month
+      properties:
+        period:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        totalUsd:
+          type: number
+        budgetUsd:
+          type: number
+        byAgent:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpendingLine'
+        byRepo:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpendingLine'
+        byPerson:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpendingLine'
+        daily:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpendingDay'
+      required:
+      - period
+      - from
+      - to
+      - totalUsd
+      - byAgent
+      - byRepo
+      - byPerson
+      - daily
+      x-ostrom-kotlin: pending
+    SpendingDay:
+      type: object
+      description: Spending of one day
+      properties:
+        date:
+          type: string
+        usd:
+          type: number
+      required:
+      - date
+      - usd
+      x-ostrom-kotlin: pending
+    SpendingLine:
+      type: object
+      description: Spending of one agent, repository or person
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        usd:
+          type: number
+        sessions:
+          type: integer
+      required:
+      - key
+      - label
+      - usd
+      - sessions
       x-ostrom-kotlin: pending
     StartSessionRequest:
       type: object
