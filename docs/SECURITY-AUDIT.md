@@ -205,5 +205,5 @@ ControlResell's and the nodes' addresses in `extraDeniedCidrs`; otherwise ship w
 
 - 30/10 02:50 — first pass: AUTH (identity, sign-in), tenancy, gates, secrets, mcp-relay, runners, billing, web, helm,
   app receipts. CLI under review.
-- 30/10 03:15 — sharing (server#17), terminal relay (server#14: bearer or single-use ticket, no cookie, no cross-site
+- 30/10 02:55 — sharing (server#17), terminal relay (server#14: bearer or single-use ticket, no cookie, no cross-site
   WebSocket hijacking; good), app sign-in (app#6), the contract's unauthenticated operations.
