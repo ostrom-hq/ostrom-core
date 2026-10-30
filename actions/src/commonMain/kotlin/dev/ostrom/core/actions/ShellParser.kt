@@ -104,6 +104,9 @@ private const val HEX = 16
 private const val UNICODE_DIGITS = 4
 private const val LONG_UNICODE_DIGITS = 8
 
+/** Whether a word right before a redirection operator is its file descriptor: ASCII digits only, as in `2>`. */
+internal fun isFileDescriptor(word: CharSequence): Boolean = word.isNotEmpty() && word.all { it in '0'..'9' }
+
 /** Characters that end a segment, run together (`&&`, `||`, `;;`). */
 private const val SEPARATORS = "&|;"
 
@@ -363,7 +366,7 @@ private class Lexer(
     @Suppress("CyclomaticComplexMethod") // One branch per redirection operator.
     private fun redirection() {
         // A word of digits right before the operator is its file descriptor (`2>`), not an argument.
-        if (hasToken && token.isNotEmpty() && token.all { it in '0'..'9' }) {
+        if (hasToken && isFileDescriptor(token)) {
             token.setLength(0)
             plain.setLength(0)
             hasToken = false

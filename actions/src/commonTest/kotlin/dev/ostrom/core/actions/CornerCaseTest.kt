@@ -46,6 +46,8 @@ class CornerCaseTest {
         assertEquals(listOf("echo", "a/"), words("echo a/>f"))
         assertEquals(listOf("echo", "a:"), words("echo a:>f"))
         assertEquals(listOf("echo"), words("echo 12>f"))
+        assertTrue(isFileDescriptor("2"))
+        for (word in listOf("", "a/", "a:", "1a", "/", ":")) assertFalse(isFileDescriptor(word), word)
     }
 
     @Test

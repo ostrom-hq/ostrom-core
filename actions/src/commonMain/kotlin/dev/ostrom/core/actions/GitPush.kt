@@ -20,19 +20,19 @@ internal class GitInvocation(
 @Suppress("CyclomaticComplexMethod", "ReturnCount")
 internal fun gitInvocation(words: List<String>, gitIndex: Int): GitInvocation? {
     val directories = ArrayList<String>()
-    var redirect: String? = null
+    val redirects = ArrayList<String>()
     var j = gitIndex + 1
     while (j < words.size && words[j].startsWith("-")) {
         val option = words[j]
         val value = words.getOrNull(j + 1)
         when {
             option == "-C" -> directories.add(value ?: return null)
-            option == "-c" -> if (redirectingConfig(value ?: return null)) redirect = redirect ?: "-c $value"
+            option == "-c" -> if (redirectingConfig(value ?: return null)) redirects += "-c $value"
             option in GIT_VALUE_OPTIONS -> {
                 if (value == null) return null
-                if (option != "--super-prefix") redirect = redirect ?: option
+                if (option != "--super-prefix") redirects += option
             }
-            option.substringBefore('=', missingDelimiterValue = "") in REDIRECT_OPTIONS -> redirect = redirect ?: option
+            option.substringBefore('=', missingDelimiterValue = "") in REDIRECT_OPTIONS -> redirects += option
             else -> {
                 j++
                 continue
@@ -40,7 +40,7 @@ internal fun gitInvocation(words: List<String>, gitIndex: Int): GitInvocation? {
         }
         j += 2
     }
-    return if (j < words.size) GitInvocation(j, directories, redirect) else null
+    return if (j < words.size) GitInvocation(j, directories, redirects.firstOrNull()) else null
 }
 
 /** Global options of git that take their value as the next word. */
