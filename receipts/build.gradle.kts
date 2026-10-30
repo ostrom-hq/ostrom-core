@@ -1,6 +1,6 @@
 plugins {
     id("ostrom.kmp")
-    alias(libs.plugins.maven)
+    id("ostrom.publish")
 }
 
 description = "Ostrom signed receipts: canonical JSON, SHA-256 digests, Ed25519 signing and offline verification."

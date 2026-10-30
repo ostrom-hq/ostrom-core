@@ -1,6 +1,6 @@
 plugins {
     id("ostrom.kmp")
-    alias(libs.plugins.maven)
+    id("ostrom.publish")
 }
 
 description = "Ostrom shared contract: the serializable models of the protocol and of the server API."
