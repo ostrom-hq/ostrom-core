@@ -35,12 +35,13 @@ public data class TelemetrySettings(
          * | --- | --- |
          * | `OTEL_SDK_DISABLED=true` | turns OTLP export off (Langfuse and PostHog follow their own variables) |
          * | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP/HTTP base URL, without `/v1/...` |
+         * | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` (the default, and the only one supported) |
          * | `OTEL_EXPORTER_OTLP_HEADERS` | `key=value,key2=value2`, values percent-encoded (W3C baggage format) |
          * | `OTEL_SERVICE_NAME` | overrides [defaultServiceName] |
          * | `OTEL_RESOURCE_ATTRIBUTES` | reads `deployment.environment.name` from it |
          * | `OTEL_TRACES_SAMPLER_ARG` | sampling ratio, 0 to 1 |
          * | `OSTROM_LANGFUSE_HOST`, `OSTROM_LANGFUSE_PUBLIC_KEY`, `OSTROM_LANGFUSE_SECRET_KEY` | Langfuse |
-         * | `OSTROM_POSTHOG_HOST` (default EU cloud), `OSTROM_POSTHOG_KEY` | PostHog |
+         * | `OSTROM_POSTHOG_HOST` (default EU cloud), `OSTROM_POSTHOG_API_KEY` | PostHog |
          *
          * @param getEnv Reads one variable.
          * @param defaultServiceName The service name when `OTEL_SERVICE_NAME` is absent.
@@ -50,6 +51,8 @@ public data class TelemetrySettings(
         public fun fromEnvironment(getEnv: (String) -> String?, defaultServiceName: String): TelemetrySettings {
             fun value(name: String) = getEnv(name)?.trim()?.takeIf { it.isNotEmpty() }
             val disabled = value("OTEL_SDK_DISABLED")?.lowercase() == "true"
+            val protocol = value("OTEL_EXPORTER_OTLP_PROTOCOL") ?: PROTOBUF
+            require(protocol == PROTOBUF) { "OTEL_EXPORTER_OTLP_PROTOCOL: only $PROTOBUF is supported." }
             val otlp = value("OTEL_EXPORTER_OTLP_ENDPOINT")?.takeUnless { disabled }?.let { url ->
                 OtlpEndpoint(url, parsePairs(value("OTEL_EXPORTER_OTLP_HEADERS"), "OTEL_EXPORTER_OTLP_HEADERS"))
             }
@@ -63,7 +66,7 @@ public data class TelemetrySettings(
                 }
                 ModelCall.langfuseEndpoint(host, publicKey, secretKey)
             }
-            val postHog = value("OSTROM_POSTHOG_KEY")?.let { key ->
+            val postHog = value("OSTROM_POSTHOG_API_KEY")?.let { key ->
                 PostHogConfig(value("OSTROM_POSTHOG_HOST") ?: PostHogConfig.EU_HOST, key)
             }
             val ratio = value("OTEL_TRACES_SAMPLER_ARG")?.let { raw ->
@@ -89,6 +92,7 @@ public data class TelemetrySettings(
                 pair.substring(0, separator).trim() to percentDecode(pair.substring(separator + 1).trim())
             } ?: emptyMap()
 
+        private const val PROTOBUF = "http/protobuf"
         private const val HEX_RADIX = 16
         private const val ESCAPE_LENGTH = 3
 

@@ -25,13 +25,14 @@ Standard OpenTelemetry variables, so any collector or Helm chart configures Ostr
 | Variable | Meaning |
 | --- | --- |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP/HTTP base URL, e.g. `https://otlp-gateway-prod-eu-west-2.grafana.net/otlp` or `http://otel-collector:4318` |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` (default; the only encoding written, JSON is not) |
 | `OTEL_EXPORTER_OTLP_HEADERS` | `Authorization=Basic%20<base64(instanceId:token)>` for Grafana Cloud |
 | `OTEL_SERVICE_NAME` | defaults to `ostrom-server` / `ostrom-cli` |
 | `OTEL_RESOURCE_ATTRIBUTES` | `deployment.environment.name=production` |
 | `OTEL_TRACES_SAMPLER_ARG` | share of new traces recorded, 0 to 1 (default 1) |
 | `OTEL_SDK_DISABLED=true` | turns OTLP export off |
 | `OSTROM_LANGFUSE_HOST`, `OSTROM_LANGFUSE_PUBLIC_KEY`, `OSTROM_LANGFUSE_SECRET_KEY` | Langfuse (EU cloud: `https://cloud.langfuse.com`) |
-| `OSTROM_POSTHOG_KEY`, `OSTROM_POSTHOG_HOST` | PostHog (default `https://eu.i.posthog.com`) |
+| `OSTROM_POSTHOG_API_KEY`, `OSTROM_POSTHOG_HOST` | PostHog (default `https://eu.i.posthog.com`) |
 
 A self-hosted install that sets none of them sends nothing anywhere.
 

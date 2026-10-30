@@ -69,10 +69,10 @@ class TelemetrySettingsTest {
 
     @Test
     fun postHogDefaultsToTheEuCloud() {
-        assertEquals(PostHogConfig.EU_HOST, settings("OSTROM_POSTHOG_KEY" to "phc_1").postHog?.host)
+        assertEquals(PostHogConfig.EU_HOST, settings("OSTROM_POSTHOG_API_KEY" to "phc_1").postHog?.host)
         assertEquals(
             "https://posthog.internal",
-            settings("OSTROM_POSTHOG_KEY" to "phc_1", "OSTROM_POSTHOG_HOST" to "https://posthog.internal")
+            settings("OSTROM_POSTHOG_API_KEY" to "phc_1", "OSTROM_POSTHOG_HOST" to "https://posthog.internal")
                 .postHog?.host,
         )
         assertNull(settings("OSTROM_POSTHOG_HOST" to "https://posthog.internal").postHog)
@@ -86,6 +86,14 @@ class TelemetrySettingsTest {
             settings("OTEL_EXPORTER_OTLP_ENDPOINT" to "http://c", "OTEL_EXPORTER_OTLP_HEADERS" to "secret-token")
         }
 
+        val badProtocol = assertFailsWith<IllegalArgumentException> {
+            settings("OTEL_EXPORTER_OTLP_PROTOCOL" to "http/json")
+        }
+        assertEquals(
+            "OTEL_EXPORTER_OTLP_PROTOCOL: only http/protobuf is supported.",
+            badProtocol.message,
+        )
+        assertNull(settings("OTEL_EXPORTER_OTLP_PROTOCOL" to "http/protobuf").otlp)
         assertEquals("OTEL_TRACES_SAMPLER_ARG must be a number between 0 and 1.", badRatio.message)
         assertEquals("OTEL_EXPORTER_OTLP_HEADERS must be a list of key=value pairs.", badHeaders.message)
     }
