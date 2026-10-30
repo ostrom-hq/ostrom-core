@@ -130,9 +130,10 @@ the serial descriptors of the models with `api/contract/shapes.json`, and CI che
 `api-types/scripts/contract-shapes.mjs` derives from `openapi.yaml`. To change the contract: edit `openapi.yaml`, run
 `npm run contract` in `api-types/`, change the Kotlin model, commit the three.
 
-The contract is ahead of the server: it also describes routes the server does not serve yet. The public
-[API reference](https://ostrom.run/docs/reference/api) lists an operation once the contract marks it
-`x-ostrom-server: implemented`; no operation carries the mark yet.
+The contract is ahead of the server: it also describes routes the server does not serve yet. Every operation carries
+`x-ostrom-status`: `served` when ostrom-server's `main` answers it, `planned` otherwise (`npm run contract` refuses an
+operation without it). The public [API reference](https://ostrom.run/docs/reference/api) lists the `served` ones; a
+server PR that serves a route sets its operation to `served` here.
 
 TypeScript: `@ostrom-hq/api-types`, published to GitHub Packages npm with the same `0.1.<run>` version as the Kotlin
 artifacts. `.npmrc`:

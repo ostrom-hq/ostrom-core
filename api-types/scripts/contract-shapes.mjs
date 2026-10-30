@@ -1,12 +1,25 @@
 // Writes the JSON shape of every schema of openapi.yaml that has a Kotlin model (all but `x-ostrom-kotlin: pending`).
 // The Kotlin test ContractTest compares this file with the serial descriptors of dev.ostrom.core.api.models;
-// CI regenerates it and fails when the committed copy differs.
+// CI regenerates it and fails when the committed copy differs. It also refuses an operation without
+// `x-ostrom-status: served | planned`, the marker the public API reference filters on.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { parse } from 'yaml'
 
 const [input, output] = process.argv.slice(2)
-const schemas = parse(readFileSync(input, 'utf8')).components.schemas
+const contract = parse(readFileSync(input, 'utf8'))
+const schemas = contract.components.schemas
 const PREFIX = '#/components/schemas/'
+const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'head', 'options', 'trace']
+const STATUSES = ['served', 'planned']
+
+const unmarked = Object.entries(contract.paths).flatMap(([path, item]) =>
+  METHODS.filter((method) => item[method] && !STATUSES.includes(item[method]['x-ostrom-status'])).map(
+    (method) => `${method.toUpperCase()} ${path}`,
+  ),
+)
+if (unmarked.length > 0) {
+  throw new Error(`operations without x-ostrom-status (served or planned):\n${unmarked.join('\n')}`)
+}
 
 function isNull(schema) {
   return schema.type === 'null'
