@@ -1,0 +1,32 @@
+{
+  "name": "@ostrom-hq/api-types",
+  "version": "0.1.0",
+  "description": "TypeScript types of the Ostrom API, generated from ostrom-core's api/openapi.yaml",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ostrom-hq/ostrom-core.git",
+    "directory": "api-types"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "build": "openapi-typescript ../api/openapi.yaml --output dist/index.d.ts --alphabetize --export-type",
+    "contract": "node scripts/contract-shapes.mjs ../api/openapi.yaml ../api/contract/shapes.json"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "yaml": "2.9.1"
+  }
+}

@@ -61,11 +61,13 @@ public data class GateRef(
  *
  * @property remote Remote repository (`owner/name`).
  * @property refs Refs and SHAs.
+ * @property force True for a forced push (`--force`, `+ref`); not part of the push preimage.
  */
 @Serializable
 public data class GatePush(
     val remote: String,
     val refs: List<GatePushRef>,
+    val force: Boolean? = null,
 )
 
 /**
@@ -214,7 +216,9 @@ public enum class ApprovalStatus {
  * @property evidence What is shown.
  * @property repo Repository the yes is bound to.
  * @property sha Commit the yes is bound to.
- * @property commits Commits shown.
+ * @property commits Commits shown (SHAs, part of what the yes is bound to).
+ * @property commitDetails The same commits with their title and author, for the approver's screen.
+ * @property checks CI checks of [sha], shown as evidence.
  * @property requestedFrom Approver asked.
  * @property channel Where it is shown (`console`, `slack`, `discord`, `app`, `cli`).
  * @property status Status.
@@ -237,6 +241,8 @@ public data class Approval(
     val repo: String? = null,
     val sha: String? = null,
     val commits: List<String>? = null,
+    val commitDetails: List<ApprovalCommit>? = null,
+    val checks: List<ApprovalCheck>? = null,
     val requestedFrom: String,
     val channel: String,
     val status: ApprovalStatus,
@@ -247,6 +253,36 @@ public data class Approval(
     val selfApproved: Boolean? = null,
     val expiresAt: String? = null,
 )
+
+/**
+ * A commit shown with an approval.
+ *
+ * @property sha Commit.
+ * @property title First line of its message.
+ * @property author Author login or name.
+ * @property url Link.
+ */
+@Serializable
+public data class ApprovalCommit(val sha: String, val title: String, val author: String? = null, val url: String? = null)
+
+/** State of a CI check. */
+@Serializable
+public enum class CheckState {
+    @SerialName("success") SUCCESS,
+    @SerialName("failure") FAILURE,
+    @SerialName("pending") PENDING,
+    @SerialName("skipped") SKIPPED,
+}
+
+/**
+ * A CI check shown with an approval.
+ *
+ * @property name Check name.
+ * @property state State.
+ * @property url Link.
+ */
+@Serializable
+public data class ApprovalCheck(val name: String, val state: CheckState, val url: String? = null)
 
 /**
  * A line of evidence shown with an approval.
