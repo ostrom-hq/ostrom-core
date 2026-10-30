@@ -23,7 +23,8 @@ info:
 
     A route without `orgs/{orgId}` in its path acts in the caller''s organization. A person who is a member of several
     organizations names it with the `Ostrom-Org` header (the organization''s id); without it they get 409 with
-    `error.type` `org_required`. With exactly one active membership the header may be left out.'
+    `error.type` `org_required`. With exactly one active membership the header may be left out. `getMe` and
+    `listMyOrganizations` never need it.'
 servers:
 - url: https://{host}
   variables:
@@ -314,7 +315,10 @@ paths:
       x-ostrom-status: planned
       tags:
       - auth
-      summary: Exchange a confirmed device code for a token
+      summary: Exchange a confirmed device code for a token (RFC 8628 section 3.5). 428 `authorization_pending` while
+        nobody approved it yet (poll again after the interval); 400 `slow_down` (poll less often), `access_denied` (the
+        sign-in was refused) or `expired_token` (the code expired or was used; start again), in `error.type`; 200 with
+        the token once approved
       security: []
       requestBody:
         required: true
@@ -335,11 +339,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthToken'
         '400':
-          $ref: '#/components/responses/Error'
+          description: '`error.type` is `slow_down`, `access_denied` or `expired_token` (RFC 8628), or the request is
+            malformed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '428':
-          description: authorization pending
+          description: '`error.type` is `authorization_pending`: not approved yet, poll again after the interval'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/auth/token/refresh:
     post:
       operationId: refreshToken
@@ -542,8 +555,6 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/auth/me:
-    parameters:
-    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMe
       x-ostrom-status: planned
@@ -1000,6 +1011,38 @@ paths:
       responses:
         '204':
           description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/organizations:
+    get:
+      operationId: listMyOrganizations
+      x-ostrom-status: planned
+      tags:
+      - organization
+      summary: The organizations the caller is an active member of, to choose the one sent in `Ostrom-Org`. Needs no
+        `Ostrom-Org` itself
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Organization'
+                required:
+                - items
         '400':
           $ref: '#/components/responses/Error'
         '401':
