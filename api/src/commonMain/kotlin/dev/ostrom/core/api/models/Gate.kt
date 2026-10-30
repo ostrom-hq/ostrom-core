@@ -514,3 +514,47 @@ public data class Decision(
  */
 @Serializable
 public data class DecisionSubject(val kind: String, val id: String, val label: String? = null)
+
+/**
+ * Who approves what in a repository (`GET /api/v1/gates/approvers`): the gates catalogue seen from the approvers' side,
+ * read from the same catalogue the gates decide on.
+ *
+ * @property approvers Every approver with the gates they answer, sorted by name.
+ * @property unanswered The gates that name no approver: their actions can never run.
+ * @property ungated The action classes no gate covers, sorted.
+ */
+@Serializable
+public data class ApproversGraph(
+    val approvers: List<ApproverLine>,
+    val unanswered: List<ApproverGate>,
+    val ungated: List<String>,
+)
+
+/**
+ * One approver and the gates they answer.
+ *
+ * @property approver The approver, as the workflow names them.
+ * @property gates Their gates, by workflow then node.
+ */
+@Serializable
+public data class ApproverLine(val approver: String, val gates: List<ApproverGate>)
+
+/**
+ * A gate seen from its approvers, with the actions it covers.
+ *
+ * @property workflowId The workflow.
+ * @property workflowName Its name.
+ * @property nodeId The gate node.
+ * @property label The gate's label.
+ * @property enforce False while the workflow is only proposed.
+ * @property actions The action classes it covers (`push-main`, `deploy`…), sorted.
+ */
+@Serializable
+public data class ApproverGate(
+    val workflowId: String,
+    val workflowName: String,
+    val nodeId: String,
+    val label: String,
+    val enforce: Boolean,
+    val actions: List<String>,
+)

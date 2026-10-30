@@ -294,6 +294,89 @@
       "expired"
     ]
   },
+  "ApproverGate": {
+    "properties": {
+      "workflowId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowName": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "enforce": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "actions": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ApproverLine": {
+    "properties": {
+      "approver": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "gates": {
+        "type": {
+          "array": {
+            "ref": "ApproverGate"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ApproversGraph": {
+    "properties": {
+      "approvers": {
+        "type": {
+          "array": {
+            "ref": "ApproverLine"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "unanswered": {
+        "type": {
+          "array": {
+            "ref": "ApproverGate"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "ungated": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "ArtifactType": {
     "enum": [
       "skill",
@@ -1557,6 +1640,11 @@
   },
   "Member": {
     "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
       "login": {
         "type": "string",
         "required": true,
@@ -1597,6 +1685,27 @@
         "nullable": false
       },
       "discordUserId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "MemberInvite": {
+    "properties": {
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "role": {
+        "type": {
+          "ref": "MemberRole"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "team": {
         "type": "string",
         "required": false,
         "nullable": false
