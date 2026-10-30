@@ -191,7 +191,8 @@ fun Route.gatesRoutes(dependencies: GatesRoutesDependencies) = with(dependencies
 - Version the management API under `/api/v1` (`teamcode:docs/architecture.md`).
 - Mappers are extension functions in `presentation/mappers/<feature>/`: `Gate.toGateResponse()`
   (`asonar:presentation/mappers/`).
-- **Every route declares who may call it, and a test proves it**: without a token → 401; another organization's resource → 404,
+- **Every route declares who may call it, and a test proves it**: without a token → 401 (except the unauthenticated routes listed in `ostrom-server`'s `docs/security.md`,
+  section 16.2, each tested as such); another organization's resource → 404,
   exactly like an unknown id; a list returns only the caller's rows (`ENG-054`). Identity comes from the credential,
   never from a caller-controlled header (`teamcode:docs/architecture.md`).
 
@@ -397,6 +398,8 @@ Cleanup that must run when the caller is cancelled (kill a child process, close 
 // worker-tutorial: Env.kt (expect) + Env.native.kt (actual, platform.posix.getenv)
 expect fun getEnv(name: String): String?
 
+// The serving process only ever reads OSTROM_DATABASE_URL (runtime role); `ostrom-server migrate` reads
+// OSTROM_DATABASE_MIGRATION_URL (owner role) in its own process (section 16.1).
 data class ServerConfig(val port: Int, val databaseUrl: String, val publicUrl: String) {
     companion object {
         fun fromEnvironment(): ServerConfig = ServerConfig(
@@ -560,7 +563,8 @@ Every module also has `jvm()` for tests and coverage only (section 7.2).
   only touch `infrastructure`. The fallback, if sqlx4k stalls, is a thin `libpq` cinterop wrapper (the approach of
   `hfhbd/postgres-native-sqldelight`, itself unmaintained since 2023 and limited to one connection: not usable as is).
 - Queries are written with bound parameters only; never string interpolation of a value into SQL.
-- **Migrations are versioned SQL files**, applied at startup by sqlx4k's migrator; a published migration is never edited
+- **Migrations are versioned SQL files**, applied by sqlx4k's migrator in a separate step (`ostrom-server migrate`, its
+  own process and job, with the owner credentials), never by the serving process; a published migration is never edited
   (`teamcode:AGENTS.md`, the Flyway rule). Each migration exists in a PostgreSQL and a SQLite flavour when the dialects
   differ, and the contract test suite (section 7.3) runs on both. Row-Level Security exists only in the PostgreSQL
   flavour (section 16.1).
@@ -643,8 +647,9 @@ Template: [`docs/conventions/.github/workflows/build.yml`](conventions/.github/w
 - Test tasks always execute in CI: never `FROM-CACHE` or `UP-TO-DATE` (`ENG-032`; the template's init script does it).
 - No secret in clear; publication uses `GITHUB_TOKEN` with `packages: write` on the publishing job only.
 - Package managers: Gradle for Kotlin; **npm** for `ostrom-app` (Expo's default) and **pnpm** for `ostrom-web`. The
-  pnpm variant of `build-ts.yml` adds `pnpm/action-setup` (pinned by SHA) **before** `setup-node`, then uses
-  `cache: pnpm`, `pnpm install --frozen-lockfile` and `pnpm run <script>`.
+  pnpm variant of `build-ts.yml` is written in it, commented out: `pnpm/action-setup` (pinned by SHA) **before**
+  `setup-node`, the version taken from `packageManager` in `package.json` (required), then `cache: pnpm`,
+  `pnpm install --frozen-lockfile` and `pnpm run <script>`.
 
 ---
 
@@ -783,8 +788,9 @@ every repository. "Organization" (`org_id`) is the tenant everywhere: in tables,
 
 - Every table holding an organization's data has an `org_id` column, first in its access indexes (equality column
   first, `teamcode:AGENTS.md` index rule).
-- **Isolation is enforced by Row-Level Security**, not only by `WHERE org_id = ?`. Each such table has
-  `ENABLE ROW LEVEL SECURITY`, `FORCE ROW LEVEL SECURITY` and a policy that **fails closed**:
+- **Isolation is enforced by Row-Level Security**, not only by `WHERE org_id = ?`. Every such table, `organizations`,
+  memberships and tokens included, has `ENABLE ROW LEVEL SECURITY`, `FORCE ROW LEVEL SECURITY` and policies that
+  **fail closed**:
 
 ```sql
 CREATE POLICY gates_org ON gates
@@ -793,23 +799,29 @@ CREATE POLICY gates_org ON gates
 ```
 
   Without an organization set, `current_setting(..., true)` gives NULL (or `''`, mapped to NULL): no row matches,
-  nothing errors, nothing leaks.
-- **Two roles.** An owner role runs the migrations (it owns the tables and the policies); the server serves with a
-  runtime role that owns nothing, is neither superuser nor `BYPASSRLS`, and has only `SELECT`/`INSERT`/`UPDATE`/`DELETE`
-  on the tables it needs. The server takes two connection settings, `OSTROM_DATABASE_MIGRATION_URL` and
-  `OSTROM_DATABASE_URL`; migrations run with the first, requests with the second. A CI integration test connects as
-  the runtime role and proves it can neither read another organization's rows nor `ALTER`/`DROP` a policy.
+  nothing errors, nothing leaks. `organizations` uses `id` in place of `org_id`.
+- **Three roles, two processes.**
+  - *Owner* (`ostrom_owner`, `BYPASSRLS`): owns tables, policies and functions. Used only by `ostrom-server migrate`,
+    a separate process and deployment job reading `OSTROM_DATABASE_MIGRATION_URL`. `BYPASSRLS` lets schema and data
+    migrations see every row; each data migration has a test that asserts the number of rows it changes.
+  - *Runtime* (`ostrom_app`): the serving process, `OSTROM_DATABASE_URL` only; it never receives the migration URL.
+    Owns nothing, neither superuser nor `BYPASSRLS`, only `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the tables it needs and
+    `EXECUTE` on the lookup functions below.
+  - *Authentication lookup* (`ostrom_auth`, no login): owns the lookup functions and has its own `SELECT` policy on the
+    tables read before an organization is known.
+  A CI integration test connects as `ostrom_app` and proves it can neither read another organization's rows nor
+  `ALTER`/`DROP` a table or a policy.
 - **No query outside an organization's transaction.** The infrastructure exposes one entry point,
   `withOrganization(orgId) { transaction -> ... }`, which opens the transaction and runs
   `SELECT set_config('ostrom.org_id', $1, true)` first (`true`: transaction-local; `SET LOCAL` takes no bind parameter,
   and a session-level setting would leak to the next request on the pooled connection). Repositories of tenant tables
   only receive that transaction; they never see the pool.
-- **Tables read before the organization is known** (tokens, devices and sessions looked up by their secret hash,
-  `organizations`, memberships, sign-in links) have no RLS keyed on `ostrom.org_id`. They are listed in one place
-  (`docs/tenancy.md` of `ostrom-server`) with the reason, reached only through narrow functions that look up one row
-  by a unique secret hash or id and return the principal (owner-defined `SECURITY DEFINER` functions with a fixed
-  `search_path`, or a dedicated read-only role), and each has a test that it cannot enumerate rows.
-- The PostgreSQL flavour of a migration that creates a tenant table creates its policy in the same file; the SQLite
+- **Before the organization is known** (resolving a token, a device or a session from its secret, redeeming a sign-in
+  link), the server calls a `SECURITY DEFINER` function owned by `ostrom_auth`, with a fixed `search_path`, that takes
+  the secret's hash and returns at most one principal (`org_id`, user, scopes). Tenant routes that list members or
+  tokens go through `withOrganization` like any other table. The functions are listed in `ostrom-server`'s
+  `docs/tenancy.md`, each with a test that it returns nothing for a wrong hash and cannot enumerate rows.
+- The PostgreSQL flavour of a migration that creates a tenant table creates its policies in the same file; the SQLite
   flavour has no RLS. SQLite (tests, local single-user mode) relies on the same repository code filtering on `org_id`.
 - **One end-to-end test per resource** proves another organization neither sees nor changes it (list, read, update,
   delete: 404 and nothing changed), on PostgreSQL and on SQLite, on top of the route tests of section 1.6 (`ENG-054`).
@@ -822,8 +834,10 @@ CREATE POLICY gates_org ON gates
   documentation. Every other route requires a credential.
 - Creating an organization, an account, a member or a long-lived token requires a **user session** from one of those
   sign-ins (or the device flow approved by such a session); an agent or device token never creates or replaces an
-  account, a member or a token. Bootstrap (first account and organization) goes through the same sign-in, never an open
-  "create operator" route.
+  account, a member or a token. **Bootstrap** never goes through an open "create operator" route: either the first
+  sign-in of a fresh server becomes owner of the first organization, or, without an identity provider (local SQLite
+  mode, self-hosted offline), `ostrom-server bootstrap` run on the host (filesystem access to its configuration) creates
+  the first owner and prints a one-time sign-in link.
 - Console write routes (workflows, policies, gate actions, rules, members) require a user session and the right role.
 - The token given to an agent is scoped to its own session: it cannot mark a check as passed, close or reopen another
   session, or set its own cost. Check results are signed or recomputed by the server.
@@ -838,7 +852,7 @@ CREATE POLICY gates_org ON gates
 | --- | --- | --- |
 | CLI start-up | < 30 ms | `ostrom --version`, release binary, process start to exit |
 | CLI hook | < 15 ms | one hook invocation with its input on stdin, release binary, process start to exit (the hook path loads less than `--version`'s full command tree: keep it that way) |
-| Server start-up | < 200 ms | process start to the first `200` on the readiness route, against an already migrated database (migrations are measured apart and never block readiness longer than they run) |
+| Server start-up | < 200 ms | process start to the first `200` on the readiness route, with zero pending migrations. Readiness stays false while the schema version differs from the one the binary expects; `ostrom-server migrate` duration is reported by its own job, not in this budget |
 | API p95 | < 50 ms | k6 at the nominal load written in the test, server and PostgreSQL on the same runner |
 
 How the gate stays meaningful on shared runners:
@@ -847,8 +861,10 @@ How the gate stays meaningful on shared runners:
   budget, and reports p95. The API test fails on p95 over 50 ms or an error rate over 0.1 %.
 - Runner class: `ubuntu-24.04` (x64), written in the job. A failing budget is investigated, never retried until green;
   a budget changes only by a pull request that says why, with measurements.
-- Besides the absolute budget, each job compares with the last `main` run (stored artifact) and fails on a regression
-  over 20 % of the median; a pull request that moves a measured value by more than 10 % says so with before/after.
+- Besides the absolute budget, each job builds `main` and the pull request in the same job and alternates their runs
+  (A/B on the same runner, no stored baseline). It fails when the pull request's median is over 20 % **and** over an
+  absolute margin (2 ms for CLI start-up and hook, 10 ms for server start-up, 5 ms for API p95) above `main`'s. A pull
+  request that moves a measured value by more than 10 % says so with before/after.
 
 Section 10.3 lists what makes Kotlin/Native slow; start-up is where it shines: keep `main` free of eager work (no global
 `object` initialization doing IO, Koin modules built once, no reflection).
@@ -860,7 +876,9 @@ artifacts, so the server exports through a thin OTLP/HTTP exporter (protobuf, or
 ready; both are accepted by the OTLP gateway) in `infrastructure`, behind domain interfaces (`MetricsService`,
 `TracingService`), as `asonar` keeps OpenTelemetry behind `TelemetryFactory` and `OpenTelemetryMetricsService`.
 
-- Export never runs on the request path: spans and metrics go into a bounded in-memory queue, a background coroutine
-  sends batches with a timeout, and on overflow or failure the oldest data is **dropped and counted**; telemetry never
-  slows a request or start-up.
-- Attributes are bounded values, never identifiers (section 6.1); no prompt, token or body in a span or a log.
+- Export never runs on the request path. **Metrics** are aggregated in memory (counters, histograms) and exported
+  periodically; a failed export keeps the aggregate for the next one. **Spans** go into a bounded queue sent in batches
+  by a background coroutine with a timeout; on overflow the oldest spans are dropped and counted in a metric, which
+  survives in the aggregate until an export succeeds. Telemetry never slows a request or start-up.
+- **Metric** attributes are bounded values, never identifiers (`ENG-003`, section 6.1). Spans and logs may carry
+  organization and run ids for correlation. No prompt, token or body in a span, a metric or a log.
