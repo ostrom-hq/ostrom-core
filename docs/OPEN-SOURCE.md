@@ -75,6 +75,7 @@ workflow.
 | ostrom-web, ostrom-app | `.github/workflows/ci.yml` | `unpinned-uses`: actions by tag (`@v4`, `@v5`), against CONVENTIONS.md section 11 | WEB, APP (QA template) | pin each action by commit SHA |
 | ostrom-e2e | `.github/workflows/ci.yml` | `cache-poisoning`: dependency cache, QA template of the single `ci` job | QA | same, in the template too |
 | ostrom-e2e | `.github/actions/*/action.yml` | `template-injection`: inputs expanded inside `run:` | QA | pass each input through `env:` |
+| ostrom-e2e | `.github/actions/cli/action.yml` | `github-env`: writes `$RUNNER_TEMP/ostrom-cli-bin` to `GITHUB_PATH` | QA | call the binary by its full path, or justify the line with a `zizmor: ignore` comment |
 | ostrom-site | `.github/workflows/ci.yml`, `docs.yml` | `cache-poisoning`: dependency cache in workflows that also run on release tags | SITE | no cache on tag runs |
 
 ### Before the launch
