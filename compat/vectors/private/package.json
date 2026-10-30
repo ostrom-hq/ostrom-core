@@ -1,0 +1,304 @@
+{
+  "format": "compat.package/1",
+  "name": "package-ship-workflow",
+  "description": "Session package compiled from one decided workflow (trigger, step with a rule, check with a script and a PreToolUse hook, two agent nodes as sub-agents and Codex roles, a gate hook, a notify hook) plus the rules harness, published, signed and pinned. `payload` is exactly what is signed; it is served as-is and never re-serialised.",
+  "input": {
+    "repo": "acme-api",
+    "serverUrl": "https://acme.example",
+    "actor": "dev-a",
+    "clock": {
+      "compiledAt": "2026-10-30T08:45:00.000Z"
+    },
+    "env": {
+      "OSTROM_PIN": "auto",
+      "OSTROM_CODE_PUBLISHERS": "*"
+    },
+    "docs": {
+      "rules": [
+        {
+          "id": "r-commit-style",
+          "statement": "Commit messages start with a verb in the imperative.",
+          "output": "convention",
+          "group": "Git",
+          "scope": [
+            "acme-api"
+          ],
+          "sources": [
+            {
+              "kind": "history",
+              "ref": "acme-api@main"
+            }
+          ],
+          "strength": "required",
+          "confidence": 0.9,
+          "status": "accepted",
+          "foundBy": "compat",
+          "foundAt": "2026-10-30T08:00:00.000Z",
+          "decidedBy": "dev-a",
+          "decidedAt": "2026-10-30T08:00:00.000Z",
+          "reviewBy": "2027-01-28"
+        }
+      ],
+      "workflows": [
+        {
+          "id": "wf-ship",
+          "name": "Ship acme-api",
+          "domain": "acme-api",
+          "status": "accepted",
+          "foundAt": "2026-10-30T08:00:00.000Z",
+          "sources": [],
+          "nodes": [
+            {
+              "id": "wf-ship-start",
+              "kind": "trigger",
+              "label": "A change is ready to ship"
+            },
+            {
+              "id": "wf-ship-msg",
+              "kind": "step",
+              "label": "Write the commit message the team way",
+              "detail": "One line, imperative.",
+              "ruleIds": [
+                "r-commit-style"
+              ]
+            },
+            {
+              "id": "wf-ship-tests",
+              "kind": "check",
+              "label": "Unit tests pass",
+              "run": {
+                "command": "npm test",
+                "on": {
+                  "classes": [
+                    "push-main"
+                  ]
+                },
+                "timeoutSec": 300
+              }
+            },
+            {
+              "id": "wf-ship-second",
+              "kind": "agent",
+              "label": "Second",
+              "run": {
+                "instructions": "Read the diff once more."
+              }
+            },
+            {
+              "id": "wf-ship-review",
+              "kind": "agent",
+              "label": "Second look",
+              "run": {
+                "instructions": "Review the diff."
+              }
+            },
+            {
+              "id": "wf-ship-gate",
+              "kind": "gate",
+              "label": "Push to main",
+              "approvers": [
+                "rev-b",
+                "dev-a"
+              ],
+              "actions": [
+                {
+                  "class": "push-main",
+                  "label": "Push or merge into main",
+                  "patterns": [],
+                  "repos": [
+                    "acme-api"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "wf-ship-tell",
+              "kind": "notify",
+              "label": "Tell the team",
+              "run": {
+                "channel": "log:releases",
+                "message": "{dev} pushed to {repo} (session {session})."
+              }
+            }
+          ],
+          "edges": [
+            {
+              "from": "wf-ship-start",
+              "to": "wf-ship-msg"
+            },
+            {
+              "from": "wf-ship-msg",
+              "to": "wf-ship-tests"
+            },
+            {
+              "from": "wf-ship-tests",
+              "to": "wf-ship-second"
+            },
+            {
+              "from": "wf-ship-second",
+              "to": "wf-ship-review"
+            },
+            {
+              "from": "wf-ship-review",
+              "to": "wf-ship-gate"
+            },
+            {
+              "from": "wf-ship-gate",
+              "to": "wf-ship-tell"
+            }
+          ]
+        }
+      ],
+      "decisions": [
+        {
+          "by": "dev-a",
+          "subject": {
+            "kind": "workflow",
+            "id": "wf-ship",
+            "label": "Ship acme-api"
+          },
+          "action": "edit",
+          "after": {
+            "status": "accepted",
+            "gates": [
+              "Push to main: rev-b, dev-a"
+            ],
+            "runs": [
+              "Unit tests pass: runs `npm test`",
+              "Tell the team: tells log:releases"
+            ]
+          },
+          "source": {
+            "via": "console",
+            "workflowId": "wf-ship"
+          },
+          "id": "dec_a5015269-ff8c-46a7-80da-3f9789aabf24",
+          "at": "2026-10-30T08:30:00.000Z",
+          "receiptId": "rcpt_434bce76-7516-44f7-8d13-bfaea9f9fe68"
+        },
+        {
+          "by": "dev-a",
+          "subject": {
+            "kind": "policy",
+            "id": "operator:rev-b",
+            "label": "Operator account rev-b (local)"
+          },
+          "action": "edit",
+          "before": {
+            "account": null
+          },
+          "after": {
+            "login": "rev-b",
+            "kind": "local",
+            "name": null
+          },
+          "source": {
+            "via": "console"
+          },
+          "id": "dec_f19aec09-9655-4462-8098-6784e48a97a4",
+          "at": "2026-10-30T08:50:00.000Z",
+          "receiptId": "rcpt_dc0a785d-c10f-42e6-8026-4d0a070c6910"
+        },
+        {
+          "at": "2026-10-30T11:05:00.000Z",
+          "by": "rev-b",
+          "subject": {
+            "kind": "gate",
+            "id": "appr_62d52461-ed09-464d-86e5-d7dff4e0d0af",
+            "label": "dev-a via claude-code: push to the main branch in acme/acme-api"
+          },
+          "action": "approve",
+          "before": {
+            "status": "pending",
+            "requestedFrom": "rev-b",
+            "askedBy": [
+              "dev-a"
+            ]
+          },
+          "after": {
+            "status": "approved"
+          },
+          "source": {
+            "via": "console",
+            "approvalId": "appr_62d52461-ed09-464d-86e5-d7dff4e0d0af",
+            "workflowId": "wf-ship"
+          },
+          "id": "dec_0c2774fd-1351-44e9-86cf-937edeafb642"
+        }
+      ]
+    }
+  },
+  "envelope": {
+    "format": "ostrom.package/1",
+    "version": "p202610300845-a216a112",
+    "repo": "acme-api",
+    "digest": "ec5164a0a4ae691c52da7de9e05eed227c9e379595a94f3d1734079823397080",
+    "contentDigest": "a216a1129fe258965ce33cf9263ec0a35877d2e868b2cee7f8fe2fb27391abc6",
+    "alg": "ed25519",
+    "kid": "b918e282a924dda0",
+    "signature": "lRSFGrqRAyHh1mXa5UaOJqvVwkumuJFYxTD8QPBBCV7mtDvgZZrxutNq6RoFHUKdk9wYyro1UBiLXv/bXpYMBw==",
+    "payload": "{\"compiledAt\":\"2026-10-30T08:45:00.000Z\",\"compiler\":\"0.1.0\",\"contentDigest\":\"a216a1129fe258965ce33cf9263ec0a35877d2e868b2cee7f8fe2fb27391abc6\",\"context\":\"[Ostrom] Workflows compiled into this session:\\n- Ship acme-api, starts when: A change is ready to ship; skill ostrom-wf-ship-acme-api; enforced here: check \\\"Unit tests pass\\\", gate \\\"Push to main\\\", notify \\\"Tell the team\\\"\",\"files\":[{\"content\":\"{\\n  \\\"name\\\": \\\"ostrom\\\",\\n  \\\"version\\\": \\\"0.0.0-202610300845-86a2f34b\\\",\\n  \\\"description\\\": \\\"Ostrom harness for acme-api: decided rules, gates and receipts\\\"\\n}\",\"mode\":\"file\",\"path\":\".claude-plugin/plugin.json\",\"sha256\":\"a893e399b15bef830558fd62f9c5cc58e70decc4516ad50d3024e20b91529d31\"},{\"content\":\"---\\nname: ostrom-second-look\\ndescription: \\\"Second look — step of \\\\\\\"Ship acme-api\\\\\\\", compiled by Ostrom.\\\"\\n---\\n\\nReview the diff.\\n\\nWhen you are done, call node_done (MCP server \\\"ostrom-workflow\\\") with node \\\"wf-ship-review\\\" and a one-line summary.\\n\",\"mode\":\"file\",\"path\":\"agents/ostrom-second-look.md\",\"sha256\":\"4d1737b517b67ea0005fc095b8c9043c0ebb0ebb494b132be098e425bb19eebd\"},{\"content\":\"---\\nname: ostrom-second\\ndescription: \\\"Second — step of \\\\\\\"Ship acme-api\\\\\\\", compiled by Ostrom.\\\"\\n---\\n\\nRead the diff once more.\\n\\nWhen you are done, call node_done (MCP server \\\"ostrom-workflow\\\") with node \\\"wf-ship-second\\\" and a one-line summary.\\n\",\"mode\":\"file\",\"path\":\"agents/ostrom-second.md\",\"sha256\":\"a8b011aa46c0a26c9bf268b5f0fdd3ff1266d1ba055d5320deba24e32e0f4776\"},{\"content\":\"name = \\\"ostrom_second_look\\\"\\ndescription = \\\"Second look: step of \\\\\\\"Ship acme-api\\\\\\\", compiled by Ostrom.\\\"\\ndeveloper_instructions = \\\"Review the diff.\\\\n\\\\nWhen you are done, call node_done (MCP server \\\\\\\"ostrom-workflow\\\\\\\") with node \\\\\\\"wf-ship-review\\\\\\\" and a one-line summary.\\\"\\n\",\"mode\":\"file\",\"path\":\"codex/agents/ostrom_second_look.toml\",\"sha256\":\"2655d5582321d0b7cebf819b77efb19ab4d0642e86009ec638936ebc2e95c934\"},{\"content\":\"name = \\\"ostrom_second\\\"\\ndescription = \\\"Second: step of \\\\\\\"Ship acme-api\\\\\\\", compiled by Ostrom.\\\"\\ndeveloper_instructions = \\\"Read the diff once more.\\\\n\\\\nWhen you are done, call node_done (MCP server \\\\\\\"ostrom-workflow\\\\\\\") with node \\\\\\\"wf-ship-second\\\\\\\" and a one-line summary.\\\"\\n\",\"mode\":\"file\",\"path\":\"codex/agents/ostrom_second.toml\",\"sha256\":\"f45371a47c3f9250405a5c3a26a8b6b62cc711e9a5b9f30691863165114fb048\"},{\"content\":\"<!-- ostrom:begin (generated by `ostrom sync`, do not edit inside this block) -->\\n## Team harness (Ostrom h202610300845-86a2f34b)\\n\\nThis repository (acme-api) works under the rules the team decided in Ostrom. Digest `86a2f34b352f6029`.\\n\\nAlways:\\n- Commit messages start with a verb in the imperative. (r-commit-style)\\n\\nRules by domain: skills `ostrom-git`. For one file: `rules_for(path)` on the MCP server `ostrom`.\\n\\nActions that need a human yes first (the session pauses until the answer):\\n- Push to the main branch: Push to main → rev-b or dev-a\\n\\nEvery session ends with a signed receipt (rules in force, gates asked, who said yes).\\n<!-- ostrom:end -->\\n\",\"mode\":\"file\",\"path\":\"ostrom/AGENTS-block.md\",\"sha256\":\"a96ecbeea53d12db28e19cddbe09001f15b2b8a2b387ad816adf9fac9e0d99a9\"},{\"content\":\"{\\n  \\\"version\\\": \\\"h202610300845-86a2f34b\\\",\\n  \\\"digest\\\": \\\"86a2f34b352f6029ab48ce4f2af375d8f1d177d9c3e40cd756c761fbdc5360b4\\\",\\n  \\\"repo\\\": \\\"acme-api\\\",\\n  \\\"server\\\": \\\"https://acme.example\\\",\\n  \\\"failMode\\\": \\\"closed\\\",\\n  \\\"waitSeconds\\\": 300,\\n  \\\"actions\\\": [\\n    {\\n      \\\"class\\\": \\\"push-main\\\",\\n      \\\"label\\\": \\\"Push to the main branch\\\",\\n      \\\"tools\\\": [\\n        \\\"Bash\\\"\\n      ],\\n      \\\"patterns\\\": [\\n        \\\"\\\\\\\\bgit\\\\\\\\s+push\\\\\\\\b[^\\\\\\\\n;&|]*\\\\\\\\b(main|master)\\\\\\\\b\\\",\\n        \\\"\\\\\\\\bgit\\\\\\\\s+push\\\\\\\\b[^\\\\\\\\n;&|]*HEAD:(refs/heads/)?(main|master)\\\"\\n      ],\\n      \\\"keywords\\\": [\\n        \\\"push to main\\\",\\n        \\\"main\\\",\\n        \\\"pin\\\",\\n        \\\"production\\\",\\n        \\\"merge\\\"\\n      ],\\n      \\\"gate\\\": {\\n        \\\"workflowId\\\": \\\"wf-ship\\\",\\n        \\\"workflowName\\\": \\\"Ship acme-api\\\",\\n        \\\"nodeId\\\": \\\"wf-ship-gate\\\",\\n        \\\"label\\\": \\\"Push to main\\\",\\n        \\\"approvers\\\": [\\n          \\\"rev-b\\\",\\n          \\\"dev-a\\\"\\n        ],\\n        \\\"status\\\": \\\"accepted\\\",\\n        \\\"enforce\\\": true,\\n        \\\"basis\\\": \\\"declared\\\",\\n        \\\"reason\\\": \\\"gate approvers of the workflow\\\"\\n      }\\n    },\\n    {\\n      \\\"class\\\": \\\"push-tag\\\",\\n      \\\"label\\\": \\\"Push a release tag\\\",\\n      \\\"tools\\\": [\\n        \\\"Bash\\\"\\n      ],\\n      \\\"patterns\\\": [\\n        \\\"\\\\\\\\bgit\\\\\\\\s+push\\\\\\\\b[^\\\\\\\\n;&|]*(--tags|\\\\\\\\bv\\\\\\\\d+\\\\\\\\.\\\\\\\\d+)\\\",\\n        \\\"\\\\\\\\bgh\\\\\\\\s+release\\\\\\\\s+create\\\\\\\\b\\\"\\n      ],\\n      \\\"keywords\\\": [\\n        \\\"tag\\\",\\n        \\\"release\\\",\\n        \\\"production\\\"\\n      ],\\n      \\\"gate\\\": null\\n    },\\n    {\\n      \\\"class\\\": \\\"merge\\\",\\n      \\\"label\\\": \\\"Merge a pull request\\\",\\n      \\\"tools\\\": [\\n        \\\"Bash\\\"\\n      ],\\n      \\\"patterns\\\": [\\n        \\\"\\\\\\\\bgh\\\\\\\\s+pr\\\\\\\\s+merge\\\\\\\\b\\\"\\n      ],\\n      \\\"keywords\\\": [\\n        \\\"merge\\\",\\n        \\\"approve\\\",\\n        \\\"review\\\"\\n      ],\\n      \\\"gate\\\": null\\n    },\\n    {\\n      \\\"class\\\": \\\"deploy\\\",\\n      \\\"label\\\": \\\"Deploy to production\\\",\\n      \\\"tools\\\": [\\n        \\\"Bash\\\"\\n      ],\\n      \\\"patterns\\\": [\\n        \\\"\\\\\\\\bhelm\\\\\\\\s+(upgrade|install|rollback)\\\\\\\\b\\\",\\n        \\\"\\\\\\\\bkubectl\\\\\\\\s+(apply|rollout|set\\\\\\\\s+image|delete|scale)\\\\\\\\b\\\",\\n        \\\"\\\\\\\\bgh\\\\\\\\s+workflow\\\\\\\\s+run\\\\\\\\s+\\\\\\\\S*deploy\\\",\\n        \\\"\\\\\\\\bterraform\\\\\\\\s+apply\\\\\\\\b\\\",\\n        \\\"\\\\\\\\b(fly|flyctl)\\\\\\\\s+deploy\\\\\\\\b\\\",\\n        \\\"\\\\\\\\bvercel\\\\\\\\b[^\\\\\\\\n]*--prod\\\",\\n        \\\"\\\\\\\\bnpm\\\\\\\\s+publish\\\\\\\\b\\\",\\n        \\\"\\\\\\\\bdocker\\\\\\\\s+push\\\\\\\\b\\\",\\n        \\\"(^|[\\\\\\\\s;&|/])deploy(\\\\\\\\.sh)?\\\\\\\\s+(prod|production)\\\\\\\\b\\\"\\n      ],\\n      \\\"keywords\\\": [\\n        \\\"deploy\\\",\\n        \\\"production\\\",\\n        \\\"helm\\\",\\n        \\\"rollout\\\",\\n        \\\"pin\\\",\\n        \\\"release\\\"\\n      ],\\n      \\\"gate\\\": null\\n    },\\n    {\\n      \\\"class\\\": \\\"migration\\\",\\n      \\\"label\\\": \\\"Run or add a database migration\\\",\\n      \\\"tools\\\": [\\n        \\\"Bash\\\",\\n        \\\"Write\\\",\\n        \\\"Edit\\\",\\n        \\\"MultiEdit\\\"\\n      ],\\n      \\\"patterns\\\": [\\n        \\\"\\\\\\\\bflyway\\\\\\\\b[^\\\\\\\\n]*\\\\\\\\bmigrate\\\\\\\\b\\\",\\n        \\\"\\\\\\\\bprisma\\\\\\\\s+migrate\\\\\\\\s+deploy\\\\\\\\b\\\",\\n        \\\"\\\\\\\\balembic\\\\\\\\s+upgrade\\\\\\\\b\\\",\\n        \\\"\\\\\\\\bliquibase\\\\\\\\b[^\\\\\\\\n]*\\\\\\\\bupdate\\\\\\\\b\\\",\\n        \\\"\\\\\\\\b(rails|rake)\\\\\\\\s+db:migrate\\\\\\\\b\\\",\\n        \\\"\\\\\\\\bknex\\\\\\\\s+migrate\\\",\\n        \\\"/db/migration/\\\"\\n      ],\\n      \\\"keywords\\\": [\\n        \\\"migration\\\",\\n        \\\"schema\\\",\\n        \\\"database\\\",\\n        \\\"flyway\\\"\\n      ],\\n      \\\"gate\\\": null\\n    },\\n    {\\n      \\\"class\\\": \\\"mobile-release\\\",\\n      \\\"label\\\": \\\"Release the mobile app to the stores\\\",\\n      \\\"tools\\\": [\\n        \\\"Bash\\\"\\n      ],\\n      \\\"patterns\\\": [\\n        \\\"\\\\\\\\bfastlane\\\\\\\\b\\\",\\n        \\\"\\\\\\\\beas\\\\\\\\s+(submit|build)\\\\\\\\b[^\\\\\\\\n]*production\\\"\\n      ],\\n      \\\"keywords\\\": [\\n        \\\"mobile\\\",\\n        \\\"store\\\",\\n        \\\"fastlane\\\",\\n        \\\"daily release\\\",\\n        \\\"app\\\"\\n      ],\\n      \\\"gate\\\": null\\n    },\\n    {\\n      \\\"class\\\": \\\"client-message\\\",\\n      \\\"label\\\": \\\"Send a message to a customer\\\",\\n      \\\"tools\\\": [\\n        \\\"mcp\\\"\\n      ],\\n      \\\"patterns\\\": [\\n        \\\"send_validated_message\\\",\\n        \\\"discord_send\\\",\\n        \\\"discord_reply\\\",\\n        \\\"chat_postmessage\\\",\\n        \\\"send_email\\\",\\n        \\\"slack_post\\\"\\n      ],\\n      \\\"keywords\\\": [\\n        \\\"client\\\",\\n        \\\"customer\\\",\\n        \\\"support\\\",\\n        \\\"message\\\",\\n        \\\"reply\\\"\\n      ],\\n      \\\"gate\\\": null\\n    }\\n  ]\\n}\",\"mode\":\"file\",\"path\":\"ostrom/gates.json\",\"sha256\":\"b3721cd55f7f752bb3161517c0b52448bb63f278a8ddb4ffc8918f26b048924c\"},{\"content\":\"#!/bin/sh\\n# Ostrom check \\\"Unit tests pass\\\" (Ship acme-api, node wf-ship-tests). Compiled by Ostrom; run by the launcher in a sandbox,\\n# in the repository, with no network and no secret. Exit 0 = passed.\\nset -e\\nnpm test\\n\",\"mode\":\"executable\",\"path\":\"scripts/s-wf-ship-tests.sh\",\"sha256\":\"9d3bd5d02336ea7ec70c484ddfa85db071926a7561dd1f5b4283233f30b2288f\"},{\"content\":\"---\\nname: ostrom-git\\ndescription: \\\"Team rules for Git in acme-api (1 decided, 0 proposed), from Ostrom. Use before changing acme-api.\\\"\\n---\\n\\n# Git: the team's rules for acme-api\\n\\nHarness h202610300845-86a2f34b, exported by Ostrom. **MUST** and **SHOULD** rules were decided by the team (accepted or edited, each with a signed decision receipt when one exists).\\nRules marked **proposed** were found in the history but nobody decided them yet: follow them when in doubt, never cite them as decided.\\n\\n## Decided\\n\\n- **[MUST]** Commit messages start with a verb in the imperative.  \\n  <sub>r-commit-style · digest 79b6ac48e522 · scope: acme-api</sub>\\n\\nAsk `rules_for` (MCP server `ostrom`) for the rules of one path.\\n\",\"mode\":\"file\",\"path\":\"skills/ostrom-git/SKILL.md\",\"sha256\":\"59466466e3ae202e149a928009a05d4e0b285fb239e8f01618c8ea4114440fda\"},{\"content\":\"---\\nname: ostrom-wf-ship-acme-api\\ndescription: \\\"How the team ships \\\\\\\"Ship acme-api\\\\\\\" in acme-api: the steps in order, what Ostrom runs before an action, who says yes, who is told. From Ostrom.\\\"\\n---\\n\\n# Ship acme-api\\n\\nDecided by the team: Ostrom enforces it in this session.\\n\\n## A change is ready to ship (trigger)\\n\\n## Write the commit message the team way (step)\\n\\nOne line, imperative.\\n\\nRules for this step:\\n- Commit messages start with a verb in the imperative. (r-commit-style)\\n\\n## Unit tests pass (check)\\n\\nBefore push-main, Ostrom runs `npm test` in a sandbox (no network, no secret). If it fails, the action is refused with the output: fix the cause, never skip or weaken the check, then run the same command again.\\n\\n## Second (agent)\\n\\nHand this step to a sub-agent where your agent has them: `ostrom-second` in Claude Code; in Codex, spawn_agent with agent_type `ostrom_second` (and task_name `ostrom_second`). Otherwise do it yourself. Then call `node_done` (MCP server \\\"ostrom-workflow\\\") with node \\\"wf-ship-second\\\" and a one-line summary of what was really done; never report a sub-agent that did not run.\\n\\nRead the diff once more.\\n\\n## Second look (agent)\\n\\nHand this step to a sub-agent where your agent has them: `ostrom-second-look` in Claude Code; in Codex, spawn_agent with agent_type `ostrom_second_look` (and task_name `ostrom_second_look`). Otherwise do it yourself. Then call `node_done` (MCP server \\\"ostrom-workflow\\\") with node \\\"wf-ship-review\\\" and a one-line summary of what was really done; never report a sub-agent that did not run.\\n\\nReview the diff.\\n\\n## Push to main (gate)\\n\\nA human yes is needed from rev-b or dev-a. When Ostrom refuses the action \\\"waiting for a yes\\\", run the `ostrom wait <id>` command it gives, then the same command again. Never work around a gate.\\n\\n## Tell the team (notify)\\n\\nAfter the action, Ostrom tells releases by itself: do not send the message yourself.\\n\",\"mode\":\"file\",\"path\":\"skills/ostrom-wf-ship-acme-api/SKILL.md\",\"sha256\":\"0fb25eb5ba5b3ad2d56a138fbb43fdf4cc8ac3abbcc66e9ab037ecc17a1f4aac\"}],\"format\":\"ostrom.package/1\",\"harness\":{\"digest\":\"86a2f34b352f6029ab48ce4f2af375d8f1d177d9c3e40cd756c761fbdc5360b4\",\"receiptId\":\"rcpt_fb02440a-28c4-484e-81ad-8cda105b64d7\",\"version\":\"h202610300845-86a2f34b\"},\"hooks\":[{\"classes\":[\"push-main\"],\"event\":\"PreToolUse\",\"id\":\"h-wf-ship-tests\",\"kind\":\"check\",\"mode\":\"enforce\",\"nodeId\":\"wf-ship-tests\",\"order\":0,\"patterns\":[\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*\\\\b(main|master)\\\\b\",\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*HEAD:(refs/heads/)?(main|master)\"],\"scriptId\":\"s-wf-ship-tests\",\"tools\":[\"Bash\"],\"workflowId\":\"wf-ship\"},{\"classes\":[\"push-main\"],\"event\":\"PreToolUse\",\"id\":\"h-wf-ship-gate\",\"kind\":\"gate\",\"mode\":\"enforce\",\"nodeId\":\"wf-ship-gate\",\"order\":1,\"patterns\":[\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*\\\\b(main|master)\\\\b\",\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*HEAD:(refs/heads/)?(main|master)\"],\"tools\":[\"Bash\",\"mcp\"],\"workflowId\":\"wf-ship\"},{\"classes\":[\"push-main\"],\"event\":\"PostToolUse\",\"id\":\"h-wf-ship-tell\",\"kind\":\"notify\",\"mode\":\"enforce\",\"nodeId\":\"wf-ship-tell\",\"notifyId\":\"n-wf-ship-tell\",\"order\":2,\"patterns\":[\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*\\\\b(main|master)\\\\b\",\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*HEAD:(refs/heads/)?(main|master)\"],\"tools\":[\"Bash\"],\"workflowId\":\"wf-ship\"}],\"mcp\":{\"servers\":[{\"name\":\"ostrom\",\"path\":\"/api/bridge/mcp\"},{\"name\":\"ostrom-workflow\",\"path\":\"/api/compiler/mcp\"}],\"tools\":[{\"description\":\"Where this session stands in the compiled workflows\",\"name\":\"workflow_status\",\"server\":\"ostrom-workflow\"},{\"description\":\"Report that a workflow step (agent node) is done\",\"name\":\"node_done\",\"server\":\"ostrom-workflow\"}]},\"nodes\":[{\"artifacts\":[],\"id\":\"wf-ship-start\",\"kind\":\"trigger\",\"label\":\"A change is ready to ship\",\"mode\":\"enforce\",\"produces\":[{\"event\":\"SessionStart\",\"note\":\"when the workflow starts: one line of the session context\",\"type\":\"context\"}],\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\"},{\"artifacts\":[\"skills/ostrom-wf-ship-acme-api/SKILL.md\"],\"id\":\"wf-ship-msg\",\"kind\":\"step\",\"label\":\"Write the commit message the team way\",\"mode\":\"enforce\",\"produces\":[{\"note\":\"instructions and linked rules, loaded when the agent needs them\",\"type\":\"skill\"}],\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\"},{\"artifacts\":[\"skills/ostrom-wf-ship-acme-api/SKILL.md\",\"scripts/s-wf-ship-tests.sh\",\"hook h-wf-ship-tests\"],\"id\":\"wf-ship-tests\",\"kind\":\"check\",\"label\":\"Unit tests pass\",\"mode\":\"enforce\",\"produces\":[{\"event\":\"PreToolUse\",\"shadow\":false,\"type\":\"hook\"},{\"shadow\":false,\"type\":\"script\",\"where\":\"workstation\"}],\"trigger\":{\"classes\":[\"push-main\"],\"from\":\"node\",\"patterns\":[],\"resolved\":[\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*\\\\b(main|master)\\\\b\",\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*HEAD:(refs/heads/)?(main|master)\"]},\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\"},{\"artifacts\":[\"skills/ostrom-wf-ship-acme-api/SKILL.md\",\"agents/ostrom-second.md\",\"codex/agents/ostrom_second.toml\"],\"id\":\"wf-ship-second\",\"kind\":\"agent\",\"label\":\"Second\",\"mode\":\"enforce\",\"produces\":[{\"note\":\"Claude Code, OpenCode and Codex (ostrom_* role); a skill for the other agents\",\"type\":\"subagent\"},{\"note\":\"node_done: the agent reports the review, kept in the receipt\",\"type\":\"mcp\"}],\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\"},{\"artifacts\":[\"skills/ostrom-wf-ship-acme-api/SKILL.md\",\"agents/ostrom-second-look.md\",\"codex/agents/ostrom_second_look.toml\"],\"id\":\"wf-ship-review\",\"kind\":\"agent\",\"label\":\"Second look\",\"mode\":\"enforce\",\"produces\":[{\"note\":\"Claude Code, OpenCode and Codex (ostrom_* role); a skill for the other agents\",\"type\":\"subagent\"},{\"note\":\"node_done: the agent reports the review, kept in the receipt\",\"type\":\"mcp\"}],\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\"},{\"artifacts\":[\"hook h-wf-ship-gate (gate: ostrom-gate)\"],\"id\":\"wf-ship-gate\",\"kind\":\"gate\",\"label\":\"Push to main\",\"mode\":\"enforce\",\"produces\":[{\"event\":\"PreToolUse\",\"shadow\":false,\"type\":\"hook\"},{\"shadow\":false,\"type\":\"approval\"},{\"type\":\"receipt\"}],\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\"},{\"artifacts\":[\"notification n-wf-ship-tell\",\"hook h-wf-ship-tell\"],\"id\":\"wf-ship-tell\",\"kind\":\"notify\",\"label\":\"Tell the team\",\"mode\":\"enforce\",\"produces\":[{\"event\":\"PostToolUse\",\"shadow\":false,\"type\":\"hook\"},{\"shadow\":false,\"suggested\":false,\"type\":\"notify\",\"where\":\"ostrom\"}],\"trigger\":{\"classes\":[\"push-main\"],\"from\":\"gate\",\"gateNodeId\":\"wf-ship-gate\",\"patterns\":[],\"resolved\":[\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*\\\\b(main|master)\\\\b\",\"\\\\bgit\\\\s+push\\\\b[^\\\\n;&|]*HEAD:(refs/heads/)?(main|master)\"]},\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\"}],\"notifications\":[{\"channel\":\"log:releases\",\"id\":\"n-wf-ship-tell\",\"message\":\"{dev} pushed to {repo} (session {session}).\",\"mode\":\"enforce\",\"nodeId\":\"wf-ship-tell\",\"workflowId\":\"wf-ship\"}],\"repo\":\"acme-api\",\"scripts\":[{\"approval\":{\"allowed\":true,\"at\":\"2026-10-30T08:30:00.000Z\",\"by\":\"dev-a\",\"decisionId\":\"dec_a5015269-ff8c-46a7-80da-3f9789aabf24\",\"reason\":\"decided by a code publisher\",\"receiptId\":\"rcpt_434bce76-7516-44f7-8d13-bfaea9f9fe68\"},\"command\":\"npm test\",\"id\":\"s-wf-ship-tests\",\"label\":\"Unit tests pass\",\"mode\":\"enforce\",\"network\":false,\"nodeId\":\"wf-ship-tests\",\"path\":\"scripts/s-wf-ship-tests.sh\",\"sha256\":\"9d3bd5d02336ea7ec70c484ddfa85db071926a7561dd1f5b4283233f30b2288f\",\"timeoutSec\":300,\"where\":\"workstation\",\"workflowId\":\"wf-ship\"}],\"server\":\"https://acme.example\",\"version\":\"p202610300845-a216a112\",\"workflows\":[{\"decidedBy\":\"dev-a\",\"decisionReceipt\":\"rcpt_434bce76-7516-44f7-8d13-bfaea9f9fe68\",\"digest\":\"a0748b64b977b4aa24998f1cdd5406701cec950294e4aa626e5b038a6e1894f4\",\"id\":\"wf-ship\",\"name\":\"Ship acme-api\",\"status\":\"accepted\"}]}",
+    "pinned": true,
+    "revoked": false
+  },
+  "payloadUtf8Base64": "eyJjb21waWxlZEF0IjoiMjAyNi0xMC0zMFQwODo0NTowMC4wMDBaIiwiY29tcGlsZXIiOiIwLjEuMCIsImNvbnRlbnREaWdlc3QiOiJhMjE2YTExMjlmZTI1ODk2NWNlMzNjZjkyNjNlYzBhMzU4NzdkMmU4NjhiMmNlZTdmOGZlMmZiMjczOTFhYmM2IiwiY29udGV4dCI6IltPc3Ryb21dIFdvcmtmbG93cyBjb21waWxlZCBpbnRvIHRoaXMgc2Vzc2lvbjpcbi0gU2hpcCBhY21lLWFwaSwgc3RhcnRzIHdoZW46IEEgY2hhbmdlIGlzIHJlYWR5IHRvIHNoaXA7IHNraWxsIG9zdHJvbS13Zi1zaGlwLWFjbWUtYXBpOyBlbmZvcmNlZCBoZXJlOiBjaGVjayBcIlVuaXQgdGVzdHMgcGFzc1wiLCBnYXRlIFwiUHVzaCB0byBtYWluXCIsIG5vdGlmeSBcIlRlbGwgdGhlIHRlYW1cIiIsImZpbGVzIjpbeyJjb250ZW50Ijoie1xuICBcIm5hbWVcIjogXCJvc3Ryb21cIixcbiAgXCJ2ZXJzaW9uXCI6IFwiMC4wLjAtMjAyNjEwMzAwODQ1LTg2YTJmMzRiXCIsXG4gIFwiZGVzY3JpcHRpb25cIjogXCJPc3Ryb20gaGFybmVzcyBmb3IgYWNtZS1hcGk6IGRlY2lkZWQgcnVsZXMsIGdhdGVzIGFuZCByZWNlaXB0c1wiXG59IiwibW9kZSI6ImZpbGUiLCJwYXRoIjoiLmNsYXVkZS1wbHVnaW4vcGx1Z2luLmpzb24iLCJzaGEyNTYiOiJhODkzZTM5OWIxNWJlZjgzMDU1OGZkNjJmOWM1Y2M1OGU3MGRlY2M0NTE2YWQ1MGQzMDI0ZTIwYjkxNTI5ZDMxIn0seyJjb250ZW50IjoiLS0tXG5uYW1lOiBvc3Ryb20tc2Vjb25kLWxvb2tcbmRlc2NyaXB0aW9uOiBcIlNlY29uZCBsb29rIOKAlCBzdGVwIG9mIFxcXCJTaGlwIGFjbWUtYXBpXFxcIiwgY29tcGlsZWQgYnkgT3N0cm9tLlwiXG4tLS1cblxuUmV2aWV3IHRoZSBkaWZmLlxuXG5XaGVuIHlvdSBhcmUgZG9uZSwgY2FsbCBub2RlX2RvbmUgKE1DUCBzZXJ2ZXIgXCJvc3Ryb20td29ya2Zsb3dcIikgd2l0aCBub2RlIFwid2Ytc2hpcC1yZXZpZXdcIiBhbmQgYSBvbmUtbGluZSBzdW1tYXJ5LlxuIiwibW9kZSI6ImZpbGUiLCJwYXRoIjoiYWdlbnRzL29zdHJvbS1zZWNvbmQtbG9vay5tZCIsInNoYTI1NiI6IjRkMTczN2I1MTdiNjdlYTAwMDVmYzA5NWI4YzkwNDNjMGViYjBlYmI0OTRiMTMyYmUwOThlNDI1YmIxOWVlYmQifSx7ImNvbnRlbnQiOiItLS1cbm5hbWU6IG9zdHJvbS1zZWNvbmRcbmRlc2NyaXB0aW9uOiBcIlNlY29uZCDigJQgc3RlcCBvZiBcXFwiU2hpcCBhY21lLWFwaVxcXCIsIGNvbXBpbGVkIGJ5IE9zdHJvbS5cIlxuLS0tXG5cblJlYWQgdGhlIGRpZmYgb25jZSBtb3JlLlxuXG5XaGVuIHlvdSBhcmUgZG9uZSwgY2FsbCBub2RlX2RvbmUgKE1DUCBzZXJ2ZXIgXCJvc3Ryb20td29ya2Zsb3dcIikgd2l0aCBub2RlIFwid2Ytc2hpcC1zZWNvbmRcIiBhbmQgYSBvbmUtbGluZSBzdW1tYXJ5LlxuIiwibW9kZSI6ImZpbGUiLCJwYXRoIjoiYWdlbnRzL29zdHJvbS1zZWNvbmQubWQiLCJzaGEyNTYiOiJhOGIwMTFhYTQ2YzBhMjZjOWJmMjY4YjVmMGZkZDNmZjEyNjZkMWJhMDU1ZDUzMjBkZWJhMjRlMzJlMGY0Nzc2In0seyJjb250ZW50IjoibmFtZSA9IFwib3N0cm9tX3NlY29uZF9sb29rXCJcbmRlc2NyaXB0aW9uID0gXCJTZWNvbmQgbG9vazogc3RlcCBvZiBcXFwiU2hpcCBhY21lLWFwaVxcXCIsIGNvbXBpbGVkIGJ5IE9zdHJvbS5cIlxuZGV2ZWxvcGVyX2luc3RydWN0aW9ucyA9IFwiUmV2aWV3IHRoZSBkaWZmLlxcblxcbldoZW4geW91IGFyZSBkb25lLCBjYWxsIG5vZGVfZG9uZSAoTUNQIHNlcnZlciBcXFwib3N0cm9tLXdvcmtmbG93XFxcIikgd2l0aCBub2RlIFxcXCJ3Zi1zaGlwLXJldmlld1xcXCIgYW5kIGEgb25lLWxpbmUgc3VtbWFyeS5cIlxuIiwibW9kZSI6ImZpbGUiLCJwYXRoIjoiY29kZXgvYWdlbnRzL29zdHJvbV9zZWNvbmRfbG9vay50b21sIiwic2hhMjU2IjoiMjY1NWQ1NTgyMzIxZDBiN2NlYmY4MTliNzdlZmIxOWFiNGQwNjQyZTg2MDA5ZWM2Mzg5MzZlYmMyZTk1YzkzNCJ9LHsiY29udGVudCI6Im5hbWUgPSBcIm9zdHJvbV9zZWNvbmRcIlxuZGVzY3JpcHRpb24gPSBcIlNlY29uZDogc3RlcCBvZiBcXFwiU2hpcCBhY21lLWFwaVxcXCIsIGNvbXBpbGVkIGJ5IE9zdHJvbS5cIlxuZGV2ZWxvcGVyX2luc3RydWN0aW9ucyA9IFwiUmVhZCB0aGUgZGlmZiBvbmNlIG1vcmUuXFxuXFxuV2hlbiB5b3UgYXJlIGRvbmUsIGNhbGwgbm9kZV9kb25lIChNQ1Agc2VydmVyIFxcXCJvc3Ryb20td29ya2Zsb3dcXFwiKSB3aXRoIG5vZGUgXFxcIndmLXNoaXAtc2Vjb25kXFxcIiBhbmQgYSBvbmUtbGluZSBzdW1tYXJ5LlwiXG4iLCJtb2RlIjoiZmlsZSIsInBhdGgiOiJjb2RleC9hZ2VudHMvb3N0cm9tX3NlY29uZC50b21sIiwic2hhMjU2IjoiZjQ1MzcxYTQ3YzNmOTI1MDQwNWE1YzNhMjZhOGI2YjYyY2M3MTFlOWE1YjlmMzA2OTE4NjMxNjUxMTRmYjA0OCJ9LHsiY29udGVudCI6IjwhLS0gb3N0cm9tOmJlZ2luIChnZW5lcmF0ZWQgYnkgYG9zdHJvbSBzeW5jYCwgZG8gbm90IGVkaXQgaW5zaWRlIHRoaXMgYmxvY2spIC0tPlxuIyMgVGVhbSBoYXJuZXNzIChPc3Ryb20gaDIwMjYxMDMwMDg0NS04NmEyZjM0YilcblxuVGhpcyByZXBvc2l0b3J5IChhY21lLWFwaSkgd29ya3MgdW5kZXIgdGhlIHJ1bGVzIHRoZSB0ZWFtIGRlY2lkZWQgaW4gT3N0cm9tLiBEaWdlc3QgYDg2YTJmMzRiMzUyZjYwMjlgLlxuXG5BbHdheXM6XG4tIENvbW1pdCBtZXNzYWdlcyBzdGFydCB3aXRoIGEgdmVyYiBpbiB0aGUgaW1wZXJhdGl2ZS4gKHItY29tbWl0LXN0eWxlKVxuXG5SdWxlcyBieSBkb21haW46IHNraWxscyBgb3N0cm9tLWdpdGAuIEZvciBvbmUgZmlsZTogYHJ1bGVzX2ZvcihwYXRoKWAgb24gdGhlIE1DUCBzZXJ2ZXIgYG9zdHJvbWAuXG5cbkFjdGlvbnMgdGhhdCBuZWVkIGEgaHVtYW4geWVzIGZpcnN0ICh0aGUgc2Vzc2lvbiBwYXVzZXMgdW50aWwgdGhlIGFuc3dlcik6XG4tIFB1c2ggdG8gdGhlIG1haW4gYnJhbmNoOiBQdXNoIHRvIG1haW4g4oaSIHJldi1iIG9yIGRldi1hXG5cbkV2ZXJ5IHNlc3Npb24gZW5kcyB3aXRoIGEgc2lnbmVkIHJlY2VpcHQgKHJ1bGVzIGluIGZvcmNlLCBnYXRlcyBhc2tlZCwgd2hvIHNhaWQgeWVzKS5cbjwhLS0gb3N0cm9tOmVuZCAtLT5cbiIsIm1vZGUiOiJmaWxlIiwicGF0aCI6Im9zdHJvbS9BR0VOVFMtYmxvY2subWQiLCJzaGEyNTYiOiJhOTZlY2JlZWE1M2QxMmRiMjhlMTljZGRiZTA5MDAxZjE1YjJiOGEyYjM4N2FkODE2YWRmOWZhYzllMGQ5OWE5In0seyJjb250ZW50Ijoie1xuICBcInZlcnNpb25cIjogXCJoMjAyNjEwMzAwODQ1LTg2YTJmMzRiXCIsXG4gIFwiZGlnZXN0XCI6IFwiODZhMmYzNGIzNTJmNjAyOWFiNDhjZTRmMmFmMzc1ZDhmMWQxNzdkOWMzZTQwY2Q3NTZjNzYxZmJkYzUzNjBiNFwiLFxuICBcInJlcG9cIjogXCJhY21lLWFwaVwiLFxuICBcInNlcnZlclwiOiBcImh0dHBzOi8vYWNtZS5leGFtcGxlXCIsXG4gIFwiZmFpbE1vZGVcIjogXCJjbG9zZWRcIixcbiAgXCJ3YWl0U2Vjb25kc1wiOiAzMDAsXG4gIFwiYWN0aW9uc1wiOiBbXG4gICAge1xuICAgICAgXCJjbGFzc1wiOiBcInB1c2gtbWFpblwiLFxuICAgICAgXCJsYWJlbFwiOiBcIlB1c2ggdG8gdGhlIG1haW4gYnJhbmNoXCIsXG4gICAgICBcInRvb2xzXCI6IFtcbiAgICAgICAgXCJCYXNoXCJcbiAgICAgIF0sXG4gICAgICBcInBhdHRlcm5zXCI6IFtcbiAgICAgICAgXCJcXFxcYmdpdFxcXFxzK3B1c2hcXFxcYlteXFxcXG47JnxdKlxcXFxiKG1haW58bWFzdGVyKVxcXFxiXCIsXG4gICAgICAgIFwiXFxcXGJnaXRcXFxccytwdXNoXFxcXGJbXlxcXFxuOyZ8XSpIRUFEOihyZWZzL2hlYWRzLyk/KG1haW58bWFzdGVyKVwiXG4gICAgICBdLFxuICAgICAgXCJrZXl3b3Jkc1wiOiBbXG4gICAgICAgIFwicHVzaCB0byBtYWluXCIsXG4gICAgICAgIFwibWFpblwiLFxuICAgICAgICBcInBpblwiLFxuICAgICAgICBcInByb2R1Y3Rpb25cIixcbiAgICAgICAgXCJtZXJnZVwiXG4gICAgICBdLFxuICAgICAgXCJnYXRlXCI6IHtcbiAgICAgICAgXCJ3b3JrZmxvd0lkXCI6IFwid2Ytc2hpcFwiLFxuICAgICAgICBcIndvcmtmbG93TmFtZVwiOiBcIlNoaXAgYWNtZS1hcGlcIixcbiAgICAgICAgXCJub2RlSWRcIjogXCJ3Zi1zaGlwLWdhdGVcIixcbiAgICAgICAgXCJsYWJlbFwiOiBcIlB1c2ggdG8gbWFpblwiLFxuICAgICAgICBcImFwcHJvdmVyc1wiOiBbXG4gICAgICAgICAgXCJyZXYtYlwiLFxuICAgICAgICAgIFwiZGV2LWFcIlxuICAgICAgICBdLFxuICAgICAgICBcInN0YXR1c1wiOiBcImFjY2VwdGVkXCIsXG4gICAgICAgIFwiZW5mb3JjZVwiOiB0cnVlLFxuICAgICAgICBcImJhc2lzXCI6IFwiZGVjbGFyZWRcIixcbiAgICAgICAgXCJyZWFzb25cIjogXCJnYXRlIGFwcHJvdmVycyBvZiB0aGUgd29ya2Zsb3dcIlxuICAgICAgfVxuICAgIH0sXG4gICAge1xuICAgICAgXCJjbGFzc1wiOiBcInB1c2gtdGFnXCIsXG4gICAgICBcImxhYmVsXCI6IFwiUHVzaCBhIHJlbGVhc2UgdGFnXCIsXG4gICAgICBcInRvb2xzXCI6IFtcbiAgICAgICAgXCJCYXNoXCJcbiAgICAgIF0sXG4gICAgICBcInBhdHRlcm5zXCI6IFtcbiAgICAgICAgXCJcXFxcYmdpdFxcXFxzK3B1c2hcXFxcYlteXFxcXG47JnxdKigtLXRhZ3N8XFxcXGJ2XFxcXGQrXFxcXC5cXFxcZCspXCIsXG4gICAgICAgIFwiXFxcXGJnaFxcXFxzK3JlbGVhc2VcXFxccytjcmVhdGVcXFxcYlwiXG4gICAgICBdLFxuICAgICAgXCJrZXl3b3Jkc1wiOiBbXG4gICAgICAgIFwidGFnXCIsXG4gICAgICAgIFwicmVsZWFzZVwiLFxuICAgICAgICBcInByb2R1Y3Rpb25cIlxuICAgICAgXSxcbiAgICAgIFwiZ2F0ZVwiOiBudWxsXG4gICAgfSxcbiAgICB7XG4gICAgICBcImNsYXNzXCI6IFwibWVyZ2VcIixcbiAgICAgIFwibGFiZWxcIjogXCJNZXJnZSBhIHB1bGwgcmVxdWVzdFwiLFxuICAgICAgXCJ0b29sc1wiOiBbXG4gICAgICAgIFwiQmFzaFwiXG4gICAgICBdLFxuICAgICAgXCJwYXR0ZXJuc1wiOiBbXG4gICAgICAgIFwiXFxcXGJnaFxcXFxzK3ByXFxcXHMrbWVyZ2VcXFxcYlwiXG4gICAgICBdLFxuICAgICAgXCJrZXl3b3Jkc1wiOiBbXG4gICAgICAgIFwibWVyZ2VcIixcbiAgICAgICAgXCJhcHByb3ZlXCIsXG4gICAgICAgIFwicmV2aWV3XCJcbiAgICAgIF0sXG4gICAgICBcImdhdGVcIjogbnVsbFxuICAgIH0sXG4gICAge1xuICAgICAgXCJjbGFzc1wiOiBcImRlcGxveVwiLFxuICAgICAgXCJsYWJlbFwiOiBcIkRlcGxveSB0byBwcm9kdWN0aW9uXCIsXG4gICAgICBcInRvb2xzXCI6IFtcbiAgICAgICAgXCJCYXNoXCJcbiAgICAgIF0sXG4gICAgICBcInBhdHRlcm5zXCI6IFtcbiAgICAgICAgXCJcXFxcYmhlbG1cXFxccysodXBncmFkZXxpbnN0YWxsfHJvbGxiYWNrKVxcXFxiXCIsXG4gICAgICAgIFwiXFxcXGJrdWJlY3RsXFxcXHMrKGFwcGx5fHJvbGxvdXR8c2V0XFxcXHMraW1hZ2V8ZGVsZXRlfHNjYWxlKVxcXFxiXCIsXG4gICAgICAgIFwiXFxcXGJnaFxcXFxzK3dvcmtmbG93XFxcXHMrcnVuXFxcXHMrXFxcXFMqZGVwbG95XCIsXG4gICAgICAgIFwiXFxcXGJ0ZXJyYWZvcm1cXFxccythcHBseVxcXFxiXCIsXG4gICAgICAgIFwiXFxcXGIoZmx5fGZseWN0bClcXFxccytkZXBsb3lcXFxcYlwiLFxuICAgICAgICBcIlxcXFxidmVyY2VsXFxcXGJbXlxcXFxuXSotLXByb2RcIixcbiAgICAgICAgXCJcXFxcYm5wbVxcXFxzK3B1Ymxpc2hcXFxcYlwiLFxuICAgICAgICBcIlxcXFxiZG9ja2VyXFxcXHMrcHVzaFxcXFxiXCIsXG4gICAgICAgIFwiKF58W1xcXFxzOyZ8L10pZGVwbG95KFxcXFwuc2gpP1xcXFxzKyhwcm9kfHByb2R1Y3Rpb24pXFxcXGJcIlxuICAgICAgXSxcbiAgICAgIFwia2V5d29yZHNcIjogW1xuICAgICAgICBcImRlcGxveVwiLFxuICAgICAgICBcInByb2R1Y3Rpb25cIixcbiAgICAgICAgXCJoZWxtXCIsXG4gICAgICAgIFwicm9sbG91dFwiLFxuICAgICAgICBcInBpblwiLFxuICAgICAgICBcInJlbGVhc2VcIlxuICAgICAgXSxcbiAgICAgIFwiZ2F0ZVwiOiBudWxsXG4gICAgfSxcbiAgICB7XG4gICAgICBcImNsYXNzXCI6IFwibWlncmF0aW9uXCIsXG4gICAgICBcImxhYmVsXCI6IFwiUnVuIG9yIGFkZCBhIGRhdGFiYXNlIG1pZ3JhdGlvblwiLFxuICAgICAgXCJ0b29sc1wiOiBbXG4gICAgICAgIFwiQmFzaFwiLFxuICAgICAgICBcIldyaXRlXCIsXG4gICAgICAgIFwiRWRpdFwiLFxuICAgICAgICBcIk11bHRpRWRpdFwiXG4gICAgICBdLFxuICAgICAgXCJwYXR0ZXJuc1wiOiBbXG4gICAgICAgIFwiXFxcXGJmbHl3YXlcXFxcYlteXFxcXG5dKlxcXFxibWlncmF0ZVxcXFxiXCIsXG4gICAgICAgIFwiXFxcXGJwcmlzbWFcXFxccyttaWdyYXRlXFxcXHMrZGVwbG95XFxcXGJcIixcbiAgICAgICAgXCJcXFxcYmFsZW1iaWNcXFxccyt1cGdyYWRlXFxcXGJcIixcbiAgICAgICAgXCJcXFxcYmxpcXVpYmFzZVxcXFxiW15cXFxcbl0qXFxcXGJ1cGRhdGVcXFxcYlwiLFxuICAgICAgICBcIlxcXFxiKHJhaWxzfHJha2UpXFxcXHMrZGI6bWlncmF0ZVxcXFxiXCIsXG4gICAgICAgIFwiXFxcXGJrbmV4XFxcXHMrbWlncmF0ZVwiLFxuICAgICAgICBcIi9kYi9taWdyYXRpb24vXCJcbiAgICAgIF0sXG4gICAgICBcImtleXdvcmRzXCI6IFtcbiAgICAgICAgXCJtaWdyYXRpb25cIixcbiAgICAgICAgXCJzY2hlbWFcIixcbiAgICAgICAgXCJkYXRhYmFzZVwiLFxuICAgICAgICBcImZseXdheVwiXG4gICAgICBdLFxuICAgICAgXCJnYXRlXCI6IG51bGxcbiAgICB9LFxuICAgIHtcbiAgICAgIFwiY2xhc3NcIjogXCJtb2JpbGUtcmVsZWFzZVwiLFxuICAgICAgXCJsYWJlbFwiOiBcIlJlbGVhc2UgdGhlIG1vYmlsZSBhcHAgdG8gdGhlIHN0b3Jlc1wiLFxuICAgICAgXCJ0b29sc1wiOiBbXG4gICAgICAgIFwiQmFzaFwiXG4gICAgICBdLFxuICAgICAgXCJwYXR0ZXJuc1wiOiBbXG4gICAgICAgIFwiXFxcXGJmYXN0bGFuZVxcXFxiXCIsXG4gICAgICAgIFwiXFxcXGJlYXNcXFxccysoc3VibWl0fGJ1aWxkKVxcXFxiW15cXFxcbl0qcHJvZHVjdGlvblwiXG4gICAgICBdLFxuICAgICAgXCJrZXl3b3Jkc1wiOiBbXG4gICAgICAgIFwibW9iaWxlXCIsXG4gICAgICAgIFwic3RvcmVcIixcbiAgICAgICAgXCJmYXN0bGFuZVwiLFxuICAgICAgICBcImRhaWx5IHJlbGVhc2VcIixcbiAgICAgICAgXCJhcHBcIlxuICAgICAgXSxcbiAgICAgIFwiZ2F0ZVwiOiBudWxsXG4gICAgfSxcbiAgICB7XG4gICAgICBcImNsYXNzXCI6IFwiY2xpZW50LW1lc3NhZ2VcIixcbiAgICAgIFwibGFiZWxcIjogXCJTZW5kIGEgbWVzc2FnZSB0byBhIGN1c3RvbWVyXCIsXG4gICAgICBcInRvb2xzXCI6IFtcbiAgICAgICAgXCJtY3BcIlxuICAgICAgXSxcbiAgICAgIFwicGF0dGVybnNcIjogW1xuICAgICAgICBcInNlbmRfdmFsaWRhdGVkX21lc3NhZ2VcIixcbiAgICAgICAgXCJkaXNjb3JkX3NlbmRcIixcbiAgICAgICAgXCJkaXNjb3JkX3JlcGx5XCIsXG4gICAgICAgIFwiY2hhdF9wb3N0bWVzc2FnZVwiLFxuICAgICAgICBcInNlbmRfZW1haWxcIixcbiAgICAgICAgXCJzbGFja19wb3N0XCJcbiAgICAgIF0sXG4gICAgICBcImtleXdvcmRzXCI6IFtcbiAgICAgICAgXCJjbGllbnRcIixcbiAgICAgICAgXCJjdXN0b21lclwiLFxuICAgICAgICBcInN1cHBvcnRcIixcbiAgICAgICAgXCJtZXNzYWdlXCIsXG4gICAgICAgIFwicmVwbHlcIlxuICAgICAgXSxcbiAgICAgIFwiZ2F0ZVwiOiBudWxsXG4gICAgfVxuICBdXG59IiwibW9kZSI6ImZpbGUiLCJwYXRoIjoib3N0cm9tL2dhdGVzLmpzb24iLCJzaGEyNTYiOiJiMzcyMWNkNTVmN2Y3NTJiYjMxNjE1MTdjMGI1MjQ0OGJiNjNmMjc4YThkZGI0ZmZjODkxOGYyNmIwNDg5MjRjIn0seyJjb250ZW50IjoiIyEvYmluL3NoXG4jIE9zdHJvbSBjaGVjayBcIlVuaXQgdGVzdHMgcGFzc1wiIChTaGlwIGFjbWUtYXBpLCBub2RlIHdmLXNoaXAtdGVzdHMpLiBDb21waWxlZCBieSBPc3Ryb207IHJ1biBieSB0aGUgbGF1bmNoZXIgaW4gYSBzYW5kYm94LFxuIyBpbiB0aGUgcmVwb3NpdG9yeSwgd2l0aCBubyBuZXR3b3JrIGFuZCBubyBzZWNyZXQuIEV4aXQgMCA9IHBhc3NlZC5cbnNldCAtZVxubnBtIHRlc3RcbiIsIm1vZGUiOiJleGVjdXRhYmxlIiwicGF0aCI6InNjcmlwdHMvcy13Zi1zaGlwLXRlc3RzLnNoIiwic2hhMjU2IjoiOWQzYmQ1ZDAyMzM2ZWE3ZWM3MGM0ODRkZGZhODVkYjA3MTkyNmE3NTYxZGQxZjViNDI4MzIzM2YzMGIyMjg4ZiJ9LHsiY29udGVudCI6Ii0tLVxubmFtZTogb3N0cm9tLWdpdFxuZGVzY3JpcHRpb246IFwiVGVhbSBydWxlcyBmb3IgR2l0IGluIGFjbWUtYXBpICgxIGRlY2lkZWQsIDAgcHJvcG9zZWQpLCBmcm9tIE9zdHJvbS4gVXNlIGJlZm9yZSBjaGFuZ2luZyBhY21lLWFwaS5cIlxuLS0tXG5cbiMgR2l0OiB0aGUgdGVhbSdzIHJ1bGVzIGZvciBhY21lLWFwaVxuXG5IYXJuZXNzIGgyMDI2MTAzMDA4NDUtODZhMmYzNGIsIGV4cG9ydGVkIGJ5IE9zdHJvbS4gKipNVVNUKiogYW5kICoqU0hPVUxEKiogcnVsZXMgd2VyZSBkZWNpZGVkIGJ5IHRoZSB0ZWFtIChhY2NlcHRlZCBvciBlZGl0ZWQsIGVhY2ggd2l0aCBhIHNpZ25lZCBkZWNpc2lvbiByZWNlaXB0IHdoZW4gb25lIGV4aXN0cykuXG5SdWxlcyBtYXJrZWQgKipwcm9wb3NlZCoqIHdlcmUgZm91bmQgaW4gdGhlIGhpc3RvcnkgYnV0IG5vYm9keSBkZWNpZGVkIHRoZW0geWV0OiBmb2xsb3cgdGhlbSB3aGVuIGluIGRvdWJ0LCBuZXZlciBjaXRlIHRoZW0gYXMgZGVjaWRlZC5cblxuIyMgRGVjaWRlZFxuXG4tICoqW01VU1RdKiogQ29tbWl0IG1lc3NhZ2VzIHN0YXJ0IHdpdGggYSB2ZXJiIGluIHRoZSBpbXBlcmF0aXZlLiAgXG4gIDxzdWI+ci1jb21taXQtc3R5bGUgwrcgZGlnZXN0IDc5YjZhYzQ4ZTUyMiDCtyBzY29wZTogYWNtZS1hcGk8L3N1Yj5cblxuQXNrIGBydWxlc19mb3JgIChNQ1Agc2VydmVyIGBvc3Ryb21gKSBmb3IgdGhlIHJ1bGVzIG9mIG9uZSBwYXRoLlxuIiwibW9kZSI6ImZpbGUiLCJwYXRoIjoic2tpbGxzL29zdHJvbS1naXQvU0tJTEwubWQiLCJzaGEyNTYiOiI1OTQ2NjQ2NmUzYWUyMDJlMTQ5YTkyODAwOWEwNWQ0ZTBiMjg1ZmIyMzllOGYwMTYxOGM4ZWE0MTE0NDQwZmRhIn0seyJjb250ZW50IjoiLS0tXG5uYW1lOiBvc3Ryb20td2Ytc2hpcC1hY21lLWFwaVxuZGVzY3JpcHRpb246IFwiSG93IHRoZSB0ZWFtIHNoaXBzIFxcXCJTaGlwIGFjbWUtYXBpXFxcIiBpbiBhY21lLWFwaTogdGhlIHN0ZXBzIGluIG9yZGVyLCB3aGF0IE9zdHJvbSBydW5zIGJlZm9yZSBhbiBhY3Rpb24sIHdobyBzYXlzIHllcywgd2hvIGlzIHRvbGQuIEZyb20gT3N0cm9tLlwiXG4tLS1cblxuIyBTaGlwIGFjbWUtYXBpXG5cbkRlY2lkZWQgYnkgdGhlIHRlYW06IE9zdHJvbSBlbmZvcmNlcyBpdCBpbiB0aGlzIHNlc3Npb24uXG5cbiMjIEEgY2hhbmdlIGlzIHJlYWR5IHRvIHNoaXAgKHRyaWdnZXIpXG5cbiMjIFdyaXRlIHRoZSBjb21taXQgbWVzc2FnZSB0aGUgdGVhbSB3YXkgKHN0ZXApXG5cbk9uZSBsaW5lLCBpbXBlcmF0aXZlLlxuXG5SdWxlcyBmb3IgdGhpcyBzdGVwOlxuLSBDb21taXQgbWVzc2FnZXMgc3RhcnQgd2l0aCBhIHZlcmIgaW4gdGhlIGltcGVyYXRpdmUuIChyLWNvbW1pdC1zdHlsZSlcblxuIyMgVW5pdCB0ZXN0cyBwYXNzIChjaGVjaylcblxuQmVmb3JlIHB1c2gtbWFpbiwgT3N0cm9tIHJ1bnMgYG5wbSB0ZXN0YCBpbiBhIHNhbmRib3ggKG5vIG5ldHdvcmssIG5vIHNlY3JldCkuIElmIGl0IGZhaWxzLCB0aGUgYWN0aW9uIGlzIHJlZnVzZWQgd2l0aCB0aGUgb3V0cHV0OiBmaXggdGhlIGNhdXNlLCBuZXZlciBza2lwIG9yIHdlYWtlbiB0aGUgY2hlY2ssIHRoZW4gcnVuIHRoZSBzYW1lIGNvbW1hbmQgYWdhaW4uXG5cbiMjIFNlY29uZCAoYWdlbnQpXG5cbkhhbmQgdGhpcyBzdGVwIHRvIGEgc3ViLWFnZW50IHdoZXJlIHlvdXIgYWdlbnQgaGFzIHRoZW06IGBvc3Ryb20tc2Vjb25kYCBpbiBDbGF1ZGUgQ29kZTsgaW4gQ29kZXgsIHNwYXduX2FnZW50IHdpdGggYWdlbnRfdHlwZSBgb3N0cm9tX3NlY29uZGAgKGFuZCB0YXNrX25hbWUgYG9zdHJvbV9zZWNvbmRgKS4gT3RoZXJ3aXNlIGRvIGl0IHlvdXJzZWxmLiBUaGVuIGNhbGwgYG5vZGVfZG9uZWAgKE1DUCBzZXJ2ZXIgXCJvc3Ryb20td29ya2Zsb3dcIikgd2l0aCBub2RlIFwid2Ytc2hpcC1zZWNvbmRcIiBhbmQgYSBvbmUtbGluZSBzdW1tYXJ5IG9mIHdoYXQgd2FzIHJlYWxseSBkb25lOyBuZXZlciByZXBvcnQgYSBzdWItYWdlbnQgdGhhdCBkaWQgbm90IHJ1bi5cblxuUmVhZCB0aGUgZGlmZiBvbmNlIG1vcmUuXG5cbiMjIFNlY29uZCBsb29rIChhZ2VudClcblxuSGFuZCB0aGlzIHN0ZXAgdG8gYSBzdWItYWdlbnQgd2hlcmUgeW91ciBhZ2VudCBoYXMgdGhlbTogYG9zdHJvbS1zZWNvbmQtbG9va2AgaW4gQ2xhdWRlIENvZGU7IGluIENvZGV4LCBzcGF3bl9hZ2VudCB3aXRoIGFnZW50X3R5cGUgYG9zdHJvbV9zZWNvbmRfbG9va2AgKGFuZCB0YXNrX25hbWUgYG9zdHJvbV9zZWNvbmRfbG9va2ApLiBPdGhlcndpc2UgZG8gaXQgeW91cnNlbGYuIFRoZW4gY2FsbCBgbm9kZV9kb25lYCAoTUNQIHNlcnZlciBcIm9zdHJvbS13b3JrZmxvd1wiKSB3aXRoIG5vZGUgXCJ3Zi1zaGlwLXJldmlld1wiIGFuZCBhIG9uZS1saW5lIHN1bW1hcnkgb2Ygd2hhdCB3YXMgcmVhbGx5IGRvbmU7IG5ldmVyIHJlcG9ydCBhIHN1Yi1hZ2VudCB0aGF0IGRpZCBub3QgcnVuLlxuXG5SZXZpZXcgdGhlIGRpZmYuXG5cbiMjIFB1c2ggdG8gbWFpbiAoZ2F0ZSlcblxuQSBodW1hbiB5ZXMgaXMgbmVlZGVkIGZyb20gcmV2LWIgb3IgZGV2LWEuIFdoZW4gT3N0cm9tIHJlZnVzZXMgdGhlIGFjdGlvbiBcIndhaXRpbmcgZm9yIGEgeWVzXCIsIHJ1biB0aGUgYG9zdHJvbSB3YWl0IDxpZD5gIGNvbW1hbmQgaXQgZ2l2ZXMsIHRoZW4gdGhlIHNhbWUgY29tbWFuZCBhZ2Fpbi4gTmV2ZXIgd29yayBhcm91bmQgYSBnYXRlLlxuXG4jIyBUZWxsIHRoZSB0ZWFtIChub3RpZnkpXG5cbkFmdGVyIHRoZSBhY3Rpb24sIE9zdHJvbSB0ZWxscyByZWxlYXNlcyBieSBpdHNlbGY6IGRvIG5vdCBzZW5kIHRoZSBtZXNzYWdlIHlvdXJzZWxmLlxuIiwibW9kZSI6ImZpbGUiLCJwYXRoIjoic2tpbGxzL29zdHJvbS13Zi1zaGlwLWFjbWUtYXBpL1NLSUxMLm1kIiwic2hhMjU2IjoiMGZiMjVlYjViYTViM2FkMmQ1NmExMzhmYmI0M2ZkZjRjYzhhYzNhYmJjYzY2ZTlhYjAzN2VjYzE3YTFmNGFhYyJ9XSwiZm9ybWF0Ijoib3N0cm9tLnBhY2thZ2UvMSIsImhhcm5lc3MiOnsiZGlnZXN0IjoiODZhMmYzNGIzNTJmNjAyOWFiNDhjZTRmMmFmMzc1ZDhmMWQxNzdkOWMzZTQwY2Q3NTZjNzYxZmJkYzUzNjBiNCIsInJlY2VpcHRJZCI6InJjcHRfZmIwMjQ0MGEtMjhjNC00ODRlLTgxYWQtOGNkYTEwNWI2NGQ3IiwidmVyc2lvbiI6ImgyMDI2MTAzMDA4NDUtODZhMmYzNGIifSwiaG9va3MiOlt7ImNsYXNzZXMiOlsicHVzaC1tYWluIl0sImV2ZW50IjoiUHJlVG9vbFVzZSIsImlkIjoiaC13Zi1zaGlwLXRlc3RzIiwia2luZCI6ImNoZWNrIiwibW9kZSI6ImVuZm9yY2UiLCJub2RlSWQiOiJ3Zi1zaGlwLXRlc3RzIiwib3JkZXIiOjAsInBhdHRlcm5zIjpbIlxcYmdpdFxccytwdXNoXFxiW15cXG47JnxdKlxcYihtYWlufG1hc3RlcilcXGIiLCJcXGJnaXRcXHMrcHVzaFxcYlteXFxuOyZ8XSpIRUFEOihyZWZzL2hlYWRzLyk/KG1haW58bWFzdGVyKSJdLCJzY3JpcHRJZCI6InMtd2Ytc2hpcC10ZXN0cyIsInRvb2xzIjpbIkJhc2giXSwid29ya2Zsb3dJZCI6IndmLXNoaXAifSx7ImNsYXNzZXMiOlsicHVzaC1tYWluIl0sImV2ZW50IjoiUHJlVG9vbFVzZSIsImlkIjoiaC13Zi1zaGlwLWdhdGUiLCJraW5kIjoiZ2F0ZSIsIm1vZGUiOiJlbmZvcmNlIiwibm9kZUlkIjoid2Ytc2hpcC1nYXRlIiwib3JkZXIiOjEsInBhdHRlcm5zIjpbIlxcYmdpdFxccytwdXNoXFxiW15cXG47JnxdKlxcYihtYWlufG1hc3RlcilcXGIiLCJcXGJnaXRcXHMrcHVzaFxcYlteXFxuOyZ8XSpIRUFEOihyZWZzL2hlYWRzLyk/KG1haW58bWFzdGVyKSJdLCJ0b29scyI6WyJCYXNoIiwibWNwIl0sIndvcmtmbG93SWQiOiJ3Zi1zaGlwIn0seyJjbGFzc2VzIjpbInB1c2gtbWFpbiJdLCJldmVudCI6IlBvc3RUb29sVXNlIiwiaWQiOiJoLXdmLXNoaXAtdGVsbCIsImtpbmQiOiJub3RpZnkiLCJtb2RlIjoiZW5mb3JjZSIsIm5vZGVJZCI6IndmLXNoaXAtdGVsbCIsIm5vdGlmeUlkIjoibi13Zi1zaGlwLXRlbGwiLCJvcmRlciI6MiwicGF0dGVybnMiOlsiXFxiZ2l0XFxzK3B1c2hcXGJbXlxcbjsmfF0qXFxiKG1haW58bWFzdGVyKVxcYiIsIlxcYmdpdFxccytwdXNoXFxiW15cXG47JnxdKkhFQUQ6KHJlZnMvaGVhZHMvKT8obWFpbnxtYXN0ZXIpIl0sInRvb2xzIjpbIkJhc2giXSwid29ya2Zsb3dJZCI6IndmLXNoaXAifV0sIm1jcCI6eyJzZXJ2ZXJzIjpbeyJuYW1lIjoib3N0cm9tIiwicGF0aCI6Ii9hcGkvYnJpZGdlL21jcCJ9LHsibmFtZSI6Im9zdHJvbS13b3JrZmxvdyIsInBhdGgiOiIvYXBpL2NvbXBpbGVyL21jcCJ9XSwidG9vbHMiOlt7ImRlc2NyaXB0aW9uIjoiV2hlcmUgdGhpcyBzZXNzaW9uIHN0YW5kcyBpbiB0aGUgY29tcGlsZWQgd29ya2Zsb3dzIiwibmFtZSI6IndvcmtmbG93X3N0YXR1cyIsInNlcnZlciI6Im9zdHJvbS13b3JrZmxvdyJ9LHsiZGVzY3JpcHRpb24iOiJSZXBvcnQgdGhhdCBhIHdvcmtmbG93IHN0ZXAgKGFnZW50IG5vZGUpIGlzIGRvbmUiLCJuYW1lIjoibm9kZV9kb25lIiwic2VydmVyIjoib3N0cm9tLXdvcmtmbG93In1dfSwibm9kZXMiOlt7ImFydGlmYWN0cyI6W10sImlkIjoid2Ytc2hpcC1zdGFydCIsImtpbmQiOiJ0cmlnZ2VyIiwibGFiZWwiOiJBIGNoYW5nZSBpcyByZWFkeSB0byBzaGlwIiwibW9kZSI6ImVuZm9yY2UiLCJwcm9kdWNlcyI6W3siZXZlbnQiOiJTZXNzaW9uU3RhcnQiLCJub3RlIjoid2hlbiB0aGUgd29ya2Zsb3cgc3RhcnRzOiBvbmUgbGluZSBvZiB0aGUgc2Vzc2lvbiBjb250ZXh0IiwidHlwZSI6ImNvbnRleHQifV0sIndvcmtmbG93SWQiOiJ3Zi1zaGlwIiwid29ya2Zsb3dOYW1lIjoiU2hpcCBhY21lLWFwaSJ9LHsiYXJ0aWZhY3RzIjpbInNraWxscy9vc3Ryb20td2Ytc2hpcC1hY21lLWFwaS9TS0lMTC5tZCJdLCJpZCI6IndmLXNoaXAtbXNnIiwia2luZCI6InN0ZXAiLCJsYWJlbCI6IldyaXRlIHRoZSBjb21taXQgbWVzc2FnZSB0aGUgdGVhbSB3YXkiLCJtb2RlIjoiZW5mb3JjZSIsInByb2R1Y2VzIjpbeyJub3RlIjoiaW5zdHJ1Y3Rpb25zIGFuZCBsaW5rZWQgcnVsZXMsIGxvYWRlZCB3aGVuIHRoZSBhZ2VudCBuZWVkcyB0aGVtIiwidHlwZSI6InNraWxsIn1dLCJ3b3JrZmxvd0lkIjoid2Ytc2hpcCIsIndvcmtmbG93TmFtZSI6IlNoaXAgYWNtZS1hcGkifSx7ImFydGlmYWN0cyI6WyJza2lsbHMvb3N0cm9tLXdmLXNoaXAtYWNtZS1hcGkvU0tJTEwubWQiLCJzY3JpcHRzL3Mtd2Ytc2hpcC10ZXN0cy5zaCIsImhvb2sgaC13Zi1zaGlwLXRlc3RzIl0sImlkIjoid2Ytc2hpcC10ZXN0cyIsImtpbmQiOiJjaGVjayIsImxhYmVsIjoiVW5pdCB0ZXN0cyBwYXNzIiwibW9kZSI6ImVuZm9yY2UiLCJwcm9kdWNlcyI6W3siZXZlbnQiOiJQcmVUb29sVXNlIiwic2hhZG93IjpmYWxzZSwidHlwZSI6Imhvb2sifSx7InNoYWRvdyI6ZmFsc2UsInR5cGUiOiJzY3JpcHQiLCJ3aGVyZSI6IndvcmtzdGF0aW9uIn1dLCJ0cmlnZ2VyIjp7ImNsYXNzZXMiOlsicHVzaC1tYWluIl0sImZyb20iOiJub2RlIiwicGF0dGVybnMiOltdLCJyZXNvbHZlZCI6WyJcXGJnaXRcXHMrcHVzaFxcYlteXFxuOyZ8XSpcXGIobWFpbnxtYXN0ZXIpXFxiIiwiXFxiZ2l0XFxzK3B1c2hcXGJbXlxcbjsmfF0qSEVBRDoocmVmcy9oZWFkcy8pPyhtYWlufG1hc3RlcikiXX0sIndvcmtmbG93SWQiOiJ3Zi1zaGlwIiwid29ya2Zsb3dOYW1lIjoiU2hpcCBhY21lLWFwaSJ9LHsiYXJ0aWZhY3RzIjpbInNraWxscy9vc3Ryb20td2Ytc2hpcC1hY21lLWFwaS9TS0lMTC5tZCIsImFnZW50cy9vc3Ryb20tc2Vjb25kLm1kIiwiY29kZXgvYWdlbnRzL29zdHJvbV9zZWNvbmQudG9tbCJdLCJpZCI6IndmLXNoaXAtc2Vjb25kIiwia2luZCI6ImFnZW50IiwibGFiZWwiOiJTZWNvbmQiLCJtb2RlIjoiZW5mb3JjZSIsInByb2R1Y2VzIjpbeyJub3RlIjoiQ2xhdWRlIENvZGUsIE9wZW5Db2RlIGFuZCBDb2RleCAob3N0cm9tXyogcm9sZSk7IGEgc2tpbGwgZm9yIHRoZSBvdGhlciBhZ2VudHMiLCJ0eXBlIjoic3ViYWdlbnQifSx7Im5vdGUiOiJub2RlX2RvbmU6IHRoZSBhZ2VudCByZXBvcnRzIHRoZSByZXZpZXcsIGtlcHQgaW4gdGhlIHJlY2VpcHQiLCJ0eXBlIjoibWNwIn1dLCJ3b3JrZmxvd0lkIjoid2Ytc2hpcCIsIndvcmtmbG93TmFtZSI6IlNoaXAgYWNtZS1hcGkifSx7ImFydGlmYWN0cyI6WyJza2lsbHMvb3N0cm9tLXdmLXNoaXAtYWNtZS1hcGkvU0tJTEwubWQiLCJhZ2VudHMvb3N0cm9tLXNlY29uZC1sb29rLm1kIiwiY29kZXgvYWdlbnRzL29zdHJvbV9zZWNvbmRfbG9vay50b21sIl0sImlkIjoid2Ytc2hpcC1yZXZpZXciLCJraW5kIjoiYWdlbnQiLCJsYWJlbCI6IlNlY29uZCBsb29rIiwibW9kZSI6ImVuZm9yY2UiLCJwcm9kdWNlcyI6W3sibm90ZSI6IkNsYXVkZSBDb2RlLCBPcGVuQ29kZSBhbmQgQ29kZXggKG9zdHJvbV8qIHJvbGUpOyBhIHNraWxsIGZvciB0aGUgb3RoZXIgYWdlbnRzIiwidHlwZSI6InN1YmFnZW50In0seyJub3RlIjoibm9kZV9kb25lOiB0aGUgYWdlbnQgcmVwb3J0cyB0aGUgcmV2aWV3LCBrZXB0IGluIHRoZSByZWNlaXB0IiwidHlwZSI6Im1jcCJ9XSwid29ya2Zsb3dJZCI6IndmLXNoaXAiLCJ3b3JrZmxvd05hbWUiOiJTaGlwIGFjbWUtYXBpIn0seyJhcnRpZmFjdHMiOlsiaG9vayBoLXdmLXNoaXAtZ2F0ZSAoZ2F0ZTogb3N0cm9tLWdhdGUpIl0sImlkIjoid2Ytc2hpcC1nYXRlIiwia2luZCI6ImdhdGUiLCJsYWJlbCI6IlB1c2ggdG8gbWFpbiIsIm1vZGUiOiJlbmZvcmNlIiwicHJvZHVjZXMiOlt7ImV2ZW50IjoiUHJlVG9vbFVzZSIsInNoYWRvdyI6ZmFsc2UsInR5cGUiOiJob29rIn0seyJzaGFkb3ciOmZhbHNlLCJ0eXBlIjoiYXBwcm92YWwifSx7InR5cGUiOiJyZWNlaXB0In1dLCJ3b3JrZmxvd0lkIjoid2Ytc2hpcCIsIndvcmtmbG93TmFtZSI6IlNoaXAgYWNtZS1hcGkifSx7ImFydGlmYWN0cyI6WyJub3RpZmljYXRpb24gbi13Zi1zaGlwLXRlbGwiLCJob29rIGgtd2Ytc2hpcC10ZWxsIl0sImlkIjoid2Ytc2hpcC10ZWxsIiwia2luZCI6Im5vdGlmeSIsImxhYmVsIjoiVGVsbCB0aGUgdGVhbSIsIm1vZGUiOiJlbmZvcmNlIiwicHJvZHVjZXMiOlt7ImV2ZW50IjoiUG9zdFRvb2xVc2UiLCJzaGFkb3ciOmZhbHNlLCJ0eXBlIjoiaG9vayJ9LHsic2hhZG93IjpmYWxzZSwic3VnZ2VzdGVkIjpmYWxzZSwidHlwZSI6Im5vdGlmeSIsIndoZXJlIjoib3N0cm9tIn1dLCJ0cmlnZ2VyIjp7ImNsYXNzZXMiOlsicHVzaC1tYWluIl0sImZyb20iOiJnYXRlIiwiZ2F0ZU5vZGVJZCI6IndmLXNoaXAtZ2F0ZSIsInBhdHRlcm5zIjpbXSwicmVzb2x2ZWQiOlsiXFxiZ2l0XFxzK3B1c2hcXGJbXlxcbjsmfF0qXFxiKG1haW58bWFzdGVyKVxcYiIsIlxcYmdpdFxccytwdXNoXFxiW15cXG47JnxdKkhFQUQ6KHJlZnMvaGVhZHMvKT8obWFpbnxtYXN0ZXIpIl19LCJ3b3JrZmxvd0lkIjoid2Ytc2hpcCIsIndvcmtmbG93TmFtZSI6IlNoaXAgYWNtZS1hcGkifV0sIm5vdGlmaWNhdGlvbnMiOlt7ImNoYW5uZWwiOiJsb2c6cmVsZWFzZXMiLCJpZCI6Im4td2Ytc2hpcC10ZWxsIiwibWVzc2FnZSI6IntkZXZ9IHB1c2hlZCB0byB7cmVwb30gKHNlc3Npb24ge3Nlc3Npb259KS4iLCJtb2RlIjoiZW5mb3JjZSIsIm5vZGVJZCI6IndmLXNoaXAtdGVsbCIsIndvcmtmbG93SWQiOiJ3Zi1zaGlwIn1dLCJyZXBvIjoiYWNtZS1hcGkiLCJzY3JpcHRzIjpbeyJhcHByb3ZhbCI6eyJhbGxvd2VkIjp0cnVlLCJhdCI6IjIwMjYtMTAtMzBUMDg6MzA6MDAuMDAwWiIsImJ5IjoiZGV2LWEiLCJkZWNpc2lvbklkIjoiZGVjX2E1MDE1MjY5LWZmOGMtNDZhNy04MGRhLTNmOTc4OWFhYmYyNCIsInJlYXNvbiI6ImRlY2lkZWQgYnkgYSBjb2RlIHB1Ymxpc2hlciIsInJlY2VpcHRJZCI6InJjcHRfNDM0YmNlNzYtNzUxNi00NGY3LThkMTMtYmZhZWE5ZjlmZTY4In0sImNvbW1hbmQiOiJucG0gdGVzdCIsImlkIjoicy13Zi1zaGlwLXRlc3RzIiwibGFiZWwiOiJVbml0IHRlc3RzIHBhc3MiLCJtb2RlIjoiZW5mb3JjZSIsIm5ldHdvcmsiOmZhbHNlLCJub2RlSWQiOiJ3Zi1zaGlwLXRlc3RzIiwicGF0aCI6InNjcmlwdHMvcy13Zi1zaGlwLXRlc3RzLnNoIiwic2hhMjU2IjoiOWQzYmQ1ZDAyMzM2ZWE3ZWM3MGM0ODRkZGZhODVkYjA3MTkyNmE3NTYxZGQxZjViNDI4MzIzM2YzMGIyMjg4ZiIsInRpbWVvdXRTZWMiOjMwMCwid2hlcmUiOiJ3b3Jrc3RhdGlvbiIsIndvcmtmbG93SWQiOiJ3Zi1zaGlwIn1dLCJzZXJ2ZXIiOiJodHRwczovL2FjbWUuZXhhbXBsZSIsInZlcnNpb24iOiJwMjAyNjEwMzAwODQ1LWEyMTZhMTEyIiwid29ya2Zsb3dzIjpbeyJkZWNpZGVkQnkiOiJkZXYtYSIsImRlY2lzaW9uUmVjZWlwdCI6InJjcHRfNDM0YmNlNzYtNzUxNi00NGY3LThkMTMtYmZhZWE5ZjlmZTY4IiwiZGlnZXN0IjoiYTA3NDhiNjRiOTc3YjRhYTI0OTk4ZjFjZGQ1NDA2NzAxY2VjOTUwMjk0ZTRhYTYyNmU1YjAzOGE2ZTE4OTRmNCIsImlkIjoid2Ytc2hpcCIsIm5hbWUiOiJTaGlwIGFjbWUtYXBpIiwic3RhdHVzIjoiYWNjZXB0ZWQifV19",
+  "payloadLength": 16671,
+  "contentDigest": "a216a1129fe258965ce33cf9263ec0a35877d2e868b2cee7f8fe2fb27391abc6",
+  "digest": "ec5164a0a4ae691c52da7de9e05eed227c9e379595a94f3d1734079823397080",
+  "signatureBase64": "lRSFGrqRAyHh1mXa5UaOJqvVwkumuJFYxTD8QPBBCV7mtDvgZZrxutNq6RoFHUKdk9wYyro1UBiLXv/bXpYMBw==",
+  "filePaths": [
+    ".claude-plugin/plugin.json",
+    "agents/ostrom-second-look.md",
+    "agents/ostrom-second.md",
+    "codex/agents/ostrom_second_look.toml",
+    "codex/agents/ostrom_second.toml",
+    "ostrom/AGENTS-block.md",
+    "ostrom/gates.json",
+    "scripts/s-wf-ship-tests.sh",
+    "skills/ostrom-git/SKILL.md",
+    "skills/ostrom-wf-ship-acme-api/SKILL.md"
+  ],
+  "filePathsCodeUnitOrder": [
+    ".claude-plugin/plugin.json",
+    "agents/ostrom-second-look.md",
+    "agents/ostrom-second.md",
+    "codex/agents/ostrom_second.toml",
+    "codex/agents/ostrom_second_look.toml",
+    "ostrom/AGENTS-block.md",
+    "ostrom/gates.json",
+    "scripts/s-wf-ship-tests.sh",
+    "skills/ostrom-git/SKILL.md",
+    "skills/ostrom-wf-ship-acme-api/SKILL.md"
+  ],
+  "filesSortedByLocaleCompare": true,
+  "harnessReceipt": {
+    "name": "harness",
+    "description": "Receipt of the rules harness embedded in the package (subject.kind harness).",
+    "receipt": {
+      "subject": {
+        "kind": "harness",
+        "id": "h202610300845-86a2f34b",
+        "digest": "86a2f34b352f6029ab48ce4f2af375d8f1d177d9c3e40cd756c761fbdc5360b4"
+      },
+      "initiator": "ostrom compiler",
+      "agent": "ostrom export",
+      "rules": [
+        {
+          "id": "r-commit-style",
+          "digest": "79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7"
+        }
+      ],
+      "decisions": [],
+      "id": "rcpt_fb02440a-28c4-484e-81ad-8cda105b64d7",
+      "createdAt": "2026-10-30T08:45:00.000Z",
+      "signature": "ed25519;kid=b918e282a924dda0;sha256=5fd7cf20c1218e7753c17c6ce5b1bdf153785343917c0e6ad53f1381ac734573;sig=tz4edS/sj5p93FohYyRll/MrM47yhP21onygUge7ubNe1+AZMOCsZ8E/UVzdSDV5PE0srAVQsoN4UQa4m0M1Ag=="
+    },
+    "canonical": "{\"agent\":\"ostrom export\",\"createdAt\":\"2026-10-30T08:45:00.000Z\",\"decisions\":[],\"id\":\"rcpt_fb02440a-28c4-484e-81ad-8cda105b64d7\",\"initiator\":\"ostrom compiler\",\"rules\":[{\"digest\":\"79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7\",\"id\":\"r-commit-style\"}],\"subject\":{\"digest\":\"86a2f34b352f6029ab48ce4f2af375d8f1d177d9c3e40cd756c761fbdc5360b4\",\"id\":\"h202610300845-86a2f34b\",\"kind\":\"harness\"}}",
+    "signedBytesBase64": "eyJhZ2VudCI6Im9zdHJvbSBleHBvcnQiLCJjcmVhdGVkQXQiOiIyMDI2LTEwLTMwVDA4OjQ1OjAwLjAwMFoiLCJkZWNpc2lvbnMiOltdLCJpZCI6InJjcHRfZmIwMjQ0MGEtMjhjNC00ODRlLTgxYWQtOGNkYTEwNWI2NGQ3IiwiaW5pdGlhdG9yIjoib3N0cm9tIGNvbXBpbGVyIiwicnVsZXMiOlt7ImRpZ2VzdCI6Ijc5YjZhYzQ4ZTUyMjViZTkwMzc0OTNjMWU4YThmYzllNWZiYzQyZTI4OTNiMGMxNWI4ODQ2YmQzOWQzMTBjZDciLCJpZCI6InItY29tbWl0LXN0eWxlIn1dLCJzdWJqZWN0Ijp7ImRpZ2VzdCI6Ijg2YTJmMzRiMzUyZjYwMjlhYjQ4Y2U0ZjJhZjM3NWQ4ZjFkMTc3ZDljM2U0MGNkNzU2Yzc2MWZiZGM1MzYwYjQiLCJpZCI6ImgyMDI2MTAzMDA4NDUtODZhMmYzNGIiLCJraW5kIjoiaGFybmVzcyJ9fQ==",
+    "signedBytesLength": 403,
+    "sha256": "5fd7cf20c1218e7753c17c6ce5b1bdf153785343917c0e6ad53f1381ac734573",
+    "kid": "b918e282a924dda0",
+    "signatureBase64": "tz4edS/sj5p93FohYyRll/MrM47yhP21onygUge7ubNe1+AZMOCsZ8E/UVzdSDV5PE0srAVQsoN4UQa4m0M1Ag==",
+    "signatureField": "ed25519;kid=b918e282a924dda0;sha256=5fd7cf20c1218e7753c17c6ce5b1bdf153785343917c0e6ad53f1381ac734573;sig=tz4edS/sj5p93FohYyRll/MrM47yhP21onygUge7ubNe1+AZMOCsZ8E/UVzdSDV5PE0srAVQsoN4UQa4m0M1Ag=="
+  }
+}
