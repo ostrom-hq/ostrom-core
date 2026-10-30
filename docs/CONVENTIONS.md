@@ -253,28 +253,57 @@ A refusal the code expects is a **domain exception** (one class per case, in `do
 result; presentation maps it to a status in one StatusPages configuration. Never `return@get call.respond(...)`
 scattered in routes with free-text bodies (that is `asonar`'s shortcut, which `kotlin-bp` explicitly overrides).
 
-```kotlin
-// domain
-class GateNotFoundException : Exception()
-class GateAlreadyAnsweredException : Exception()
+**On Kotlin/Native, StatusPages matches a handler by the exact exception class only** (found by `ostrom-server`,
+30/10/2026: every domain error, being a subclass, answered 500). So domain exceptions extend one base that carries its
+`ErrorKind` (the stable key of section 3.3), presentation maps each kind to its status once, and the single `Throwable`
+handler routes by type:
 
-// presentation/config/ErrorHandling.kt
-fun Application.configureErrorHandling() {
+```kotlin
+// domain of the shared kernel: no Ktor type here
+enum class ErrorKind(val code: String) {
+    INVALID_REQUEST("invalid_request"), UNAUTHENTICATED("unauthenticated"), FORBIDDEN("forbidden"),
+    NOT_FOUND("not_found"), CONFLICT("conflict"), PAYMENT_REQUIRED("payment_required"), INTERNAL("internal_error"),
+}
+
+open class OstromException(val kind: ErrorKind, message: String) : Exception(message)
+
+// domain
+class GateNotFoundException : OstromException(ErrorKind.NOT_FOUND, "Gate not found.")
+class GateAlreadyAnsweredException : OstromException(ErrorKind.CONFLICT, "The gate is already answered.")
+
+// presentation/config/ErrorHandling.kt: the only place a kind becomes a status (section 3.2)
+fun ErrorKind.status(): HttpStatusCode = when (this) {
+    ErrorKind.INVALID_REQUEST -> HttpStatusCode.BadRequest
+    ErrorKind.UNAUTHENTICATED -> HttpStatusCode.Unauthorized
+    ErrorKind.FORBIDDEN -> HttpStatusCode.Forbidden
+    ErrorKind.NOT_FOUND -> HttpStatusCode.NotFound
+    ErrorKind.CONFLICT -> HttpStatusCode.Conflict
+    ErrorKind.PAYMENT_REQUIRED -> HttpStatusCode.PaymentRequired
+    ErrorKind.INTERNAL -> HttpStatusCode.InternalServerError
+}
+
+fun Application.configureErrorHandling(logger: Logger) {
     install(StatusPages) {
-        exception<GateNotFoundException> { call, _ -> call.respondError(HttpStatusCode.NotFound, "gate_not_found") }
-        exception<GateAlreadyAnsweredException> { call, _ ->
-            call.respondError(HttpStatusCode.Conflict, "gate_already_answered")
-        }
         exception<Throwable> { call, cause ->
-            // A cancelled call (client gone, server stopping) is not a defect: let it propagate (section 4.1).
-            if (cause is CancellationException) throw cause
-            // Unexpected only. Log the type and the request id, never the request or response body.
-            call.application.log.error("Unhandled ${cause::class.simpleName} on ${call.request.path()}", cause)
-            call.respondError(HttpStatusCode.InternalServerError, "internal_error")
+            when (cause) {
+                // A cancelled call (client gone, server stopping) is not a defect: let it propagate (section 4.1).
+                is CancellationException -> throw cause
+                is OstromException -> call.respondError(cause.kind, cause.message ?: cause.kind.code)
+                is BadRequestException -> call.respondError(ErrorKind.INVALID_REQUEST, "The request is malformed.")
+                else -> {
+                    // Unexpected only. Log the type and the request id, never the request or response body.
+                    logger.error("unexpected failure", mapOf("request_id" to call.callId), cause)
+                    call.respondError(ErrorKind.INTERNAL, "Internal error.")
+                }
+            }
         }
     }
 }
 ```
+
+A test throws a **subclass** of the base and asserts its status and key (`ostrom-server:HttpTest.
+domainErrorSubclassKeepsItsKindAndMessage`), and another throws an unexpected exception and asserts a 500 that does not
+echo its message.
 
 ### 3.2 The status names the refusal (`ENG-007`)
 
