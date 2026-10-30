@@ -14,9 +14,11 @@ info:
     otherwise. The public API reference lists the `served` ones only. A server PR that serves a route sets its operation
     to `served` here, in the same change set.
 
-    A browser signs in with the `ostrom_session` cookie (HttpOnly, Secure, SameSite=Lax); the CLI, the app, devices,
-    runners and service keys send a bearer token. With the cookie, every request that changes something (POST, PUT,
-    PATCH, DELETE) also sends `X-CSRF-Token`, equal to the readable `ostrom_csrf` cookie, or is refused with 403.
+    A browser signs in with the `__Host-ostrom_session` cookie (HttpOnly, Secure, SameSite=Lax, `Path=/`, no `Domain`;
+    plain `ostrom_session` only on a plain-HTTP development server); the CLI, the app, devices, runners and service keys
+    send a bearer token. With the cookie, every request that changes something (POST, PUT, PATCH, DELETE) also sends
+    `X-CSRF-Token`, equal to the readable `__Host-ostrom_csrf` cookie, and comes from an allowed `Origin` (the
+    console''s, or `OSTROM_ALLOWED_ORIGINS`), or is refused with 403.
 
     Every route is under `/api/v1`, except `/health` and the incoming webhooks (`/webhooks/stripe`, `/webhooks/github`,
     `/webhooks/slack`), each authenticated by its sender''s signature.
@@ -640,7 +642,7 @@ paths:
           description: Signed in; the session is in the cookies, never in the body
           headers:
             Set-Cookie:
-              description: '`ostrom_session` (HttpOnly) and the readable `ostrom_csrf`'
+              description: '`__Host-ostrom_session` (HttpOnly) and the readable `__Host-ostrom_csrf`'
               schema:
                 type: string
           content:
@@ -660,12 +662,13 @@ paths:
   /api/v1/auth/link:
     post:
       operationId: exchangeSignInLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: 'Exchange an approver''s link (`/yes#signin=opk_…`) for the session cookie. The console and the app read
         the token from the fragment, erase it at once (`history.replaceState`) and post it here: it never appears in a
-        URL the server receives. Single-use. Not the e-mail sign-in, which is `/api/v1/auth/email/verify`'
+        URL the server receives. Single-use. The `Origin` header must be an allowed one (the console''s), else 403. The
+        answer sends the console to `/yes`. Not the e-mail sign-in, which is `/api/v1/auth/email/verify`'
       security: []
       requestBody:
         required: true
@@ -683,8 +686,8 @@ paths:
           description: Signed in; the session is in the cookies, never in the body
           headers:
             Set-Cookie:
-              description: '`ostrom_session=…; HttpOnly; Secure; SameSite=Lax; Path=/` and the readable
-                `ostrom_csrf=…; Secure; SameSite=Lax; Path=/`'
+              description: '`__Host-ostrom_session=…; HttpOnly; Secure; SameSite=Lax; Path=/` and the readable
+                `__Host-ostrom_csrf=…; Secure; SameSite=Lax; Path=/`'
               schema:
                 type: string
           content:
@@ -704,16 +707,64 @@ paths:
   /api/v1/auth/logout:
     post:
       operationId: logout
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Sign out
       description: 'Revokes the calling token or browser session, deletes the push devices registered with it (the app
-        receives no more yes requests), and for a browser session expires the `ostrom_session` and `ostrom_csrf`
-        cookies.'
+        receives no more yes requests), and for a browser session expires the `__Host-ostrom_session` and
+        `__Host-ostrom_csrf` cookies.'
       responses:
         '204':
           description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/logout/everywhere:
+    post:
+      operationId: logoutEverywhere
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: Sign out of every browser session of the caller (browser session only, else 403)
+      description: Ends every browser session of the signed-in person, expires this browser's `__Host-ostrom_session` and
+        `__Host-ostrom_csrf` cookies, and deletes the push devices registered with them. Tokens are not revoked
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/links:
+    post:
+      operationId: createSignInLink
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: 'Make a sign-in link for another browser (browser session only, else 403): `url` is the console''s
+        `/yes#signin=opk_…` (the token is in the fragment, which no server or log receives), `token` the token alone
+        for a QR code. Exchanged once by `POST /api/v1/auth/link`'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInLink'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -8564,10 +8615,12 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: ostrom_session
-      description: 'The browser session of the console: HttpOnly, Secure, SameSite=Lax, Path=/. Set by a sign-in, never
-        carried in a body, a URL or a redirect. With it, every POST, PUT, PATCH and DELETE also sends the `X-CSRF-Token`
-        header, equal to the readable `ostrom_csrf` cookie set beside it; otherwise 403. Sign-out expires both cookies.'
+      name: __Host-ostrom_session
+      description: 'The browser session of the console: HttpOnly, Secure, SameSite=Lax, Path=/, no Domain (plain
+        `ostrom_session` only on a plain-HTTP development server). Set by a sign-in, never carried in a body, a URL or
+        a redirect. With it, every POST, PUT, PATCH and DELETE also sends the `X-CSRF-Token` header, equal to the
+        readable `__Host-ostrom_csrf` cookie set beside it, from an allowed `Origin`; otherwise 403. Sign-out expires
+        both cookies.'
   parameters:
     OstromOrg:
       name: Ostrom-Org
@@ -12267,6 +12320,24 @@ components:
       - gates
       - actions
       x-ostrom-kotlin: pending
+    SignInLink:
+      type: object
+      description: A sign-in link just made
+      properties:
+        url:
+          type: string
+          description: The link to open, the token in its fragment
+        token:
+          type: string
+          description: The token alone (`opk_…`), for a QR code
+        expiresAt:
+          type: string
+          description: When it stops working (ISO 8601)
+      required:
+      - url
+      - token
+      - expiresAt
+      x-ostrom-kotlin: pending
     SignedIn:
       type: object
       description: A completed sign-in; the session itself is in the cookies
@@ -12276,7 +12347,7 @@ components:
           description: The console path to go to
         csrfToken:
           type: string
-          description: The same value as the `ostrom_csrf` cookie, for the `X-CSRF-Token` header
+          description: The same value as the `__Host-ostrom_csrf` cookie, for the `X-CSRF-Token` header
       required:
       - redirect
       x-ostrom-kotlin: pending
