@@ -1965,6 +1965,29 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/approvals/queue:
+    get:
+      operationId: getApprovalQueue
+      tags:
+      - approvals
+      summary: 'The yes queue of the caller: pending approvals and recent answers, as the console and the app show them'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalQueue'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/approvals/{id}:
     get:
       operationId: getApproval
@@ -1994,13 +2017,43 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/approvals/{id}/view:
+    get:
+      operationId: getApprovalView
+      tags:
+      - approvals
+      summary: An approval as the console and the app show it
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/approvals/{id}/answer:
     post:
       operationId: answerApproval
       tags:
       - approvals
-      summary: Say yes or no; 409 shown_digest_mismatch when the shown digest differs; refused when the caller asked (unless
-        sole approver) or is not an approver
+      summary: Say yes or no, as the caller. 409 shown_digest_mismatch when the shown digest differs, 409 approval_closed
+        when already answered (a signed answer never changes); 403 self_approval_refused when the asker answers while another
+        approver exists
       parameters:
       - name: id
         in: path
@@ -2015,24 +2068,21 @@ paths:
               $ref: '#/components/schemas/AnswerApprovalRequest'
       responses:
         '200':
-          description: OK
+          description: The answered approval and its receipt
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  approval:
-                    $ref: '#/components/schemas/Approval'
-                  receipt:
-                    $ref: '#/components/schemas/Receipt'
-                required:
-                - approval
+                $ref: '#/components/schemas/ApprovalView'
         '400':
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: self_approval_refused, or not an approver
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfApprovalRefused'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6560,7 +6610,7 @@ components:
           $ref: '#/components/schemas/ApprovalAnswer'
         shownDigest:
           type: string
-        comment:
+        note:
           type: string
       required:
       - answer
@@ -6640,6 +6690,25 @@ components:
       enum:
       - approve
       - reject
+    ApprovalCallerView:
+      type: object
+      description: What the caller may do with an approval
+      properties:
+        login:
+          type: string
+        self:
+          type: boolean
+        canApprove:
+          type: boolean
+        reason:
+          type: string
+        selfApproval:
+          type: boolean
+      required:
+      - login
+      - self
+      - canApprove
+      x-ostrom-kotlin: pending
     ApprovalCheck:
       type: object
       description: A CI check shown with an approval
@@ -6668,6 +6737,29 @@ components:
       required:
       - sha
       - title
+    ApprovalQueue:
+      type: object
+      description: The yes queue of the caller
+      properties:
+        operator:
+          type: string
+          description: Login a yes is signed as
+        you:
+          $ref: '#/components/schemas/ApprovalViewer'
+        pending:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalView'
+        recent:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalView'
+      required:
+      - operator
+      - you
+      - pending
+      - recent
+      x-ostrom-kotlin: pending
     ApprovalStatus:
       type: string
       enum:
@@ -6675,6 +6767,79 @@ components:
       - approved
       - rejected
       - expired
+    ApprovalView:
+      type: object
+      description: 'An approval as the console and the app show it: the request, the gate, the rules, the commits and checks
+        (in `approval`), the receipt once answered'
+      properties:
+        approval:
+          $ref: '#/components/schemas/Approval'
+        who:
+          type: object
+          properties:
+            dev:
+              type: string
+            agent:
+              type: string
+            model:
+              type: string
+            session:
+              type: string
+        what:
+          type: object
+          properties:
+            action:
+              type: string
+            command:
+              type: string
+            repo:
+              type: string
+            sessionRepo:
+              type: string
+            harness:
+              type: string
+        gate:
+          $ref: '#/components/schemas/GateRef'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        diff:
+          type: string
+        pr:
+          $ref: '#/components/schemas/GatePullRequest'
+        askedVia:
+          type: array
+          items:
+            type: string
+        note:
+          type: string
+          description: What the approver told the agent with the answer
+        receipt:
+          $ref: '#/components/schemas/Receipt'
+        verification:
+          $ref: '#/components/schemas/Verification'
+        you:
+          $ref: '#/components/schemas/ApprovalCallerView'
+      required:
+      - approval
+      - you
+      x-ostrom-kotlin: pending
+    ApprovalViewer:
+      type: object
+      description: Who is looking at the yes queue
+      properties:
+        login:
+          type: string
+        via:
+          type: string
+          description: '`console`, `app`, `cli`, `operator-account`'
+        name:
+          type: string
+      required:
+      - login
+      - via
+      x-ostrom-kotlin: pending
     Artifact:
       type: object
       description: A published page or file set, behind the login
@@ -8761,6 +8926,21 @@ components:
       required:
       - name
       - value
+      x-ostrom-kotlin: pending
+    SelfApprovalRefused:
+      type: object
+      description: '403 self_approval_refused: the asker answered while another approver exists'
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+        others:
+          type: array
+          items:
+            type: string
+          description: Approvers who may answer instead
+      required:
+      - error
+      - others
       x-ostrom-kotlin: pending
     ServiceKey:
       type: object

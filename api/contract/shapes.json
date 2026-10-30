@@ -23,7 +23,7 @@
         "required": true,
         "nullable": false
       },
-      "comment": {
+      "note": {
         "type": "string",
         "required": false,
         "nullable": false

@@ -368,13 +368,13 @@ public enum class ApprovalAnswer {
  *
  * @property answer Yes or no.
  * @property shownDigest Digest of what the approver saw.
- * @property comment Comment.
+ * @property note What the approver tells the agent with the answer; sent to its session, written on the receipt.
  */
 @Serializable
 public data class AnswerApprovalRequest(
     val answer: ApprovalAnswer,
     val shownDigest: String,
-    val comment: String? = null,
+    val note: String? = null,
 )
 
 /**
