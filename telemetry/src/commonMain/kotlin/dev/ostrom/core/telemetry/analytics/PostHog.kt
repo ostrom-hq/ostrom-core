@@ -97,17 +97,16 @@ public class PostHogClient(private val client: HttpClient, private val config: P
             // Network failure: retryable; the cause is not logged.
             null
         }
-        return status?.let(::classify) ?: ExportResult.Retryable()
+        return if (status == null) ExportResult.Retryable() else classify(status)
     }
 
-    private fun classify(status: Int): ExportResult = when (status) {
-        in SUCCESS -> ExportResult.Success
-        in RETRYABLE -> ExportResult.Retryable()
+    private fun classify(status: Int): ExportResult = when {
+        status in POSTHOG_RETRYABLE -> ExportResult.Retryable()
+        status / STATUS_CLASS == SUCCESS_STATUS_CLASS -> ExportResult.Success
         else -> ExportResult.Rejected(status)
     }
-
-    private companion object {
-        val SUCCESS = 200..299
-        val RETRYABLE = setOf(429, 500, 502, 503, 504)
-    }
 }
+
+private val POSTHOG_RETRYABLE = setOf(429, 500, 502, 503, 504)
+private const val STATUS_CLASS = 100
+private const val SUCCESS_STATUS_CLASS = 2

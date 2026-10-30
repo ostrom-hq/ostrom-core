@@ -8,8 +8,6 @@ import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.AtomicLongArray
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.update
-import kotlin.concurrent.atomics.updateAndFetch
 import kotlin.time.Clock
 
 /**
@@ -52,7 +50,7 @@ public class MeterImpl(
     }
 
     private fun <T : Instrument> register(instrument: T): T {
-        instruments.update { it + instrument }
+        instruments.atomicUpdate { it + instrument }
         return instrument
     }
 
@@ -74,7 +72,7 @@ private class SeriesMap<C>(private val maxSeries: Int, private val newCell: () -
     fun cell(attributes: Attributes): C {
         cells.load()[attributes]?.let { return it }
         // The transform may run again when another thread won the race: creating a spare cell is harmless.
-        val updated = cells.updateAndFetch { current ->
+        val updated = cells.atomicUpdate { current ->
             val key = if (current.size < maxSeries) attributes else OVERFLOW
             if (key in current) current else current + (key to newCell())
         }
@@ -85,7 +83,7 @@ private class SeriesMap<C>(private val maxSeries: Int, private val newCell: () -
 }
 
 /** Adds a double to a long holding its bits, atomically. */
-private fun AtomicLong.addDouble(delta: Double) = update { (Double.fromBits(it) + delta).toRawBits() }
+private fun AtomicLong.addDouble(delta: Double) = atomicUpdate { (Double.fromBits(it) + delta).toRawBits() }
 
 private class CounterInstrument(
     val name: String,
@@ -133,8 +131,8 @@ private class HistogramInstrument(
         cell.buckets.fetchAndAddAt(bucket, 1L)
         cell.count.fetchAndAdd(1L)
         cell.sum.addDouble(value)
-        cell.min.update { minOf(Double.fromBits(it), value).toRawBits() }
-        cell.max.update { maxOf(Double.fromBits(it), value).toRawBits() }
+        cell.min.atomicUpdate { minOf(Double.fromBits(it), value).toRawBits() }
+        cell.max.atomicUpdate { maxOf(Double.fromBits(it), value).toRawBits() }
     }
 
     override fun collect(startEpochNanos: Long, now: Long): MetricData? {

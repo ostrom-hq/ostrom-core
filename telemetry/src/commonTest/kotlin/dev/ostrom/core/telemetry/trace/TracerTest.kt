@@ -140,6 +140,17 @@ class TracerTest {
     }
 
     @Test
+    fun aFailureWithoutAClassNameIsStillAnError() = runTest {
+        val anonymous = object : RuntimeException("secret") {}
+        assertFailsWith<RuntimeException> { tracer.inSpan("failing") { throw anonymous } }
+
+        val span = ended.single()
+        assertEquals(StatusCode.ERROR, span.status)
+        assertTrue(span.statusMessage.isNotBlank())
+        assertFalse(span.statusMessage.contains("secret"))
+    }
+
+    @Test
     fun inSpanPropagatesCancellationWithoutMarkingAnError() = runTest {
         assertFailsWith<CancellationException> {
             tracer.inSpan("cancelled") { throw CancellationException("caller went away") }

@@ -37,21 +37,20 @@ public class KtorOtlpTransport(
             // credentials in a URL.
             null
         }
-        return response?.let(::classify) ?: ExportResult.Retryable()
+        return if (response == null) ExportResult.Retryable() else classify(response)
     }
 
     private fun classify(response: HttpResponse): ExportResult = when (val status = response.status.value) {
-        in SUCCESS -> ExportResult.Success
         in RETRYABLE -> ExportResult.Retryable(
-            response.headers[HttpHeaders.RetryAfter]?.trim()?.toLongOrNull()?.takeIf { it >= 0 }?.seconds,
+            response.headers[HttpHeaders.RetryAfter]?.let { it.trim().toLongOrNull() }?.takeIf { it >= 0 }?.seconds,
         )
-        else -> ExportResult.Rejected(status)
-    }
-
-    private companion object {
-        val PROTOBUF = ContentType("application", "x-protobuf")
-        val SUCCESS = 200..299
-        // OTLP/HTTP specification, "Retryable Response Codes".
-        val RETRYABLE = setOf(429, 502, 503, 504)
+        else -> if (status / CLASS == SUCCESS_CLASS) ExportResult.Success else ExportResult.Rejected(status)
     }
 }
+
+private val PROTOBUF = ContentType("application", "x-protobuf")
+
+// OTLP/HTTP specification, "Retryable Response Codes".
+private val RETRYABLE = setOf(429, 502, 503, 504)
+private const val CLASS = 100
+private const val SUCCESS_CLASS = 2

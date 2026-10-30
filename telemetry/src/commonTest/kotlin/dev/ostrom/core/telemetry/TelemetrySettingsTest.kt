@@ -82,6 +82,7 @@ class TelemetrySettingsTest {
     fun malformedValuesFailAtStartUpWithoutEchoingThem() {
         val badRatio = assertFailsWith<IllegalArgumentException> { settings("OTEL_TRACES_SAMPLER_ARG" to "lots") }
         assertFailsWith<IllegalArgumentException> { settings("OTEL_TRACES_SAMPLER_ARG" to "2") }
+        assertFailsWith<IllegalArgumentException> { settings("OTEL_TRACES_SAMPLER_ARG" to "-0.5") }
         val badHeaders = assertFailsWith<IllegalArgumentException> {
             settings("OTEL_EXPORTER_OTLP_ENDPOINT" to "http://c", "OTEL_EXPORTER_OTLP_HEADERS" to "secret-token")
         }

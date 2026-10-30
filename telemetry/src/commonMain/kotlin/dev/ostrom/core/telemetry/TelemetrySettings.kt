@@ -49,7 +49,7 @@ public data class TelemetrySettings(
          * @throws IllegalArgumentException When a value is malformed, so the process fails at start-up.
          */
         public fun fromEnvironment(getEnv: (String) -> String?, defaultServiceName: String): TelemetrySettings {
-            fun value(name: String) = getEnv(name)?.trim()?.takeIf { it.isNotEmpty() }
+            fun value(name: String) = getEnv(name)?.let { raw -> raw.trim().takeIf { it.isNotEmpty() } }
             val disabled = value("OTEL_SDK_DISABLED")?.lowercase() == "true"
             val protocol = value("OTEL_EXPORTER_OTLP_PROTOCOL") ?: PROTOBUF
             require(protocol == PROTOBUF) { "OTEL_EXPORTER_OTLP_PROTOCOL: only $PROTOBUF is supported." }
@@ -85,12 +85,14 @@ public data class TelemetrySettings(
         }
 
         /** Parses `k=v,k2=v2` with percent-encoded values; the error names the variable, never its value. */
-        internal fun parsePairs(raw: String?, variable: String): Map<String, String> =
-            raw?.split(',')?.filter { it.isNotBlank() }?.associate { pair ->
+        internal fun parsePairs(raw: String?, variable: String): Map<String, String> {
+            if (raw == null) return emptyMap()
+            return raw.split(',').filter { it.isNotBlank() }.associate { pair ->
                 val separator = pair.indexOf('=')
                 require(separator > 0) { "$variable must be a list of key=value pairs." }
                 pair.substring(0, separator).trim() to percentDecode(pair.substring(separator + 1).trim())
-            } ?: emptyMap()
+            }
+        }
 
         private const val PROTOBUF = "http/protobuf"
         private const val HEX_RADIX = 16

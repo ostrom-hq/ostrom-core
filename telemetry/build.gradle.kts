@@ -40,8 +40,15 @@ kotlin {
 tasks.matching { it.name.startsWith("publishJvm") }.configureEach { enabled = false }
 
 // 100 % of lines and branches of commonMain, measured through the jvm() test run (BRIEF, rule TESTS).
+// An exclusion is added here with a one-line reason, and reviewed.
 kover {
     reports {
+        filters {
+            excludes {
+                // Each use carries a `// coverage: <why>` line right above it (compare-and-set retry loops).
+                annotatedBy("dev.ostrom.core.telemetry.ExcludeFromCoverage")
+            }
+        }
         verify {
             rule {
                 minBound(100, kotlinx.kover.gradle.plugin.dsl.CoverageUnit.LINE)
