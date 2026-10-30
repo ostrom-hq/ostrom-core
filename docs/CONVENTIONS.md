@@ -558,8 +558,10 @@ literally in the test, not recomputed with the code under test (`ENG-047`).
   test-only JVM target, Kover's 100 % rule, detekt and the opt-ins are declared once
   ([`ostrom.kmp.gradle.kts`](conventions/build-logic/src/main/kotlin/ostrom.kmp.gradle.kts)). A module's
   `build.gradle.kts` applies the plugin and adds its dependencies, nothing else.
-- `settings.gradle.kts`: `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` and `implementation(projects.domain)`,
-  repositories declared once in `dependencyResolutionManagement` (`teamcode`, `asonar`).
+- `settings.gradle.kts`: modules depend on `project(":domain")`, never on type-safe project accessors (a feature
+  preview applies to the whole build tree: ostrom-core's reached ostrom-server through the composite build of its CI
+  and broke its module `artifacts`); repositories declared once in `dependencyResolutionManagement` (`teamcode`,
+  `asonar`).
 - `gradle.properties` (`teamcode`): `org.gradle.parallel=true`, `kotlin.code.style=official`,
   `kotlin.native.ignoreDisabledTargets=true` (a macOS target is skipped, not failed, on Linux), a JVM heap sized for
   Kotlin/Native linking (`-Xmx6g`).

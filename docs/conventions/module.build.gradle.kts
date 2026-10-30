@@ -6,7 +6,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            api(projects.domain)
+            api(project(":domain"))
             implementation(libs.ktor.server.core)
         }
         commonTest.dependencies {

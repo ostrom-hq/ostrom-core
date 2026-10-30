@@ -32,7 +32,7 @@ kotlin {
     sourceSets {
         all { languageSettings.optIn("kotlin.io.encoding.ExperimentalEncodingApi") }
         commonMain.dependencies {
-            api(projects.api)
+            api(project(":api"))
             api(libs.serialization.json)
             implementation(libs.cryptography.core)
         }
