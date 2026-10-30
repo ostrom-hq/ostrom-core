@@ -44,7 +44,13 @@ app `main` bd01382.
 | S2-23 | medium (contract) | auth | Unauthenticated GitHub App manifest and install callbacks: without a `state` bound to an admin session, anyone completes an instance's App setup | core `api/openapi.yaml:950` | open, before it is implemented |
 | S2-24 | low | app | Mobile sign-in returns to the custom scheme `ostrom://auth/callback`, claimable by another app (PKCE and `state` limit it to a denial) | app#6 `GithubSignInImpl.ts:6` | open |
 | S2-19 | — | core | Package envelopes ignore `revoked` and `contentDigest`, recursive canonical JSON without a depth limit, duplicated `kid` (review of 02:20) | core `main` | fix in progress by CORE (`3d74405`, not pushed at 02:50) |
-| S2-20 | — | CLI | Command parsing and hook bypasses A4, A5, A6, A9, A12, A13, A24 on the Kotlin CLI | cli#5, #1, #4 | under review |
+| S2-20 | **critical** | CLI | The hook's gate catalogue is a file the agent can write: empty it and date it in the future (age = now − mtime, negative), or delete it and stop the relay → no gate at all; `failMode` is read from that same file | cli#5 `CatalogueStore.kt:24-55`, `Adapters.kt:99-100` | open |
+| S2-25 | **critical** (A12) | CLI | The relay token is in the agent's environment (`OSTROM_RELAY_TOKEN`): the agent calls the relay itself (fake green check, consume, end session); the launcher passes the developer's whole environment | cli#5 `Adapters.kt:18-30`, `SessionHooks.kt:29`, `AgentLauncher.kt:37-44` | open |
+| S2-26 | high (A4) | CLI | Commands are matched on raw text: `g\it push origin main`, `git pu''sh`, `kube''ctl apply`, `B=main; git push origin $B`, `$(…)`, git aliases (`git config alias.ship push`), a script written then run | cli#5 `PushReader.kt:177-215`, `GateCatalogue.kt:55-61`, `ToolSubject.kt:34-61` | open; core's `actions` classifier (not merged) handles most of it |
+| S2-27 | high (A9) | CLI | Push destination ignores `branch.<b>.pushRemote`, `remote.pushDefault`, `--repo <url>`; redirection only checked when the verb is `push` | cli#5 `PushReader.kt:123,144-146,219`, `GateRequests.kt:129` | open |
+| S2-28 | high (A7b) | CLI | The shown diff uses the local remote-tracking ref and `git diff` without `--no-ext-diff --no-textconv`: the agent shapes the diff | cli#5 `Diffs.kt:23-41` | open |
+| S2-29 | high (A24, A13) | CLI | No reserve at PreToolUse; the yes is kept in `.yes.json` (agent-writable) and consumed at PostToolUse only (a failing command keeps it); `consumed` answer lets the action through | cli#5 `GateHook.kt:96-97`, `SessionIds.kt:59-73`, `GateRequests.kt:113` | open |
+| S2-30 | medium | CLI | Fail-open edges: event over 1 MiB or unreadable → allowed; `git` from `PATH`; `-ud`/`-qd` read as a plain push; no PR number sent (server binds the merge to the text, S2-06); install without mandatory signature check, hook binary writable by the agent | cli#5 `HookRunner.kt:39`, `HookEvent.kt:48-54`, `Adapters.kt:56`, `PushReader.kt:122`; cli#4 `install.sh:62-99` | open |
 
 ## The prototype's holes in the new code
 
@@ -53,14 +59,14 @@ app `main` bd01382.
 | A1 (an open route recreates another's account and token) | No such route: accounts come only from a sign-in, tokens from a browser session or a device flow approved by one (`IdentityRoutes.kt:137-169`). Not regressed; re-check when the orgs module adds members and invitations. |
 | A2 (console writes without credentials, or with a device token) | Kernel answers 401 without credentials; `requireScope` exists; but the module routes do not use it (S2-03), and the CLI token has the console scopes (S2-04). **Partly regressed.** |
 | A3 (no token = the console operator) | Gone: no fallback, `authenticated` answers 401. Closed. |
-| A4, A6, A9 (options before the verb, redirection, push to main without naming it) | Server side: `GateCommands.redirected` refuses the A6 forms (`GateRules.kt:213-227`). Hook side: S2-20. |
+| A4, A6, A9 (options before the verb, redirection, push to main without naming it) | Server side: `GateCommands.redirected` refuses the A6 forms (`GateRules.kt:213-227`). Hook side: S2-26, S2-27 (still open). |
 | A5 (a yes on a push covers a force-push) | `force` is in the key (`GateRules.kt:51`) but read from the request body, not from the command (S2-05). |
 | A7 (a yes for a harmless diff covers the real one) | The yes is bound to the shown digest and refused when it changed (`AnswerGateUseCase.kt:88`). Closed for the binding; the diff itself is still the hook's (A7b, S2-05). |
 | A8 (merge key without base or gate) | Base and gate node are in the key, head and base come from GitHub (`GateRules.kt:38-43`), except when GitHub is not reachable or configured (S2-06). |
 | A10, A11, A17 (session writes by another, workflow receipt, session id reuse) | The sessions module is not written; gates check the launch (`UseGateUseCase.kt:62`). To re-check with the sessions PR. |
-| A12 (the agent holds the user's token) | The server issues agent tokens with the single `agent:session` scope (`TokenUseCases.kt:219-234`, `CredentialAuthenticator.kt:39-45`). Hook side: S2-20. |
+| A12 (the agent holds the user's token) | The server issues agent tokens with the single `agent:session` scope (`TokenUseCases.kt:219-234`, `CredentialAuthenticator.kt:39-45`). Hook side: **reopened**, S2-25. |
 | A14 (the receipt does not sign what was approved) | The receipts signer is not written (`UnavailableGateReceiptSigner`). Requirement: the gate receipt signs repo, refs and shas, remote, force, diff digest, PR head and base. |
-| A24 (two parallel tool calls use one yes) | Closed: reserve under the gate's row lock, then consume (`UseGateUseCase.kt:59-85`). |
+| A24 (two parallel tool calls use one yes) | Server closed: reserve under the gate's row lock, then consume (`UseGateUseCase.kt:59-85`). The CLI does not call reserve yet: S2-29. |
 
 ## What is already right
 
@@ -201,9 +207,30 @@ ControlResell's and the nodes' addresses in `extraDeniedCidrs`; otherwise ship w
   before the first owner exists, only the bootstrap setup link may start them (CONVENTIONS § 16.2).
 - **S2-24** prefer an App Link / Universal Link (`https://app.ostrom.run/auth/callback`) on both platforms.
 
+- **S2-20** the catalogue comes signed by the server (or only through the relay), its age is the server's signed
+  date, never a file's mtime; a catalogue built into the binary is the fallback and it is closed; `failMode` is
+  served signed, never read from a local file.
+- **S2-25** the relay authenticates the hook process, not a variable: a Unix socket 0600 in a directory the agent
+  cannot reach, or a per-call one-time token; `/checks` and `/sessions/*/end` only from the launcher. The launcher
+  passes an allow-list of variables to the agent.
+- **S2-26** classify on normalized words (core `ShellParser`, quotes and escapes removed, `$(…)` and `bash -c`
+  expanded); a dynamic word (`$`, backtick, glob) in a gated command = unreadable → refused; resolve git aliases
+  (refuse `!` aliases); `git config` writes to `alias.*`, `remote.*`, `url.*`, `push.*`, `branch.*` are gated;
+  Write/Edit contents go through the same classifier.
+- **S2-27** git's own precedence for the push remote (`pushRemote`, `pushDefault`, `remote`); `--repo` is a remote;
+  redirection checks on every git call.
+- **S2-28** `git ls-remote` before the diff; `git -c diff.external= diff --no-ext-diff --no-textconv`; long term the
+  server computes the diff (S2-05).
+- **S2-29** reserve at PreToolUse (refuse if the reservation fails), consume at PostToolUse or on failure, treat
+  `consumed`/`reserved` as a refusal; no yes state the agent can write.
+- **S2-30** refuse at PreToolUse on an oversized or unreadable event; absolute `git` path fixed at launch;
+  grouped short options; send the PR number; cosign check mandatory in `install.sh`, hook binary owned by another
+  user or checked by digest at each launch.
+
 ## Log
 
 - 30/10 02:50 — first pass: AUTH (identity, sign-in), tenancy, gates, secrets, mcp-relay, runners, billing, web, helm,
   app receipts. CLI under review.
 - 30/10 02:55 — sharing (server#17), terminal relay (server#14: bearer or single-use ticket, no cookie, no cross-site
   WebSocket hijacking; good), app sign-in (app#6), the contract's unauthenticated operations.
+- 30/10 03:05 — CLI review (cli#5 `5814c9d`, cli#4 `61cb0e1`): two critical holes (S2-20, S2-25) and five more.
