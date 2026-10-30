@@ -6207,6 +6207,12 @@ paths:
         description: Report the plan without writing anything
         schema:
           type: boolean
+      - name: cutover
+        in: query
+        required: false
+        description: "The final run, once TeamCode is stopped: owners only (403 otherwise), recorded in the audit log before anything is written (503 on a server without one). It also revives the shared accounts waiting for a reconnection, testing TeamCode's tokens first (renewing rotates them, so a normal run never does)."
+        schema:
+          type: boolean
       requestBody:
         required: true
         content:
@@ -6229,6 +6235,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/inference/v1/messages:
     parameters:
@@ -11884,10 +11892,11 @@ components:
           type: string
         action:
           type: string
-          enum: [planned, created, updated, unchanged, skipped]
+          enum: [planned, created, updated, unchanged, skipped, revive_at_cutover]
+          description: "`revive_at_cutover`: a shared account waiting for a reconnection, left so while TeamCode runs; the cutover run revives it."
         reason:
           type: string
-          description: Why it was skipped
+          description: Why it was skipped, or why a `revive_at_cutover` line waits for the cutover run
       required:
       - kind
       - name
