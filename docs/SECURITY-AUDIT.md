@@ -233,4 +233,4 @@ ControlResell's and the nodes' addresses in `extraDeniedCidrs`; otherwise ship w
   app receipts. CLI under review.
 - 30/10 02:55 — sharing (server#17), terminal relay (server#14: bearer or single-use ticket, no cookie, no cross-site
   WebSocket hijacking; good), app sign-in (app#6), the contract's unauthenticated operations.
-- 30/10 03:05 — CLI review (cli#5 `5814c9d`, cli#4 `61cb0e1`): two critical holes (S2-20, S2-25) and five more.
+- 30/10 02:57 — CLI review (cli#5 `5814c9d`, cli#4 `61cb0e1`): two critical holes (S2-20, S2-25) and five more.
