@@ -1,6 +1,6 @@
 // Reference settings.gradle.kts of an Ostrom Kotlin repository (teamcode, asonar, pkg).
 rootProject.name = "ostrom-server"
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+// No TYPESAFE_PROJECT_ACCESSORS: modules depend on project(":name") (CONVENTIONS, settings.gradle.kts).
 
 pluginManagement {
     includeBuild("build-logic")
