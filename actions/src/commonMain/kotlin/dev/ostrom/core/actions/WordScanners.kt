@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package dev.ostrom.core.actions
 
 /** The program a word names: its file name, lower-cased, without `.exe` (`/usr/bin/GIT` → `git`). */

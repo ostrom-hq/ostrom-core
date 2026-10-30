@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package dev.ostrom.core.actions
 
 // Test binaries are debug builds: unoptimized, several times slower than the release CLI.

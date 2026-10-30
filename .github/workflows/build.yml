@@ -16,8 +16,9 @@ concurrency:
   group: build-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
+  # The required check of main is named `native`: the job keeps that name (the brief's `native-tests` would block
+  # every pull request until the protection changes).
   native:
-    name: native-tests
     timeout-minutes: 45
     runs-on: ubuntu-latest
     steps:

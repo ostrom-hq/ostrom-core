@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 
 plugins {

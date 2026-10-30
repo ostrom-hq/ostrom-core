@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package dev.ostrom.core.actions
 
 /** Remote URLs: the `owner/name` an approver reads, and the URL git really pushes to. */

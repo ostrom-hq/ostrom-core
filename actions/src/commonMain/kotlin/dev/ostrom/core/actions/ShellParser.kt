@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package dev.ostrom.core.actions
 
 /** Where a piece of shell text was found, which says how sure we are that it runs. */
