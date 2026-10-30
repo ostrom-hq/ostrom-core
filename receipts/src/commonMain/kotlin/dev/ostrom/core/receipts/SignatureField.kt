@@ -17,9 +17,13 @@ public class SignatureField(
     public val signature: ByteArray?,
 ) {
 
-    /** Writes the field as the prototype does. */
-    override fun toString(): String =
-        "$algorithm;kid=$kid;sha256=$sha256;sig=${signature?.let { Base64.encode(it) }}"
+    /** Writes the field as the prototype does; a missing part is left out. */
+    override fun toString(): String = listOfNotNull(
+        algorithm,
+        kid?.let { "kid=$it" },
+        sha256?.let { "sha256=$it" },
+        signature?.let { "sig=${Base64.encode(it)}" },
+    ).joinToString(";")
 
     /** Parser of the field. */
     public companion object {
@@ -28,8 +32,8 @@ public class SignatureField(
         public const val ED25519: String = "ed25519"
 
         /**
-         * Parses a signature field. Unknown parts are ignored, missing ones are null; a `sig` that is not base64 is
-         * null.
+         * Parses a signature field. Unknown parts are ignored; a missing or repeated part is null (a field naming
+         * two keys is not one anybody signed); a `sig` that is not base64 is null.
          *
          * @param field The field text.
          *
@@ -37,10 +41,12 @@ public class SignatureField(
          */
         public fun parse(field: String): SignatureField {
             val parts = field.split(';')
-            val values = parts.drop(1).associate { part ->
+            val pairs = parts.drop(1).map { part ->
                 val i = part.indexOf('=')
                 if (i < 0) part to "" else part.substring(0, i) to part.substring(i + 1)
             }
+            val counts = pairs.groupingBy { it.first }.eachCount()
+            val values = pairs.filter { counts[it.first] == 1 }.toMap()
             val signature = values["sig"]?.let(::decodeBase64OrNull)
             return SignatureField(parts.first(), values["kid"], values["sha256"], signature)
         }

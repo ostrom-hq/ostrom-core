@@ -1,5 +1,7 @@
 package dev.ostrom.core.receipts
 
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -15,6 +17,9 @@ public object PackageEnvelopes {
 
     /** The envelope format name. */
     public const val FORMAT: String = "ostrom.package/1"
+
+    /** Envelope fields copied out of the signed payload. */
+    private val COPIED_FIELDS = listOf("version", "repo", "contentDigest")
 
     /**
      * The digest and the signature of a package payload.
@@ -39,11 +44,12 @@ public object PackageEnvelopes {
     }
 
     /**
-     * Verifies an envelope: format, digest of the payload bytes, trusted kid, signature.
+     * Verifies an envelope: format, digest of the payload bytes, trusted kid, signature; then refuses a revoked
+     * envelope, and one whose `version`, `repo` or `contentDigest` differs from the signed payload's.
      *
-     * Only `payload` is signed. The envelope's `repo`, `version`, `contentDigest`, `pinned` and `revoked` are not: read
-     * the repository, version and content digest from [PackageVerification.Verified.payload] (the decoded
-     * `SessionPackage`), and the pin and revocation state from the server you trust, never from the envelope alone.
+     * Only `payload` is signed. The envelope's copies of `repo`, `version` and `contentDigest` are checked against it,
+     * but read them from [PackageVerification.Verified.payload] (the decoded `SessionPackage`). `revoked: true` is
+     * refused; its absence proves nothing: ask the server you trust for the revocation state.
      *
      * @param envelope The envelope JSON object.
      * @param trustedKeys The keys to trust.
@@ -61,6 +67,14 @@ public object PackageEnvelopes {
         val key = trustedKeys.firstOrNull { it.kid == text("kid") } ?: return failed("unknown key id")
         val signature = text("signature")?.let(::decodeBase64OrNull) ?: return failed("bad signature")
         if (!key.verify(bytes, signature)) return failed("bad signature")
+        if (envelope["revoked"] == JsonPrimitive(true)) return failed("package revoked")
+        val signed = try {
+            Json.parseToJsonElement(payload) as? JsonObject
+        } catch (e: SerializationException) {
+            null
+        } ?: return failed("payload is not a package")
+        val copied = COPIED_FIELDS.firstOrNull { it in envelope && envelope[it] != signed[it] }
+        if (copied != null) return failed("envelope $copied does not match the signed payload")
         return PackageVerification.Verified(payload, key.kid)
     }
 }

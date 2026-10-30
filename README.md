@@ -64,6 +64,9 @@ the serial descriptors of the models with `api/contract/shapes.json`, and CI che
 `api-types/scripts/contract-shapes.mjs` derives from `openapi.yaml`. To change the contract: edit `openapi.yaml`, run
 `npm run contract` in `api-types/`, change the Kotlin model, commit the three.
 
+An operation the server serves carries `x-ostrom-server: implemented`, set by the server pull request that serves it:
+the public API reference lists only those.
+
 TypeScript: `@ostrom-hq/api-types`, published to GitHub Packages npm with the same `0.1.<run>` version as the Kotlin
 artifacts. `.npmrc`:
 
