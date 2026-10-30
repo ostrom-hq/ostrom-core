@@ -99,7 +99,7 @@ private class RunningTelemetry(
     settings: TelemetrySettings,
     resource: Resource,
     scope: CoroutineScope,
-    httpClient: () -> HttpClient,
+    private val httpClient: () -> HttpClient,
     clock: Clock,
     ids: IdGenerator,
     config: ExportConfig,
