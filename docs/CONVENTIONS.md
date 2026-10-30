@@ -165,6 +165,7 @@ recent project of his uses them.
 @Serializable
 @Resource("/api/v1/gates")
 class GatesApi {
+    @Serializable
     @Resource("{id}")
     class Id(val parent: GatesApi = GatesApi(), val id: Uuid)
 }
@@ -263,6 +264,8 @@ fun Application.configureErrorHandling() {
             call.respondError(HttpStatusCode.Conflict, "gate_already_answered")
         }
         exception<Throwable> { call, cause ->
+            // A cancelled call (client gone, server stopping) is not a defect: let it propagate (section 4.1).
+            if (cause is CancellationException) throw cause
             // Unexpected only. Log the type and the request id, never the request or response body.
             call.application.log.error("Unhandled ${cause::class.simpleName} on ${call.request.path()}", cause)
             call.respondError(HttpStatusCode.InternalServerError, "internal_error")
@@ -484,6 +487,12 @@ literally in the test, not recomputed with the code under test (`ENG-047`).
   (`SuspendFunSwallowedCancellation`) do not work here; the cancellation rule is enforced by
   [`check-conventions.py`](conventions/scripts/check-conventions.py) in CI and by review. Move to detekt 2 once it is
   stable (2.0.0-alpha.6 on 30/10/2026: not adopted).
+- detekt 1.23.8 embeds the Kotlin 2.0 parser. `flareon` pairs it with Kotlin 2.1; Nathan's Kotlin 2.4 repositories
+  (`teamcode`, `asonar`, `pkg`) run no detekt at all. Write Kotlin that the 2.0 parser reads (no context parameters,
+  guard conditions in `when` or multi-dollar interpolation) until the switch to detekt 2; the first repository that
+  adopts `build-logic` proves the combination in CI.
+- `TooGenericExceptionCaught` is off: the broad catch of section 4.1 is the required form and `check-conventions.py`
+  governs it. `SwallowedException` stays on: a broad catch logs or rethrows what it caught.
 - No ktlint: Nathan's own repositories do not use it (only `amplitude-kmp`, a port of Amplitude's code). Formatting is
   the IntelliJ "Kotlin official" style plus [`.editorconfig`](conventions/.editorconfig): 4 spaces, LF, final newline,
   max line length 120 (the fleet's detekt setting).
@@ -644,7 +653,9 @@ Template: [`docs/conventions/.github/workflows/build.yml`](conventions/.github/w
   `com.vanniktech.maven.publish` (Nathan's plugin everywhere, `JavadocJar.Empty()`, `SourcesJar.Sources()`), and the
   generated TypeScript package (Zodable, section 13.4) to GitHub Packages npm as `@ostrom-hq/core`. While the
   repositories are developed together, consumers may use a Gradle `includeBuild("../ostrom-core")` locally; CI always
-  resolves the published version. If `ostrom-core` becomes public, it moves to Maven Central and npm like Nathan's
+  resolves the published version. A consuming workflow needs `permissions: packages: read` and passes
+  `GITHUB_TOKEN` to Gradle (see the CI template), and the `ostrom-core` package grants each consuming repository read
+  access (package settings, "Manage Actions access"): without it, resolution answers 401. If `ostrom-core` becomes public, it moves to Maven Central and npm like Nathan's
   public libraries (`publishToMavenCentral()`, `signAllPublications()`).
 - CLI releases attach one binary per target with its SHA-256 checksum, signed; document the dynamic libraries each one
   needs (`teamcode:docs/architecture.md`). Never advertise a target or a command before its artifact passed the matrix.

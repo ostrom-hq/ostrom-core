@@ -17,6 +17,7 @@ mordant = "3.0.2"
 cryptography = "0.6.0"
 sqlx4k = "1.17.0"
 junit = "5.11.4"
+junit-platform = "1.11.4"
 kover = "0.9.11"
 detekt = "1.23.8"
 maven-publish = "0.37.0"
@@ -83,3 +84,5 @@ sqlx4k-sqlite = { module = "io.github.smyrgeorge:sqlx4k-sqlite", version.ref = "
 
 # Tests (the JVM target is the test and coverage runner only)
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+# Gradle 9 no longer puts the JUnit Platform launcher on the test runtime classpath.
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }

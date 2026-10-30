@@ -47,10 +47,10 @@ exceptions:
   SwallowedException:
     active: true
     allowedExceptionNameRegex: '_|(ignore|expected).*'
+  # Off: the cancellation-safe broad catch of CONVENTIONS.md section 4.1 (`catch (error: Exception)` after the
+  # CancellationException rethrow) is the required form, and scripts/check-conventions.py enforces it.
   TooGenericExceptionCaught:
-    active: true
-    excludes: ['**/commonTest/**', '**/jvmTest/**', '**/nativeTest/**', '**/linuxTest/**', '**/macosTest/**', '**/mingwTest/**', '**/posixTest/**']
-    allowedExceptionNameRegex: '_|(ignore|expected).*'
+    active: false
   TooGenericExceptionThrown:
     active: true
 

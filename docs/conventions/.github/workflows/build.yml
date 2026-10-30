@@ -16,8 +16,11 @@ env:
   # A tag is the version (no "v" prefix); everything else builds a snapshot.
   ORG_GRADLE_PROJECT_ostromVersion: ${{ github.ref_type == 'tag' && github.ref_name || '0.1.0-SNAPSHOT' }}
   KOTLIN_VERSION: '2.4.21'
+  # settings.gradle.kts reads GITHUB_ACTOR (set by Actions) and GITHUB_TOKEN to resolve ostrom-core from GitHub Packages.
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 permissions:
   contents: read
+  packages: read # dev.ostrom artifacts of ostrom-core on GitHub Packages
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true

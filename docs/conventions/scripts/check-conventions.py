@@ -22,6 +22,9 @@ PROJECT_DEPENDENCY = re.compile(r"projects\.([A-Za-z0-9_.]+)")
 BROAD_CATCH = re.compile(r"catch\s*\(\s*\w+\s*:\s*(kotlin\.)?(Exception|Throwable)\s*\)")
 CANCELLATION_CATCH = re.compile(r"catch\s*\(\s*\w+\s*:\s*(kotlinx\.coroutines\.|kotlin\.coroutines\.cancellation\.)?CancellationException\s*\)")
 TRY = re.compile(r"\btry\s*\{")
+# Every production source set except the JVM ones: commonMain, nativeMain, posixMain, linuxX64Main, mingwX64Main...
+NON_JVM_SOURCE_SET = re.compile(r"/src/(?!jvm|android)[A-Za-z0-9]*Main/")
+TOKEN = re.compile(r"\{|\}|\bcatch\s*\([^)]*\)|\btry\b")
 RUN_CATCHING = re.compile(r"\brunCatching\b")
 NOT_COROUTINE_REACHABLE = "not coroutine-reachable:"
 JVM_ONLY_IMPORT = re.compile(r"^\s*import\s+(io\.mockk|org\.slf4j|ch\.qos\.logback|org\.jetbrains\.exposed|java\.|javax\.)")
@@ -35,7 +38,7 @@ def check_kotlin(path: str, text: str) -> list:
     """Returns the violations of one production Kotlin file."""
     errors = []
     lines = text.splitlines()
-    native_or_common = re.search(r"/src/(common|native|posix|linux|macos|mingw|apple)Main/", path) is not None
+    native_or_common = NON_JVM_SOURCE_SET.search(path) is not None
     for index, line in enumerate(lines):
         number = index + 1
         justified = NOT_COROUTINE_REACHABLE in line or (index > 0 and NOT_COROUTINE_REACHABLE in lines[index - 1])
@@ -53,22 +56,42 @@ def check_kotlin(path: str, text: str) -> list:
     return errors
 
 
+def block_after(text: str, start: int) -> str:
+    """The text of the first `{ ... }` block at or after start (braces in strings and comments are not special)."""
+    opening = text.find("{", start)
+    if opening < 0:
+        return ""
+    depth = 0
+    for position in range(opening, len(text)):
+        if text[position] == "{":
+            depth += 1
+        elif text[position] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[opening:position + 1]
+    return text[opening:]
+
+
 def cancellation_handled(lines: list, catch_index: int) -> bool:
-    """True when the try owning this catch rethrows CancellationException earlier, or the catch calls ensureActive()."""
-    for line in lines[catch_index:catch_index + 4]:
-        if "ensureActive()" in line:
-            return True
-    current = lines[catch_index]
-    prefix = current[:BROAD_CATCH.search(current).start()]
-    if CANCELLATION_CATCH.search(prefix):
+    """True when the broad catch on this line calls ensureActive() in its block, or an earlier catch of the same try
+    catches CancellationException and rethrows it."""
+    before = "\n".join(lines[:catch_index]) + "\n" + lines[catch_index][:BROAD_CATCH.search(lines[catch_index]).start()]
+    after = "\n".join(lines[catch_index:])
+    if "ensureActive()" in block_after(after, BROAD_CATCH.search(after).end()):
         return True
-    if TRY.search(prefix):
-        return False
-    for line in reversed(lines[:catch_index]):
-        if CANCELLATION_CATCH.search(line):
-            return True
-        if TRY.search(line):
+    depth = 0
+    for token in reversed(list(TOKEN.finditer(before))):
+        text = token.group(0)
+        if text == "}":
+            depth += 1
+        elif text == "{":
+            depth -= 1
+            if depth < 0:
+                return False
+        elif depth == 0 and text.startswith("try"):
             return False
+        elif depth == 0 and CANCELLATION_CATCH.match(text) and "throw" in block_after(before, token.end()):
+            return True
     return False
 
 
@@ -122,6 +145,15 @@ def self_test() -> None:
         }
         // not coroutine-reachable: a property initializer
         val home = runCatching { canonicalize() }.getOrNull()
+        suspend fun d() {
+            try {
+                try { a() } catch (e: Exception) { currentCoroutineContext().ensureActive(); log(e) }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                log(error)
+            }
+        }
     """
     bad = """
         suspend fun a() {
@@ -130,13 +162,25 @@ def self_test() -> None:
         suspend fun b() { val r = runCatching { work() } }
         fun c() { GlobalScope.launch { } }
         import io.mockk.mockk
+        suspend fun nested() {
+            try {
+                try { a() } catch (e: CancellationException) { throw e }
+                b()
+            } catch (e: Exception) { log(e) }
+        }
+        suspend fun logged() {
+            try { a() } catch (e: CancellationException) { log(e) } catch (e: Exception) { log(e) }
+        }
     """
     path = "/x/src/commonMain/kotlin/A.kt"
     assert check_kotlin(path, good) == [], check_kotlin(path, good)
     found = check_kotlin(path, bad)
-    assert len(found) == 4, found
-    assert any("broad catch" in e for e in found) and any("runCatching" in e for e in found)
+    assert len(found) == 6, found
+    assert sum("broad catch" in e for e in found) == 3 and any("runCatching" in e for e in found)
     assert any("GlobalScope" in e for e in found) and any("JVM-only" in e for e in found)
+    native = check_kotlin("/x/src/linuxX64Main/kotlin/A.kt", "import java.io.File\n")
+    assert len(native) == 1 and "JVM-only" in native[0], native
+    assert check_kotlin("/x/src/jvmMain/kotlin/A.kt", "import java.io.File\n") == []
     print("check-conventions self-test passed")
 
 
