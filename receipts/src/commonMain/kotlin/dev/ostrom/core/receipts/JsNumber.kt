@@ -2,11 +2,11 @@ package dev.ostrom.core.receipts
 
 /**
  * Numbers as ECMAScript `Number.prototype.toString` writes them (what `JSON.stringify` writes): the shortest decimal
- * that reads back as the same double, closest to it on a tie of length; integers below `1e21` in full, exponents as
- * `1e+21` and `1e-7`, `-0` as `0`. Kotlin's own `Double.toString()` differs (`1.0E21`), hence this exact
- * implementation: the double is expanded to its exact decimal value with integer arithmetic, and a candidate is kept
- * when it lies inside the double's rounding interval (round half to even), with no reliance on the platform's float
- * parser.
+ * that reads back as the same double, closest to it on a tie of length, even on a tie of distance; integers below
+ * `1e21` in full, exponents as `1e+21` and `1e-7`, `-0` as `0`. Kotlin's own `Double.toString()` differs (`1.0E21`),
+ * hence this exact implementation: the double is expanded to its exact decimal value with integer arithmetic, and a
+ * candidate is kept when it lies inside the double's rounding interval (round half to even), with no reliance on the
+ * platform's float parser.
  */
 internal object JsNumber {
 
@@ -95,13 +95,8 @@ private class RoundingInterval(
     }
 
     /**
-     * The [k]-digit decimal that reads back as the double, the closest to it when both neighbours do; null when
-     * neither does.
-     *
-     * The closest is decided on the digits after the k-th: below `5` the lower neighbour, otherwise the upper one.
-     * An exact tie (the rest is exactly `5`) never happens with both neighbours inside: a double whose exact value
-     * ends in 5 at the 10^-j place is a multiple of 2^-j, so its half-gap is at most 2^-(j+1), below the
-     * 5 × 10^-j between it and either neighbour; and every integer double of 2^53 or more is even.
+     * The [k]-digit decimal that reads back as the double, the closest to it when both neighbours do (the even one
+     * when they are exactly as close: `646628074277751.25` is written `646628074277751.2`); null when neither does.
      */
     fun candidate(k: Int): Decimal? {
         val prefix = exact.digits.substring(0, k)
@@ -110,11 +105,17 @@ private class RoundingInterval(
         val lowerInside = contains(lower)
         val upperInside = contains(upper)
         return when {
-            lowerInside && upperInside -> if (exact.digits.substring(k) < "5") lower else upper
+            lowerInside && upperInside -> if (closerToLower(k)) lower else upper
             lowerInside -> lower
             upperInside -> upper
             else -> null
         }
+    }
+
+    /** Whether the exact value is nearer the lower [k]-digit neighbour, ties going to the even one. */
+    private fun closerToLower(k: Int): Boolean {
+        val rest = exact.digits.substring(k)
+        return rest < "5" || (rest == "5" && exact.digits[k - 1].digitToInt() % 2 == 0)
     }
 
     companion object {

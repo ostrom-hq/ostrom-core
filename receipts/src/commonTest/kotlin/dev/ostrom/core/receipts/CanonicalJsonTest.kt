@@ -49,7 +49,7 @@ class CanonicalJsonTest {
 
     @Test
     fun numbersAreWrittenAsEcmaScriptWritesThem() {
-        // 4 060 doubles written by Node (compat/extra/js-numbers.mjs): fixed edge cases and random bit patterns
+        // 4 072 doubles written by Node (compat/extra/js-numbers.mjs): fixed edge cases and random bit patterns
         val path = Path(COMPAT_VECTORS_DIR, "../extra/js-numbers.json")
         val pairs = SystemFileSystem.source(path).buffered().use { Json.parseToJsonElement(it.readString()) }.jsonArray
         assertTrue(pairs.size > 4000)
