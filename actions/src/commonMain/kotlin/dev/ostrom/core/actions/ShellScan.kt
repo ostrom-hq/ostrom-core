@@ -103,7 +103,8 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
             return
         }
         val directories = (if (top) cdDirectories.toList() else emptyList()) + invocation.directories
-        val plain = !quoteBlind && top && segment.origin == SegmentOrigin.SCRIPT && atCommandPosition(w, i) &&
+        // A command of the script itself (depth 0) is never quoted text: its origin is the script.
+        val plain = !quoteBlind && top && atCommandPosition(w, i) &&
             !(subshells && cdDirectories.isNotEmpty()) && directories.none { dynamic(it) || it == "-" }
         pushes += PushInvocation(
             directories, pushArguments(w.subList(invocation.verbIndex + 1, w.size)), plain, invocation.redirect != null,

@@ -100,10 +100,12 @@ public class ActionClassifierImpl(
     }
 
     /** Whether one of [patterns] matches; true too when the reading budget runs out. */
-    private fun matches(patterns: List<Regex>, text: BudgetedText): Boolean =
-        // not coroutine-reachable: classification is plain blocking code; anything but the budget's end is rethrown.
-        runCatching { patterns.any { it.containsMatchIn(text) } }
-            .getOrElse { if (it is BudgetedText.Exhausted) true else throw it }
+    private fun matches(patterns: List<Regex>, text: BudgetedText): Boolean = try {
+        patterns.any { it.containsMatchIn(text) }
+    } catch (expected: BudgetedText.Exhausted) {
+        // The pattern read more than the budget allows: what it would have found is unknown, so assume a match.
+        true
+    }
 
     private companion object {
         const val MIGRATION_PATH = "/db/migration/"
