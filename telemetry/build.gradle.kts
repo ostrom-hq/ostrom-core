@@ -10,8 +10,9 @@ description = "Ostrom telemetry: W3C trace context, spans, metrics and logs expo
 
 kotlin {
     explicitApi()
-    // jvm() is for tests and Kover coverage of commonMain only (CONVENTIONS 7.2), never shipped. Its artifact is
-    // published so that the server's and the CLI's own test-only jvm() targets can depend on this module.
+    // jvm() is for tests and Kover coverage of commonMain only (CONVENTIONS 7.2), never shipped in a binary. Its
+    // artifact is published to GitHub Packages all the same: the Gradle metadata of the module lists the jvm variant,
+    // and the server's and the CLI's own test-only jvm() targets resolve it (without it, their jvmTest cannot build).
     jvm()
     macosArm64(); linuxX64(); linuxArm64(); mingwX64()
     sourceSets {
@@ -35,9 +36,6 @@ kotlin {
         }
     }
 }
-
-// The jvm() target exists for tests: it is not published (CONVENTIONS 7.2).
-tasks.matching { it.name.startsWith("publishJvm") }.configureEach { enabled = false }
 
 // 100 % of lines and branches of commonMain, measured through the jvm() test run (BRIEF, rule TESTS).
 // An exclusion is added here with a one-line reason, and reviewed.
