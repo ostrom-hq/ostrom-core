@@ -6294,7 +6294,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getInferenceSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: The org's provider keys (named by their org secret, never sent) and whether shared accounts serve first
@@ -6317,7 +6317,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setInferenceSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Replace the org's inference settings (owners and admins, `inference:admin`)
@@ -6349,7 +6349,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getModelPolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Model policy
@@ -6372,7 +6372,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setModelPolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Set the model policy
