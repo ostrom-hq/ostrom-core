@@ -389,6 +389,19 @@ describe("checkFile", () => {
         assert.deepEqual(checkFile(source, facts, {markdown: false}).map(({line}) => line), [1, 4])
     })
 
+    it("refuses a claim that checks are proven unless the same chunk says where they ran, Coming soon or not", () => {
+        const message = (claim) => [{line: 1, message: `"${claim}" without saying where the checks ran (attestation: declared by the workstation, an isolated runner or CI)`}]
+        assert.deepEqual(checkFile("Every receipt carries proven checks.\n", facts), message("proven checks"))
+        assert.deepEqual(checkFile("Coming soon: tests are proven.\n", facts), message("tests are proven"))
+        assert.deepEqual(checkFile("A proof that the tests passed.\n", facts), message("proof that the tests passed"))
+        assert.deepEqual(checkFile("Des checks prouvés.\n", facts, {markdown: false}), message("checks prouvés"))
+        assert.deepEqual(checkFile("Verified checks, each with its attestation.\n", facts), [])
+        assert.deepEqual(checkFile("Checks are proven when they ran in CI.\n", facts), [])
+        assert.deepEqual(checkFile("Des checks prouvés, déclarés par le poste.\n", facts), [])
+        assert.deepEqual(checkFile("Proven checks. <!-- docs-truth: ignore -->\n", facts), [])
+        assert.deepEqual(checkFile("The check runs offline.\n", facts), [])
+    })
+
     it("needs a page whose status is coming-soon or partial to say Coming soon in its text", () => {
         const problem = {line: 1, message: `the page's status says a part is not shipped, but its text never says "coming soon"`}
         assert.deepEqual(checkFile("---\nstatus: partial\n---\nAll done.\n", facts), [problem])

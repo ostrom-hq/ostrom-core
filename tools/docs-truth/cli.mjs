@@ -10,7 +10,8 @@ export const USAGE = `Usage: docs-truth --routes <served-routes.txt> [options] <
 
 Fails when a page cites an API route, an ostrom command or option, or an OSTROM_ variable that the product does not
 have, unless the page says "Coming soon" around it. A folder is read for its .md and .mdx pages; any other file given
-by name is read line by line, for routes and variables only.
+by name is read line by line, for routes and variables only. A claim that checks are proven must say, in the same
+paragraph, where they ran (the receipt's attestation: declared by the workstation, an isolated runner or CI).
 
 Options:
   --routes <file>     ostrom-core's api/contract/served-routes.txt (required)

@@ -3,7 +3,7 @@
 // (api/contract/served-routes.txt), every `ostrom …` command and option must be in the help of the real binary, and
 // every OSTROM_ variable must be read by the sources given. A citation of something not shipped is allowed only under
 // an explicit marker ("Coming soon" by default): in its paragraph, list item, table row or heading, or on a page whose
-// front matter says `status: coming-soon`.
+// front matter says `status: coming-soon`. A claim that checks are proven must say where they ran (their attestation).
 
 /** First path segments of the API: a path that starts with another one (`/docs`, `/healthz`) is not a route. */
 const API_ROOTS = ["api", "webhooks", "health", "ready"]
@@ -12,6 +12,16 @@ const SHELLS = ["sh", "bash", "shell", "zsh", "console", "powershell", "ps1"]
 export const DEFAULT_MARKER = /coming soon/i
 /** Written in a chunk (`<!-- docs-truth: ignore … -->`, the reason after it), it lets the chunk cite anything. */
 const IGNORE = /docs-truth:\s*ignore/
+/**
+ * A claim that checks or tests are proven (decision of 13:23, JOURNAL: a check's report may be only the workstation's
+ * word). It must say where they ran, in the same chunk: the receipt's `attestation`.
+ */
+const PROVEN_CHECKS = new RegExp(
+    String.raw`\b(?:proven|proved|verified|attested|guaranteed)\s+(?:checks?|tests?)\b|\b(?:checks?|tests?)\s+(?:are\s+|were\s+)?(?:proven|proved|guaranteed)\b|` +
+        String.raw`\bproof\s+that\s+(?:the\s+)?(?:checks?|tests?)\s+(?:ran|passed)\b|\bchecks?\s+prouv[ée]s?\b`,
+    "i",
+)
+const CHECK_ORIGIN = /attestation|declared by the (?:workstation|device|developer)|workstation[_ ]declared|isolated[_ ]runner|\bin CI\b|\bby (?:the )?CI\b|d[ée]clar[ée]s? par le poste/i
 /** Hosts of an Ostrom server in examples; a URL on another host (a provider's API) is not a route of ours. */
 const OUR_HOST = /(^|[.\/])(ostrom[\w.-]*|localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:\d+)?$/
 
@@ -375,6 +385,11 @@ export function checkFile(source, facts, {marker = DEFAULT_MARKER, markdown = tr
                 for (const message of found) add(line, message)
                 if (found.length === 0 && comingSoon) add(line, `\`${words.join(" ")}\` is coming soon in the binary`)
             }
+        }
+        const claim = PROVEN_CHECKS.exec(chunk.text)
+        if (claim !== null && !CHECK_ORIGIN.test(chunk.text) && !IGNORE.test(chunk.text)) {
+            const message = `"${claim[0]}" without saying where the checks ran (attestation: declared by the workstation, an isolated runner or CI)`
+            problems.push({line: lineOf(claim[0]), message})
         }
         if (facts.variables !== null) {
             for (const name of variablesCited(chunk.text)) {
