@@ -27,6 +27,9 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
     var severalMerges = false
         private set
     private val merges = HashSet<String>()
+
+    /** A `gh pr merge` whose arguments run past [MAX_SCAN] words: which pull request it merges is not read. */
+    private var mergeUnread = false
     private var apiPull: PullRequestRef? = null
     private var mergePullRequest: PullRequestRef? = null
     private var mergeRead = false
@@ -70,7 +73,7 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
                 onlyCdAndPushes = onlyCdAndPushes && (cd || segmentPushes)
             }
         }
-        severalMerges = severalMerges || merges.size > 1
+        severalMerges = severalMerges || merges.size > 1 || mergeUnread
     }
 
     private fun tool(segment: ShellSegment, i: Int, top: Boolean, subshells: Boolean, quoteBlind: Boolean) {
@@ -136,7 +139,8 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
         val w = segment.words
         val invocation = gitInvocation(w, i) ?: return
         val verb = w[invocation.verbIndex].lowercase()
-        val directories = (if (top) cdDirectories.toList() else emptyList()) + invocation.directories
+        // Built only for the few invocations kept: a long run of `cd` must not be copied at every git word.
+        val directories by lazy { (if (top) cdDirectories.toList() else emptyList()) + invocation.directories }
         // A verb built at run time, a plumbing push or `git subtree push`: a push Ostrom cannot read.
         // An unknown verb with a redirecting option may be an alias the option itself defines (`-c alias.p=push p`).
         val unreadable = dynamicCommand(verb) || verb in PUSH_PLUMBING ||
@@ -232,6 +236,11 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
         var number: Int? = null
         var j = gh + 1
         while (j < w.size) {
+            // Each merge reads its own arguments only: past the bound, the pull request is unknown and refused.
+            if (j - merge > MAX_SCAN) {
+                mergeUnread = true
+                return null
+            }
             val word = w[j]
             val option = GH_MERGE_VALUE_OPTIONS.firstOrNull { word == it || word.startsWith("$it=") }
             when {

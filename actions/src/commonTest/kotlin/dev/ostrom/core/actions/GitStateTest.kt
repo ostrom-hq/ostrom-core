@@ -99,7 +99,8 @@ class GitStateTest {
         assertEquals("-", pushArguments(listOf("-")).remote)
         assertFalse(pushArguments(listOf("-v", "--quiet", "--porcelain", "origin")).force)
         assertTrue(pushArguments(listOf("-qf", "origin")).force)
-        assertFalse(pushArguments(listOf("-1f", "origin")).force)
+        // git refuses `-1`; read as a cluster, the `f` still counts
+        assertTrue(pushArguments(listOf("-1f", "origin")).force)
     }
 
     @Test

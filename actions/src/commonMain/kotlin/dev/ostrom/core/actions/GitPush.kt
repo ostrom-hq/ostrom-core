@@ -96,15 +96,20 @@ internal fun dynamic(word: String): Boolean = dynamicCommand(word) || '?' in wor
 /** Whether a command name is built at run time: a substitution, a variable or a brace expansion. */
 internal fun dynamicCommand(word: String): Boolean = '$' in word || '`' in word || braceExpansion(word)
 
-/** Whether [word] holds a brace expansion (`{a,b}`, `{1..3}`), which the shell turns into several words. */
+/**
+ * Whether [word] may hold a brace expansion (`{a,b}`, `{1..3}`), which the shell turns into several words: a `{`, then
+ * a `,` or `..`, then a `}`. Read in one pass; a word that only looks like one is not plain either.
+ */
 internal fun braceExpansion(word: String): Boolean {
-    var open = word.indexOf('{')
-    while (open >= 0) {
-        val close = word.indexOf('}', open + 1)
-        if (close < 0) return false
-        val inside = word.substring(open + 1, close)
-        if (',' in inside || ".." in inside) return true
-        open = word.indexOf('{', open + 1)
+    var open = false
+    var separator = false
+    for (k in word.indices) {
+        when (word[k]) {
+            '{' -> open = true
+            ',' -> separator = separator || open
+            '.' -> separator = separator || (open && word.getOrNull(k + 1) == '.')
+            '}' -> if (separator) return true
+        }
     }
     return false
 }

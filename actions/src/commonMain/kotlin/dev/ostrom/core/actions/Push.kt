@@ -75,11 +75,11 @@ public enum class Refusal(public val key: String, public val message: String) {
             "tell what it does. Write the program's name in full.",
     ),
 
-    /** Several merges in one command, or merges of different pull requests: one yes would cover them all. */
+    /** Merges of different pull requests in one command, or one named past what Ostrom reads. */
     SEVERAL_MERGES(
         "several_merges",
-        "this command merges more than one pull request. Merge one pull request per command " +
-            "(`gh pr merge <number>`).",
+        "this command merges more than one pull request, or names its pull request past what Ostrom reads. " +
+            "Merge one pull request per command (`gh pr merge <number>`).",
     ),
 }
 

@@ -76,9 +76,16 @@ class HardeningTest {
             assertEquals(Refusal.NOT_PLAIN, classify(command).refusal, command)
         }
         assertTrue(braceExpansion("a{b}c{d,e}"))
+        assertTrue(braceExpansion("{a,{b}}"))
+        assertTrue(braceExpansion("{a,b,c}"))
+        assertTrue(braceExpansion("{a,b..c}"))
         assertFalse(braceExpansion("HEAD@{1}"))
         assertFalse(braceExpansion("a{b,c"))
         assertFalse(braceExpansion("plain"))
+        assertFalse(braceExpansion("a.b,c}"))
+        assertFalse(braceExpansion("{a.b}"))
+        // linear: a long run of braces is read in one pass
+        assertFalse(braceExpansion("{".repeat(1_000_000) + "}"))
         assertNull(classify("git push origin HEAD@{1}:topic").refusal)
     }
 
@@ -184,6 +191,9 @@ class HardeningTest {
             classify("gh pr merge 3; gh api -X PUT repos/o/r/pulls/4/merge").refusal,
         )
         assertNull(classify("gh pr merge 3 && gh pr merge 3").refusal)
+        val hidden = "gh pr merge " + (1..MAX_SCAN + 1).joinToString(" ") { "--auto" } + " 7"
+        assertEquals(Refusal.SEVERAL_MERGES, classify(hidden).refusal)
+        assertNull(classify(hidden).pullRequest)
         assertNull(classify("gh pr merge 3 '").refusal, "the second, quote-blind reading counts on its own")
         assertEquals(Refusal.NOT_PLAIN, classify("gh pr merge 1 && gh pr merge 2 && git push x \$y").refusal)
     }
