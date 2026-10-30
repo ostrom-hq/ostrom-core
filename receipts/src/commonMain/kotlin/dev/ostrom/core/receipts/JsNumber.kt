@@ -166,11 +166,11 @@ private fun increment(digits: String, pos: Int): Decimal {
     }
 }
 
-/** Strips the zeros around `0.digits × 10^pos`; [digits] always has a non-zero digit here (every value is > 0). */
-private fun normalize(digits: String, pos: Int): Decimal {
-    val leading = digits.indexOfFirst { it != '0' }
-    return Decimal(digits.substring(leading).trimEnd('0'), pos - leading)
-}
+/**
+ * Strips the trailing zeros of `0.digits × 10^pos`. [digits] never starts with a zero here: it is a prefix of an exact
+ * value, that prefix plus one unit, or the decimal text of a positive integer.
+ */
+private fun normalize(digits: String, pos: Int): Decimal = Decimal(digits.trimEnd('0'), pos)
 
 private const val FIVE = 5
 

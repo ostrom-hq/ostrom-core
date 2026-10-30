@@ -42,3 +42,16 @@ kotlin {
         }
     }
 }
+
+// One reviewed exclusion from the 100 % rule (docs/CONVENTIONS.md section 7.1): the models are declarations only,
+// with no function of their own; what Kover counts there is generated (constructors, default-argument masks, copy).
+// ContractTest checks each shape against api/openapi.yaml; ModelRoundTripTest decodes, writes back and refuses each.
+kover {
+    reports {
+        filters {
+            excludes {
+                packages("dev.ostrom.core.api.models")
+            }
+        }
+    }
+}
