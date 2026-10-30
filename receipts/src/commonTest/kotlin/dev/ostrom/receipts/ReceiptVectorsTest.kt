@@ -16,7 +16,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ReceiptVectorsTest {
@@ -69,13 +68,24 @@ class ReceiptVectorsTest {
         val field = receipt.text("signature")
         val forged = JsonObject(receipt + ("signature" to JsonPrimitive(field.substringBefore(";sig=") + ";sig=" + Base64.encode(ByteArray(64)))))
         assertEquals(ReceiptVerificationFailure.BAD_SIGNATURE, assertIs<ReceiptVerification.Failed>(verifier.verify(forged)).reason)
+        val notBase64 = JsonObject(receipt + ("signature" to JsonPrimitive(field.substringBefore(";sig=") + ";sig=***")))
+        assertEquals(ReceiptVerificationFailure.BAD_SIGNATURE, assertIs<ReceiptVerification.Failed>(verifier.verify(notBase64)).reason)
+        val otherAlgorithm = JsonObject(receipt + ("signature" to JsonPrimitive("rsa;" + field.substringAfter(";"))))
+        assertEquals(ReceiptVerificationFailure.UNKNOWN_ALGORITHM, assertIs<ReceiptVerification.Failed>(verifier.verify(otherAlgorithm)).reason)
+        var deep: kotlinx.serialization.json.JsonElement = JsonPrimitive(1)
+        repeat(CanonicalJson.MAX_DEPTH + 1) { deep = kotlinx.serialization.json.JsonArray(listOf(deep)) }
+        val tooDeep = JsonObject(receipt + ("extra" to deep))
+        assertEquals(ReceiptVerificationFailure.MALFORMED, assertIs<ReceiptVerification.Failed>(verifier.verify(tooDeep)).reason)
     }
 
     @Test
-    fun typedReceiptsRoundTripAndStillVerify() {
+    fun typedReceiptsEncodeBackToTheSignedObject() {
+        // the model is the contract: every field the prototype signs survives a decode and an encode
         for (vector in Vectors.receipts.filter { it.text("name") != "odd-values" }) {
             val typed = ReceiptJson.decodeFromJsonElement(Receipt.serializer(), vector.obj("receipt"))
-            assertTrue(verifier.verify(typed).ok, vector.text("name"))
+            val encoded = ReceiptJson.encodeToJsonElement(Receipt.serializer(), typed) as JsonObject
+            assertEquals(CanonicalJson.encode(vector.obj("receipt")), CanonicalJson.encode(encoded), vector.text("name"))
+            assertTrue(verifier.verify(encoded).ok, vector.text("name"))
         }
     }
 
@@ -145,7 +155,7 @@ class ReceiptVectorsTest {
         assertEquals(typed.subject.digest, Digests.digestOf(preimage))
         val bundle = vector.obj("bundle")
         for (chained in bundle.array("chain")) assertTrue(verifier.verify(chained.jsonObject).ok)
-        assertNull(PackageEnvelopes.verify(bundle.obj("package"), listOf(Vectors.signingKey.publicKey)))
+        assertIs<PackageVerification.Verified>(PackageEnvelopes.verify(bundle.obj("package"), listOf(Vectors.signingKey.publicKey)))
     }
 
     @Test
@@ -153,12 +163,14 @@ class ReceiptVectorsTest {
         val vector = Vectors.read("private/package.json").jsonObject
         val envelope = vector.obj("envelope")
         val keys = listOf(Vectors.signingKey.publicKey)
-        assertNull(PackageEnvelopes.verify(envelope, keys))
+        assertEquals(PackageVerification.Verified(envelope.text("payload"), envelope.text("kid")), PackageEnvelopes.verify(envelope, keys))
         val signature = PackageEnvelopes.sign(envelope.text("payload"), Vectors.signingKey)
         assertEquals(envelope.text("digest"), signature.digest)
         assertEquals(envelope.text("signature"), signature.signature)
         val tampered = JsonObject(envelope + ("payload" to JsonPrimitive(envelope.text("payload") + " ")))
-        assertEquals("digest mismatch (package was modified)", PackageEnvelopes.verify(tampered, keys))
+        assertEquals(PackageVerification.Failed("digest mismatch (package was modified)"), PackageEnvelopes.verify(tampered, keys))
+        val stranger = listOf(ReceiptSigningKey.generate().publicKey)
+        assertEquals(PackageVerification.Failed("unknown key id"), PackageEnvelopes.verify(envelope, stranger))
         assertTrue(verifier.verify(vector.obj("harnessReceipt").let { it["receipt"]?.jsonObject ?: it }).ok)
     }
 }

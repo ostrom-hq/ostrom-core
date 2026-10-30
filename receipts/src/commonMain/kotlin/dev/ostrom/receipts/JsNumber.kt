@@ -134,14 +134,21 @@ internal object JsNumber {
 
     /** A non-negative integer in base 10^9 limbs, little-endian; only what [decimalOf] needs. */
     private class BigDecimalDigits(value: Long) {
-        private val limbs = ArrayList<Long>()
+        // 5^1075 and 2^1024 fit in 85 limbs of 9 digits; the array grows if ever needed
+        private var limbs = LongArray(8)
+        private var size = 0
 
         init {
             var v = value
             while (v > 0) {
-                limbs.add(v % BASE)
+                push(v % BASE)
                 v /= BASE
             }
+        }
+
+        private fun push(limb: Long) {
+            if (size == limbs.size) limbs = limbs.copyOf(limbs.size * 2)
+            limbs[size++] = limb
         }
 
         fun multiplyByPowerOf(factor: Int, power: Int) {
@@ -159,21 +166,22 @@ internal object JsNumber {
 
         private fun multiplySmall(multiplier: Long) {
             var carry = 0L
-            for (i in limbs.indices) {
+            for (i in 0 until size) {
                 val product = limbs[i] * multiplier + carry
                 limbs[i] = product % BASE
                 carry = product / BASE
             }
             while (carry > 0) {
-                limbs.add(carry % BASE)
+                push(carry % BASE)
                 carry /= BASE
             }
         }
 
         fun toDecimalString(): String {
-            if (limbs.isEmpty()) return "0"
-            val out = StringBuilder(limbs.last().toString())
-            for (i in limbs.size - 2 downTo 0) out.append(limbs[i].toString().padStart(9, '0'))
+            if (size == 0) return "0"
+            val out = StringBuilder(size * 9)
+            out.append(limbs[size - 1].toString())
+            for (i in size - 2 downTo 0) out.append(limbs[i].toString().padStart(9, '0'))
             return out.toString()
         }
 

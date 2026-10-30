@@ -10,7 +10,6 @@ kotlin {
     explicitApi()
     macosArm64(); linuxX64(); linuxArm64(); mingwX64()
     sourceSets {
-        all { languageSettings.optIn("kotlin.io.encoding.ExperimentalEncodingApi") }
         commonMain.dependencies {
             api(libs.serialization)
         }

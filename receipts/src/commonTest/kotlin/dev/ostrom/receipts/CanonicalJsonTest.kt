@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class CanonicalJsonTest {
@@ -54,6 +55,25 @@ class CanonicalJsonTest {
             val bits = pair[0].jsonPrimitive.content.toULong(16).toLong()
             assertEquals(pair[1].jsonPrimitive.content, JsNumber.format(Double.fromBits(bits)), pair[0].jsonPrimitive.content)
         }
+    }
+
+    @Test
+    fun numberLiteralsReadFromJsonKeepTheirEcmaScriptText() {
+        // the parse step: a receipt's number literal goes through the platform parser before it is written back
+        val path = Path(COMPAT_VECTORS_DIR, "../extra/js-numbers.json")
+        val pairs = SystemFileSystem.source(path).buffered().use { Json.parseToJsonElement(it.readString()) }.jsonArray
+        for (pair in pairs.map { it.jsonArray }) {
+            val text = pair[1].jsonPrimitive.content
+            assertEquals(text, CanonicalJson.encode(Json.parseToJsonElement(text)), text)
+        }
+    }
+
+    @Test
+    fun aDocumentNestedTooDeepIsRefusedNotRecursedInto() {
+        val deep = "[".repeat(10_000) + "]".repeat(10_000)
+        assertFailsWith<CanonicalJsonException> { CanonicalJson.encode(Json.parseToJsonElement(deep)) }
+        val shallow = "[".repeat(CanonicalJson.MAX_DEPTH + 1) + "]".repeat(CanonicalJson.MAX_DEPTH + 1)
+        assertEquals(shallow, CanonicalJson.encode(Json.parseToJsonElement(shallow)))
     }
 
     @Test

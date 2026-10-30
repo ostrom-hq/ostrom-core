@@ -1,6 +1,5 @@
 package dev.ostrom.receipts
 
-import dev.ostrom.api.models.Receipt
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -10,22 +9,15 @@ public interface ReceiptVerifier {
 
     /**
      * Verifies a receipt as received, unknown fields included: remove `signature`, recompute the canonical form,
-     * compare its digest, find the key by kid, check the Ed25519 signature.
+     * compare its digest, find the key by kid, check the Ed25519 signature. There is deliberately no overload taking
+     * the typed `Receipt`: decoding drops the fields the model does not know, and a genuine receipt from a newer server
+     * would then read as modified.
      *
      * @param receipt The receipt JSON object.
      *
      * @return The outcome, with the recomputed digest.
      */
     public fun verify(receipt: JsonObject): ReceiptVerification
-
-    /**
-     * Verifies a typed receipt. Only right for a receipt this code built: fields the model does not know are lost.
-     *
-     * @param receipt The receipt.
-     *
-     * @return The outcome.
-     */
-    public fun verify(receipt: Receipt): ReceiptVerification
 }
 
 /** The outcome of a receipt verification. */
@@ -64,6 +56,9 @@ public sealed interface ReceiptVerification {
  * @property message Reason shown to people.
  */
 public enum class ReceiptVerificationFailure(public val message: String) {
+    /** The body cannot be canonicalized (nested deeper than [CanonicalJson.MAX_DEPTH]). */
+    MALFORMED("malformed receipt"),
+
     /** No `signature` string field. */
     MISSING_SIGNATURE("missing signature"),
 
@@ -92,7 +87,11 @@ public class ReceiptVerifierImpl(trustedKeys: List<ReceiptPublicKey>) : ReceiptV
 
     override fun verify(receipt: JsonObject): ReceiptVerification {
         val body = JsonObject(receipt - ReceiptSignerImpl.SIGNATURE)
-        val bytes = CanonicalJson.bytes(body)
+        val bytes = try {
+            CanonicalJson.bytes(body)
+        } catch (e: CanonicalJsonException) {
+            return ReceiptVerification.Failed(ReceiptVerificationFailure.MALFORMED, null)
+        }
         val digest = Digests.sha256Hex(bytes)
         val raw = (receipt[ReceiptSignerImpl.SIGNATURE] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
             ?: return ReceiptVerification.Failed(ReceiptVerificationFailure.MISSING_SIGNATURE, digest)
@@ -105,9 +104,6 @@ public class ReceiptVerifierImpl(trustedKeys: List<ReceiptPublicKey>) : ReceiptV
         if (!key.verify(bytes, signature)) return failed(ReceiptVerificationFailure.BAD_SIGNATURE, digest)
         return ReceiptVerification.Verified(digest, key.kid)
     }
-
-    override fun verify(receipt: Receipt): ReceiptVerification =
-        verify(ReceiptJson.encodeToJsonElement(Receipt.serializer(), receipt) as JsonObject)
 
     private fun failed(reason: ReceiptVerificationFailure, digest: String) = ReceiptVerification.Failed(reason, digest)
 }

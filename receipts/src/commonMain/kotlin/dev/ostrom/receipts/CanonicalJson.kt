@@ -27,8 +27,13 @@ public object CanonicalJson {
      * @param element The JSON value to canonicalize.
      *
      * @return The canonical text, to be encoded in UTF-8 before hashing or signing.
+     *
+     * @throws CanonicalJsonException When [element] is nested deeper than [MAX_DEPTH].
      */
-    public fun encode(element: JsonElement): String = StringBuilder().also { write(element, it) }.toString()
+    public fun encode(element: JsonElement): String = StringBuilder().also { write(element, it, 0) }.toString()
+
+    /** The deepest nesting accepted: a received document deeper than this is refused, never recursed into. */
+    public const val MAX_DEPTH: Int = 64
 
     /**
      * Returns the UTF-8 bytes of the canonical text of [element]: what is hashed and signed.
@@ -36,10 +41,13 @@ public object CanonicalJson {
      * @param element The JSON value to canonicalize.
      *
      * @return The signed bytes.
+     *
+     * @throws CanonicalJsonException When [element] is nested deeper than [MAX_DEPTH].
      */
     public fun bytes(element: JsonElement): ByteArray = encode(element).encodeToByteArray()
 
-    private fun write(element: JsonElement, out: StringBuilder) {
+    private fun write(element: JsonElement, out: StringBuilder, depth: Int) {
+        if (depth > MAX_DEPTH) throw CanonicalJsonException()
         when (element) {
             is JsonNull -> out.append("null")
             is JsonObject -> {
@@ -48,7 +56,7 @@ public object CanonicalJson {
                     if (index > 0) out.append(',')
                     writeString(key, out)
                     out.append(':')
-                    write(element.getValue(key), out)
+                    write(element.getValue(key), out, depth + 1)
                 }
                 out.append('}')
             }
@@ -56,7 +64,7 @@ public object CanonicalJson {
                 out.append('[')
                 element.forEachIndexed { index, item ->
                     if (index > 0) out.append(',')
-                    write(item, out)
+                    write(item, out, depth + 1)
                 }
                 out.append(']')
             }
@@ -97,3 +105,6 @@ public object CanonicalJson {
 
     private fun hex4(c: Char): String = c.code.toString(16).padStart(4, '0')
 }
+
+/** A JSON value nested deeper than [CanonicalJson.MAX_DEPTH]: no receipt or package of the format is. */
+public class CanonicalJsonException : Exception()

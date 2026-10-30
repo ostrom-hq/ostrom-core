@@ -55,7 +55,7 @@ Gradle then substitutes `dev.ostrom:ostrom-api` and `dev.ostrom:ostrom-receipts`
 ```kotlin
 val key = ReceiptSigningKey.fromPkcs8Pem(pem)                  // or fromSeed, generate
 val receipt = ReceiptSignerImpl(key).sign(draft)               // ReceiptDraft -> Receipt, signature field added
-val result = ReceiptVerifierImpl(listOf(key.publicKey)).verify(json) // verify the raw JSON object as received
+val result = ReceiptVerifierImpl(listOf(key.publicKey)).verify(json) // the raw JSON object as received, never the typed model
 ```
 
 Subject digests: `Digests.digestOf(SubjectPreimages.session(...))` (also `gate`, `workflow`, `ruleChange`,
@@ -65,3 +65,6 @@ Subject digests: `Digests.digestOf(SubjectPreimages.session(...))` (also `gate`,
 
 Builds run in GitHub Actions (Linux): `linuxX64` tests, cross-compilation of `linuxArm64`, `mingwX64` and the
 `macosArm64` klibs. Locally: `./gradlew linuxX64Test` on Linux, `./gradlew macosArm64Test` on a Mac.
+
+Session packages: `PackageEnvelopes.verify(envelope, keys)` returns the verified payload text; only the payload is signed,
+so read the repository and version from the decoded payload, never from the envelope fields.

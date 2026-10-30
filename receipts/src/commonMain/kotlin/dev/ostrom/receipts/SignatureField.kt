@@ -40,8 +40,15 @@ public class SignatureField(
                 val i = part.indexOf('=')
                 if (i < 0) part to "" else part.substring(0, i) to part.substring(i + 1)
             }
-            val signature = values["sig"]?.let { runCatching { Base64.decode(it) }.getOrNull() }
+            val signature = values["sig"]?.let(::decodeBase64OrNull)
             return SignatureField(parts.first(), values["kid"], values["sha256"], signature)
         }
     }
+}
+
+/** Decodes standard base64 with padding; null when [text] is not base64. */
+internal fun decodeBase64OrNull(text: String): ByteArray? = try {
+    Base64.decode(text)
+} catch (e: IllegalArgumentException) {
+    null
 }

@@ -41,20 +41,44 @@ public object PackageEnvelopes {
     /**
      * Verifies an envelope: format, digest of the payload bytes, trusted kid, signature.
      *
+     * Only `payload` is signed. The envelope's `repo`, `version`, `contentDigest`, `pinned` and `revoked` are not: read
+     * the repository, version and content digest from [PackageVerification.Verified.payload] (the decoded
+     * `SessionPackage`), and the pin and revocation state from the server you trust, never from the envelope alone.
+     *
      * @param envelope The envelope JSON object.
      * @param trustedKeys The keys to trust.
      *
-     * @return Null when the envelope verifies, else the reason.
+     * @return The verified payload text, or the reason it does not verify.
      */
-    public fun verify(envelope: JsonObject, trustedKeys: List<ReceiptPublicKey>): String? {
+    public fun verify(envelope: JsonObject, trustedKeys: List<ReceiptPublicKey>): PackageVerification {
         fun text(name: String) = (envelope[name] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
-        if (text("format") != FORMAT) return "not an $FORMAT envelope"
-        if (text("alg") != SignatureField.ED25519) return "unknown algorithm"
-        val payload = text("payload") ?: return "missing payload"
+        fun failed(reason: String) = PackageVerification.Failed(reason)
+        if (text("format") != FORMAT) return failed("not an $FORMAT envelope")
+        if (text("alg") != SignatureField.ED25519) return failed("unknown algorithm")
+        val payload = text("payload") ?: return failed("missing payload")
         val bytes = payload.encodeToByteArray()
-        if (Digests.sha256Hex(bytes) != text("digest")) return "digest mismatch (package was modified)"
-        val key = trustedKeys.firstOrNull { it.kid == text("kid") } ?: return "unknown key id"
-        val signature = text("signature")?.let { runCatching { Base64.decode(it) }.getOrNull() } ?: return "bad signature"
-        return if (key.verify(bytes, signature)) null else "bad signature"
+        if (Digests.sha256Hex(bytes) != text("digest")) return failed("digest mismatch (package was modified)")
+        val key = trustedKeys.firstOrNull { it.kid == text("kid") } ?: return failed("unknown key id")
+        val signature = text("signature")?.let(::decodeBase64OrNull) ?: return failed("bad signature")
+        return if (key.verify(bytes, signature)) PackageVerification.Verified(payload, key.kid) else failed("bad signature")
     }
+}
+
+/** The outcome of a package envelope verification. */
+public sealed interface PackageVerification {
+
+    /**
+     * The payload is intact and signed by a trusted key.
+     *
+     * @property payload The exact payload text: decode it, never re-canonicalize it.
+     * @property kid Key that signed it.
+     */
+    public data class Verified(val payload: String, val kid: String) : PackageVerification
+
+    /**
+     * The envelope does not verify.
+     *
+     * @property reason Why.
+     */
+    public data class Failed(val reason: String) : PackageVerification
 }

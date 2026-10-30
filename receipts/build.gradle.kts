@@ -9,7 +9,7 @@ description = "Ostrom signed receipts: canonical JSON, SHA-256 digests, Ed25519 
 // The golden vectors of the TypeScript prototype live in compat/vectors; native tests read them from disk.
 val vectorsDirectory = rootProject.layout.projectDirectory.dir("compat/vectors").asFile.absolutePath
 val generatedTestDirectory = layout.buildDirectory.dir("generated/compat-vectors")
-val generateVectorsPath by tasks.registering {
+val generateVectorsPath = tasks.register("generateVectorsPath") {
     inputs.property("vectors", vectorsDirectory)
     outputs.dir(generatedTestDirectory)
     doLast {
@@ -21,6 +21,11 @@ val generateVectorsPath by tasks.registering {
                 "internal const val COMPAT_VECTORS_DIR: String = \"${vectorsDirectory.replace("\\", "/")}\"\n"
         )
     }
+}
+
+// The tests read compat/ at run time: a changed vector must re-run them, never replay a cached result.
+tasks.withType<AbstractTestTask>().configureEach {
+    inputs.dir(rootProject.layout.projectDirectory.dir("compat")).withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 kotlin {
