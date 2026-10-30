@@ -15,12 +15,18 @@ internal class PushOutcome(
     val note: String,
 ) {
     companion object {
-        fun of(scan: ShellScan, git: GitStateReader?, protectedBranches: Set<String>): PushOutcome {
+        /** The outcome of the pushes of [scan]; null when it has none, aliases that may push included. */
+        fun of(scan: ShellScan, git: GitStateReader?, protectedBranches: Set<String>): PushOutcome? {
             val pushes = scan.pushes
+            // An alias is read where it runs; one that may push is a push Ostrom cannot read.
+            val aliasPush = git != null && scan.aliases.any { alias ->
+                aliasMayPush(git.read(alias.directories)?.config?.get("alias.${alias.verb}"))
+            }
+            if (pushes.isEmpty() && !aliasPush) return null
             val explicit = pushes.flatMap { it.explicitDestinations() }
             var refusal: Refusal? = when {
                 scan.redirectAssignment || pushes.any { it.redirect } -> Refusal.REDIRECTED
-                scan.tooManyPushes || pushes.any { !it.plain } -> Refusal.NOT_PLAIN
+                aliasPush || scan.tooManyPushes || pushes.any { !it.plain } -> Refusal.NOT_PLAIN
                 else -> pushes.firstNotNullOfOrNull { it.arguments.refusal }
             }
             var detail: String? = null
@@ -46,7 +52,8 @@ internal class PushOutcome(
                 classes += BuiltInActions.PUSH_TAG
             }
             val note = if (targets == null) "" else "\n# ostrom: git push to: ${destinations.joinToString(", ")}"
-            val plan = PushPlan(pushes.any { it.arguments.force }, pushes.all { it.standalone }, explicit, targets)
+            val standalone = pushes.isNotEmpty() && pushes.all { it.standalone }
+            val plan = PushPlan(pushes.any { it.arguments.force }, standalone, explicit, targets)
             return PushOutcome(classes, refusal, detail, plan, note)
         }
 

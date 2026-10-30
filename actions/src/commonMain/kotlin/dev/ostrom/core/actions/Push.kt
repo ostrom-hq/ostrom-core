@@ -66,6 +66,20 @@ public enum class Refusal(public val key: String, public val message: String) {
         "Ostrom could not read the git repository this push runs in. Run a plain `git push <remote> <branch>` " +
             "from inside the repository, as its own command.",
     ),
+
+    /** A program whose name is built at run time (`$GIT`, `$(which git)`, `{git,x}`): what runs is unknown. */
+    DYNAMIC_COMMAND(
+        "command_not_plain",
+        "this command runs a program whose name is built at run time ($VAR, $(…), backticks, {a,b}): Ostrom cannot " +
+            "tell what it does. Write the program's name in full.",
+    ),
+
+    /** Several merges in one command, or merges of different pull requests: one yes would cover them all. */
+    SEVERAL_MERGES(
+        "several_merges",
+        "this command merges more than one pull request. Merge one pull request per command " +
+            "(`gh pr merge <number>`).",
+    ),
 }
 
 /**

@@ -23,6 +23,8 @@ public class ShellSegment internal constructor(
     public val words: List<String>,
     public val depth: Int,
     public val origin: SegmentOrigin,
+    /** Whether the shell runs the segment as a command line: not a here-document body nor a `${…}` expansion. */
+    internal val commandLine: Boolean = true,
 )
 
 /**
@@ -63,7 +65,7 @@ public object ShellParser {
     public fun parse(text: String): ShellScript {
         val out = ArrayList<ShellSegment>()
         val queue = ArrayDeque<PendingScript>()
-        queue.add(PendingScript(text, 0, SegmentOrigin.SCRIPT))
+        queue.add(PendingScript(text, 0, SegmentOrigin.SCRIPT, commandLine = true))
         var malformed = false
         var subshells = false
         while (queue.isNotEmpty()) {
@@ -81,12 +83,20 @@ public object ShellParser {
     }
 }
 
-internal class PendingScript(val text: String, val depth: Int, val origin: SegmentOrigin)
+internal class PendingScript(val text: String, val depth: Int, val origin: SegmentOrigin, val commandLine: Boolean)
 
 private enum class NextWord { KEEP, DISCARD, HEREDOC, HERESTRING }
 
 /** Characters that make a quoted word worth parsing as a script. */
 private const val SCRIPT_CHARS = " \t\n;&|"
+
+/** The one-letter escapes of `$'…'`, and what they stand for. */
+private const val ANSI_LETTERS = "ntrabeEfv\\'\"?"
+private const val ANSI_VALUES = "\n\t\r\u0007\b\u001b\u001b\u000c\u000b\\'\"?"
+private const val CONTROL_MASK = 0x1f
+private const val OCTAL = 8
+private const val OCTAL_DIGITS = 3
+private const val HEX = 16
 
 
 /** Lexes one script, one level: nested scripts go to [queue], one level deeper. */
@@ -128,6 +138,9 @@ private class Lexer(
             c == '\\' -> escaped()
             c == '`' -> backtick()
             c == '$' && (next == '(' || next == '{') -> substitution(i + 2, next)
+            c == '$' && next == '\'' -> ansiQuoted()
+            // `$"…"` is a double-quoted word (translated by the locale, which changes no command name).
+            c == '$' && next == '"' -> i++
             c == '#' && !hasToken -> comment()
             c == ' ' || c == '\t' || c == '\r' -> {
                 flush()
@@ -178,6 +191,66 @@ private class Lexer(
         }
     }
 
+    /** `$'…'`: a quoted word whose escapes the shell decodes (`$'\x70ush'` is `push`). */
+    private fun ansiQuoted() {
+        hasToken = true
+        var j = i + 2
+        while (j < n && s[j] != '\'') {
+            if (s[j] == '\\' && j + 1 < n) {
+                j = ansiEscape(j + 1)
+            } else {
+                add(s[j])
+                j++
+            }
+        }
+        if (j >= n) malformed = true
+        i = minOf(j + 1, n)
+    }
+
+    /** Decodes the escape whose letter is at [k]; returns where the word goes on. */
+    private fun ansiEscape(k: Int): Int {
+        val c = s[k]
+        val simple = ANSI_LETTERS.indexOf(c)
+        return when {
+            simple >= 0 -> {
+                add(ANSI_VALUES[simple])
+                k + 1
+            }
+            c == 'c' && k + 1 < n -> {
+                add((s[k + 1].code and CONTROL_MASK).toChar())
+                k + 2
+            }
+            c in '0'..'7' -> codePoint(k, OCTAL, OCTAL_DIGITS)
+            c == 'x' -> codePoint(k + 1, HEX, 2)
+            c == 'u' -> codePoint(k + 1, HEX, 4)
+            c == 'U' -> codePoint(k + 1, HEX, 8)
+            else -> {
+                add('\\')
+                add(c)
+                k + 1
+            }
+        }
+    }
+
+    /** Up to [max] digits in [radix] from [from], as one character; `\x` without digits stays as written. */
+    private fun codePoint(from: Int, radix: Int, max: Int): Int {
+        var j = from
+        var value = 0L
+        while (j < n && j - from < max) {
+            val digit = s[j].digitToIntOrNull(radix) ?: break
+            value = value * radix + digit
+            j++
+        }
+        if (j == from) {
+            add('\\')
+            add(s[from - 1])
+        } else {
+            // A command name is plain ASCII: a character outside the basic plane only needs to stay unknown.
+            add(if (value <= Char.MAX_VALUE.code) value.toInt().toChar() else '\uFFFD')
+        }
+        return j
+    }
+
     private fun doubleQuoted() {
         hasToken = true
         i++
@@ -222,13 +295,15 @@ private class Lexer(
     private fun substitution(innerStart: Int, open: Char) {
         val end = closing(innerStart, open, if (open == '(') ')' else '}')
         hasToken = true
+        // `${…}` expands a parameter: its words are not a command line, though a `$(…)` in it runs.
+        val commandLine = open == '('
         if (end < 0) {
             malformed = true
-            nested(s.substring(innerStart), SegmentOrigin.EXECUTED)
+            nested(s.substring(innerStart), SegmentOrigin.EXECUTED, commandLine)
             addSubstitution(i, n)
             i = n
         } else {
-            nested(s.substring(innerStart, end), SegmentOrigin.EXECUTED)
+            nested(s.substring(innerStart, end), SegmentOrigin.EXECUTED, commandLine)
             addSubstitution(i, end + 1)
             i = end + 1
         }
@@ -339,7 +414,7 @@ private class Lexer(
         flush()
         nextWord = NextWord.KEEP
         if (words.isNotEmpty()) {
-            out.add(ShellSegment(words, script.depth, script.origin))
+            out.add(ShellSegment(words, script.depth, script.origin, script.commandLine))
             words = ArrayList()
         }
     }
@@ -357,13 +432,14 @@ private class Lexer(
                 if (end == delimiter) found = true else body.append(line).append('\n')
             }
             if (!found) malformed = true
-            nested(body.toString(), SegmentOrigin.EXECUTED)
+            // A here-document is often a file's text (`cat > a.sh <<EOF`): its lines are not taken as command lines.
+            nested(body.toString(), SegmentOrigin.EXECUTED, commandLine = false)
         }
         heredocs.clear()
         if (i > n) i = n
     }
 
-    private fun nested(text: String, origin: SegmentOrigin) {
-        queue.add(PendingScript(text, script.depth + 1, origin))
+    private fun nested(text: String, origin: SegmentOrigin, commandLine: Boolean = true) {
+        queue.add(PendingScript(text, script.depth + 1, origin, commandLine))
     }
 }

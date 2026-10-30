@@ -182,13 +182,20 @@ class ActionClassifierTest {
             "deploy production", "./deploy.sh prod", "gh workflow run deploy-prod.yml",
             "sudo -u ops kubectl apply -f a.yaml", "xargs kubectl delete pod", "timeout 30s helm upgrade api ./c",
             "env FOO=1 kubectl apply -f a", "nohup flyctl deploy &",
+            // a changed environment rolls the pods out again
+            "kubectl set env deploy/api X=1", "kubectl create deploy api --image x", "kubectl run x --image y",
+            "tofu apply", "pulumi up", "helmfile sync", "argocd app sync api", "kamal deploy", "firebase deploy",
+            "wrangler publish", "sls deploy", "netlify deploy --prod", "gcloud run deploy api", "cap production deploy",
+            "docker buildx build --push -t x .", "docker compose push",
         )) {
             assertEquals(listOf("deploy"), classes(command), command)
         }
         for (command in listOf(
-            "helm list", "kubectl get pods", "kubectl set env deploy/api X=1", "terraform plan", "fly status",
+            "helm list", "kubectl get pods", "terraform plan", "fly status",
             "vercel", "npm install", "yarn npm info", "docker build .", "docker image ls", "deploy staging", "deploy",
-            "gh workflow run tests.yml", "gh workflow list",
+            "gh workflow run tests.yml", "gh workflow list", "tofu plan", "pulumi preview", "helmfile diff",
+            "argocd app get api", "argocd app", "firebase login", "netlify deploy", "gcloud auth login",
+            "docker buildx build .", "docker compose up",
         )) {
             assertEquals(emptyList(), classes(command), command)
         }

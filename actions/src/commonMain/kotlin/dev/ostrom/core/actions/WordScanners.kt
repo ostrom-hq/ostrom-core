@@ -52,13 +52,17 @@ internal fun containsWord(word: String, part: String): Boolean {
     return false
 }
 
-/** `pulls/<n>/merge` in a GitHub API path. */
+/** A word of a call to the GitHub API: api.github.com, or the `/api/v3/` and `/api/graphql` of GitHub Enterprise. */
+internal fun githubApiWord(word: String): Boolean = word.contains("api.github.com/", ignoreCase = true) ||
+    word.contains("/api/v3/", ignoreCase = true) || word.contains("/api/graphql", ignoreCase = true)
+
+/** `pulls/<n>/merge` in a GitHub API path, whatever stands for the number (`$PR`, `{n}`, `:number`). */
 internal fun hasPullsMerge(word: String): Boolean {
     var k = word.indexOf("pulls/", ignoreCase = true)
     while (k >= 0) {
         var end = k + "pulls/".length
         val digits = end
-        while (end < word.length && word[end].isDigit()) end++
+        while (end < word.length && word[end] != '/') end++
         if (end > digits && word.regionMatches(end, "/merge", 0, "/merge".length, ignoreCase = true) &&
             !isWordChar(word.getOrNull(end + "/merge".length))
         ) {
@@ -97,8 +101,11 @@ internal fun apiPullRequest(word: String): PullRequestRef? {
     if (k < 0) return null
     val parts = word.substring(k + "repos/".length).split('/')
     if (parts.size < 5 || !same(parts[2], "pulls") || !parts[4].startsWith("merge", ignoreCase = true)) return null
-    if (isWordChar(parts[4].getOrNull("merge".length)) || !validName(parts[0]) || !validName(parts[1])) return null
+    if (isWordChar(parts[4].getOrNull("merge".length))) return null
     val number = parts[3].takeIf { it.all(Char::isDigit) }?.toIntOrNull() ?: return null
+    // `gh api` fills `{owner}` and `{repo}` with the repository of the current directory.
+    if (parts[0] == "{owner}" && parts[1] == "{repo}") return PullRequestRef(number)
+    if (!validName(parts[0]) || !validName(parts[1])) return null
     return PullRequestRef(number, parts[0], parts[1])
 }
 
@@ -140,6 +147,19 @@ private val WRAPPERS = setOf(
     "caffeinate", "unbuffer", "npx", "bunx", "bundle",
 )
 
+/** Options of ssh that take a value. */
+private const val SSH_VALUE_OPTIONS = "BbcDEeFIiJLlmOoPpQRSWw"
+
+/** Where the remote command of `ssh [options] host command` starts. */
+internal fun sshCommand(words: List<String>, ssh: Int): Int {
+    var j = ssh + 1
+    while (j < words.size && words[j].length > 1 && words[j][0] == '-') {
+        // `-p 22` takes the next word; `-p22` and flag clusters (`-tt`) do not.
+        j += if (words[j].length == 2 && words[j][1] in SSH_VALUE_OPTIONS) 2 else 1
+    }
+    return j + 1
+}
+
 /** Shell keywords that may come before a command. */
 private val KEYWORDS = setOf("!", "{", "if", "then", "do", "else", "elif", "while", "until")
 
@@ -154,6 +174,7 @@ internal fun commandPositions(words: List<String>): List<Int> {
         val w = words[j]
         when {
             assignedVariable(w) != null -> Unit
+            toolName(w) == "ssh" -> return listOf(j, sshCommand(words, j))
             toolName(w) in WRAPPERS || w in KEYWORDS -> {
                 afterWrapper = true
                 optionBefore = false

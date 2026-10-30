@@ -25,8 +25,16 @@ public class ActionClassifierImpl(
         val rejected = ArrayList<RejectedPattern>()
         for (action in declared) {
             val kinds = action.tools.mapNotNullTo(LinkedHashSet(), ::kindOfTool)
-            val known = classes.getOrPut(action.classId) {
+            action.tools.filter { kindOfTool(it) == null }.forEach {
+                rejected += RejectedPattern(action.classId, it, "not a tool Ostrom reads: $it")
+            }
+            var known = classes.getOrPut(action.classId) {
                 ActionClass(action.classId, action.label, kinds, emptyList())
+            }
+            // A custom class declared twice applies to the tools of both declarations; a built-in keeps its own.
+            if (known !in BuiltInActions.all && !known.kinds.containsAll(kinds)) {
+                known = known.copy(kinds = known.kinds + kinds)
+                classes[known.id] = known
             }
             val list = patterns.getOrPut(known.id) { ArrayList() }
             for (pattern in action.patterns) {
@@ -66,24 +74,30 @@ public class ActionClassifierImpl(
                 val tool = subject.tool.lowercase()
                 if (CLIENT_MESSAGE_TOOLS.any { it in tool }) found += BuiltInActions.CLIENT_MESSAGE
             }
-            SubjectKind.WRITE -> if (text.contains(MIGRATION_PATH, ignoreCase = true)) found += BuiltInActions.MIGRATION
+            SubjectKind.WRITE -> if (migrationPath(text)) found += BuiltInActions.MIGRATION
             else -> {
                 val scan = ShellScan(protectedBranches)
                 val script = ShellParser.parse(text)
                 scan.scan(script, quoteBlind = false)
                 // A malformed command may run otherwise than it reads: look at it without quotes and substitutions too.
                 if (script.malformed) scan.scan(ShellParser.parse(quoteBlind(text)), quoteBlind = true)
-                if (text.contains(MIGRATION_PATH, ignoreCase = true)) found += BuiltInActions.MIGRATION
+                if (migrationPath(text)) found += BuiltInActions.MIGRATION
                 found += scan.found
                 pullRequest = scan.pullRequest
-                if (scan.pushes.isNotEmpty()) {
-                    val outcome = PushOutcome.of(scan, git, protectedBranches)
+                val outcome = PushOutcome.of(scan, git, protectedBranches)
+                if (outcome != null) {
                     found += outcome.classes
                     refusal = outcome.refusal
                     detail = outcome.detail
                     push = outcome.plan
                     note = outcome.note
                 }
+                // A program named at run time may be any of them: it falls under every class of its kind.
+                if (scan.dynamicCommand) {
+                    catalogue.filter { SubjectKind.SHELL in it.kinds }.forEach { found += it.id }
+                    refusal = refusal ?: Refusal.DYNAMIC_COMMAND
+                }
+                if (scan.severalMerges) refusal = refusal ?: Refusal.SEVERAL_MERGES
             }
         }
         val patternText = if (subject.kind == SubjectKind.MCP) subject.tool.lowercase() else text + note
@@ -108,16 +122,22 @@ public class ActionClassifierImpl(
     }
 
     private companion object {
-        const val MIGRATION_PATH = "/db/migration/"
+        /** Where migrations live (Flyway, Rails, Prisma), relative paths included. */
+        val MIGRATION_PATHS = listOf("db/migration/", "db/migrate/", "prisma/migrations/")
+
+        fun migrationPath(text: String): Boolean = MIGRATION_PATHS.any { text.contains(it, ignoreCase = true) }
         val CLIENT_MESSAGE_TOOLS = listOf(
             "send_validated_message", "discord_send", "discord_reply", "chat_postmessage", "send_email", "slack_post",
         )
 
-        fun kindOfTool(tool: String): SubjectKind? = when (tool.lowercase()) {
-            "bash" -> SubjectKind.SHELL
-            "write", "edit", "multiedit" -> SubjectKind.WRITE
-            "mcp" -> SubjectKind.MCP
-            else -> null
+        fun kindOfTool(tool: String): SubjectKind? {
+            val lower = tool.lowercase()
+            return when {
+                lower in ToolSubject.SHELL_TOOLS -> SubjectKind.SHELL
+                lower in ToolSubject.WRITE_TOOLS -> SubjectKind.WRITE
+                lower == "mcp" || lower.startsWith("mcp__") -> SubjectKind.MCP
+                else -> null
+            }
         }
 
         /** The pattern compiled, or null when it is not a valid regular expression. */

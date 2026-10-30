@@ -20,7 +20,8 @@ class EdgeCaseTest {
 
     @Test
     fun severalRedirectingOptionsKeepTheFirst() {
-        val command = "git --git-dir=/a -c remote.x.url=y --work-tree /b --namespace=n -c url.a.insteadOf=b push origin x"
+        val command = "git --git-dir=/a -c remote.x.url=y --work-tree /b --namespace=n -c url.a.insteadOf=b " +
+            "push origin x"
         assertEquals(Refusal.REDIRECTED, classify(command).refusal)
     }
 

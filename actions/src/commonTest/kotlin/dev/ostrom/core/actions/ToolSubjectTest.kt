@@ -81,8 +81,9 @@ class ToolSubjectTest {
         assertEquals("/r/b.kt", ToolSubject.of("write_file", input("path" to "/r/b.kt")).text)
         assertEquals("{\"patch\":\"*** a\"}", ToolSubject.of("apply_patch", input("patch" to "*** a")).text)
         assertEquals(
-            ToolSubject.MAX_INPUT_TEXT,
+            "{\"patch\":\"\"}".length + 5000,
             ToolSubject.of("apply_patch", input("patch" to "x".repeat(5000))).text.length,
+            "a patch is read whole: the file it touches may come late",
         )
     }
 

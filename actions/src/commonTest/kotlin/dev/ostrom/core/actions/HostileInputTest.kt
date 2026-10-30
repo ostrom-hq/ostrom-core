@@ -72,8 +72,14 @@ class HostileInputTest {
         val shallow = "echo \$(echo \$(echo \$(git push origin main)))"
         assertEquals(listOf("push-main"), classifier.classify(ToolSubject.shell(shallow)).actions)
         assertEquals(Refusal.NOT_PLAIN, classifier.classify(ToolSubject.shell(shallow)).refusal)
-        // deeper than the parser reads: the quote-blind reading still sees the push
-        assertEquals(listOf("push-main"), classifier.classify(ToolSubject.shell(deep)).actions)
+        // deeper than the parser reads: the quote-blind reading still sees the push; `$($(…))` runs what the inner
+        // command prints, a program named at run time, so every class of the shell applies
+        val classification = classifier.classify(ToolSubject.shell(deep))
+        assertEquals(
+            listOf("push-main", "push-tag", "merge", "deploy", "migration", "mobile-release"),
+            classification.actions,
+        )
+        assertEquals(Refusal.NOT_PLAIN, classification.refusal)
     }
 
     @Test

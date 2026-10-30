@@ -31,15 +31,17 @@ public data class ToolSubject(val kind: SubjectKind, val tool: String, val text:
 
     /** Builders from an agent's tool call. */
     public companion object {
-        /** Input text kept for a write or an MCP call, as the prototype did. */
+        /** Input text kept for an MCP call, as the prototype did. */
         public const val MAX_INPUT_TEXT: Int = 2000
 
-        private val SHELL_TOOLS = setOf(
+        internal val SHELL_TOOLS = setOf(
             "bash", "shell", "exec_command", "local_shell", "container.exec", "run_terminal_command",
-            "run_shell_command",
-            "terminal",
+            "run_shell_command", "terminal", "shell_command", "run_terminal_cmd", "execute_command", "run_command",
         )
-        private val WRITE_TOOLS = setOf(
+
+        /** Input fields that hold what a write puts in a file: a tool with a path and one of them writes. */
+        private val WRITE_FIELDS = setOf("content", "contents", "new_string", "edits", "patch", "diff", "text")
+        internal val WRITE_TOOLS = setOf(
             "write", "edit", "multiedit", "apply_patch", "write_file", "replace", "edit_file", "search_replace",
             "patch",
         )
@@ -56,15 +58,18 @@ public data class ToolSubject(val kind: SubjectKind, val tool: String, val text:
          */
         public fun of(tool: String, input: JsonObject): ToolSubject {
             val lower = tool.lowercase()
+            val command = input["command"] ?: input["cmd"]
+            val path = (input["file_path"] ?: input["path"]).stringOrNull()
             return when {
-                lower in SHELL_TOOLS ->
-                    ToolSubject(SubjectKind.SHELL, tool, commandOf(input["command"] ?: input["cmd"]))
-                lower in WRITE_TOOLS -> {
-                    val path = (input["file_path"] ?: input["path"]).stringOrNull()
-                    ToolSubject(SubjectKind.WRITE, tool, path ?: input.toString().take(MAX_INPUT_TEXT))
-                }
                 tool.startsWith("mcp__") ->
                     ToolSubject(SubjectKind.MCP, tool, "$tool ${input.toString().take(MAX_INPUT_TEXT)}")
+                // A tool of another agent, or a new one, is known by its input: a command runs, a path with content
+                // writes.
+                lower in SHELL_TOOLS || command is JsonPrimitive && command.isString || command is JsonArray ->
+                    ToolSubject(SubjectKind.SHELL, tool, commandOf(command))
+                // A patch names its files inside: the whole input is read (a longer one than a command is refused).
+                lower in WRITE_TOOLS -> ToolSubject(SubjectKind.WRITE, tool, path ?: input.toString())
+                path != null && WRITE_FIELDS.any { it in input } -> ToolSubject(SubjectKind.WRITE, tool, path)
                 else -> ToolSubject(SubjectKind.OTHER, tool, "")
             }
         }

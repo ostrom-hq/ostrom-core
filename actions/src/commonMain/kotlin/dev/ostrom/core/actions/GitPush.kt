@@ -46,7 +46,9 @@ private val GIT_VALUE_OPTIONS = setOf("--git-dir", "--work-tree", "--namespace",
 private val REDIRECT_OPTIONS = listOf("--git-dir", "--work-tree", "--namespace", "--config-env", "--exec-path")
 
 /** `-c` keys that change where a push goes or what it sends. */
-private val REDIRECT_CONFIG_PREFIXES = listOf("remote.", "url.", "branch.", "push.", "core.", "include.", "includeif.")
+private val REDIRECT_CONFIG_PREFIXES = listOf(
+    "remote.", "url.", "branch.", "push.", "core.", "include.", "includeif.", "alias.",
+)
 
 private fun redirectingConfig(assignment: String): Boolean {
     val key = assignment.substringBefore('=').lowercase()
@@ -84,8 +86,27 @@ private val PLAIN_PREFIXES = setOf(
 internal fun atCommandPosition(words: List<String>, gitIndex: Int): Boolean =
     (0 until gitIndex).all { assignedVariable(words[it]) != null || words[it] in PLAIN_PREFIXES }
 
-/** Whether a word is built by the shell at run time (`$x`, `$(…)`, backticks): its value is unknown here. */
-internal fun dynamic(word: String): Boolean = '$' in word || '`' in word
+/**
+ * Whether a word is built by the shell at run time (`$x`, `$(…)`, backticks, `{a,b}`, a glob): its value is unknown
+ * here.
+ */
+internal fun dynamic(word: String): Boolean = dynamicCommand(word) || '?' in word || '[' in word || '*' in word
+
+/** Whether a command name is built at run time: a substitution, a variable or a brace expansion. */
+internal fun dynamicCommand(word: String): Boolean = '$' in word || '`' in word || braceExpansion(word)
+
+/** Whether [word] holds a brace expansion (`{a,b}`, `{1..3}`), which the shell turns into several words. */
+internal fun braceExpansion(word: String): Boolean {
+    var open = word.indexOf('{')
+    while (open >= 0) {
+        val close = word.indexOf('}', open + 1)
+        if (close < 0) return false
+        val inside = word.substring(open + 1, close)
+        if (',' in inside || ".." in inside) return true
+        open = word.indexOf('{', open + 1)
+    }
+    return false
+}
 
 /**
  * The arguments of one `git push`, read from the command alone.
@@ -104,7 +125,25 @@ internal class PushArguments(
 )
 
 private val UNLISTABLE_OPTIONS = setOf("--all", "--mirror", "--branches", "--tags", "--follow-tags")
-private val PUSH_VALUE_OPTIONS = setOf("-o", "--push-option", "--receive-pack", "--exec")
+private val PUSH_VALUE_OPTIONS = setOf("--push-option", "--receive-pack", "--exec")
+
+/** The long options of `git push`: git accepts any unambiguous prefix of them (`--al` is `--all`). */
+private val PUSH_LONG_OPTIONS = listOf(
+    "--all", "--branches", "--mirror", "--delete", "--tags", "--follow-tags", "--dry-run", "--porcelain", "--force",
+    "--force-with-lease", "--force-if-includes", "--recurse-submodules", "--thin", "--receive-pack", "--exec",
+    "--set-upstream", "--progress", "--prune", "--verify", "--signed", "--atomic", "--push-option", "--ipv4", "--ipv6",
+    "--quiet", "--verbose", "--repo", "--no-verify", "--no-thin", "--no-signed", "--no-force-with-lease",
+    "--no-force-if-includes", "--no-recurse-submodules", "--no-atomic", "--no-progress", "--no-follow-tags",
+)
+
+/**
+ * The full name of a long option of `git push` as git reads it: itself, or the one option it abbreviates; null when
+ * it abbreviates several (git then refuses to run) or none.
+ */
+internal fun pushOption(name: String): String? {
+    if (name in PUSH_LONG_OPTIONS) return name
+    return PUSH_LONG_OPTIONS.filter { it.startsWith(name) }.singleOrNull()
+}
 
 /** Reads the words after `push`. */
 internal fun pushArguments(args: List<String>): PushArguments {
@@ -118,22 +157,40 @@ internal fun pushArguments(args: List<String>): PushArguments {
     var optionsEnded = false
     while (j < args.size) {
         val a = args[j]
+        if (optionsEnded || !a.startsWith("-") || a == "-") {
+            positionals.add(a)
+            j++
+            continue
+        }
+        if (a == "--") {
+            optionsEnded = true
+            j++
+            continue
+        }
+        if (!a.startsWith("--")) {
+            // A cluster of short options (`-fu`, `-d`, `-oci.skip`): `-o` takes the rest, or the next word.
+            val o = a.indexOf('o')
+            val flags = if (o < 0) a else a.substring(0, o)
+            if ('f' in flags) force = true
+            if ('d' in flags) delete = true
+            if (o == a.length - 1) j++
+            j++
+            continue
+        }
+        val name = pushOption(a.substringBefore('='))
+        val value = if ('=' in a) a.substringAfter('=') else null
         when {
-            optionsEnded || !a.startsWith("-") || a == "-" -> positionals.add(a)
-            a == "--" -> optionsEnded = true
-            a in UNLISTABLE_OPTIONS -> {
-                tags = tags || a == "--tags" || a == "--follow-tags"
+            // An abbreviation of several options, or of none: git refuses it, Ostrom does not read further.
+            name == null -> refusal = Refusal.NOT_PLAIN
+            name in UNLISTABLE_OPTIONS -> {
+                tags = tags || name == "--tags" || name == "--follow-tags"
                 refusal = Refusal.UNLISTABLE
             }
-            a.startsWith("--recurse-submodules=") -> {
-                if (a.substringAfter('=') in SUBMODULE_PUSHES) refusal = Refusal.UNLISTABLE
-            }
-            a == "-d" || a == "--delete" -> delete = true
-            a == "--repo" -> repoOption = args.getOrNull(++j)
-            a.startsWith("--repo=") -> repoOption = a.substringAfter('=')
-            a in PUSH_VALUE_OPTIONS -> j++
-            a.startsWith("--force") -> force = true
-            !a.startsWith("--") && a.drop(1).all { it.isLetter() } && 'f' in a -> force = true
+            name == "--recurse-submodules" -> if (value in SUBMODULE_PUSHES) refusal = Refusal.UNLISTABLE
+            name == "--delete" -> delete = true
+            name == "--repo" -> repoOption = value ?: args.getOrNull(++j)
+            name in PUSH_VALUE_OPTIONS -> if (value == null) j++
+            name.startsWith("--force") -> force = true
         }
         j++
     }
@@ -146,6 +203,13 @@ internal fun pushArguments(args: List<String>): PushArguments {
 }
 
 private val SUBMODULE_PUSHES = setOf("on-demand", "only")
+
+/** `git <verb>` with a verb git does not know: an alias, maybe of `push`, that only the git configuration tells. */
+internal class GitAliasCandidate(val verb: String, val directories: List<String>)
+
+/** Whether the alias [definition] may push: it names `push`, or runs a shell command (`!…`). */
+internal fun aliasMayPush(definition: String?): Boolean =
+    definition != null && (definition.trimStart().startsWith("!") || containsWord(definition, "push"))
 
 /** One `git push` of a command. */
 internal class PushInvocation(
@@ -244,11 +308,17 @@ internal fun splitRefspec(spec: String): Pair<String, String> {
 }
 
 /** A branch by its short name; any other ref in full. */
-internal fun shortRef(ref: String): String = ref.removePrefix("refs/heads/")
+internal fun shortRef(ref: String): String = when {
+    ref.startsWith("refs/heads/") -> ref.removePrefix("refs/heads/")
+    // git completes a destination as it completes a revision: `heads/main` is `refs/heads/main`.
+    ref.startsWith("heads/") -> ref.removePrefix("heads/")
+    else -> ref
+}
 
 /** Whether a ref looks like a release tag: `refs/tags/…`, or a part that starts like a version (`v1.2`, `1.2.3`). */
-internal fun tagLike(ref: String): Boolean = ref.startsWith("refs/tags/") || ref.split('/').any { part ->
-    val p = part.removePrefix("v").removePrefix("V")
-    val dot = p.indexOf('.')
-    dot > 0 && p.substring(0, dot).all { it.isDigit() } && p.getOrNull(dot + 1)?.isDigit() == true
-}
+internal fun tagLike(ref: String): Boolean =
+    ref.startsWith("refs/tags/") || ref.startsWith("tags/") || ref.split('/').any { part ->
+        val p = part.removePrefix("v").removePrefix("V")
+        val dot = p.indexOf('.')
+        dot > 0 && p.substring(0, dot).all { it.isDigit() } && p.getOrNull(dot + 1)?.isDigit() == true
+    }
