@@ -1,0 +1,473 @@
+{
+  "format": "compat.receipts/1",
+  "key": {
+    "kid": "b918e282a924dda0",
+    "publicKeySpkiPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAFaTHPoIFP1zbbrrHDBIDpfCW9zXjiXCkuGwP9LU8puM=\n-----END PUBLIC KEY-----\n"
+  },
+  "receipts": [
+    {
+      "name": "session-simple",
+      "description": "One launch, ended by the SessionEnd hook with cost, model and exit code (subject.kind session).",
+      "receipt": {
+        "subject": {
+          "kind": "session",
+          "id": "sess-simple",
+          "digest": "fa5d45c582fb6c611f0abe30d015b95fce7ac0020131429b32ea6eff1c18ccbd"
+        },
+        "initiator": "dev-a",
+        "agent": "claude-code",
+        "model": "sonnet",
+        "costUsd": 0.4213,
+        "rules": [
+          {
+            "id": "r-commit-style",
+            "digest": "79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7"
+          }
+        ],
+        "decisions": [],
+        "id": "rcpt_0defe64e-fceb-4d0e-871b-291de0157bc8",
+        "createdAt": "2026-10-30T09:12:34.567Z",
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=e619010d5fa8d39e45088e29dceb6df4719e3c28537125729291b8d8d2ee48bd;sig=vi4zzRN4+Ywzy7Xp4wB8X0c0/rQDfryd4rmp5ghkSucpokSmOdI89ok++dIUGpYxOM5Zygqh+iOfEUeaRFKqDQ=="
+      },
+      "canonical": "{\"agent\":\"claude-code\",\"costUsd\":0.4213,\"createdAt\":\"2026-10-30T09:12:34.567Z\",\"decisions\":[],\"id\":\"rcpt_0defe64e-fceb-4d0e-871b-291de0157bc8\",\"initiator\":\"dev-a\",\"model\":\"sonnet\",\"rules\":[{\"digest\":\"79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7\",\"id\":\"r-commit-style\"}],\"subject\":{\"digest\":\"fa5d45c582fb6c611f0abe30d015b95fce7ac0020131429b32ea6eff1c18ccbd\",\"id\":\"sess-simple\",\"kind\":\"session\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNsYXVkZS1jb2RlIiwiY29zdFVzZCI6MC40MjEzLCJjcmVhdGVkQXQiOiIyMDI2LTEwLTMwVDA5OjEyOjM0LjU2N1oiLCJkZWNpc2lvbnMiOltdLCJpZCI6InJjcHRfMGRlZmU2NGUtZmNlYi00ZDBlLTg3MWItMjkxZGUwMTU3YmM4IiwiaW5pdGlhdG9yIjoiZGV2LWEiLCJtb2RlbCI6InNvbm5ldCIsInJ1bGVzIjpbeyJkaWdlc3QiOiI3OWI2YWM0OGU1MjI1YmU5MDM3NDkzYzFlOGE4ZmM5ZTVmYmM0MmUyODkzYjBjMTViODg0NmJkMzlkMzEwY2Q3IiwiaWQiOiJyLWNvbW1pdC1zdHlsZSJ9XSwic3ViamVjdCI6eyJkaWdlc3QiOiJmYTVkNDVjNTgyZmI2YzYxMWYwYWJlMzBkMDE1Yjk1ZmNlN2FjMDAyMDEzMTQyOWIzMmVhNmVmZjFjMThjY2JkIiwiaWQiOiJzZXNzLXNpbXBsZSIsImtpbmQiOiJzZXNzaW9uIn19",
+      "signedBytesLength": 414,
+      "sha256": "e619010d5fa8d39e45088e29dceb6df4719e3c28537125729291b8d8d2ee48bd",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "vi4zzRN4+Ywzy7Xp4wB8X0c0/rQDfryd4rmp5ghkSucpokSmOdI89ok++dIUGpYxOM5Zygqh+iOfEUeaRFKqDQ==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=e619010d5fa8d39e45088e29dceb6df4719e3c28537125729291b8d8d2ee48bd;sig=vi4zzRN4+Ywzy7Xp4wB8X0c0/rQDfryd4rmp5ghkSucpokSmOdI89ok++dIUGpYxOM5Zygqh+iOfEUeaRFKqDQ==",
+      "subjectPreimage": {
+        "id": "sess-simple",
+        "repo": "acme-api",
+        "dev": "dev-a",
+        "agent": "claude-code",
+        "harness": "h-compat",
+        "startedAt": "2026-10-30T09:00:00.000Z",
+        "endedAt": "2026-10-30T09:12:34.567Z",
+        "gates": [],
+        "exitCode": 0
+      },
+      "subjectPreimageCanonical": "{\"agent\":\"claude-code\",\"dev\":\"dev-a\",\"endedAt\":\"2026-10-30T09:12:34.567Z\",\"exitCode\":0,\"gates\":[],\"harness\":\"h-compat\",\"id\":\"sess-simple\",\"repo\":\"acme-api\",\"startedAt\":\"2026-10-30T09:00:00.000Z\"}",
+      "subjectPreimageText": "{\"id\":\"sess-simple\",\"repo\":\"acme-api\",\"dev\":\"dev-a\",\"agent\":\"claude-code\",\"harness\":\"h-compat\",\"startedAt\":\"2026-10-30T09:00:00.000Z\",\"endedAt\":\"2026-10-30T09:12:34.567Z\",\"gates\":[],\"exitCode\":0}"
+    },
+    {
+      "name": "session-resume-superseded",
+      "description": "Segment 1, closed by the server when the session was resumed by another launch (\"superseded\").",
+      "receipt": {
+        "subject": {
+          "kind": "session",
+          "id": "sess-resume",
+          "digest": "1d49a37733cbc7b2aff1f9754f25662bdfe9fdc8bb6e2cce3e5fd19cb1ea9e26"
+        },
+        "initiator": "dev-a",
+        "agent": "claude-code",
+        "rules": [
+          {
+            "id": "r-commit-style",
+            "digest": "79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7"
+          }
+        ],
+        "decisions": [],
+        "id": "rcpt_26307e91-82ec-4d6c-815e-668e6d3ce2ce",
+        "createdAt": "2026-10-30T09:25:00.000Z",
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=6590887faca44163aded95e66b49b579f2e19bba61847d5528704ea574d36735;sig=6HJ1gW5yDkWd49dKRmODxAe5U+kU/QG3jDJ+36hWkPJ4PyxhPK4dl4zSriyBjqm2y5X/GOSgj3b9zJ5ZLWCyAg=="
+      },
+      "canonical": "{\"agent\":\"claude-code\",\"createdAt\":\"2026-10-30T09:25:00.000Z\",\"decisions\":[],\"id\":\"rcpt_26307e91-82ec-4d6c-815e-668e6d3ce2ce\",\"initiator\":\"dev-a\",\"rules\":[{\"digest\":\"79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7\",\"id\":\"r-commit-style\"}],\"subject\":{\"digest\":\"1d49a37733cbc7b2aff1f9754f25662bdfe9fdc8bb6e2cce3e5fd19cb1ea9e26\",\"id\":\"sess-resume\",\"kind\":\"session\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNsYXVkZS1jb2RlIiwiY3JlYXRlZEF0IjoiMjAyNi0xMC0zMFQwOToyNTowMC4wMDBaIiwiZGVjaXNpb25zIjpbXSwiaWQiOiJyY3B0XzI2MzA3ZTkxLTgyZWMtNGQ2Yy04MTVlLTY2OGU2ZDNjZTJjZSIsImluaXRpYXRvciI6ImRldi1hIiwicnVsZXMiOlt7ImRpZ2VzdCI6Ijc5YjZhYzQ4ZTUyMjViZTkwMzc0OTNjMWU4YThmYzllNWZiYzQyZTI4OTNiMGMxNWI4ODQ2YmQzOWQzMTBjZDciLCJpZCI6InItY29tbWl0LXN0eWxlIn1dLCJzdWJqZWN0Ijp7ImRpZ2VzdCI6IjFkNDlhMzc3MzNjYmM3YjJhZmYxZjk3NTRmMjU2NjJiZGZlOWZkYzhiYjZlMmNjZTNlNWZkMTljYjFlYTllMjYiLCJpZCI6InNlc3MtcmVzdW1lIiwia2luZCI6InNlc3Npb24ifX0=",
+      "signedBytesLength": 380,
+      "sha256": "6590887faca44163aded95e66b49b579f2e19bba61847d5528704ea574d36735",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "6HJ1gW5yDkWd49dKRmODxAe5U+kU/QG3jDJ+36hWkPJ4PyxhPK4dl4zSriyBjqm2y5X/GOSgj3b9zJ5ZLWCyAg==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=6590887faca44163aded95e66b49b579f2e19bba61847d5528704ea574d36735;sig=6HJ1gW5yDkWd49dKRmODxAe5U+kU/QG3jDJ+36hWkPJ4PyxhPK4dl4zSriyBjqm2y5X/GOSgj3b9zJ5ZLWCyAg==",
+      "subjectPreimage": {
+        "id": "sess-resume",
+        "repo": "acme-api",
+        "dev": "dev-a",
+        "agent": "claude-code",
+        "harness": "h-compat",
+        "startedAt": "2026-10-30T09:20:00.000Z",
+        "endedAt": "2026-10-30T09:25:00.000Z",
+        "gates": []
+      },
+      "subjectPreimageCanonical": "{\"agent\":\"claude-code\",\"dev\":\"dev-a\",\"endedAt\":\"2026-10-30T09:25:00.000Z\",\"gates\":[],\"harness\":\"h-compat\",\"id\":\"sess-resume\",\"repo\":\"acme-api\",\"startedAt\":\"2026-10-30T09:20:00.000Z\"}",
+      "subjectPreimageText": "{\"id\":\"sess-resume\",\"repo\":\"acme-api\",\"dev\":\"dev-a\",\"agent\":\"claude-code\",\"harness\":\"h-compat\",\"startedAt\":\"2026-10-30T09:20:00.000Z\",\"endedAt\":\"2026-10-30T09:25:00.000Z\",\"gates\":[]}"
+    },
+    {
+      "name": "session-resume-segment-2",
+      "description": "Segment 2 (id `<agent session>~r2`): its subject cites resumedFrom, previousReceiptId and segment.",
+      "receipt": {
+        "subject": {
+          "kind": "session",
+          "id": "sess-resume~r2",
+          "digest": "bb1df51a8be19e961ff82040f52e788cc42b79b16fab221039527d74a4fb7f98"
+        },
+        "initiator": "dev-a",
+        "agent": "claude-code",
+        "rules": [
+          {
+            "id": "r-commit-style",
+            "digest": "79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7"
+          }
+        ],
+        "decisions": [],
+        "id": "rcpt_048801fa-658d-49db-8053-49bb44d67b34",
+        "createdAt": "2026-10-30T09:40:00.000Z",
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=eb649c30af9730c5f4b881bd755941be964f26c39780f84a72362e9624e41bd7;sig=9lgKZ+iVXYdWeNYnsGURzKa7y3gw8ZAa1rDd3z3kGZfsUBjhoiG0PTl9MrvA0j8hNDP7KF8/fSUjbfxehttKCw=="
+      },
+      "canonical": "{\"agent\":\"claude-code\",\"createdAt\":\"2026-10-30T09:40:00.000Z\",\"decisions\":[],\"id\":\"rcpt_048801fa-658d-49db-8053-49bb44d67b34\",\"initiator\":\"dev-a\",\"rules\":[{\"digest\":\"79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7\",\"id\":\"r-commit-style\"}],\"subject\":{\"digest\":\"bb1df51a8be19e961ff82040f52e788cc42b79b16fab221039527d74a4fb7f98\",\"id\":\"sess-resume~r2\",\"kind\":\"session\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNsYXVkZS1jb2RlIiwiY3JlYXRlZEF0IjoiMjAyNi0xMC0zMFQwOTo0MDowMC4wMDBaIiwiZGVjaXNpb25zIjpbXSwiaWQiOiJyY3B0XzA0ODgwMWZhLTY1OGQtNDlkYi04MDUzLTQ5YmI0NGQ2N2IzNCIsImluaXRpYXRvciI6ImRldi1hIiwicnVsZXMiOlt7ImRpZ2VzdCI6Ijc5YjZhYzQ4ZTUyMjViZTkwMzc0OTNjMWU4YThmYzllNWZiYzQyZTI4OTNiMGMxNWI4ODQ2YmQzOWQzMTBjZDciLCJpZCI6InItY29tbWl0LXN0eWxlIn1dLCJzdWJqZWN0Ijp7ImRpZ2VzdCI6ImJiMWRmNTFhOGJlMTllOTYxZmY4MjA0MGY1MmU3ODhjYzQyYjc5YjE2ZmFiMjIxMDM5NTI3ZDc0YTRmYjdmOTgiLCJpZCI6InNlc3MtcmVzdW1lfnIyIiwia2luZCI6InNlc3Npb24ifX0=",
+      "signedBytesLength": 383,
+      "sha256": "eb649c30af9730c5f4b881bd755941be964f26c39780f84a72362e9624e41bd7",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "9lgKZ+iVXYdWeNYnsGURzKa7y3gw8ZAa1rDd3z3kGZfsUBjhoiG0PTl9MrvA0j8hNDP7KF8/fSUjbfxehttKCw==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=eb649c30af9730c5f4b881bd755941be964f26c39780f84a72362e9624e41bd7;sig=9lgKZ+iVXYdWeNYnsGURzKa7y3gw8ZAa1rDd3z3kGZfsUBjhoiG0PTl9MrvA0j8hNDP7KF8/fSUjbfxehttKCw==",
+      "subjectPreimage": {
+        "id": "sess-resume~r2",
+        "repo": "acme-api",
+        "dev": "dev-a",
+        "agent": "claude-code",
+        "harness": "h-compat",
+        "startedAt": "2026-10-30T09:25:00.000Z",
+        "endedAt": "2026-10-30T09:40:00.000Z",
+        "gates": [],
+        "resumedFrom": "sess-resume",
+        "previousReceiptId": "rcpt_26307e91-82ec-4d6c-815e-668e6d3ce2ce",
+        "segment": 2,
+        "exitCode": 0
+      },
+      "subjectPreimageCanonical": "{\"agent\":\"claude-code\",\"dev\":\"dev-a\",\"endedAt\":\"2026-10-30T09:40:00.000Z\",\"exitCode\":0,\"gates\":[],\"harness\":\"h-compat\",\"id\":\"sess-resume~r2\",\"previousReceiptId\":\"rcpt_26307e91-82ec-4d6c-815e-668e6d3ce2ce\",\"repo\":\"acme-api\",\"resumedFrom\":\"sess-resume\",\"segment\":2,\"startedAt\":\"2026-10-30T09:25:00.000Z\"}",
+      "subjectPreimageText": "{\"id\":\"sess-resume~r2\",\"repo\":\"acme-api\",\"dev\":\"dev-a\",\"agent\":\"claude-code\",\"harness\":\"h-compat\",\"startedAt\":\"2026-10-30T09:25:00.000Z\",\"endedAt\":\"2026-10-30T09:40:00.000Z\",\"gates\":[],\"resumedFrom\":\"sess-resume\",\"previousReceiptId\":\"rcpt_26307e91-82ec-4d6c-815e-668e6d3ce2ce\",\"segment\":2,\"exitCode\":0}"
+    },
+    {
+      "name": "session-wake-lost",
+      "description": "Closed by the server sweep: no sign of life for 120 s (\"launcher lost: …\").",
+      "receipt": {
+        "subject": {
+          "kind": "session",
+          "id": "sess-wake",
+          "digest": "009ed1c462c6a292d3ef382fe5c7c0ed4318886b0b607750baab415f4b7430ff"
+        },
+        "initiator": "dev-a",
+        "agent": "claude-code",
+        "rules": [
+          {
+            "id": "r-commit-style",
+            "digest": "79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7"
+          }
+        ],
+        "decisions": [],
+        "id": "rcpt_c5fce262-4b6c-48ff-853f-52fa69479c3d",
+        "createdAt": "2026-10-30T10:05:00.000Z",
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=9d8d62441c004b6ef3148bd929c2935f298a6e480b6fda8185e7ddd45e481488;sig=CmJTjn5Kk5h8YwW1girmnUuOsvSQRMXzB46DFaHQM6/AG+62Atp4uwdsNsA93A3X2HncvSPTfoXjTWXQGkCOCg=="
+      },
+      "canonical": "{\"agent\":\"claude-code\",\"createdAt\":\"2026-10-30T10:05:00.000Z\",\"decisions\":[],\"id\":\"rcpt_c5fce262-4b6c-48ff-853f-52fa69479c3d\",\"initiator\":\"dev-a\",\"rules\":[{\"digest\":\"79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7\",\"id\":\"r-commit-style\"}],\"subject\":{\"digest\":\"009ed1c462c6a292d3ef382fe5c7c0ed4318886b0b607750baab415f4b7430ff\",\"id\":\"sess-wake\",\"kind\":\"session\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNsYXVkZS1jb2RlIiwiY3JlYXRlZEF0IjoiMjAyNi0xMC0zMFQxMDowNTowMC4wMDBaIiwiZGVjaXNpb25zIjpbXSwiaWQiOiJyY3B0X2M1ZmNlMjYyLTRiNmMtNDhmZi04NTNmLTUyZmE2OTQ3OWMzZCIsImluaXRpYXRvciI6ImRldi1hIiwicnVsZXMiOlt7ImRpZ2VzdCI6Ijc5YjZhYzQ4ZTUyMjViZTkwMzc0OTNjMWU4YThmYzllNWZiYzQyZTI4OTNiMGMxNWI4ODQ2YmQzOWQzMTBjZDciLCJpZCI6InItY29tbWl0LXN0eWxlIn1dLCJzdWJqZWN0Ijp7ImRpZ2VzdCI6IjAwOWVkMWM0NjJjNmEyOTJkM2VmMzgyZmU1YzdjMGVkNDMxODg4NmIwYjYwNzc1MGJhYWI0MTVmNGI3NDMwZmYiLCJpZCI6InNlc3Mtd2FrZSIsImtpbmQiOiJzZXNzaW9uIn19",
+      "signedBytesLength": 378,
+      "sha256": "9d8d62441c004b6ef3148bd929c2935f298a6e480b6fda8185e7ddd45e481488",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "CmJTjn5Kk5h8YwW1girmnUuOsvSQRMXzB46DFaHQM6/AG+62Atp4uwdsNsA93A3X2HncvSPTfoXjTWXQGkCOCg==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=9d8d62441c004b6ef3148bd929c2935f298a6e480b6fda8185e7ddd45e481488;sig=CmJTjn5Kk5h8YwW1girmnUuOsvSQRMXzB46DFaHQM6/AG+62Atp4uwdsNsA93A3X2HncvSPTfoXjTWXQGkCOCg==",
+      "subjectPreimage": {
+        "id": "sess-wake",
+        "repo": "acme-api",
+        "dev": "dev-a",
+        "agent": "claude-code",
+        "harness": "h-compat",
+        "startedAt": "2026-10-30T10:00:00.000Z",
+        "endedAt": "2026-10-30T10:05:00.000Z",
+        "gates": []
+      },
+      "subjectPreimageCanonical": "{\"agent\":\"claude-code\",\"dev\":\"dev-a\",\"endedAt\":\"2026-10-30T10:05:00.000Z\",\"gates\":[],\"harness\":\"h-compat\",\"id\":\"sess-wake\",\"repo\":\"acme-api\",\"startedAt\":\"2026-10-30T10:00:00.000Z\"}",
+      "subjectPreimageText": "{\"id\":\"sess-wake\",\"repo\":\"acme-api\",\"dev\":\"dev-a\",\"agent\":\"claude-code\",\"harness\":\"h-compat\",\"startedAt\":\"2026-10-30T10:00:00.000Z\",\"endedAt\":\"2026-10-30T10:05:00.000Z\",\"gates\":[]}"
+    },
+    {
+      "name": "session-wake-reopened",
+      "description": "The segment reopened when the launcher woke up, chained to the lost one.",
+      "receipt": {
+        "subject": {
+          "kind": "session",
+          "id": "sess-wake~r2",
+          "digest": "fd2943aed896a84353658cab222495c7906c7a1303f13195fc9eb797f7a7324f"
+        },
+        "initiator": "dev-a",
+        "agent": "claude-code",
+        "rules": [
+          {
+            "id": "r-commit-style",
+            "digest": "79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7"
+          }
+        ],
+        "decisions": [],
+        "id": "rcpt_dd348367-c017-4196-89c0-f3bb07e2b89c",
+        "createdAt": "2026-10-30T10:30:00.000Z",
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=0ed7f32edc8c0b1803c933f8b91fe12930db6233f50a330aa91885f4899e99ab;sig=BceVvVNopTpVWYgIgPd22FR+2oG9HDNhVXq4tBMCrHVgMWVizN9TiCpwTInTw2cMbDjrrqA/RQSxN/+eCItXDg=="
+      },
+      "canonical": "{\"agent\":\"claude-code\",\"createdAt\":\"2026-10-30T10:30:00.000Z\",\"decisions\":[],\"id\":\"rcpt_dd348367-c017-4196-89c0-f3bb07e2b89c\",\"initiator\":\"dev-a\",\"rules\":[{\"digest\":\"79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7\",\"id\":\"r-commit-style\"}],\"subject\":{\"digest\":\"fd2943aed896a84353658cab222495c7906c7a1303f13195fc9eb797f7a7324f\",\"id\":\"sess-wake~r2\",\"kind\":\"session\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNsYXVkZS1jb2RlIiwiY3JlYXRlZEF0IjoiMjAyNi0xMC0zMFQxMDozMDowMC4wMDBaIiwiZGVjaXNpb25zIjpbXSwiaWQiOiJyY3B0X2RkMzQ4MzY3LWMwMTctNDE5Ni04OWMwLWYzYmIwN2UyYjg5YyIsImluaXRpYXRvciI6ImRldi1hIiwicnVsZXMiOlt7ImRpZ2VzdCI6Ijc5YjZhYzQ4ZTUyMjViZTkwMzc0OTNjMWU4YThmYzllNWZiYzQyZTI4OTNiMGMxNWI4ODQ2YmQzOWQzMTBjZDciLCJpZCI6InItY29tbWl0LXN0eWxlIn1dLCJzdWJqZWN0Ijp7ImRpZ2VzdCI6ImZkMjk0M2FlZDg5NmE4NDM1MzY1OGNhYjIyMjQ5NWM3OTA2YzdhMTMwM2YxMzE5NWZjOWViNzk3ZjdhNzMyNGYiLCJpZCI6InNlc3Mtd2FrZX5yMiIsImtpbmQiOiJzZXNzaW9uIn19",
+      "signedBytesLength": 381,
+      "sha256": "0ed7f32edc8c0b1803c933f8b91fe12930db6233f50a330aa91885f4899e99ab",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "BceVvVNopTpVWYgIgPd22FR+2oG9HDNhVXq4tBMCrHVgMWVizN9TiCpwTInTw2cMbDjrrqA/RQSxN/+eCItXDg==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=0ed7f32edc8c0b1803c933f8b91fe12930db6233f50a330aa91885f4899e99ab;sig=BceVvVNopTpVWYgIgPd22FR+2oG9HDNhVXq4tBMCrHVgMWVizN9TiCpwTInTw2cMbDjrrqA/RQSxN/+eCItXDg==",
+      "subjectPreimage": {
+        "id": "sess-wake~r2",
+        "repo": "acme-api",
+        "dev": "dev-a",
+        "agent": "claude-code",
+        "harness": "h-compat",
+        "startedAt": "2026-10-30T10:05:30.000Z",
+        "endedAt": "2026-10-30T10:30:00.000Z",
+        "gates": [],
+        "resumedFrom": "sess-wake",
+        "previousReceiptId": "rcpt_c5fce262-4b6c-48ff-853f-52fa69479c3d",
+        "segment": 2,
+        "exitCode": 0
+      },
+      "subjectPreimageCanonical": "{\"agent\":\"claude-code\",\"dev\":\"dev-a\",\"endedAt\":\"2026-10-30T10:30:00.000Z\",\"exitCode\":0,\"gates\":[],\"harness\":\"h-compat\",\"id\":\"sess-wake~r2\",\"previousReceiptId\":\"rcpt_c5fce262-4b6c-48ff-853f-52fa69479c3d\",\"repo\":\"acme-api\",\"resumedFrom\":\"sess-wake\",\"segment\":2,\"startedAt\":\"2026-10-30T10:05:30.000Z\"}",
+      "subjectPreimageText": "{\"id\":\"sess-wake~r2\",\"repo\":\"acme-api\",\"dev\":\"dev-a\",\"agent\":\"claude-code\",\"harness\":\"h-compat\",\"startedAt\":\"2026-10-30T10:05:30.000Z\",\"endedAt\":\"2026-10-30T10:30:00.000Z\",\"gates\":[],\"resumedFrom\":\"sess-wake\",\"previousReceiptId\":\"rcpt_c5fce262-4b6c-48ff-853f-52fa69479c3d\",\"segment\":2,\"exitCode\":0}"
+    },
+    {
+      "name": "gate-push-sha",
+      "description": "A push gate: the yes of rev-b covers exactly the commit pushed to main (subject.kind gate). The action key binds the remote, each ref and its sha.",
+      "receipt": {
+        "subject": {
+          "kind": "gate",
+          "id": "gate_6c8dba85-265",
+          "digest": "eea507ffc456edcb2ed4bfe52767ed5d635a4ab11882317b401a0f1541e3b05f"
+        },
+        "initiator": "dev-a",
+        "agent": "claude-code",
+        "rules": [
+          {
+            "id": "r-commit-style",
+            "digest": "79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7"
+          }
+        ],
+        "decisions": [
+          {
+            "approvalId": "appr_62d52461-ed09-464d-86e5-d7dff4e0d0af",
+            "by": "rev-b",
+            "at": "2026-10-30T11:05:00.000Z",
+            "result": "approved"
+          }
+        ],
+        "id": "rcpt_487602be-d073-43c6-83b9-c4163084b042",
+        "createdAt": "2026-10-30T11:05:00.000Z",
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=e7b0b3a844566e9c453e33291248c5deb9c9c668d0a8ecc88c333c6f6a485622;sig=7K/pt5Yn+SPziMcBYy2xckjiHdxJEqIBBcRe+dNZjZeQBVhHtyTfMBouswBcytF1sbvkkJENH9oZ3rcqnKEGBg=="
+      },
+      "canonical": "{\"agent\":\"claude-code\",\"createdAt\":\"2026-10-30T11:05:00.000Z\",\"decisions\":[{\"approvalId\":\"appr_62d52461-ed09-464d-86e5-d7dff4e0d0af\",\"at\":\"2026-10-30T11:05:00.000Z\",\"by\":\"rev-b\",\"result\":\"approved\"}],\"id\":\"rcpt_487602be-d073-43c6-83b9-c4163084b042\",\"initiator\":\"dev-a\",\"rules\":[{\"digest\":\"79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7\",\"id\":\"r-commit-style\"}],\"subject\":{\"digest\":\"eea507ffc456edcb2ed4bfe52767ed5d635a4ab11882317b401a0f1541e3b05f\",\"id\":\"gate_6c8dba85-265\",\"kind\":\"gate\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNsYXVkZS1jb2RlIiwiY3JlYXRlZEF0IjoiMjAyNi0xMC0zMFQxMTowNTowMC4wMDBaIiwiZGVjaXNpb25zIjpbeyJhcHByb3ZhbElkIjoiYXBwcl82MmQ1MjQ2MS1lZDA5LTQ2NGQtODZlNS1kN2RmZjRlMGQwYWYiLCJhdCI6IjIwMjYtMTAtMzBUMTE6MDU6MDAuMDAwWiIsImJ5IjoicmV2LWIiLCJyZXN1bHQiOiJhcHByb3ZlZCJ9XSwiaWQiOiJyY3B0XzQ4NzYwMmJlLWQwNzMtNDNjNi04M2I5LWM0MTYzMDg0YjA0MiIsImluaXRpYXRvciI6ImRldi1hIiwicnVsZXMiOlt7ImRpZ2VzdCI6Ijc5YjZhYzQ4ZTUyMjViZTkwMzc0OTNjMWU4YThmYzllNWZiYzQyZTI4OTNiMGMxNWI4ODQ2YmQzOWQzMTBjZDciLCJpZCI6InItY29tbWl0LXN0eWxlIn1dLCJzdWJqZWN0Ijp7ImRpZ2VzdCI6ImVlYTUwN2ZmYzQ1NmVkY2IyZWQ0YmZlNTI3NjdlZDVkNjM1YTRhYjExODgyMzE3YjQwMWEwZjE1NDFlM2IwNWYiLCJpZCI6ImdhdGVfNmM4ZGJhODUtMjY1Iiwia2luZCI6ImdhdGUifX0=",
+      "signedBytesLength": 506,
+      "sha256": "e7b0b3a844566e9c453e33291248c5deb9c9c668d0a8ecc88c333c6f6a485622",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "7K/pt5Yn+SPziMcBYy2xckjiHdxJEqIBBcRe+dNZjZeQBVhHtyTfMBouswBcytF1sbvkkJENH9oZ3rcqnKEGBg==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=e7b0b3a844566e9c453e33291248c5deb9c9c668d0a8ecc88c333c6f6a485622;sig=7K/pt5Yn+SPziMcBYy2xckjiHdxJEqIBBcRe+dNZjZeQBVhHtyTfMBouswBcytF1sbvkkJENH9oZ3rcqnKEGBg==",
+      "subjectPreimage": {
+        "gate": {
+          "workflowId": "wf-ship",
+          "workflowName": "Ship acme-api",
+          "nodeId": "wf-ship-gate",
+          "label": "Push to main",
+          "approvers": [
+            "rev-b",
+            "dev-a"
+          ],
+          "status": "accepted",
+          "enforce": true,
+          "basis": "declared",
+          "reason": "gate approvers of the workflow"
+        },
+        "class": "push-main",
+        "command": "git push origin main",
+        "repo": "acme-api",
+        "sessionId": "sess-ship",
+        "ci": null,
+        "shown": "b326b42c8d6a2bfba69a27948a507b7a44da035861d0e0f399f52a743e58d79c",
+        "push": {
+          "remote": "acme/acme-api",
+          "refs": [
+            {
+              "ref": "main",
+              "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"
+            }
+          ]
+        }
+      },
+      "subjectPreimageCanonical": "{\"ci\":null,\"class\":\"push-main\",\"command\":\"git push origin main\",\"gate\":{\"approvers\":[\"rev-b\",\"dev-a\"],\"basis\":\"declared\",\"enforce\":true,\"label\":\"Push to main\",\"nodeId\":\"wf-ship-gate\",\"reason\":\"gate approvers of the workflow\",\"status\":\"accepted\",\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\"},\"push\":{\"refs\":[{\"ref\":\"main\",\"sha\":\"a1b2c3d4e5f60718293a4b5c6d7e8f9012345678\"}],\"remote\":\"acme/acme-api\"},\"repo\":\"acme-api\",\"sessionId\":\"sess-ship\",\"shown\":\"b326b42c8d6a2bfba69a27948a507b7a44da035861d0e0f399f52a743e58d79c\"}",
+      "subjectPreimageText": "{\"gate\":{\"workflowId\":\"wf-ship\",\"workflowName\":\"Ship acme-api\",\"nodeId\":\"wf-ship-gate\",\"label\":\"Push to main\",\"approvers\":[\"rev-b\",\"dev-a\"],\"status\":\"accepted\",\"enforce\":true,\"basis\":\"declared\",\"reason\":\"gate approvers of the workflow\"},\"class\":\"push-main\",\"command\":\"git push origin main\",\"repo\":\"acme-api\",\"sessionId\":\"sess-ship\",\"ci\":null,\"shown\":\"b326b42c8d6a2bfba69a27948a507b7a44da035861d0e0f399f52a743e58d79c\",\"push\":{\"remote\":\"acme/acme-api\",\"refs\":[{\"ref\":\"main\",\"sha\":\"a1b2c3d4e5f60718293a4b5c6d7e8f9012345678\"}]}}",
+      "actionKey": {
+        "note": "gate request key (not signed, used to find the same request again): digestOf of this object (bridge/index.ts pushKey)",
+        "preimage": {
+          "repo": "acme-api",
+          "realRepo": "acme/acme-api",
+          "cls": "push-main",
+          "action": "push",
+          "remote": "acme/acme-api",
+          "refs": [
+            "main=a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"
+          ],
+          "scope": "session:sess-ship"
+        },
+        "canonical": "{\"action\":\"push\",\"cls\":\"push-main\",\"realRepo\":\"acme/acme-api\",\"refs\":[\"main=a1b2c3d4e5f60718293a4b5c6d7e8f9012345678\"],\"remote\":\"acme/acme-api\",\"repo\":\"acme-api\",\"scope\":\"session:sess-ship\"}",
+        "digest": "d9b4910f4c53eed29c2b7d9376a45ed402771a5f70a49fe43aec606f911ccfed"
+      }
+    },
+    {
+      "name": "session-with-gate",
+      "description": "The session that asked the gate: its receipt cites the gate (status consumed) and carries the yes as a decision.",
+      "receipt": {
+        "subject": {
+          "kind": "session",
+          "id": "sess-ship",
+          "digest": "4ddcc6d96cbd19d6067ba47618df0567efa32234f97752afc1c38490b67fed50"
+        },
+        "initiator": "dev-a",
+        "agent": "claude-code",
+        "model": "sonnet",
+        "costUsd": 1.875,
+        "rules": [
+          {
+            "id": "r-commit-style",
+            "digest": "79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7"
+          }
+        ],
+        "decisions": [
+          {
+            "approvalId": "appr_62d52461-ed09-464d-86e5-d7dff4e0d0af",
+            "by": "rev-b",
+            "at": "2026-10-30T11:05:00.000Z",
+            "result": "approved"
+          }
+        ],
+        "id": "rcpt_1ca16869-c06a-4741-8f58-dee5639065da",
+        "createdAt": "2026-10-30T11:10:00.000Z",
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=162c5def6de1973190beef7f82e307619e540ace5d6c1ac249d87139805a7db3;sig=dQbfVvb36t5OXvOXsUECigksBDwFPvnxQzHu3ctIz4tZLM17nUIfSZmkcR593DkbAlC7c1hM2sfB/R3L2fpsBw=="
+      },
+      "canonical": "{\"agent\":\"claude-code\",\"costUsd\":1.875,\"createdAt\":\"2026-10-30T11:10:00.000Z\",\"decisions\":[{\"approvalId\":\"appr_62d52461-ed09-464d-86e5-d7dff4e0d0af\",\"at\":\"2026-10-30T11:05:00.000Z\",\"by\":\"rev-b\",\"result\":\"approved\"}],\"id\":\"rcpt_1ca16869-c06a-4741-8f58-dee5639065da\",\"initiator\":\"dev-a\",\"model\":\"sonnet\",\"rules\":[{\"digest\":\"79b6ac48e5225be9037493c1e8a8fc9e5fbc42e2893b0c15b8846bd39d310cd7\",\"id\":\"r-commit-style\"}],\"subject\":{\"digest\":\"4ddcc6d96cbd19d6067ba47618df0567efa32234f97752afc1c38490b67fed50\",\"id\":\"sess-ship\",\"kind\":\"session\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNsYXVkZS1jb2RlIiwiY29zdFVzZCI6MS44NzUsImNyZWF0ZWRBdCI6IjIwMjYtMTAtMzBUMTE6MTA6MDAuMDAwWiIsImRlY2lzaW9ucyI6W3siYXBwcm92YWxJZCI6ImFwcHJfNjJkNTI0NjEtZWQwOS00NjRkLTg2ZTUtZDdkZmY0ZTBkMGFmIiwiYXQiOiIyMDI2LTEwLTMwVDExOjA1OjAwLjAwMFoiLCJieSI6InJldi1iIiwicmVzdWx0IjoiYXBwcm92ZWQifV0sImlkIjoicmNwdF8xY2ExNjg2OS1jMDZhLTQ3NDEtOGY1OC1kZWU1NjM5MDY1ZGEiLCJpbml0aWF0b3IiOiJkZXYtYSIsIm1vZGVsIjoic29ubmV0IiwicnVsZXMiOlt7ImRpZ2VzdCI6Ijc5YjZhYzQ4ZTUyMjViZTkwMzc0OTNjMWU4YThmYzllNWZiYzQyZTI4OTNiMGMxNWI4ODQ2YmQzOWQzMTBjZDciLCJpZCI6InItY29tbWl0LXN0eWxlIn1dLCJzdWJqZWN0Ijp7ImRpZ2VzdCI6IjRkZGNjNmQ5NmNiZDE5ZDYwNjdiYTQ3NjE4ZGYwNTY3ZWZhMzIyMzRmOTc3NTJhZmMxYzM4NDkwYjY3ZmVkNTAiLCJpZCI6InNlc3Mtc2hpcCIsImtpbmQiOiJzZXNzaW9uIn19",
+      "signedBytesLength": 534,
+      "sha256": "162c5def6de1973190beef7f82e307619e540ace5d6c1ac249d87139805a7db3",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "dQbfVvb36t5OXvOXsUECigksBDwFPvnxQzHu3ctIz4tZLM17nUIfSZmkcR593DkbAlC7c1hM2sfB/R3L2fpsBw==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=162c5def6de1973190beef7f82e307619e540ace5d6c1ac249d87139805a7db3;sig=dQbfVvb36t5OXvOXsUECigksBDwFPvnxQzHu3ctIz4tZLM17nUIfSZmkcR593DkbAlC7c1hM2sfB/R3L2fpsBw==",
+      "subjectPreimage": {
+        "id": "sess-ship",
+        "repo": "acme-api",
+        "dev": "dev-a",
+        "agent": "claude-code",
+        "harness": "h-compat",
+        "startedAt": "2026-10-30T11:00:00.000Z",
+        "endedAt": "2026-10-30T11:10:00.000Z",
+        "gates": [
+          {
+            "id": "gate_6c8dba85-265",
+            "class": "push-main",
+            "mode": "enforced",
+            "status": "consumed",
+            "receiptId": "rcpt_487602be-d073-43c6-83b9-c4163084b042"
+          }
+        ],
+        "exitCode": 0
+      },
+      "subjectPreimageCanonical": "{\"agent\":\"claude-code\",\"dev\":\"dev-a\",\"endedAt\":\"2026-10-30T11:10:00.000Z\",\"exitCode\":0,\"gates\":[{\"class\":\"push-main\",\"id\":\"gate_6c8dba85-265\",\"mode\":\"enforced\",\"receiptId\":\"rcpt_487602be-d073-43c6-83b9-c4163084b042\",\"status\":\"consumed\"}],\"harness\":\"h-compat\",\"id\":\"sess-ship\",\"repo\":\"acme-api\",\"startedAt\":\"2026-10-30T11:00:00.000Z\"}",
+      "subjectPreimageText": "{\"id\":\"sess-ship\",\"repo\":\"acme-api\",\"dev\":\"dev-a\",\"agent\":\"claude-code\",\"harness\":\"h-compat\",\"startedAt\":\"2026-10-30T11:00:00.000Z\",\"endedAt\":\"2026-10-30T11:10:00.000Z\",\"gates\":[{\"id\":\"gate_6c8dba85-265\",\"class\":\"push-main\",\"mode\":\"enforced\",\"status\":\"consumed\",\"receiptId\":\"rcpt_487602be-d073-43c6-83b9-c4163084b042\"}],\"exitCode\":0}"
+    },
+    {
+      "name": "odd-values",
+      "description": "Signed directly by signReceipt: non-ASCII text, a U+2028, control characters, an extra field with astral keys, -0, 1e21, 0.30000000000000004, 5e-324 and a lone surrogate.",
+      "receipt": {
+        "id": "rcpt_odd-values",
+        "createdAt": "2026-10-30T12:00:00.000Z",
+        "subject": {
+          "kind": "task",
+          "id": "t-odd",
+          "digest": "93621954b9f0b11716f46df0d404d67fb69f0cdea387791c4aa769542b64a1a1"
+        },
+        "initiator": "dévelopeur·e « test » ✓ 𝔘",
+        "agent": "claude-code",
+        "costUsd": 1e-7,
+        "rules": [
+          {
+            "id": "r- line",
+            "digest": "\u0001\u001f\"\\/ "
+          }
+        ],
+        "decisions": [
+          {
+            "approvalId": "appr_odd",
+            "by": "rev-b",
+            "at": "2026-10-30T12:00:00.000Z",
+            "result": "approved"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "n",
+            "workflowId": "w",
+            "kind": "check",
+            "label": "big 1e21 and small 0.000001",
+            "outcome": "ok",
+            "detail": "123456789012345680000"
+          }
+        ],
+        "extra": {
+          "é": 1,
+          "z": 2,
+          "｡": 3,
+          "😀": 4,
+          "a": [
+            0.30000000000000004,
+            0,
+            1e+21,
+            5e-324
+          ],
+          "lone": "x\ud800y"
+        },
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=a45ddb3a5ac67606a48c4df2731863b2e6b46b52781a847d7552d791df9fa529;sig=mfnfb4fFD1T/yBiB9om+hyGWORb3k5uWW3wGmXHgcKvRw0V/mEDJjHWcgJZPG25LoDJnJKw6EPGllPlgTqVgBw=="
+      },
+      "canonical": "{\"agent\":\"claude-code\",\"costUsd\":1e-7,\"createdAt\":\"2026-10-30T12:00:00.000Z\",\"decisions\":[{\"approvalId\":\"appr_odd\",\"at\":\"2026-10-30T12:00:00.000Z\",\"by\":\"rev-b\",\"result\":\"approved\"}],\"extra\":{\"a\":[0.30000000000000004,0,1e+21,5e-324],\"lone\":\"x\\ud800y\",\"z\":2,\"é\":1,\"😀\":4,\"｡\":3},\"id\":\"rcpt_odd-values\",\"initiator\":\"dévelopeur·e « test » ✓ 𝔘\",\"nodes\":[{\"detail\":\"123456789012345680000\",\"id\":\"n\",\"kind\":\"check\",\"label\":\"big 1e21 and small 0.000001\",\"outcome\":\"ok\",\"workflowId\":\"w\"}],\"rules\":[{\"digest\":\"\\u0001\\u001f\\\"\\\\/ \",\"id\":\"r- line\"}],\"subject\":{\"digest\":\"93621954b9f0b11716f46df0d404d67fb69f0cdea387791c4aa769542b64a1a1\",\"id\":\"t-odd\",\"kind\":\"task\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNsYXVkZS1jb2RlIiwiY29zdFVzZCI6MWUtNywiY3JlYXRlZEF0IjoiMjAyNi0xMC0zMFQxMjowMDowMC4wMDBaIiwiZGVjaXNpb25zIjpbeyJhcHByb3ZhbElkIjoiYXBwcl9vZGQiLCJhdCI6IjIwMjYtMTAtMzBUMTI6MDA6MDAuMDAwWiIsImJ5IjoicmV2LWIiLCJyZXN1bHQiOiJhcHByb3ZlZCJ9XSwiZXh0cmEiOnsiYSI6WzAuMzAwMDAwMDAwMDAwMDAwMDQsMCwxZSsyMSw1ZS0zMjRdLCJsb25lIjoieFx1ZDgwMHkiLCJ6IjoyLCLDqSI6MSwi8J+YgCI6NCwi772hIjozfSwiaWQiOiJyY3B0X29kZC12YWx1ZXMiLCJpbml0aWF0b3IiOiJkw6l2ZWxvcGV1csK3ZSDCqyB0ZXN0IMK7IOKckyDwnZSYIiwibm9kZXMiOlt7ImRldGFpbCI6IjEyMzQ1Njc4OTAxMjM0NTY4MDAwMCIsImlkIjoibiIsImtpbmQiOiJjaGVjayIsImxhYmVsIjoiYmlnIDFlMjEgYW5kIHNtYWxsIDAuMDAwMDAxIiwib3V0Y29tZSI6Im9rIiwid29ya2Zsb3dJZCI6IncifV0sInJ1bGVzIjpbeyJkaWdlc3QiOiJcdTAwMDFcdTAwMWZcIlxcL+KAqCIsImlkIjoici0gbGluZSJ9XSwic3ViamVjdCI6eyJkaWdlc3QiOiI5MzYyMTk1NGI5ZjBiMTE3MTZmNDZkZjBkNDA0ZDY3ZmI2OWYwY2RlYTM4Nzc5MWM0YWE3Njk1NDJiNjRhMWExIiwiaWQiOiJ0LW9kZCIsImtpbmQiOiJ0YXNrIn19",
+      "signedBytesLength": 666,
+      "sha256": "a45ddb3a5ac67606a48c4df2731863b2e6b46b52781a847d7552d791df9fa529",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "mfnfb4fFD1T/yBiB9om+hyGWORb3k5uWW3wGmXHgcKvRw0V/mEDJjHWcgJZPG25LoDJnJKw6EPGllPlgTqVgBw==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=a45ddb3a5ac67606a48c4df2731863b2e6b46b52781a847d7552d791df9fa529;sig=mfnfb4fFD1T/yBiB9om+hyGWORb3k5uWW3wGmXHgcKvRw0V/mEDJjHWcgJZPG25LoDJnJKw6EPGllPlgTqVgBw=="
+    },
+    {
+      "name": "cost-double",
+      "description": "costUsd as a double that needs 17 significant digits (0.30000000000000004).",
+      "receipt": {
+        "id": "rcpt_cost-float",
+        "createdAt": "2026-10-30T12:00:01.000Z",
+        "subject": {
+          "kind": "session",
+          "id": "s-cost",
+          "digest": "0c8617882cc0a5c56ae35520ce302351af69ea227d605f5f0cfb3f9f63363738"
+        },
+        "initiator": "dev-a",
+        "agent": "codex",
+        "model": "gpt-5-codex",
+        "costUsd": 0.30000000000000004,
+        "rules": [],
+        "decisions": [],
+        "signature": "ed25519;kid=b918e282a924dda0;sha256=ab34e698b4f22119fd33b6154f9b5b702cf247193862aae4a5de20e1c1f8527c;sig=1N05c6CdRvF8sfABz6Q+FK/FLAYRHslg4ge3mx4/qzuERRszaJOGxZcUePC/JPbLsOP7/FI2LLMGcE5eerdpCA=="
+      },
+      "canonical": "{\"agent\":\"codex\",\"costUsd\":0.30000000000000004,\"createdAt\":\"2026-10-30T12:00:01.000Z\",\"decisions\":[],\"id\":\"rcpt_cost-float\",\"initiator\":\"dev-a\",\"model\":\"gpt-5-codex\",\"rules\":[],\"subject\":{\"digest\":\"0c8617882cc0a5c56ae35520ce302351af69ea227d605f5f0cfb3f9f63363738\",\"id\":\"s-cost\",\"kind\":\"session\"}}",
+      "signedBytesBase64": "eyJhZ2VudCI6ImNvZGV4IiwiY29zdFVzZCI6MC4zMDAwMDAwMDAwMDAwMDAwNCwiY3JlYXRlZEF0IjoiMjAyNi0xMC0zMFQxMjowMDowMS4wMDBaIiwiZGVjaXNpb25zIjpbXSwiaWQiOiJyY3B0X2Nvc3QtZmxvYXQiLCJpbml0aWF0b3IiOiJkZXYtYSIsIm1vZGVsIjoiZ3B0LTUtY29kZXgiLCJydWxlcyI6W10sInN1YmplY3QiOnsiZGlnZXN0IjoiMGM4NjE3ODgyY2MwYTVjNTZhZTM1NTIwY2UzMDIzNTFhZjY5ZWEyMjdkNjA1ZjVmMGNmYjNmOWY2MzM2MzczOCIsImlkIjoicy1jb3N0Iiwia2luZCI6InNlc3Npb24ifX0=",
+      "signedBytesLength": 296,
+      "sha256": "ab34e698b4f22119fd33b6154f9b5b702cf247193862aae4a5de20e1c1f8527c",
+      "kid": "b918e282a924dda0",
+      "signatureBase64": "1N05c6CdRvF8sfABz6Q+FK/FLAYRHslg4ge3mx4/qzuERRszaJOGxZcUePC/JPbLsOP7/FI2LLMGcE5eerdpCA==",
+      "signatureField": "ed25519;kid=b918e282a924dda0;sha256=ab34e698b4f22119fd33b6154f9b5b702cf247193862aae4a5de20e1c1f8527c;sig=1N05c6CdRvF8sfABz6Q+FK/FLAYRHslg4ge3mx4/qzuERRszaJOGxZcUePC/JPbLsOP7/FI2LLMGcE5eerdpCA=="
+    }
+  ],
+  "refusals": [
+    {
+      "name": "gate-in-closed-session",
+      "description": "A gate asked in a session closed by the sweep is refused, nothing is added to its signed receipt.",
+      "status": 409,
+      "errorPrefix": "session closed:",
+      "error": "session closed: sess-wake ended at 2026-10-30T10:05:00.000Z (launcher lost: no sign of life since 2026-10-30T10:00:20.000Z); its receipt is signed and nothing more is added to it. Reopen a segment (POST /api/bridge/sessions/sess-wake/reopen) and ask there."
+    }
+  ]
+}

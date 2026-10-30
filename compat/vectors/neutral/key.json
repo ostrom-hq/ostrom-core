@@ -1,0 +1,12 @@
+{
+  "note": "TEST ONLY: derived from a public seed, signs the compatibility vectors and nothing else. Never an instance key.",
+  "seedLabel": "acme.compat.test-key/1",
+  "seedHex": "495b2a7cd62314d9538102e8726b3c280b15071f09d2e6664be11b313e1ba78e",
+  "privateKeyPkcs8Pem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIElbKnzWIxTZU4EC6HJrPCgLFQcfCdLmZkvhGzE+G6eO\n-----END PRIVATE KEY-----\n",
+  "privateKeyPkcs8DerHex": "302e020100300506032b657004220420495b2a7cd62314d9538102e8726b3c280b15071f09d2e6664be11b313e1ba78e",
+  "publicKeySpkiPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAFaTHPoIFP1zbbrrHDBIDpfCW9zXjiXCkuGwP9LU8puM=\n-----END PUBLIC KEY-----\n",
+  "publicKeySpkiDerHex": "302a300506032b657003210015a4c73e82053f5cdb6ebac70c1203a5f096f735e38970a4b86c0ff4b53ca6e3",
+  "publicKeyRawHex": "15a4c73e82053f5cdb6ebac70c1203a5f096f735e38970a4b86c0ff4b53ca6e3",
+  "kid": "b918e282a924dda0",
+  "kidRule": "first 16 hex chars of SHA-256(SPKI DER of the public key)"
+}
