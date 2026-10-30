@@ -30,6 +30,7 @@ tags:
 - name: events
 - name: gates
 - name: github
+- name: import
 - name: inference
 - name: mcp
 - name: meta
@@ -3745,6 +3746,15 @@ paths:
       tags:
       - mcp
       summary: MCP servers relayed by Ostrom
+      parameters:
+      - name: mine
+        in: query
+        required: false
+        description: Only the servers the caller reaches, with their tools and agent names (what `ostrom claude` connects).
+          A member, an agent session or an `mcp:use` token always gets this list, whatever `mine` says; the whole list,
+          with upstream URLs and secret names, is for an admin with `mcp:read` or a browser session
+        schema:
+          type: boolean
       responses:
         '200':
           description: OK
@@ -3848,6 +3858,250 @@ paths:
       responses:
         '204':
           description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/assignments:
+    get:
+      operationId: listMcpAssignments
+      tags:
+      - mcp
+      summary: Who reaches a relayed server, with which tools (scope mcp:read)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpAssignmentsPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/assignments/{member}:
+    put:
+      operationId: assignMcpServer
+      tags:
+      - mcp
+      summary: Give a member (or everyone) a relayed server, all tools or an allowlist (scope mcp:admin)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: member
+        in: path
+        required: true
+        description: The member's id, or `all` for every member of the org
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpAssignmentRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpAssignment'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unassignMcpServer
+      tags:
+      - mcp
+      summary: Take a relayed server back from a member (scope mcp:admin)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: member
+        in: path
+        required: true
+        description: The member's id, or `all` for every member of the org
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/policies:
+    get:
+      operationId: listMcpArgumentPolicies
+      tags:
+      - mcp
+      summary: Argument policies of a relayed server (scope mcp:read)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpArgumentPolicies'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createMcpArgumentPolicy
+      tags:
+      - mcp
+      summary: Allow, deny or ask for approval of a tool call by its arguments (scope mcp:admin)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpArgumentPolicyRequest'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpArgumentPolicy'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/policies/{policyId}:
+    delete:
+      operationId: deleteMcpArgumentPolicy
+      tags:
+      - mcp
+      summary: Remove an argument policy (scope mcp:admin)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/settings:
+    get:
+      operationId: getMcpSettings
+      tags:
+      - mcp
+      summary: The prefix of relayed server names as agents see them (scope mcp:read)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: putMcpSettings
+      tags:
+      - mcp
+      summary: Change the prefix (scope mcp:admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpSettings'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4093,12 +4347,75 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/import/teamcode:
+    post:
+      operationId: importTeamCode
+      tags:
+      - import
+      summary: Import a TeamCode team read by `ostrom import teamcode` (owners and admins; scope import:write); idempotent
+      parameters:
+      - name: dryRun
+        in: query
+        required: false
+        description: Report the plan without writing anything
+        schema:
+          type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamCodeImportRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportReport'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/messages:
     post:
       operationId: inferenceMessages
       tags:
       - inference
       summary: Anthropic-compatible Messages endpoint, metered against budgets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: {}
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/inference/v1/responses:
+    post:
+      operationId: inferenceResponses
+      tags:
+      - inference
+      summary: OpenAI-compatible Responses endpoint, metered against budgets
       requestBody:
         required: true
         content:
@@ -4168,6 +4485,57 @@ paths:
                       additionalProperties: {}
                 required:
                 - data
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/inference/settings:
+    get:
+      operationId: getInferenceSettings
+      tags:
+      - inference
+      summary: The org's provider keys (named by their org secret, never sent) and whether shared accounts serve first
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setInferenceSettings
+      tags:
+      - inference
+      summary: Replace the org's inference settings (owners and admins, `inference:admin`)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferenceSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceSettings'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -8210,6 +8578,50 @@ components:
       - pinned
       - assignedTo
       x-ostrom-kotlin: pending
+    ImportItem:
+      type: object
+      description: One line of an import report
+      properties:
+        kind:
+          type: string
+          enum: [setting, secret, server, policy, assignment, account]
+          description: Clients keep an unknown kind as UNKNOWN
+        name:
+          type: string
+        action:
+          type: string
+          enum: [planned, created, updated, unchanged, skipped]
+        reason:
+          type: string
+          description: Why it was skipped
+      required:
+      - kind
+      - name
+      - action
+      x-ostrom-kotlin: pending
+    ImportReport:
+      type: object
+      description: What an import did; a second run reports everything unchanged
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportItem'
+        created:
+          type: integer
+        updated:
+          type: integer
+        unchanged:
+          type: integer
+        skipped:
+          type: integer
+      required:
+      - items
+      - created
+      - updated
+      - unchanged
+      - skipped
+      x-ostrom-kotlin: pending
     InferenceRoute:
       type: object
       description: Where a model is served from
@@ -8229,6 +8641,147 @@ components:
       - model
       - provider
       - priority
+      x-ostrom-kotlin: pending
+    McpArgumentCondition:
+      type: object
+      description: One test on a tool call's arguments
+      properties:
+        path:
+          type: string
+          maxLength: 256
+          description: A dotted path into the arguments (`query`, `options.database`, `items.0.id`)
+        operator:
+          type: string
+          enum: [EQUALS, NOT_EQUALS, MATCHES, PREFIX, CONTAINS, EXISTS, ABSENT]
+          description: Answers carry these values; requests may use any case. MATCHES is a case-insensitive regular
+            expression that may not repeat a repeated group (`(a+)+`) nor refer back to a group, and an argument longer
+            than 8192 characters counts as matching (fail closed)
+        value:
+          type: string
+          maxLength: 1024
+          description: The operand, unused for EXISTS and ABSENT
+      required:
+      - path
+      - operator
+      x-ostrom-kotlin: pending
+    McpArgumentPolicies:
+      type: object
+      description: The argument policies of a relayed server, at most 64, so always one page
+      properties:
+        policies:
+          type: array
+          maxItems: 64
+          items:
+            $ref: '#/components/schemas/McpArgumentPolicy'
+        next:
+          type: string
+          description: Reserved for paging; always absent today
+      required:
+      - policies
+      x-ostrom-kotlin: pending
+    McpArgumentPolicy:
+      type: object
+      description: A rule on a tool's arguments, checked on every call before it reaches the upstream server
+      properties:
+        id:
+          type: string
+        tool:
+          type: string
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpArgumentCondition'
+        effect:
+          type: string
+          enum: [DENY, REQUIRE_APPROVAL]
+          description: DENY refuses the call; REQUIRE_APPROVAL holds it until a human approves it
+        message:
+          type: string
+          description: What the agent is told
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - tool
+      - conditions
+      - effect
+      - message
+      - createdAt
+      x-ostrom-kotlin: pending
+    McpArgumentPolicyRequest:
+      type: object
+      description: A new argument policy; every condition must hold (none means every call of the tool)
+      properties:
+        tool:
+          type: string
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpArgumentCondition'
+        effect:
+          type: string
+          enum: [DENY, REQUIRE_APPROVAL]
+          description: Any case is accepted; answers carry the upper-case value
+        message:
+          type: string
+      required:
+      - tool
+      - effect
+      - message
+      x-ostrom-kotlin: pending
+    McpAssignment:
+      type: object
+      description: Who reaches a relayed server and which of its tools. A member's own assignment replaces the one for
+        every member (`all`) for that member, it never adds to it; removing `all` leaves members' own assignments
+      properties:
+        server:
+          type: string
+        member:
+          type: string
+          description: The member's id; absent for every member of the org
+        tools:
+          type: array
+          description: The allowlist; absent for every tool, empty for none
+          items:
+            type: string
+        credentialSecret:
+          type: string
+          description: The member's personal secret used as credential, for a per-member server
+        assignedAt:
+          type: string
+          format: date-time
+      required:
+      - server
+      - assignedAt
+      x-ostrom-kotlin: pending
+    McpAssignmentRequest:
+      type: object
+      description: An assignment; hiding a tool is not the boundary, every call is checked again
+      properties:
+        tools:
+          type: array
+          description: The allowlist; absent for every tool, empty for none (send `[]`, never drop it)
+          items:
+            type: string
+        credentialSecret:
+          type: string
+          description: The name of one of the member's personal secrets, only for a per-member server and one member (400
+            with `all`)
+      x-ostrom-kotlin: pending
+    McpAssignmentsPage:
+      type: object
+      description: The assignments of a server, one per member and one for `all` at most, so always one page
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpAssignment'
+        next:
+          type: string
+          description: Reserved for paging; always absent today
+      required:
+      - items
       x-ostrom-kotlin: pending
     McpCall:
       type: object
@@ -8264,14 +8817,21 @@ components:
       properties:
         name:
           type: string
+          pattern: ^[a-z0-9][a-z0-9._-]{0,63}$
+          description: 1 to 64 characters; `servers`, `settings`, `calls` and `usage` are reserved (they are paths of
+            this API)
         url:
           type: string
+          description: The upstream URL of an HTTP server; absent for a stdio server. In answers, a stdio server reads
+            `stdio:<launcher>:<package>`, and a member's list (`mine=true`) gives the relay path, never the upstream
         transport:
           type: string
+          description: http, sse or stdio
         secretNames:
           type: array
           items:
             type: string
+          description: The org secrets the server uses, in an admin's list only
         tools:
           type: array
           items:
@@ -8280,13 +8840,88 @@ components:
           type: boolean
         scope:
           type: string
+        agentName:
+          type: string
+          readOnly: true
+          description: The name the agent sees (`<agentPrefix>-<name>`), in a member's list
+        path:
+          type: string
+          readOnly: true
+          description: The relay endpoint, in a member's list
+        credentialHeader:
+          type: string
+          description: 'The header carrying the credential, when not `Authorization: Bearer`'
+        stdio:
+          $ref: '#/components/schemas/McpStdioSpec'
+        version:
+          type: integer
+          readOnly: true
+          description: Bumped at each change
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
       required:
       - name
-      - url
       - transport
-      - secretNames
       - enabled
       - scope
+      x-ostrom-kotlin: pending
+    InferenceSettings:
+      type: object
+      description: How the gateway reaches model providers for the org (bring your own key)
+      properties:
+        anthropicKeySecret:
+          type: string
+          description: Name of the org secret holding an Anthropic API key, used when no shared Claude account serves
+        openaiKeySecret:
+          type: string
+          description: Name of the org secret holding an OpenAI API key
+        openrouterKeySecret:
+          type: string
+          description: Name of the org secret holding an OpenRouter key (models named `vendor/model`)
+        useSharedAccounts:
+          type: boolean
+          default: true
+          description: Whether members' shared subscription accounts serve before the org's keys
+      x-ostrom-kotlin: pending
+    McpSettings:
+      type: object
+      description: How agents see relayed servers
+      properties:
+        agentPrefix:
+          type: string
+          pattern: ^[a-z0-9][a-z0-9_-]{0,31}$
+          description: 'Tools are `mcp__<agentPrefix>-<server>__<tool>`; 1 to 32 characters of a-z 0-9 _ -, default `ostrom`'
+      required:
+      - agentPrefix
+      x-ostrom-kotlin: pending
+    McpStdioSpec:
+      type: object
+      description: A server run by the MCP host from a pinned package
+      properties:
+        launcher:
+          type: string
+          enum: [npm, pypi]
+        packageName:
+          type: string
+          description: name@1.2.3 (npm) or name==1.2.3 (PyPI)
+        args:
+          type: array
+          items:
+            type: string
+        env:
+          type: object
+          additionalProperties:
+            type: string
+        secretEnv:
+          type: object
+          description: Variable name to the name of the org secret injected by the server
+          additionalProperties:
+            type: string
+      required:
+      - launcher
+      - packageName
       x-ostrom-kotlin: pending
     Me:
       type: object
@@ -9722,6 +10357,156 @@ components:
       required:
       - slug
       - name
+    TeamCodeAccount:
+      type: object
+      description: A shared subscription account of TeamCode, tokens in clear (sent once, over TLS)
+      properties:
+        provider:
+          type: string
+          enum: [claude, codex]
+        providerAccountId:
+          type: string
+        label:
+          type: string
+        email:
+          type: string
+        accessToken:
+          type: string
+          writeOnly: true
+          format: password
+        refreshToken:
+          type: string
+          writeOnly: true
+          format: password
+        expiresAt:
+          type: string
+          format: date-time
+        disabled:
+          type: boolean
+      required:
+      - provider
+      - providerAccountId
+      - label
+      - accessToken
+      - refreshToken
+      - expiresAt
+      x-ostrom-kotlin: pending
+    TeamCodeAssignment:
+      type: object
+      description: A TeamCode member's assignment to an MCP variant
+      properties:
+        memberId:
+          type: string
+        serverId:
+          type: string
+          description: TeamCode's variant id
+        memberSecret:
+          type: string
+          writeOnly: true
+          format: password
+          description: The member's own credential, in clear
+      required:
+      - memberId
+      - serverId
+      x-ostrom-kotlin: pending
+    TeamCodeImportRequest:
+      type: object
+      description: What `ostrom import teamcode` read from TeamCode (read-only there), and its member map
+      properties:
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeMember'
+        mcpServers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeMcpServer'
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeAssignment'
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeAccount'
+        memberMap:
+          type: object
+          description: TeamCode member id to Ostrom member id; unmapped members are skipped
+          additionalProperties:
+            type: string
+      x-ostrom-kotlin: pending
+    TeamCodeMcpServer:
+      type: object
+      description: An MCP variant of TeamCode; a slot's most assigned variant keeps the slot's name
+      properties:
+        id:
+          type: string
+        target:
+          type: string
+          description: The slot, the name agents see
+        variant:
+          type: string
+        perMember:
+          type: boolean
+        url:
+          type: string
+        credentialHeader:
+          type: string
+          description: Absent, or Authorization, for a Bearer credential
+        sharedSecret:
+          type: string
+          writeOnly: true
+          format: password
+          description: The shared credential, in clear
+        stdio:
+          $ref: '#/components/schemas/TeamCodeStdio'
+        toolMode:
+          type: string
+          enum: [allow, deny]
+          description: Absent for every tool
+        tools:
+          type: array
+          items:
+            type: string
+      required:
+      - id
+      - target
+      - variant
+      x-ostrom-kotlin: pending
+    TeamCodeMember:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+      required:
+      - id
+      - username
+      x-ostrom-kotlin: pending
+    TeamCodeStdio:
+      type: object
+      description: A command of TeamCode run by the MCP host
+      properties:
+        launcher:
+          type: string
+          enum: [npm, pypi]
+        packageName:
+          type: string
+        args:
+          type: array
+          items:
+            type: string
+        secretEnv:
+          type: object
+          description: Secret variables, values in clear; never returned nor logged
+          writeOnly: true
+          additionalProperties:
+            type: string
+      required:
+      - launcher
+      - packageName
+      x-ostrom-kotlin: pending
     Usage:
       type: object
       description: Spending over a period
