@@ -1475,6 +1475,32 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+    delete:
+      operationId: removeMember
+      x-ostrom-status: planned
+      tags:
+      - organization
+      summary: Remove a member from the organization (or cancel an invitation); the receipts they signed keep naming
+        them
+      parameters:
+      - name: login
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/members/invites:
     post:
       operationId: inviteMembers
@@ -1492,9 +1518,7 @@ paths:
                 invites:
                   type: array
                   items:
-                    type: object
-                    additionalProperties:
-                      type: string
+                    $ref: '#/components/schemas/MemberInvite'
               required:
               - invites
       responses:
@@ -2101,6 +2125,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GateResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/gates/approvers:
+    get:
+      operationId: getApproversGraph
+      x-ostrom-status: served
+      tags:
+      - gates
+      summary: 'Who approves what in a repository (scope `packages:read`, `workflows:read`, an agent session or a browser
+        session): every approver with the gates they answer, the gates that name nobody, and the actions no gate
+        covers. Read from the same catalogue the gates decide on'
+      parameters:
+      - name: repo
+        in: query
+        required: false
+        description: The repository; the organization's catalogue when absent
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApproversGraph'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4384,7 +4441,7 @@ paths:
       - name: member
         in: path
         required: true
-        description: The member's id, or `all` for every member of the org
+        description: The member's id (`Member.id`), or `all` for every member of the org
         schema:
           type: string
       requestBody:
@@ -4425,7 +4482,7 @@ paths:
       - name: member
         in: path
         required: true
-        description: The member's id, or `all` for every member of the org
+        description: The member's id (`Member.id`), or `all` for every member of the org
         schema:
           type: string
       responses:
@@ -6621,7 +6678,7 @@ paths:
                 properties:
                   members:
                     type: array
-                    description: Member ids
+                    description: Member ids (`Member.id`)
                     items:
                       type: string
                 required:
@@ -6652,7 +6709,7 @@ paths:
       - name: memberId
         in: path
         required: true
-        description: The member's id (not a login)
+        description: The member's id (`Member.id`, also `Me.member.id` for the caller), not a login
         schema:
           type: string
       responses:
@@ -6683,7 +6740,7 @@ paths:
       - name: memberId
         in: path
         required: true
-        description: The member's id (not a login)
+        description: The member's id (`Member.id`, also `Me.member.id` for the caller), not a login
         schema:
           type: string
       responses:
@@ -8491,6 +8548,72 @@ components:
       - login
       - via
       x-ostrom-kotlin: pending
+    ApproverGate:
+      type: object
+      description: A gate seen from its approvers, with the actions it covers
+      properties:
+        workflowId:
+          type: string
+        workflowName:
+          type: string
+        nodeId:
+          type: string
+          description: The gate node
+        label:
+          type: string
+        enforce:
+          type: boolean
+          description: False while the workflow is only proposed
+        actions:
+          type: array
+          description: The action classes it covers (`push-main`, `deploy`…), sorted
+          items:
+            type: string
+      required:
+      - workflowId
+      - workflowName
+      - nodeId
+      - label
+      - enforce
+      - actions
+    ApproverLine:
+      type: object
+      description: One approver and the gates they answer
+      properties:
+        approver:
+          type: string
+          description: The approver, as the workflow names them
+        gates:
+          type: array
+          description: Their gates, by workflow then node
+          items:
+            $ref: '#/components/schemas/ApproverGate'
+      required:
+      - approver
+      - gates
+    ApproversGraph:
+      type: object
+      description: Who approves what in a repository, the gates catalogue seen from the approvers' side
+      properties:
+        approvers:
+          type: array
+          description: Every approver, sorted by name
+          items:
+            $ref: '#/components/schemas/ApproverLine'
+        unanswered:
+          type: array
+          description: The gates that name no approver; their actions can never run
+          items:
+            $ref: '#/components/schemas/ApproverGate'
+        ungated:
+          type: array
+          description: The action classes no gate covers, sorted
+          items:
+            type: string
+      required:
+      - approvers
+      - unanswered
+      - ungated
     Artifact:
       type: object
       description: A published page or file set, behind the login
@@ -10221,7 +10344,7 @@ components:
           type: string
         member:
           type: string
-          description: The member's id; absent for every member of the org
+          description: The member's id (`Member.id`); absent for every member of the org
         tools:
           type: array
           description: The allowlist; absent for every tool, empty for none
@@ -10427,6 +10550,12 @@ components:
       type: object
       description: A member of an organization
       properties:
+        id:
+          type: string
+          format: uuid
+          description: The member's id, stable across their tokens and sessions. Routes that take a member id (`memberId`
+            of `/api/v1/artifacts/{id}/members/{memberId}`, `member` of the relayed servers, `memberMap` of the TeamCode
+            import) take this one; routes under `/api/v1/members/{login}` take the login
         login:
           type: string
         name:
@@ -10446,9 +10575,25 @@ components:
         discordUserId:
           type: string
       required:
+      - id
       - login
       - avatarUrl
       - role
+    MemberInvite:
+      type: object
+      description: One person to invite into the organization
+      properties:
+        login:
+          type: string
+          description: Their GitHub login
+        role:
+          $ref: '#/components/schemas/MemberRole'
+          description: Their role once they join; `member` when absent. `owner` and `invited` are refused
+        team:
+          type: string
+          description: The slug of a team they join; none when absent
+      required:
+      - login
     MemberRole:
       type: string
       enum:
@@ -12033,7 +12178,7 @@ components:
             $ref: '#/components/schemas/TeamCodeAccount'
         memberMap:
           type: object
-          description: TeamCode member id to Ostrom member id; unmapped members are skipped
+          description: TeamCode member id to Ostrom member id (`Member.id`); unmapped members are skipped
           additionalProperties:
             type: string
       x-ostrom-kotlin: pending

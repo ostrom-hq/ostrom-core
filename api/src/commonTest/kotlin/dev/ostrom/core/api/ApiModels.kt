@@ -7,6 +7,9 @@ import dev.ostrom.core.api.models.Approval
 import dev.ostrom.core.api.models.ApprovalAction
 import dev.ostrom.core.api.models.ApprovalCheck
 import dev.ostrom.core.api.models.ApprovalCommit
+import dev.ostrom.core.api.models.ApproverGate
+import dev.ostrom.core.api.models.ApproverLine
+import dev.ostrom.core.api.models.ApproversGraph
 import dev.ostrom.core.api.models.Automation
 import dev.ostrom.core.api.models.AutomationAction
 import dev.ostrom.core.api.models.AutomationTrigger
@@ -35,6 +38,7 @@ import dev.ostrom.core.api.models.GateRef
 import dev.ostrom.core.api.models.GateRequest
 import dev.ostrom.core.api.models.GateResponse
 import dev.ostrom.core.api.models.Member
+import dev.ostrom.core.api.models.MemberInvite
 import dev.ostrom.core.api.models.NodePosition
 import dev.ostrom.core.api.models.NodeRun
 import dev.ostrom.core.api.models.NodeRunOn
@@ -92,6 +96,9 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ApprovalAction.serializer(),
     ApprovalCheck.serializer(),
     ApprovalCommit.serializer(),
+    ApproverGate.serializer(),
+    ApproverLine.serializer(),
+    ApproversGraph.serializer(),
     Automation.serializer(),
     AutomationAction.serializer(),
     AutomationTrigger.serializer(),
@@ -120,6 +127,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GateRequest.serializer(),
     GateResponse.serializer(),
     Member.serializer(),
+    MemberInvite.serializer(),
     NodePosition.serializer(),
     NodeRun.serializer(),
     NodeRunOn.serializer(),

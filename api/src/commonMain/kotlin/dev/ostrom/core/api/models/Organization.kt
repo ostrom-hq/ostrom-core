@@ -48,6 +48,9 @@ public enum class GitHubConnection(
 /**
  * A member of an organization.
  *
+ * @property id The member's id (a UUID), stable across their tokens and sessions: the id the routes that name a member
+ *   by id take (`memberId` of the artifact members, `member` of the relayed servers, the TeamCode import's
+ *   `memberMap`). Routes under `/api/v1/members/{login}` take the login.
  * @property login GitHub login: the identity every receipt names.
  * @property name Display name.
  * @property avatarUrl Avatar.
@@ -59,6 +62,7 @@ public enum class GitHubConnection(
  */
 @Serializable
 public data class Member(
+    val id: String,
     val login: String,
     val name: String? = null,
     val avatarUrl: String,
@@ -93,6 +97,20 @@ public enum class MemberRole(
         MemberRole::value,
     )
 }
+
+/**
+ * One person to invite into the organization (`POST /api/v1/members/invites`).
+ *
+ * @property login Their GitHub login.
+ * @property role Their role once they join; `member` when null. The server refuses `owner` and `invited`.
+ * @property team The slug of a team they join; none when null.
+ */
+@Serializable
+public data class MemberInvite(
+    val login: String,
+    val role: MemberRole? = null,
+    val team: String? = null,
+)
 
 /**
  * A team.
