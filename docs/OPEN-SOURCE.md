@@ -19,14 +19,14 @@ is about the repository as a public product.
 | --- | --- | --- |
 | `README.md` | Banner (light and dark through `<picture>`), the locked value proposition, badges, three-command start, a Mermaid architecture diagram, honest status | PostHog and Supabase (banner, links row), uv (one sentence then proof), Biome (status honesty) |
 | `LICENSE` | Exact SPDX text, detected by GitHub: Apache-2.0 (core, cli, e2e, site), AGPL-3.0 (server, web, app, helm) | all |
-| `ee/LICENSE`, `LICENSING.md` | Commercial license of `ee/` and the table of what is under which license | PostHog and GitLab (`ee/` model), Cal.com |
+| `ee/LICENSE`, `LICENSING.md` | server, web and app, once their `ee/` exists: commercial license of `ee/` and the table of what is under which license | PostHog and GitLab (`ee/` model), Cal.com |
 | `NOTICE` | Apache-2.0 repositories only, "The Ostrom Authors" | Apache Software Foundation practice |
 | `CONTRIBUTING.md` | Setup, the test bar, Conventional Commits, DCO, license headers, AI policy, releases | uv (concise), Biome (AI disclosure), PostHog (AI policy) |
 | `CODE_OF_CONDUCT.md` | Contributor Covenant 2.1, verbatim, contact `conduct@ostrom.run` | Biome, Bun, Zed, Cal.com |
 | `SECURITY.md` | Private reporting (`security@ostrom.run` and GitHub advisories), deadlines, scope written for Ostrom, safe harbor | Cal.com and Supabase (scope lists), Bun (acknowledgement deadline), Tailscale (coordinated disclosure) |
 | `GOVERNANCE.md`, `MAINTAINERS.md` | Roles, lazy consensus, the open core stewardship promise | Biome (roles), GitLab (buyer-based open core, "we never move an open feature into ee") |
 | `SUPPORT.md` | Where to ask what | Supabase, PostHog |
-| `CHANGELOG.md` | Written by release-please, never by hand | uv, Ruff, Biome |
+| `CHANGELOG.md` | Written by release-please, never by hand. Not in ostrom-core yet: `build.yml` publishes `0.1.<run number>` on every push to `main`, so a release-please tag would name a version no artifact carries; it arrives with tag-based publication | uv, Ruff, Biome |
 
 ## `.github/`
 
@@ -35,24 +35,24 @@ is about the repository as a public product.
 | Issue forms | YAML forms (bug, feature, question), blank issues off, links to security, docs and discussions | uv, Bun, Tailscale: structured reports are reproducible reports |
 | Discussion forms | `ideas` and `q-a` categories | Zed |
 | Pull request template | What changes for a person, why, how it was tested, checklist, **Agent context** | PostHog (problem first, agent context), Biome (AI disclosure). Ostrom sells trust in agent work: we disclose ours |
-| `CODEOWNERS` | `@ostrom-hq/maintainers` on everything, `ee/` and `.github/` explicit | Supabase, Bun, Ruff |
+| `CODEOWNERS` | `@ostrom-hq/maintainers` on everything, `.github/` and `LICENSE` explicit | Supabase, Bun, Ruff |
 | Dependencies | Renovate (`config:best-practices`, actions pinned by digest, 3-day release age, grouped minor updates, dependency dashboard) plus Dependabot security alerts | uv, Ruff, Biome, Zed, PostHog use Renovate; the release age floor is uv's `cargo-cooldowns` idea |
 | Labels | Declared in `.github/labels.yml`, synced by a workflow, brand colours (garnet is kept for "a person has to decide") | Biome |
 
 ## Workflows
 
-All third party actions are pinned by commit SHA with the version in a comment, `permissions: {}` at the top and the
-minimum per job, `persist-credentials: false` on every checkout, `timeout-minutes` on every job. These are the rules
+All third party actions are pinned by commit SHA with the version in a comment, `permissions: {}` at the top (Scorecard: `read-all`,
+as its action requires) and the minimum per job, `persist-credentials: false` on every checkout, `timeout-minutes` on every job. These are the rules
 of [zizmor](https://docs.zizmor.sh) and of the [OpenSSF Scorecard](https://scorecard.dev), followed by Linear, uv,
 Ruff, Supabase and Tailscale.
 
 | Workflow | Check name | What it does |
 | --- | --- | --- |
-| `release-please.yml` | `release-please` | Keeps a release pull request from Conventional Commit titles; merging it tags the bare version (CONVENTIONS.md section 12), writes the changelog, creates the release, and starts the tag workflows a `GITHUB_TOKEN` tag would not start |
+| `release-please.yml` | `release-please` | All repositories but ostrom-core (see `CHANGELOG.md` above). Keeps a release pull request from Conventional Commit titles; merging it tags the bare version (CONVENTIONS.md section 12), writes the changelog, creates the release, and starts the tag workflows a `GITHUB_TOKEN` tag would not start |
 | `pr-title.yml` | `pr-title` | The title is a Conventional Commit: with squash merge it is the commit on `main` and the changelog line (Resend, Cal.com) |
-| `dco.yml` | `dco` | Every commit of a contributor without write access is signed off (Developer Certificate of Origin instead of a CLA, like GitLab since 2017); maintainers and bots are exempt |
-| `license-headers.yml` | `spdx` | Every new source file carries its `SPDX-License-Identifier`, the right one for its path (`ee/` is `LicenseRef-Ostrom-Enterprise`); `LICENSE` and `ee/LICENSE` exist (Tailscale's `license_test.go`) |
-| `codeql.yml` | `analyze (actions)`, `analyze (javascript-typescript)` | CodeQL `security-extended` on the workflows and the TypeScript code. Kotlin is not analysed: CodeQL needs a JVM build of Kotlin and our product is native |
+| `dco.yml` | `dco` | Every commit of a contributor without write access is signed off (Developer Certificate of Origin instead of a CLA, like GitLab since 2017); collaborators with write, maintain or admin permission and bots are exempt (a read-only organization member is checked) |
+| `license-headers.yml` | `spdx` | Every new source file carries its `SPDX-License-Identifier`, the right one for its path (`ee/` is `LicenseRef-Ostrom-Enterprise`); `LICENSE` exists, and `ee/LICENSE` wherever `ee/` exists (Tailscale's `license_test.go`) |
+| `codeql.yml` | `analyze (actions)` everywhere, plus `analyze (javascript-typescript)` in web, app, e2e and site | CodeQL `security-extended` on the workflows and the TypeScript code. Kotlin is not analysed: CodeQL needs a JVM build of Kotlin and our product is native |
 | `scorecard.yml` | `analysis` | OpenSSF Scorecard, weekly and on every push to `main` |
 | `zizmor.yml` | `zizmor` | Static analysis of the workflows themselves (Linear, uv, Supabase, Tailscale) |
 | `links.yml` | `links` | lychee on every Markdown file: no dead link in a README or a doc |
@@ -62,7 +62,7 @@ Ruff, Supabase and Tailscale.
 
 Everything stays private until Lyes says go. One organization variable switches the public behaviour on:
 **`OSTROM_PUBLIC`** (`false` today). Set to `true` at launch, it makes CodeQL and Scorecard upload their results to
-GitHub code scanning and publish the Scorecard badge data, and lets release-please start the CLI release workflow
+GitHub code scanning and publish the Scorecard badge data, and lets ostrom-cli's release-please job start its release workflow
 that publishes binaries outside the organization. Until then the SARIF reports are kept as workflow artifacts and an
 error-level CodeQL alert fails the job. Also at launch: remove the two "until the public launch" lines of
 `.lycheeignore`, and turn on GitHub private vulnerability reporting.

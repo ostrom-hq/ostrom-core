@@ -99,6 +99,5 @@ Pull requests that clearly were not run or read are closed with a link to this s
 
 ## Releases
 
-[release-please](https://github.com/googleapis/release-please) keeps a release pull request open on `main`, built from
-the Conventional Commit titles. Merging it tags the version, writes [CHANGELOG.md](CHANGELOG.md) and publishes the
-release. Do not edit the changelog or the version by hand.
+Every push to `main` publishes the artifacts as `0.1.<run number>` (see `.github/workflows/build.yml`). Tagged
+releases with a generated changelog arrive with tag-based publication; until then, do not create tags by hand.
