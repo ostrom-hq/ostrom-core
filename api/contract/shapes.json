@@ -1,0 +1,3753 @@
+{
+  "AgentEvent": {
+    "enum": [
+      "SessionStart",
+      "UserPromptSubmit",
+      "PreToolUse",
+      "PostToolUse",
+      "Stop",
+      "SessionEnd"
+    ]
+  },
+  "AnswerApprovalRequest": {
+    "properties": {
+      "answer": {
+        "type": {
+          "ref": "ApprovalAnswer"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "shownDigest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "comment": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ApiError": {
+    "properties": {
+      "error": {
+        "type": {
+          "ref": "ErrorDetail"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "Approval": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "group": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "workflowId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "taskId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "evidence": {
+        "type": {
+          "array": {
+            "ref": "Evidence"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sha": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "commits": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "commitDetails": {
+        "type": {
+          "array": {
+            "ref": "ApprovalCommit"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "checks": {
+        "type": {
+          "array": {
+            "ref": "ApprovalCheck"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "requestedFrom": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "channel": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "ApprovalStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "decidedBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "decidedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "shownDigest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "askedBy": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "selfApproved": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ApprovalAnswer": {
+    "enum": [
+      "approve",
+      "reject"
+    ]
+  },
+  "ApprovalCheck": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "state": {
+        "type": {
+          "ref": "CheckState"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ApprovalCommit": {
+    "properties": {
+      "sha": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "author": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ApprovalStatus": {
+    "enum": [
+      "pending",
+      "approved",
+      "rejected",
+      "expired"
+    ]
+  },
+  "ArtifactType": {
+    "enum": [
+      "skill",
+      "context",
+      "hook",
+      "script",
+      "mcp",
+      "approval",
+      "notify",
+      "subagent",
+      "receipt"
+    ]
+  },
+  "Automation": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "owner": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "trigger": {
+        "type": {
+          "ref": "AutomationTrigger"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "action": {
+        "type": {
+          "ref": "AutomationAction"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "variables": {
+        "type": {
+          "array": {
+            "ref": "AutomationVariable"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "samplePayload": {
+        "type": "any",
+        "required": false,
+        "nullable": false
+      },
+      "overlap": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "maxRunsPerDay": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "webhookUrl": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "AutomationAction": {
+    "properties": {
+      "workflowId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "prompt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "effort": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "maxRuntimeMinutes": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "AutomationTrigger": {
+    "properties": {
+      "kind": {
+        "type": {
+          "ref": "AutomationTriggerKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "cron": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "timezone": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "catchup": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "catchupGraceMinutes": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "AutomationTriggerKind": {
+    "enum": [
+      "cron",
+      "webhook"
+    ]
+  },
+  "AutomationVariable": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "path": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "type": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "values": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "maxLength": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "required": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "sensitive": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CheckOutcome": {
+    "enum": [
+      "passed",
+      "failed",
+      "timeout",
+      "skipped"
+    ]
+  },
+  "CheckRun": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scriptId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scriptSha": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "tampered": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "mode": {
+        "type": {
+          "ref": "PackageMode"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "exit": {
+        "type": "integer",
+        "required": true,
+        "nullable": true
+      },
+      "durationMs": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "head": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "cached": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "sandbox": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "outputTail": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "dev": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CheckState": {
+    "enum": [
+      "success",
+      "failure",
+      "pending",
+      "skipped"
+    ]
+  },
+  "CompiledHook": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": {
+          "ref": "WorkflowNodeKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "event": {
+        "type": {
+          "ref": "AgentEvent"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "tools": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "patterns": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "classes": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "mode": {
+        "type": {
+          "ref": "PackageMode"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "why": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "scriptId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "notifyId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "order": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "suggested": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CompiledNode": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowName": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": {
+          "ref": "WorkflowNodeKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "mode": {
+        "type": {
+          "ref": "PackageMode"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "produces": {
+        "type": {
+          "array": {
+            "ref": "Produced"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "trigger": {
+        "type": {
+          "ref": "CompiledTrigger"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "artifacts": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CompiledNotify": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "channel": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "message": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "mode": {
+        "type": {
+          "ref": "PackageMode"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "suggestedChannel": {
+        "type": {
+          "ref": "SuggestedChannel"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CompiledScript": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "where": {
+        "type": {
+          "ref": "RunLocation"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "path": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sha256": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "command": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "timeoutSec": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "network": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "mode": {
+        "type": {
+          "ref": "PackageMode"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "approval": {
+        "type": {
+          "ref": "ScriptApproval"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "suggested": {
+        "type": {
+          "ref": "ScriptSuggestion"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CompiledTrigger": {
+    "properties": {
+      "from": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "gateNodeId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "classes": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "patterns": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "resolved": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "Decision": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "by": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "subject": {
+        "type": {
+          "ref": "DecisionSubject"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "action": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "before": {
+        "type": "any",
+        "required": false,
+        "nullable": false
+      },
+      "after": {
+        "type": "any",
+        "required": false,
+        "nullable": false
+      },
+      "receiptId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "DecisionSubject": {
+    "properties": {
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Deliverable": {
+    "properties": {
+      "type": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "schema": {
+        "type": "any",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Dev": {
+    "properties": {
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "verified": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "via": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "organizationId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "EndSessionRequest": {
+    "properties": {
+      "tools": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "costUsd": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "source": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "exitCode": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ErrorDetail": {
+    "properties": {
+      "type": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "message": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "Evidence": {
+    "properties": {
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "value": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GateAction": {
+    "properties": {
+      "class": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "patterns": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "repos": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "tools": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GateAskRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "runId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "realRepo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "class": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "tool": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "command": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "dev": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "harnessVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "ci": {
+        "type": {
+          "ref": "GateCi"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "diff": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "push": {
+        "type": {
+          "ref": "GatePush"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "pr": {
+        "type": {
+          "ref": "GatePullRequest"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GateCi": {
+    "properties": {
+      "sha": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "pr": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GateMode": {
+    "enum": [
+      "enforced",
+      "shadow",
+      "ungated"
+    ]
+  },
+  "GatePullRequest": {
+    "properties": {
+      "number": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sha": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "owner": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GatePush": {
+    "properties": {
+      "remote": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "refs": {
+        "type": {
+          "array": {
+            "ref": "GatePushRef"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "force": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GatePushRef": {
+    "properties": {
+      "ref": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sha": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "GateRef": {
+    "properties": {
+      "workflowId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowName": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "approvers": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "WorkflowStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "enforce": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "basis": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "GateRequest": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "approvalId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "runId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "realRepo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "dev": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "class": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "tool": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "command": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "key": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "gate": {
+        "type": {
+          "ref": "GateRef"
+        },
+        "required": true,
+        "nullable": true
+      },
+      "mode": {
+        "type": {
+          "ref": "GateMode"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "GateStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "decidedBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "decidedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "receiptId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "harnessVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "ci": {
+        "type": {
+          "ref": "GateCi"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "devVerified": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "pr": {
+        "type": {
+          "ref": "GatePullRequest"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "askedVia": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "selfApproved": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "push": {
+        "type": {
+          "ref": "GatePush"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GateResponse": {
+    "properties": {
+      "gate": {
+        "type": {
+          "ref": "GateRequest"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "approval": {
+        "type": {
+          "ref": "Approval"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "receipt": {
+        "type": {
+          "ref": "Receipt"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "waitingFor": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GateStatus": {
+    "enum": [
+      "pending",
+      "approved",
+      "rejected",
+      "shadow",
+      "ungated",
+      "consumed"
+    ]
+  },
+  "GitHubConnection": {
+    "enum": [
+      "github-app",
+      "gh-token"
+    ]
+  },
+  "Member": {
+    "properties": {
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "avatarUrl": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "email": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "teams": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "role": {
+        "type": {
+          "ref": "MemberRole"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "slackUserId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "discordUserId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "MemberRole": {
+    "enum": [
+      "owner",
+      "admin",
+      "member",
+      "approver",
+      "invited"
+    ]
+  },
+  "NodePosition": {
+    "properties": {
+      "x": {
+        "type": "number",
+        "required": true,
+        "nullable": false
+      },
+      "y": {
+        "type": "number",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "NodeRun": {
+    "properties": {
+      "on": {
+        "type": {
+          "ref": "NodeRunOn"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "command": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "timeoutSec": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "where": {
+        "type": {
+          "ref": "RunLocation"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "network": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "channel": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "message": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "instructions": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "deliverable": {
+        "type": {
+          "ref": "Deliverable"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "NodeRunOn": {
+    "properties": {
+      "classes": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "patterns": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "NodeSuggestions": {
+    "properties": {
+      "command": {
+        "type": {
+          "ref": "StringSuggestion"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "on": {
+        "type": {
+          "ref": "StringListSuggestion"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "actions": {
+        "type": {
+          "ref": "StringListSuggestion"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "channel": {
+        "type": {
+          "ref": "StringSuggestion"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "ruleIds": {
+        "type": {
+          "ref": "StringListSuggestion"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "dismissed": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "NodeVisit": {
+    "properties": {
+      "seq": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": {
+          "ref": "WorkflowNodeKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "outcome": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "output": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "waitId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "gateId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "childRunId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "startedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "endedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "NodeWhen": {
+    "properties": {
+      "hours": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "days": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "risk": {
+        "type": {
+          "ref": "RiskLevel"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Notification": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "notifyId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "channel": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "mode": {
+        "type": {
+          "ref": "PackageMode"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "NotificationStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "text": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "dev": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "error": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "link": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "attempts": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "nextAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sentAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "messageId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "NotificationStatus": {
+    "enum": [
+      "queued",
+      "sent",
+      "logged-only",
+      "not-sent"
+    ]
+  },
+  "Organization": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "avatarUrl": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "connectedVia": {
+        "type": {
+          "ref": "GitHubConnection"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "PackageEnvelope": {
+    "properties": {
+      "format": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": true,
+        "nullable": true
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "contentDigest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "alg": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kid": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "signature": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "payload": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "pinned": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "revoked": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PackageFile": {
+    "properties": {
+      "path": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "mode": {
+        "type": {
+          "ref": "PackageFileMode"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "sha256": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "content": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PackageFileMode": {
+    "enum": [
+      "file",
+      "executable"
+    ]
+  },
+  "PackageHarness": {
+    "properties": {
+      "version": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "receiptId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "PackageMcp": {
+    "properties": {
+      "servers": {
+        "type": {
+          "array": {
+            "ref": "PackageMcpServer"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "tools": {
+        "type": {
+          "array": {
+            "ref": "PackageMcpTool"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PackageMcpServer": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "path": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PackageMcpTool": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "server": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PackageMode": {
+    "enum": [
+      "enforce",
+      "shadow"
+    ]
+  },
+  "PackageWorkflow": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "WorkflowStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "decidedBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "decisionReceipt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Produced": {
+    "properties": {
+      "type": {
+        "type": {
+          "ref": "ArtifactType"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "event": {
+        "type": {
+          "ref": "AgentEvent"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "where": {
+        "type": {
+          "ref": "RunLocation"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "shadow": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "suggested": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "note": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Receipt": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "subject": {
+        "type": {
+          "ref": "ReceiptSubject"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "initiator": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "rules": {
+        "type": {
+          "array": {
+            "ref": "ReceiptRule"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "decisions": {
+        "type": {
+          "array": {
+            "ref": "ReceiptDecision"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "costUsd": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "package": {
+        "type": {
+          "ref": "ReceiptPackage"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "nodes": {
+        "type": {
+          "array": {
+            "ref": "ReceiptNode"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "signature": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ReceiptDecision": {
+    "properties": {
+      "approvalId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "by": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "result": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "selfApproved": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ReceiptDraft": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "subject": {
+        "type": {
+          "ref": "ReceiptSubject"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "initiator": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "rules": {
+        "type": {
+          "array": {
+            "ref": "ReceiptRule"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "decisions": {
+        "type": {
+          "array": {
+            "ref": "ReceiptDecision"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "costUsd": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "package": {
+        "type": {
+          "ref": "ReceiptPackage"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "nodes": {
+        "type": {
+          "array": {
+            "ref": "ReceiptNode"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ReceiptNode": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "outcome": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "detail": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ReceiptPackage": {
+    "properties": {
+      "version": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ReceiptRule": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ReceiptSubject": {
+    "properties": {
+      "kind": {
+        "type": {
+          "ref": "ReceiptSubjectKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ReceiptSubjectKind": {
+    "enum": [
+      "task",
+      "workflow",
+      "rule-change",
+      "owner-change",
+      "harness",
+      "gate",
+      "session",
+      "policy"
+    ]
+  },
+  "ReportCheckRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "nodeId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scriptId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scriptSha": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "exit": {
+        "type": "integer",
+        "required": true,
+        "nullable": true
+      },
+      "outcome": {
+        "type": {
+          "ref": "CheckOutcome"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "durationMs": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "head": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "cached": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "sandbox": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "outputTail": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "RiskLevel": {
+    "enum": [
+      "low",
+      "medium",
+      "high"
+    ]
+  },
+  "Rule": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "statement": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "output": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "group": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scope": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "sources": {
+        "type": {
+          "array": {
+            "ref": "RuleSource"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "why": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "strength": {
+        "type": {
+          "ref": "RuleStrength"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "confidence": {
+        "type": "number",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "RuleStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "foundBy": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "foundAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "reviewBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "decidedBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "decidedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "origin": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "RuleSource": {
+    "properties": {
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "RuleStatus": {
+    "enum": [
+      "proposed",
+      "accepted",
+      "edited",
+      "rejected"
+    ]
+  },
+  "RuleStrength": {
+    "enum": [
+      "required",
+      "recommended"
+    ]
+  },
+  "RunLocation": {
+    "enum": [
+      "workstation",
+      "ostrom"
+    ]
+  },
+  "RunStatus": {
+    "enum": [
+      "queued",
+      "running",
+      "waiting",
+      "succeeded",
+      "failed",
+      "cancelled"
+    ]
+  },
+  "ScriptApproval": {
+    "properties": {
+      "by": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "decisionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "receiptId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "allowed": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ScriptSuggestion": {
+    "properties": {
+      "evidence": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "excerpt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Session": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "agentSessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "segment": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "resumedFrom": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "previousReceiptId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "launchId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "realRepo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "cwd": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "dev": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "devVerified": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "devVia": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "harnessVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "packageDigest": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "startedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "endedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "endedBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "lastSeenAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "gates": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "receiptId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "tools": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "costUsd": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "exitCode": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "runId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "SessionPackage": {
+    "properties": {
+      "format": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "compiler": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "compiledAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "contentDigest": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": true,
+        "nullable": true
+      },
+      "server": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "harness": {
+        "type": {
+          "ref": "PackageHarness"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "workflows": {
+        "type": {
+          "array": {
+            "ref": "PackageWorkflow"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "nodes": {
+        "type": {
+          "array": {
+            "ref": "CompiledNode"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "hooks": {
+        "type": {
+          "array": {
+            "ref": "CompiledHook"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "scripts": {
+        "type": {
+          "array": {
+            "ref": "CompiledScript"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "notifications": {
+        "type": {
+          "array": {
+            "ref": "CompiledNotify"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "mcp": {
+        "type": {
+          "ref": "PackageMcp"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "context": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "files": {
+        "type": {
+          "array": {
+            "ref": "PackageFile"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "SessionResponse": {
+    "properties": {
+      "session": {
+        "type": {
+          "ref": "Session"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "receipt": {
+        "type": {
+          "ref": "Receipt"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "StartSessionRequest": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "launchId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "realRepo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "cwd": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "dev": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "harnessVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "packageDigest": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "StringListSuggestion": {
+    "properties": {
+      "value": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "evidence": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "excerpt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "why": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "by": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "StringSuggestion": {
+    "properties": {
+      "value": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "evidence": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "excerpt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "why": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "by": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "SuggestedChannel": {
+    "properties": {
+      "channel": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "evidence": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "Team": {
+    "properties": {
+      "slug": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "members": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "repos": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Wait": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "WaitStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "runId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "assignee": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "createdBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "question": {
+        "type": {
+          "ref": "WaitSpec"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "answer": {
+        "type": {
+          "ref": "WaitAnswer"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "resolvedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WaitAction": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "requires": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "style": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WaitAnswer": {
+    "properties": {
+      "action": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "values": {
+        "type": {
+          "map": "any"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "author": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "answeredAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "WaitField": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "type": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "help": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "required": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "default": {
+        "type": "any",
+        "required": false,
+        "nullable": false
+      },
+      "options": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "multiple": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "allowOther": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "maxLength": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WaitRef": {
+    "properties": {
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "id": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WaitSpec": {
+    "properties": {
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "body": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "fields": {
+        "type": {
+          "array": {
+            "ref": "WaitField"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "actions": {
+        "type": {
+          "array": {
+            "ref": "WaitAction"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "refs": {
+        "type": {
+          "array": {
+            "ref": "WaitRef"
+          }
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WaitStatus": {
+    "enum": [
+      "open",
+      "resolved",
+      "cancelled"
+    ]
+  },
+  "Workflow": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "domain": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "nodes": {
+        "type": {
+          "array": {
+            "ref": "WorkflowNode"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "edges": {
+        "type": {
+          "array": {
+            "ref": "WorkflowEdge"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "start": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "inputs": {
+        "type": {
+          "array": {
+            "ref": "WorkflowInput"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "sources": {
+        "type": {
+          "array": {
+            "ref": "RuleSource"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "WorkflowStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "foundAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "updatedBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WorkflowEdge": {
+    "properties": {
+      "from": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "to": {
+        "type": "string",
+        "required": true,
+        "nullable": true
+      },
+      "label": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "on": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WorkflowInput": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "required": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "default": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "maxLength": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WorkflowNode": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": {
+          "ref": "WorkflowNodeKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "detail": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "owner": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "approvers": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "approverReason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "when": {
+        "type": {
+          "ref": "NodeWhen"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "ruleIds": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "position": {
+        "type": {
+          "ref": "NodePosition"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "actions": {
+        "type": {
+          "array": {
+            "ref": "GateAction"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "actionsBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "actionsAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "run": {
+        "type": {
+          "ref": "NodeRun"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "suggested": {
+        "type": {
+          "ref": "NodeSuggestions"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "wait": {
+        "type": {
+          "ref": "WaitSpec"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "workflowId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "arguments": {
+        "type": {
+          "map": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "maxVisits": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WorkflowNodeKind": {
+    "enum": [
+      "trigger",
+      "step",
+      "check",
+      "gate",
+      "notify",
+      "agent",
+      "wait",
+      "workflow"
+    ]
+  },
+  "WorkflowRun": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowName": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workflowVersion": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "RunStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "startedBy": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "source": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "automationId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "inputs": {
+        "type": {
+          "map": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "currentNodeId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "parentRunId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "visits": {
+        "type": {
+          "array": {
+            "ref": "NodeVisit"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "failure": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "output": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "receiptId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "startedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "endedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WorkflowStatus": {
+    "enum": [
+      "proposed",
+      "accepted",
+      "edited"
+    ]
+  }
+}
