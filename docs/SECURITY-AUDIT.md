@@ -39,6 +39,10 @@ app `main` bd01382.
 | S2-16 | low | auth | Agent tokens are revoked by session id across organizations (session ids are agent strings) | server#10 `TokenUseCases.kt:259`, `CredentialsRepositoriesImpl.kt:130` | open |
 | S2-17 | low | auth | Org SSO over OIDC must verify the ID token signature (JWKS from discovery): the token endpoint is chosen by an org admin | signin `OAuthProviders.kt:146-149` | open, before the SSO PR |
 | S2-18 | low | app | Receipts are verified against the key served by the same server, without pinning | app `src/repositories/ReceiptsRepository.ts` | open |
+| S2-21 | medium | sharing | Shared Claude/Codex accounts: tables without RLS, routes without scope; the shared token must only ever be used server-side | server#17 `SharingMigrations.kt`, `SharingRoutes.kt:48-68` | open |
+| S2-22 | high (contract) | auth | `POST /api/v1/auth/launcher/login` exchanges any GitHub token for an Ostrom device token: a token minted for another OAuth app (or stolen) signs in as its user | core `api/openapi.yaml:314` | open, before it is implemented |
+| S2-23 | medium (contract) | auth | Unauthenticated GitHub App manifest and install callbacks: without a `state` bound to an admin session, anyone completes an instance's App setup | core `api/openapi.yaml:950` | open, before it is implemented |
+| S2-24 | low | app | Mobile sign-in returns to the custom scheme `ostrom://auth/callback`, claimable by another app (PKCE and `state` limit it to a denial) | app#6 `GithubSignInImpl.ts:6` | open |
 | S2-19 | — | core | Package envelopes ignore `revoked` and `contentDigest`, recursive canonical JSON without a depth limit, duplicated `kid` (review of 02:20) | core `main` | fix in progress by CORE (`3d74405`, not pushed at 02:50) |
 | S2-20 | — | CLI | Command parsing and hook bypasses A4, A5, A6, A9, A12, A13, A24 on the Kotlin CLI | cli#5, #1, #4 | under review |
 
@@ -188,7 +192,18 @@ ControlResell's and the nodes' addresses in `extraDeniedCidrs`; otherwise ship w
   signature check, HTTPS endpoints only.
 - **S2-18** the app pins the instance key id at sign-in and warns when it changes.
 
+- **S2-21** sharing tables get the S2-01 treatment and the routes the S2-03 one; the shared access and refresh
+  tokens (already sealed) are used by the gateway and the org's cloud pods only, never returned to a member.
+- **S2-22** the launcher login checks that the GitHub token was issued to Ostrom's own client
+  (`POST /applications/{client_id}/token` with the client credentials) before trusting `/user`; otherwise drop the
+  route for the device flow, which already exists.
+- **S2-23** manifest and install callbacks carry a `state` created by a signed-in owner's session and consumed once;
+  before the first owner exists, only the bootstrap setup link may start them (CONVENTIONS § 16.2).
+- **S2-24** prefer an App Link / Universal Link (`https://app.ostrom.run/auth/callback`) on both platforms.
+
 ## Log
 
 - 30/10 02:50 — first pass: AUTH (identity, sign-in), tenancy, gates, secrets, mcp-relay, runners, billing, web, helm,
   app receipts. CLI under review.
+- 30/10 03:15 — sharing (server#17), terminal relay (server#14: bearer or single-use ticket, no cookie, no cross-site
+  WebSocket hijacking; good), app sign-in (app#6), the contract's unauthenticated operations.
