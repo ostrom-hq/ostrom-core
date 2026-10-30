@@ -57,7 +57,7 @@ export const HELP = {
     ].join("\n"),
 }
 
-/** `run(args)` of a binary whose help is [HELP]; `ostrom check` is listed as plumbing but not registered. */
+/** `run(args)` of a binary whose help is [HELP]; `ostrom check` is listed as plumbing but has no help of its own. */
 export function fakeBinary({plumbing = true} = {}) {
     return (args) => {
         if (args[0] === "help" && args[1] === "plumbing") {
