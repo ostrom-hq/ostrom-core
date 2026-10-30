@@ -20,7 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # pnpm repository (ostrom-web): uncomment this step, set `cache: pnpm` below, and replace `npm ci` by
-      # `pnpm install --frozen-lockfile` and `npm run` by `pnpm run` (pnpm takes no `--`: `pnpm run test --coverage`).
+      # `pnpm install --frozen-lockfile` and `npm run` by `pnpm run`, dropping the `--` of the coverage line
+      # (`pnpm run test --coverage`).
       # With no `version` input, the action installs the pnpm version of package.json's `packageManager` field, which
       # the repository must set.
       # - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
