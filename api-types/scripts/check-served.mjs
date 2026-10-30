@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Fails when an operation's `x-ostrom-status` disagrees with what ostrom-server main serves, listed in
 // api/contract/served-routes.txt (written by scripts/served-routes.py): `served` when a listed route has the
-// operation's method and path (path parameters written `{}`; a `+` line is a literal path served through a parameter
-// route), `planned` otherwise, and `planned` for a route listed with `!` (served on main in another shape).
+// operation's method and path (path parameters written `{}`), `planned` otherwise, and `planned` for a route listed
+// with `!` (served on main in another shape than the contract's).
 import { readFileSync } from 'node:fs'
 import { parse } from 'yaml'
 
@@ -16,7 +16,7 @@ for (const raw of readFileSync(listFile, 'utf8').split('\n')) {
   const line = raw.trim()
   if (line === '' || line.startsWith('#')) continue
   const different = line.startsWith('!')
-  const [method, path] = line.replace(/^[!+]/, '').trim().split(/\s+/)
+  const [method, path] = line.replace(/^!/, '').trim().split(/\s+/)
   ;(different ? otherShape : served).push(`${method} ${path}`)
 }
 

@@ -137,10 +137,10 @@ operation without it). The public [API reference](https://ostrom.run/docs/refere
 `scripts/served-routes.py`, and `npm run contract` fails when a marker disagrees with it. When a server PR lands that
 serves (or stops serving) a route, regenerate the list against that `main` and flip the marker in the same PR:
 
-    python3 scripts/served-routes.py ../ostrom-server   # then keep the file's header, `+` and `!` lines
+    python3 scripts/served-routes.py ../ostrom-server   # then keep the file's header and `!` lines
 
-A `+` line names a literal path `main` serves through a parameter route; a `!` line keeps `planned` a route `main`
-serves in another shape than the contract's.
+A `!` line keeps `planned` a route `main` serves in another shape than the contract's; the operation's description
+says what `main` serves instead.
 
 TypeScript: `@ostrom-hq/api-types`, published to GitHub Packages npm with the same `0.1.<run>` version as the Kotlin
 artifacts. `.npmrc`:
