@@ -70,7 +70,7 @@ public enum class Refusal(public val key: String, public val message: String) {
     /** A program whose name is built at run time (`$GIT`, `$(which git)`, `{git,x}`): what runs is unknown. */
     DYNAMIC_COMMAND(
         "command_not_plain",
-        "this command runs a program whose name is built at run time ($VAR, $(…), backticks, {a,b}): Ostrom cannot " +
+        "this command runs a program whose name is built at run time (\$VAR, \$(…), backticks, {a,b}): Ostrom cannot " +
             "tell what it does. Write the program's name in full.",
     ),
 
