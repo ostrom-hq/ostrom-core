@@ -18,4 +18,4 @@ dependencyResolutionManagement {
     }
 }
 
-include(":api", ":receipts", ":telemetry")
+include(":api", ":receipts", ":telemetry", ":actions")
