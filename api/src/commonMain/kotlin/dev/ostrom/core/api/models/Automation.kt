@@ -104,6 +104,9 @@ public data class AutomationVariable(
  * @property version Version, raised at each save.
  * @property createdAt ISO creation.
  * @property updatedAt ISO last save.
+ * @property nextRunAt ISO next cron slot, while enabled.
+ * @property previousSecretValidUntil ISO end of the former webhook secret's grace after a rotation.
+ * @property secret The webhook secret, only in the answer to its creation.
  */
 @Serializable
 public data class Automation(
@@ -121,6 +124,9 @@ public data class Automation(
     val version: Int,
     val createdAt: String,
     val updatedAt: String,
+    val nextRunAt: String? = null,
+    val previousSecretValidUntil: String? = null,
+    val secret: String? = null,
 )
 
 /** Status of a workflow run. */

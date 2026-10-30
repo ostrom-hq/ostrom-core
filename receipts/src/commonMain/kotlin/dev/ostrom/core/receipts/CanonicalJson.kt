@@ -1,5 +1,7 @@
 package dev.ostrom.core.receipts
 
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -34,6 +36,58 @@ public object CanonicalJson {
 
     /** The deepest nesting accepted: a received document deeper than this is refused, never recursed into. */
     public const val MAX_DEPTH: Int = 64
+
+    private const val HEX_RADIX = 16
+    private const val ESCAPE_DIGITS = 4
+
+    /** The short escapes of `JSON.stringify`; any other control character is written `\u00xx`. */
+    private val SHORT_ESCAPES = mapOf(
+        '"' to "\\\"",
+        '\\' to "\\\\",
+        '\b' to "\\b",
+        '\u000C' to "\\f",
+        '\n' to "\\n",
+        '\r' to "\\r",
+        '\t' to "\\t",
+    )
+
+    /**
+     * Parses received JSON text, refusing a document nested deeper than [MAX_DEPTH] before any parser recurses into
+     * it (the JSON parser recurses once per level: ten thousand `[` overflow a JVM thread's stack).
+     *
+     * @param text The received text.
+     *
+     * @return The parsed value.
+     *
+     * @throws CanonicalJsonException When [text] nests containers deeper than [MAX_DEPTH].
+     * @throws SerializationException When [text] is not JSON.
+     */
+    public fun parse(text: String): JsonElement {
+        // a value at depth MAX_DEPTH may itself be a container: encode() keeps the exact bound
+        if (containerDepth(text) > MAX_DEPTH + 1) throw CanonicalJsonException()
+        return Json.parseToJsonElement(text)
+    }
+
+    /** The deepest nesting of `[` and `{` in [text], outside strings. */
+    private fun containerDepth(text: String): Int {
+        var depth = 0
+        var deepest = 0
+        var inString = false
+        var escaped = false
+        for (c in text) {
+            when {
+                escaped -> escaped = false
+                inString -> {
+                    escaped = c == '\\'
+                    inString = c != '"'
+                }
+                c == '"' -> inString = true
+                c == '[' || c == '{' -> deepest = maxOf(deepest, ++depth)
+                c == ']' || c == '}' -> depth--
+            }
+        }
+        return deepest
+    }
 
     /**
      * Returns the UTF-8 bytes of the canonical text of [element]: what is hashed and signed.
@@ -82,14 +136,9 @@ public object CanonicalJson {
         var i = 0
         while (i < value.length) {
             val c = value[i]
+            val escape = SHORT_ESCAPES[c]
             when {
-                c == '"' -> out.append("\\\"")
-                c == '\\' -> out.append("\\\\")
-                c == '\b' -> out.append("\\b")
-                c == '\u000C' -> out.append("\\f")
-                c == '\n' -> out.append("\\n")
-                c == '\r' -> out.append("\\r")
-                c == '\t' -> out.append("\\t")
+                escape != null -> out.append(escape)
                 c < ' ' -> out.append("\\u").append(hex4(c))
                 c.isHighSurrogate() && i + 1 < value.length && value[i + 1].isLowSurrogate() -> {
                     out.append(c).append(value[i + 1])
@@ -103,8 +152,8 @@ public object CanonicalJson {
         out.append('"')
     }
 
-    private fun hex4(c: Char): String = c.code.toString(16).padStart(4, '0')
+    private fun hex4(c: Char): String = c.code.toString(HEX_RADIX).padStart(ESCAPE_DIGITS, '0')
 }
 
 /** A JSON value nested deeper than [CanonicalJson.MAX_DEPTH]: no receipt or package of the format is. */
-public class CanonicalJsonException : Exception()
+public class CanonicalJsonException : SerializationException("JSON nested deeper than ${CanonicalJson.MAX_DEPTH}")

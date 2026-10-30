@@ -184,7 +184,8 @@ public enum class RunLocation(
 }
 
 /**
- * A hook rule: when the agent event fires on a matching tool call, run the check, ask the gate or send the notification.
+ * A hook rule: when the agent event fires on a matching tool call, run the check, ask the gate or send the
+ * notification.
  *
  * @property id Hook id.
  * @property nodeId Workflow node it comes from.

@@ -322,7 +322,14 @@ public data class Deliverable(
  * @property at ISO time.
  */
 @Serializable
-public data class StringSuggestion(val value: String, val evidence: List<String>, val excerpt: String? = null, val why: String? = null, val by: String = "analysis", val at: String)
+public data class StringSuggestion(
+    val value: String,
+    val evidence: List<String>,
+    val excerpt: String? = null,
+    val why: String? = null,
+    val by: String = "analysis",
+    val at: String,
+)
 
 /**
  * A list of strings suggested by the analysis, with what proves it.
@@ -335,7 +342,14 @@ public data class StringSuggestion(val value: String, val evidence: List<String>
  * @property at ISO time.
  */
 @Serializable
-public data class StringListSuggestion(val value: List<String>, val evidence: List<String>, val excerpt: String? = null, val why: String? = null, val by: String = "analysis", val at: String)
+public data class StringListSuggestion(
+    val value: List<String>,
+    val evidence: List<String>,
+    val excerpt: String? = null,
+    val why: String? = null,
+    val by: String = "analysis",
+    val at: String,
+)
 
 /**
  * What the analysis suggests for a node.

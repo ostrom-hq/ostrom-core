@@ -23,12 +23,14 @@ tags:
 - name: audit
 - name: auth
 - name: automations
+- name: billing
 - name: budgets
 - name: checks
 - name: delivery
 - name: events
 - name: gates
 - name: github
+- name: import
 - name: inference
 - name: mcp
 - name: meta
@@ -3504,11 +3506,17 @@ paths:
                   type: boolean
       responses:
         '200':
-          description: OK
+          description: 'A dry run (dryRun: true): nothing starts'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowRun'
+                $ref: '#/components/schemas/AutomationDryRun'
+        '202':
+          description: A test run, started with the saved definition (Idempotency-Key required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationRun'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -3524,13 +3532,25 @@ paths:
       operationId: listAutomationRuns
       tags:
       - automations
-      summary: Runs started by an automation
+      summary: The runs of an automation, newest first, kept 14 days
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+      - name: before
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
       responses:
         '200':
           description: OK
@@ -3542,7 +3562,7 @@ paths:
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/WorkflowRun'
+                      $ref: '#/components/schemas/AutomationRun'
                   next:
                     type: string
                 required:
@@ -3585,13 +3605,22 @@ paths:
                 properties:
                   runId:
                     type: string
+                  status:
+                    type: string
+                    description: The run's status (started, failed, invalid_payload, skipped_overlap…)
                   deduplicated:
                     type: boolean
                 required:
                 - deduplicated
         '400':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
           $ref: '#/components/responses/Error'
   /api/v1/waits:
     get:
@@ -3794,6 +3823,15 @@ paths:
       tags:
       - mcp
       summary: MCP servers relayed by Ostrom
+      parameters:
+      - name: mine
+        in: query
+        required: false
+        description: Only the servers the caller reaches, with their tools and agent names (what `ostrom claude` connects).
+          A member, an agent session or an `mcp:use` token always gets this list, whatever `mine` says; the whole list,
+          with upstream URLs and secret names, is for an admin with `mcp:read` or a browser session
+        schema:
+          type: boolean
       responses:
         '200':
           description: OK
@@ -3897,6 +3935,250 @@ paths:
       responses:
         '204':
           description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/assignments:
+    get:
+      operationId: listMcpAssignments
+      tags:
+      - mcp
+      summary: Who reaches a relayed server, with which tools (scope mcp:read)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpAssignmentsPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/assignments/{member}:
+    put:
+      operationId: assignMcpServer
+      tags:
+      - mcp
+      summary: Give a member (or everyone) a relayed server, all tools or an allowlist (scope mcp:admin)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: member
+        in: path
+        required: true
+        description: The member's id, or `all` for every member of the org
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpAssignmentRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpAssignment'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unassignMcpServer
+      tags:
+      - mcp
+      summary: Take a relayed server back from a member (scope mcp:admin)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: member
+        in: path
+        required: true
+        description: The member's id, or `all` for every member of the org
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/policies:
+    get:
+      operationId: listMcpArgumentPolicies
+      tags:
+      - mcp
+      summary: Argument policies of a relayed server (scope mcp:read)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpArgumentPolicies'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createMcpArgumentPolicy
+      tags:
+      - mcp
+      summary: Allow, deny or ask for approval of a tool call by its arguments (scope mcp:admin)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpArgumentPolicyRequest'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpArgumentPolicy'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/policies/{policyId}:
+    delete:
+      operationId: deleteMcpArgumentPolicy
+      tags:
+      - mcp
+      summary: Remove an argument policy (scope mcp:admin)
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/settings:
+    get:
+      operationId: getMcpSettings
+      tags:
+      - mcp
+      summary: The prefix of relayed server names as agents see them (scope mcp:read)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: putMcpSettings
+      tags:
+      - mcp
+      summary: Change the prefix (scope mcp:admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpSettings'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4142,12 +4424,75 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/import/teamcode:
+    post:
+      operationId: importTeamCode
+      tags:
+      - import
+      summary: Import a TeamCode team read by `ostrom import teamcode` (owners and admins; scope import:write); idempotent
+      parameters:
+      - name: dryRun
+        in: query
+        required: false
+        description: Report the plan without writing anything
+        schema:
+          type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamCodeImportRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportReport'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/messages:
     post:
       operationId: inferenceMessages
       tags:
       - inference
       summary: Anthropic-compatible Messages endpoint, metered against budgets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: {}
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/inference/v1/responses:
+    post:
+      operationId: inferenceResponses
+      tags:
+      - inference
+      summary: OpenAI-compatible Responses endpoint, metered against budgets
       requestBody:
         required: true
         content:
@@ -4217,6 +4562,57 @@ paths:
                       additionalProperties: {}
                 required:
                 - data
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/inference/settings:
+    get:
+      operationId: getInferenceSettings
+      tags:
+      - inference
+      summary: The org's provider keys (named by their org secret, never sent) and whether shared accounts serve first
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setInferenceSettings
+      tags:
+      - inference
+      summary: Replace the org's inference settings (owners and admins, `inference:admin`)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferenceSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceSettings'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4849,7 +5245,7 @@ paths:
       operationId: listCloudSessions
       tags:
       - runners
-      summary: Cloud agent sessions
+      summary: The caller's cloud agent sessions, newest first
       parameters:
       - name: status
         in: query
@@ -4861,6 +5257,13 @@ paths:
         required: false
         schema:
           type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
       responses:
         '200':
           description: OK
@@ -4905,13 +5308,17 @@ paths:
                   type: string
                 repo:
                   type: string
+                  description: https://github.com/<owner>/<name>, cloned through the organization's GitHub App
+                ref:
+                  type: string
+                  description: Branch, tag or commit; the default branch when absent
                 prompt:
                   type: string
+                  description: The agent's first message, up to 20,000 characters; an interactive agent when absent
                 name:
                   type: string
               required:
               - agent
-              - prompt
       responses:
         '201':
           description: OK
@@ -4962,7 +5369,7 @@ paths:
       operationId: stopCloudSession
       tags:
       - runners
-      summary: Stop a cloud session
+      summary: Terminate a cloud session; its workspace is deleted
       parameters:
       - name: id
         in: path
@@ -4970,8 +5377,193 @@ paths:
         schema:
           type: string
       responses:
-        '204':
-          description: Done
+        '202':
+          description: Accepted, the reconciler stops it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/pause:
+    post:
+      operationId: pauseCloudSession
+      tags:
+      - runners
+      summary: Pause a cloud session; the workspace is kept
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Accepted, the reconciler pauses it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/resume:
+    post:
+      operationId: resumeCloudSession
+      tags:
+      - runners
+      summary: Resume a paused cloud session, within the plan's running cap and hours
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Accepted, the reconciler starts a new execution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/terminal/ticket:
+    post:
+      operationId: issueCloudTerminalTicket
+      tags:
+      - runners
+      summary: A single-use ticket to attach a browser to the session's terminal
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticket:
+                    type: string
+                  expiresAt:
+                    type: string
+                required:
+                - ticket
+                - expiresAt
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/terminal:
+    get:
+      operationId: attachCloudTerminal
+      tags:
+      - runners
+      summary: 'WebSocket: the session''s terminal. Bearer token on the upgrade, or ?ticket= from a browser. Binary frames
+        carry the terminal''s bytes; text frames are JSON controls: {"type":"resize","columns":c,"rows":r} from the
+        client, {"type":"runner","connected":b} from the server. Close codes 4000 + the HTTP status (4401, 4403, 4404,
+        4409)'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ticket
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '101':
+          description: Switching protocols
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/heartbeat:
+    post:
+      operationId: cloudRunnerHeartbeat
+      tags:
+      - runners
+      summary: The runner in a session's pod reports; its bearer is the execution's runner token, not a member's
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                epoch:
+                  type: integer
+                  format: int64
+                ready:
+                  type: boolean
+                stopped:
+                  type: boolean
+                lastModelRequestAt:
+                  type: string
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instruction:
+                    type: string
+                    description: run or stop
+                  state:
+                    type: string
+                required:
+                - instruction
+                - state
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -6505,6 +7097,261 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing:
+    get:
+      operationId: getBilling
+      tags:
+      - billing
+      summary: The organization's plan, limits, usage and payment state
+      description: 'Members only. Usage and alerts are for the current period: Stripe''s billing period while a subscription is live, the UTC calendar month otherwise. `purchasable` is false on a self-hosted instance (limits come from the license key).'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingOverview'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/checkout:
+    post:
+      operationId: startBillingCheckout
+      tags:
+      - billing
+      summary: Start buying a plan (Stripe Checkout)
+      description: 'Owners, admins and billing admins. Opens a Stripe Checkout session with automatic tax, tax ids and the billing address; the console redirects to `url`. Monthly plans are billed per active person in arrears; yearly plans are bought for the people active now (at least one). 409 while a subscription is running (change its plan instead), 400 for Free or Enterprise (sold on quote).'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingPlanRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingRedirect'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/portal:
+    post:
+      operationId: openBillingPortal
+      tags:
+      - billing
+      summary: Open the Stripe customer portal
+      description: 'Owners, admins and billing admins: payment methods, invoices and receipts, billing address and tax id, cancellation at the period end. 409 for an organization that never bought.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingRedirect'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/plan:
+    post:
+      operationId: changeBillingPlan
+      tags:
+      - billing
+      summary: Change the plan or the interval of the subscription
+      description: 'Owners, admins and billing admins. An upgrade (Team to Business, monthly to yearly) is invoiced now, prorated; a downgrade is credited on the next invoice. Returns the billing after the change.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingPlanRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingOverview'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/cancel:
+    post:
+      operationId: cancelBillingSubscription
+      tags:
+      - billing
+      summary: End the subscription at the end of the period
+      description: 'Owners, admins and billing admins. The plan stays until the period end; 409 if it already ends.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingOverview'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/resume:
+    post:
+      operationId: resumeBillingSubscription
+      tags:
+      - billing
+      summary: Keep a subscription that was set to end
+      description: 'Owners, admins and billing admins. 409 if the subscription is not ending; a subscription already ended is bought again through checkout.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingOverview'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/invoices:
+    get:
+      operationId: listBillingInvoices
+      tags:
+      - billing
+      summary: Invoices and receipts, newest first
+      description: 'Owners, admins and billing admins. Empty for an organization that never bought.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 24
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingInvoiceList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /v1/billing/stripe/webhook:
+    post:
+      operationId: receiveStripeWebhook
+      tags:
+      - billing
+      summary: Stripe events (subscriptions, invoices, checkout)
+      description: 'Called by Stripe only, authenticated by the `Stripe-Signature` header (HMAC-SHA256 of the timestamp and
+        the body, 5 minutes of tolerance). Each event is applied once; a replay answers `duplicate`. Bodies over 256 KiB
+        are refused (413).'
+      security: []
+      parameters:
+      - name: Stripe-Signature
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: A Stripe event, as Stripe sends it
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingWebhookAck'
+        '400':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearer:
@@ -7010,6 +7857,15 @@ components:
           type: string
         updatedAt:
           type: string
+        nextRunAt:
+          type: string
+          description: The next cron slot, while the automation is enabled
+        previousSecretValidUntil:
+          type: string
+          description: Until when the webhook's former secret is still accepted after a rotation
+        secret:
+          type: string
+          description: The webhook secret, only in the answer to its creation (whsec_…); never readable again
       required:
       - id
       - name
@@ -7036,6 +7892,100 @@ components:
           type: string
         maxRuntimeMinutes:
           type: integer
+    AutomationRun:
+      type: object
+      description: One trigger of an automation (cron, webhook or test) and the session it started, kept 14 days
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+        source:
+          type: string
+          description: cron, webhook or test
+        status:
+          type: string
+          description: queued, started, failed, invalid_payload, skipped_overlap or skipped_budget
+        version:
+          type: integer
+          description: The automation's version that ran
+        sessionId:
+          type: [string, 'null']
+        reason:
+          type: [string, 'null']
+          description: A stable code when it failed (cloud_session_limit, cloud_hours_exhausted, owner_unavailable…)
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationPayloadProblem'
+        slotAt:
+          type: [string, 'null']
+          description: The cron slot it ran for
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+      - id
+      - automationId
+      - source
+      - status
+      - version
+      - problems
+      - createdAt
+      - updatedAt
+      x-ostrom-kotlin: pending
+    AutomationPayloadProblem:
+      type: object
+      description: A webhook payload value that does not fit its variable
+      properties:
+        path:
+          type: string
+        rule:
+          type: string
+          description: required, type:<type>, enum, max_length or not_scalar
+      required:
+      - path
+      - rule
+      x-ostrom-kotlin: pending
+    AutomationDryRun:
+      type: object
+      description: What a run would do, without starting anything
+      properties:
+        renderedPrompt:
+          type: string
+        variables:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              value:
+                type: [string, 'null']
+                description: Masked (••••) when the variable is sensitive
+              sensitive:
+                type: boolean
+            required:
+            - name
+            - sensitive
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationPayloadProblem'
+        wouldSkip:
+          type: [string, 'null']
+          description: disabled, overlap or budget
+        nextRuns:
+          type: array
+          items:
+            type: string
+      required:
+      - renderedPrompt
+      - variables
+      - problems
+      - nextRuns
+      x-ostrom-kotlin: pending
     AutomationTrigger:
       type: object
       description: The trigger of an automation
@@ -7081,6 +8031,254 @@ components:
       - name
       - path
       - type
+    BillingInvoice:
+      type: object
+      description: An invoice or receipt. Amounts are in the currency's smallest unit (cents)
+      properties:
+        id:
+          type: string
+        number:
+          type: [string, 'null']
+        status:
+          type: string
+          description: Stripe's status (paid, open, void, uncollectible, draft)
+        total:
+          type: integer
+          format: int64
+          description: Amount including tax
+        tax:
+          type: integer
+          format: int64
+        currency:
+          type: string
+          description: ISO 4217, lowercase
+        created:
+          type: string
+          format: date-time
+        hostedInvoiceUrl:
+          type: [string, 'null']
+          description: Stripe's page of the invoice (pay it, download the receipt)
+        pdfUrl:
+          type: [string, 'null']
+      required:
+      - id
+      - number
+      - status
+      - total
+      - tax
+      - currency
+      - created
+      - hostedInvoiceUrl
+      - pdfUrl
+      x-ostrom-kotlin: pending
+    BillingInvoiceList:
+      type: object
+      description: Invoices and receipts, newest first
+      properties:
+        invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingInvoice'
+      required:
+      - invoices
+      x-ostrom-kotlin: pending
+    BillingOverview:
+      type: object
+      description: 'What the console''s billing page shows: plan, period, limits, usage, alerts and payment state'
+      properties:
+        orgId:
+          type: string
+          format: uuid
+        plan:
+          type: string
+          enum: [free, team, business, enterprise]
+          description: The plan of the subscription (free without one)
+        effectivePlan:
+          type: string
+          enum: [free, team, business, enterprise]
+          description: The plan whose limits apply now (free once a subscription has ended or is unpaid past retries)
+        interval:
+          type: [string, 'null']
+          enum: [month, year, null]
+        status:
+          type: [string, 'null']
+          description: Stripe's subscription status (active, trialing, past_due, incomplete, canceled…), null without one
+        cancelAtPeriodEnd:
+          type: boolean
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+          description: First instant after the period (renewal, or reset of the Free hours)
+        activePeople:
+          type: integer
+          description: People who launched an agent or answered a gate this period (billed on Team and Business)
+        committedPeople:
+          type: integer
+          description: People paid in advance on a yearly plan (0 on a monthly plan)
+        limits:
+          $ref: '#/components/schemas/BillingPlanLimits'
+        usage:
+          $ref: '#/components/schemas/BillingUsage'
+        alerts:
+          type: array
+          description: Usage alerts raised this period, in percent of the agent hours (80, 100)
+          items:
+            type: integer
+        paymentIssue:
+          oneOf:
+          - $ref: '#/components/schemas/BillingPaymentIssue'
+          - type: 'null'
+        purchasable:
+          type: boolean
+          description: Whether plans can be bought on this instance (false when self-hosted)
+        prices:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingPrice'
+      required:
+      - orgId
+      - plan
+      - effectivePlan
+      - interval
+      - status
+      - cancelAtPeriodEnd
+      - periodStart
+      - periodEnd
+      - activePeople
+      - committedPeople
+      - limits
+      - usage
+      - alerts
+      - paymentIssue
+      - purchasable
+      - prices
+      x-ostrom-kotlin: pending
+    BillingPaymentIssue:
+      type: object
+      description: A payment waiting for the customer; the console shows a banner linking to Stripe's invoice page
+      properties:
+        kind:
+          type: string
+          enum: [payment_failed, action_required]
+          description: payment_failed (card declined, Stripe retries) or action_required (3-D Secure)
+        hostedInvoiceUrl:
+          type: [string, 'null']
+        at:
+          type: string
+          format: date-time
+      required:
+      - kind
+      - hostedInvoiceUrl
+      - at
+      x-ostrom-kotlin: pending
+    BillingPlanLimits:
+      type: object
+      description: 'The limits in force; null means unlimited. A request that would go past one (a member, a cloud agent, an agent hour, SSO, policies) is answered 402 `payment_required`, with a message naming the limit and where to upgrade.'
+      properties:
+        maxPeople:
+          type: [integer, 'null']
+        maxConcurrentCloudAgents:
+          type: [integer, 'null']
+        agentHoursPerPeriod:
+          type: [integer, 'null']
+        sso:
+          type: boolean
+        policies:
+          type: boolean
+        receiptRetentionDays:
+          type: [integer, 'null']
+      required:
+      - maxPeople
+      - maxConcurrentCloudAgents
+      - agentHoursPerPeriod
+      - sso
+      - policies
+      - receiptRetentionDays
+      x-ostrom-kotlin: pending
+    BillingPlanRequest:
+      type: object
+      description: A plan to buy or switch to
+      properties:
+        plan:
+          type: string
+          enum: [team, business]
+        interval:
+          type: string
+          enum: [month, year]
+      required:
+      - plan
+      - interval
+      x-ostrom-kotlin: pending
+    BillingPrice:
+      type: object
+      description: 'A price of the catalog: per active person per month (monthly), per person per year (yearly, 20 % off)'
+      properties:
+        plan:
+          type: string
+          enum: [team, business]
+        interval:
+          type: string
+          enum: [month, year]
+        unitAmount:
+          type: integer
+          format: int64
+          description: In cents, before tax
+        currency:
+          type: string
+      required:
+      - plan
+      - interval
+      - unitAmount
+      - currency
+      x-ostrom-kotlin: pending
+    BillingRedirect:
+      type: object
+      description: A Stripe page to send the browser to
+      properties:
+        url:
+          type: string
+          format: uri
+      required:
+      - url
+      x-ostrom-kotlin: pending
+    BillingUsage:
+      type: object
+      description: Cloud agent usage of the current period
+      properties:
+        agentSeconds:
+          type: integer
+          format: int64
+        agentHours:
+          type: integer
+          format: int64
+          description: Whole hours, rounded down
+        sessions:
+          type: integer
+          format: int64
+        percentOfHours:
+          type: [integer, 'null']
+          description: Share of the plan's agent hours used, null without an hour limit
+      required:
+      - agentSeconds
+      - agentHours
+      - sessions
+      - percentOfHours
+      x-ostrom-kotlin: pending
+    BillingWebhookAck:
+      type: object
+      properties:
+        received:
+          type: boolean
+        outcome:
+          type: string
+          enum: [processed, duplicate, ignored]
+      required:
+      - received
+      - outcome
+      x-ostrom-kotlin: pending
     Budget:
       type: object
       description: A spending limit
@@ -7213,7 +8411,7 @@ components:
       - skipped
     CloudSession:
       type: object
-      description: An agent session run on a runner
+      description: 'A cloud agent session: one pod (or local container) per execution, with a workspace kept across pauses'
       properties:
         id:
           type: string
@@ -7223,9 +8421,38 @@ components:
           type: string
         agent:
           type: string
+          description: claude, codex, opencode, gemini or shell
         model:
           type: string
+        repo:
+          type: string
+          description: The GitHub repository cloned at the first start, https://github.com/<owner>/<name>
+        ref:
+          type: string
         status:
+          type: string
+          description: creating, running, pausing, paused, resuming, terminated or failed
+        desiredStatus:
+          type: string
+          description: What the owner asked for, running, paused or terminated
+        phase:
+          type: string
+          description: An open label of the current step (scheduling, cloning, starting…)
+        epoch:
+          type: integer
+          format: int64
+          description: The execution number, raised at each start or resume
+        failure:
+          $ref: '#/components/schemas/CloudSessionFailure'
+        limits:
+          $ref: '#/components/schemas/CloudSessionLimits'
+        updatedAt:
+          type: string
+        readyAt:
+          type: string
+        lastActivityAt:
+          type: string
+        pausedAt:
           type: string
         runnerId:
           type: string
@@ -7243,6 +8470,36 @@ components:
       - agent
       - status
       - createdAt
+      x-ostrom-kotlin: pending
+    CloudSessionFailure:
+      type: object
+      description: Why a cloud session failed or paused on its own
+      properties:
+        code:
+          type: string
+          description: start_failed, execution_lost, idle_timeout, max_duration or hours_exhausted
+        message:
+          type: string
+      required:
+      - code
+      - message
+      x-ostrom-kotlin: pending
+    CloudSessionLimits:
+      type: object
+      description: The bounds a cloud session runs under, from its organization's plan
+      properties:
+        idleTimeoutMinutes:
+          type: integer
+          description: Minutes without a model request nor terminal input before it pauses
+        maxRunMinutes:
+          type: integer
+          description: Minutes an execution may run before it pauses
+        restrictedEgress:
+          type: boolean
+      required:
+      - idleTimeoutMinutes
+      - maxRunMinutes
+      - restrictedEgress
       x-ostrom-kotlin: pending
     CompiledHook:
       type: object
@@ -7871,6 +9128,50 @@ components:
       - pinned
       - assignedTo
       x-ostrom-kotlin: pending
+    ImportItem:
+      type: object
+      description: One line of an import report
+      properties:
+        kind:
+          type: string
+          enum: [setting, secret, server, policy, assignment, account]
+          description: Clients keep an unknown kind as UNKNOWN
+        name:
+          type: string
+        action:
+          type: string
+          enum: [planned, created, updated, unchanged, skipped]
+        reason:
+          type: string
+          description: Why it was skipped
+      required:
+      - kind
+      - name
+      - action
+      x-ostrom-kotlin: pending
+    ImportReport:
+      type: object
+      description: What an import did; a second run reports everything unchanged
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportItem'
+        created:
+          type: integer
+        updated:
+          type: integer
+        unchanged:
+          type: integer
+        skipped:
+          type: integer
+      required:
+      - items
+      - created
+      - updated
+      - unchanged
+      - skipped
+      x-ostrom-kotlin: pending
     InferenceRoute:
       type: object
       description: Where a model is served from
@@ -7890,6 +9191,147 @@ components:
       - model
       - provider
       - priority
+      x-ostrom-kotlin: pending
+    McpArgumentCondition:
+      type: object
+      description: One test on a tool call's arguments
+      properties:
+        path:
+          type: string
+          maxLength: 256
+          description: A dotted path into the arguments (`query`, `options.database`, `items.0.id`)
+        operator:
+          type: string
+          enum: [EQUALS, NOT_EQUALS, MATCHES, PREFIX, CONTAINS, EXISTS, ABSENT]
+          description: Answers carry these values; requests may use any case. MATCHES is a case-insensitive regular
+            expression that may not repeat a repeated group (`(a+)+`) nor refer back to a group, and an argument longer
+            than 8192 characters counts as matching (fail closed)
+        value:
+          type: string
+          maxLength: 1024
+          description: The operand, unused for EXISTS and ABSENT
+      required:
+      - path
+      - operator
+      x-ostrom-kotlin: pending
+    McpArgumentPolicies:
+      type: object
+      description: The argument policies of a relayed server, at most 64, so always one page
+      properties:
+        policies:
+          type: array
+          maxItems: 64
+          items:
+            $ref: '#/components/schemas/McpArgumentPolicy'
+        next:
+          type: string
+          description: Reserved for paging; always absent today
+      required:
+      - policies
+      x-ostrom-kotlin: pending
+    McpArgumentPolicy:
+      type: object
+      description: A rule on a tool's arguments, checked on every call before it reaches the upstream server
+      properties:
+        id:
+          type: string
+        tool:
+          type: string
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpArgumentCondition'
+        effect:
+          type: string
+          enum: [DENY, REQUIRE_APPROVAL]
+          description: DENY refuses the call; REQUIRE_APPROVAL holds it until a human approves it
+        message:
+          type: string
+          description: What the agent is told
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - tool
+      - conditions
+      - effect
+      - message
+      - createdAt
+      x-ostrom-kotlin: pending
+    McpArgumentPolicyRequest:
+      type: object
+      description: A new argument policy; every condition must hold (none means every call of the tool)
+      properties:
+        tool:
+          type: string
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpArgumentCondition'
+        effect:
+          type: string
+          enum: [DENY, REQUIRE_APPROVAL]
+          description: Any case is accepted; answers carry the upper-case value
+        message:
+          type: string
+      required:
+      - tool
+      - effect
+      - message
+      x-ostrom-kotlin: pending
+    McpAssignment:
+      type: object
+      description: Who reaches a relayed server and which of its tools. A member's own assignment replaces the one for
+        every member (`all`) for that member, it never adds to it; removing `all` leaves members' own assignments
+      properties:
+        server:
+          type: string
+        member:
+          type: string
+          description: The member's id; absent for every member of the org
+        tools:
+          type: array
+          description: The allowlist; absent for every tool, empty for none
+          items:
+            type: string
+        credentialSecret:
+          type: string
+          description: The member's personal secret used as credential, for a per-member server
+        assignedAt:
+          type: string
+          format: date-time
+      required:
+      - server
+      - assignedAt
+      x-ostrom-kotlin: pending
+    McpAssignmentRequest:
+      type: object
+      description: An assignment; hiding a tool is not the boundary, every call is checked again
+      properties:
+        tools:
+          type: array
+          description: The allowlist; absent for every tool, empty for none (send `[]`, never drop it)
+          items:
+            type: string
+        credentialSecret:
+          type: string
+          description: The name of one of the member's personal secrets, only for a per-member server and one member (400
+            with `all`)
+      x-ostrom-kotlin: pending
+    McpAssignmentsPage:
+      type: object
+      description: The assignments of a server, one per member and one for `all` at most, so always one page
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpAssignment'
+        next:
+          type: string
+          description: Reserved for paging; always absent today
+      required:
+      - items
       x-ostrom-kotlin: pending
     McpCall:
       type: object
@@ -7925,14 +9367,21 @@ components:
       properties:
         name:
           type: string
+          pattern: ^[a-z0-9][a-z0-9._-]{0,63}$
+          description: 1 to 64 characters; `servers`, `settings`, `calls` and `usage` are reserved (they are paths of
+            this API)
         url:
           type: string
+          description: The upstream URL of an HTTP server; absent for a stdio server. In answers, a stdio server reads
+            `stdio:<launcher>:<package>`, and a member's list (`mine=true`) gives the relay path, never the upstream
         transport:
           type: string
+          description: http, sse or stdio
         secretNames:
           type: array
           items:
             type: string
+          description: The org secrets the server uses, in an admin's list only
         tools:
           type: array
           items:
@@ -7941,13 +9390,88 @@ components:
           type: boolean
         scope:
           type: string
+        agentName:
+          type: string
+          readOnly: true
+          description: The name the agent sees (`<agentPrefix>-<name>`), in a member's list
+        path:
+          type: string
+          readOnly: true
+          description: The relay endpoint, in a member's list
+        credentialHeader:
+          type: string
+          description: 'The header carrying the credential, when not `Authorization: Bearer`'
+        stdio:
+          $ref: '#/components/schemas/McpStdioSpec'
+        version:
+          type: integer
+          readOnly: true
+          description: Bumped at each change
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
       required:
       - name
-      - url
       - transport
-      - secretNames
       - enabled
       - scope
+      x-ostrom-kotlin: pending
+    InferenceSettings:
+      type: object
+      description: How the gateway reaches model providers for the org (bring your own key)
+      properties:
+        anthropicKeySecret:
+          type: string
+          description: Name of the org secret holding an Anthropic API key, used when no shared Claude account serves
+        openaiKeySecret:
+          type: string
+          description: Name of the org secret holding an OpenAI API key
+        openrouterKeySecret:
+          type: string
+          description: Name of the org secret holding an OpenRouter key (models named `vendor/model`)
+        useSharedAccounts:
+          type: boolean
+          default: true
+          description: Whether members' shared subscription accounts serve before the org's keys
+      x-ostrom-kotlin: pending
+    McpSettings:
+      type: object
+      description: How agents see relayed servers
+      properties:
+        agentPrefix:
+          type: string
+          pattern: ^[a-z0-9][a-z0-9_-]{0,31}$
+          description: 'Tools are `mcp__<agentPrefix>-<server>__<tool>`; 1 to 32 characters of a-z 0-9 _ -, default `ostrom`'
+      required:
+      - agentPrefix
+      x-ostrom-kotlin: pending
+    McpStdioSpec:
+      type: object
+      description: A server run by the MCP host from a pinned package
+      properties:
+        launcher:
+          type: string
+          enum: [npm, pypi]
+        packageName:
+          type: string
+          description: name@1.2.3 (npm) or name==1.2.3 (PyPI)
+        args:
+          type: array
+          items:
+            type: string
+        env:
+          type: object
+          additionalProperties:
+            type: string
+        secretEnv:
+          type: object
+          description: Variable name to the name of the org secret injected by the server
+          additionalProperties:
+            type: string
+      required:
+      - launcher
+      - packageName
       x-ostrom-kotlin: pending
     Me:
       type: object
@@ -9398,6 +10922,156 @@ components:
       required:
       - slug
       - name
+    TeamCodeAccount:
+      type: object
+      description: A shared subscription account of TeamCode, tokens in clear (sent once, over TLS)
+      properties:
+        provider:
+          type: string
+          enum: [claude, codex]
+        providerAccountId:
+          type: string
+        label:
+          type: string
+        email:
+          type: string
+        accessToken:
+          type: string
+          writeOnly: true
+          format: password
+        refreshToken:
+          type: string
+          writeOnly: true
+          format: password
+        expiresAt:
+          type: string
+          format: date-time
+        disabled:
+          type: boolean
+      required:
+      - provider
+      - providerAccountId
+      - label
+      - accessToken
+      - refreshToken
+      - expiresAt
+      x-ostrom-kotlin: pending
+    TeamCodeAssignment:
+      type: object
+      description: A TeamCode member's assignment to an MCP variant
+      properties:
+        memberId:
+          type: string
+        serverId:
+          type: string
+          description: TeamCode's variant id
+        memberSecret:
+          type: string
+          writeOnly: true
+          format: password
+          description: The member's own credential, in clear
+      required:
+      - memberId
+      - serverId
+      x-ostrom-kotlin: pending
+    TeamCodeImportRequest:
+      type: object
+      description: What `ostrom import teamcode` read from TeamCode (read-only there), and its member map
+      properties:
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeMember'
+        mcpServers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeMcpServer'
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeAssignment'
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeAccount'
+        memberMap:
+          type: object
+          description: TeamCode member id to Ostrom member id; unmapped members are skipped
+          additionalProperties:
+            type: string
+      x-ostrom-kotlin: pending
+    TeamCodeMcpServer:
+      type: object
+      description: An MCP variant of TeamCode; a slot's most assigned variant keeps the slot's name
+      properties:
+        id:
+          type: string
+        target:
+          type: string
+          description: The slot, the name agents see
+        variant:
+          type: string
+        perMember:
+          type: boolean
+        url:
+          type: string
+        credentialHeader:
+          type: string
+          description: Absent, or Authorization, for a Bearer credential
+        sharedSecret:
+          type: string
+          writeOnly: true
+          format: password
+          description: The shared credential, in clear
+        stdio:
+          $ref: '#/components/schemas/TeamCodeStdio'
+        toolMode:
+          type: string
+          enum: [allow, deny]
+          description: Absent for every tool
+        tools:
+          type: array
+          items:
+            type: string
+      required:
+      - id
+      - target
+      - variant
+      x-ostrom-kotlin: pending
+    TeamCodeMember:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+      required:
+      - id
+      - username
+      x-ostrom-kotlin: pending
+    TeamCodeStdio:
+      type: object
+      description: A command of TeamCode run by the MCP host
+      properties:
+        launcher:
+          type: string
+          enum: [npm, pypi]
+        packageName:
+          type: string
+        args:
+          type: array
+          items:
+            type: string
+        secretEnv:
+          type: object
+          description: Secret variables, values in clear; never returned nor logged
+          writeOnly: true
+          additionalProperties:
+            type: string
+      required:
+      - launcher
+      - packageName
+      x-ostrom-kotlin: pending
     Usage:
       type: object
       description: Spending over a period
