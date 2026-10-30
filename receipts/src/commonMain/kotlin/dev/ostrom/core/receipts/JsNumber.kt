@@ -111,9 +111,9 @@ internal object JsNumber {
         }
     }
 
+    /** Strips the zeros around `0.digits × 10^pos`; [digits] always has a non-zero digit here (every value is > 0). */
     private fun normalize(digits: String, pos: Int): Decimal {
         val leading = digits.indexOfFirst { it != '0' }
-        if (leading < 0) return Decimal("", 0)
         return Decimal(digits.substring(leading).trimEnd('0'), pos - leading)
     }
 
@@ -177,8 +177,8 @@ internal object JsNumber {
             }
         }
 
+        // never empty: the value is the mantissa of a non-zero double, times a power of 2 or 5
         fun toDecimalString(): String {
-            if (size == 0) return "0"
             val out = StringBuilder(size * 9)
             out.append(limbs[size - 1].toString())
             for (i in size - 2 downTo 0) out.append(limbs[i].toString().padStart(9, '0'))
