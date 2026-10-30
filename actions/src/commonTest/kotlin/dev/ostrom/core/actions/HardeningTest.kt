@@ -210,6 +210,7 @@ class HardeningTest {
             classes("gh api graphql -f query='mutation{createCommitOnBranch(input:{})}'"),
         )
         assertEquals(emptyList(), classes("gh api graphql -f query='query{viewer{login}}'"))
+        assertEquals(emptyList(), classes("gh api repos/o/r/pulls//merge"))
     }
 
     @Test
@@ -252,7 +253,10 @@ class HardeningTest {
             put("patch", JsonPrimitive("x".repeat(3000) + "\n*** Add File: db/migration/V9__x.sql\n"))
         }
         assertEquals(listOf("migration"), classifier.classify(ToolSubject.of("apply_patch", patch)).actions)
-        for (command in listOf("./gradlew flywayMigrate", "mvn flyway:migrate", "cat > prisma/migrations/a.sql")) {
+        for (command in listOf(
+            "./gradlew flywayMigrate", "mvn flyway:migrate", "cat > prisma/migrations/a.sql", "gradle flywayMigrate",
+            "./mvnw -q flyway:migrate",
+        )) {
             assertEquals(listOf("migration"), classes(command), command)
         }
         assertEquals(emptyList(), classes("./gradlew build"))

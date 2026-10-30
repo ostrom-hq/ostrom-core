@@ -87,10 +87,10 @@ internal fun atCommandPosition(words: List<String>, gitIndex: Int): Boolean =
     (0 until gitIndex).all { assignedVariable(words[it]) != null || words[it] in PLAIN_PREFIXES }
 
 /**
- * Whether a word is built by the shell at run time (`$x`, `$(…)`, backticks, `{a,b}`, a glob): its value is unknown
- * here.
+ * Whether a word is built by the shell at run time (`$x`, `$(…)`, backticks, `{a,b}`, `?` and `[…]` globs): its
+ * value is unknown here. A `*` in a refspec is git's own wildcard, refused as unlistable.
  */
-internal fun dynamic(word: String): Boolean = dynamicCommand(word) || '?' in word || '[' in word || '*' in word
+internal fun dynamic(word: String): Boolean = dynamicCommand(word) || '?' in word || '[' in word
 
 /** Whether a command name is built at run time: a substitution, a variable or a brace expansion. */
 internal fun dynamicCommand(word: String): Boolean = '$' in word || '`' in word || braceExpansion(word)

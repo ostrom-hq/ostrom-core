@@ -186,7 +186,7 @@ class ActionClassifierTest {
             "kubectl set env deploy/api X=1", "kubectl create deploy api --image x", "kubectl run x --image y",
             "tofu apply", "pulumi up", "helmfile sync", "argocd app sync api", "kamal deploy", "firebase deploy",
             "wrangler publish", "sls deploy", "netlify deploy --prod", "gcloud run deploy api", "cap production deploy",
-            "docker buildx build --push -t x .", "docker compose push",
+            "docker buildx build --push -t x .", "docker compose push", "serverless deploy",
         )) {
             assertEquals(listOf("deploy"), classes(command), command)
         }
@@ -195,7 +195,7 @@ class ActionClassifierTest {
             "vercel", "npm install", "yarn npm info", "docker build .", "docker image ls", "deploy staging", "deploy",
             "gh workflow run tests.yml", "gh workflow list", "tofu plan", "pulumi preview", "helmfile diff",
             "argocd app get api", "argocd app", "firebase login", "netlify deploy", "gcloud auth login",
-            "docker buildx build .", "docker compose up",
+            "docker buildx build .", "docker compose up", "argocd version", "netlify status",
         )) {
             assertEquals(emptyList(), classes(command), command)
         }
