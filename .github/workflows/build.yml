@@ -77,6 +77,11 @@ jobs:
           npm run contract
           git diff --exit-code -- ../api/contract/shapes.json
           npm run build
+      # tools/docs-truth checks the docs of every repository against what main ships (served-routes.txt, the binary's
+      # help, the sources' OSTROM_ variables); the other repositories run it from a pinned ostrom-core commit.
+      - name: docs-truth's tests, 100 % lines, branches and functions
+        working-directory: tools/docs-truth
+        run: npm test
   other-hosts:
     if: github.event_name == 'workflow_dispatch' && inputs.full_validation
     strategy:

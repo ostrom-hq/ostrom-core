@@ -1,0 +1,16 @@
+{
+  "name": "docs-truth",
+  "private": true,
+  "description": "Fails when a page cites an API route, an ostrom command or an OSTROM_ variable the product does not have",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "docs-truth": "bin/docs-truth.mjs"
+  },
+  "engines": {
+    "node": ">=22.8"
+  },
+  "scripts": {
+    "test": "node --test --experimental-test-coverage --test-coverage-exclude='test/**' --test-coverage-exclude='bin/**' --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 'test/*.test.mjs'"
+  }
+}
