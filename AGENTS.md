@@ -27,7 +27,7 @@ This repository owns the contract (ENG-001): every other repository consumes it,
 11. Tests: TDD (red first), `kotlin.test` + `runTest` + hand-written fakes in `commonTest` (no MockK), lowerCamelCase sentence names. 100 % lines and branches of commonMain via the test-only `jvm()` target (Kover), plus `linuxX64Test`; integration on real PostgreSQL, end-to-end on the real binary, load tests for the server.
 12. Kotlin/Native only in production: no JVM-only library (Exposed, JDBC, Netty, Logback, MockK). Ktor CIO server, Ktor engine-defaults client, sqlx4k, cryptography-kotlin + OpenSSL prebuilt, Okio, Clikt.
 13. Gradle: versions only in `gradle/libs.versions.toml` (same versions in every repository), convention plugin `ostrom.kmp` from `build-logic/`, module build files hold dependencies only. No heavy local build on the shared Mac: CI, or `~/git/ostrom-hq/.coord/build-lock.sh`.
-14. CI: Linux on every pull request (detekt, check-conventions, jvmTest + koverVerify, linuxX64Test, PostgreSQL integration); macOS, Windows and arm64 runs on tags or `full_validation` only; actions pinned by SHA.
+14. CI: one job `ci` per pull request, on Linux (check-conventions, detekt, jvmTest + koverVerify, linuxX64Test, PostgreSQL integration, e2e, load), skipped on drafts, `concurrency` with cancel-in-progress; macOS, Windows and arm64 only on `main`, tags and `workflow_dispatch`; push a round of fixes once; actions pinned by SHA.
 15. Git: one branch per topic in its own worktree, never push to `main`, Conventional Commits in English, squash-merge after green CI and a review with nothing blocking; evidence in the pull request, never in a shared status file.
 
 ## Coordination
