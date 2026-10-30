@@ -6700,6 +6700,10 @@ paths:
       tags:
       - artifacts
       summary: Share with a member
+      description: Works on every access, `personal` included. A `personal` artifact stays `personal`, which already
+        means its owner, the members it is shared with and the organization's administrators; sharing never changes
+        `access` (`ArtifactAccess` has no `members` value). A `team` or `link` artifact is already readable by every
+        member, so sharing it only adds the member to the list
       parameters:
       - name: id
         in: path
