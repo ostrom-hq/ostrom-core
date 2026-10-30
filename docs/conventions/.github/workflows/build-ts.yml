@@ -6,15 +6,17 @@ on:
     branches: [main]
     tags: ['[0-9]*']
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 permissions:
   contents: read
   packages: read # @ostrom-hq/core, the generated contract types
 concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  check:
+  ci:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     timeout-minutes: 20
     runs-on: ubuntu-24.04
     steps:
@@ -44,5 +46,5 @@ jobs:
           name: coverage
           path: coverage/
           retention-days: 7
-  # e2e:  Playwright (web) against the real server image and PostgreSQL, or Maestro on an Android emulator (app):
-  #       added by each repository, required on every pull request (BRIEF, rule TESTS).
+      # End-to-end steps go here, in the same `ci` job (one job per pull request): Playwright against the real server
+      # image and PostgreSQL (web), or KVM + prebuild + Maestro on an Android emulator (app).
