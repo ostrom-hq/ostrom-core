@@ -12,6 +12,9 @@ junit-platform = "1.11.4"
 kover = "0.9.11"
 detekt = "1.23.8"
 maven-publish = "0.37.0"
+ktor = "3.6.1"
+# Test-only (jvmTest): the official OTLP classes decode what the telemetry encoder writes.
+opentelemetry-proto = "1.11.1-alpha"
 
 [plugins]
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -38,3 +41,6 @@ bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "boun
 
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+opentelemetry-proto = { module = "io.opentelemetry.proto:opentelemetry-proto", version.ref = "opentelemetry-proto" }

@@ -54,6 +54,9 @@ jobs:
       - run: >-
           ./gradlew --no-daemon --continue detekt jvmTest koverVerify koverXmlReport linuxX64Test
           compileTestKotlinLinuxArm64 compileTestKotlinMingwX64 compileKotlinMacosArm64
+      - name: Uncovered lines and branches
+        if: always()
+        run: python3 .github/scripts/kover_missed.py
       - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -125,7 +128,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_GRADLE_PROJECT_ostromCoreVersion: 0.1.${{ github.run_number }}
         run: ./gradlew --no-daemon publishAllPublicationsToGitHubPackagesRepository
-      - run: echo "Published dev.ostrom:ostrom-api and dev.ostrom:ostrom-receipts 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+      - run: echo "Published dev.ostrom:ostrom-api, ostrom-receipts and ostrom-telemetry 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
