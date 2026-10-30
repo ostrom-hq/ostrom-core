@@ -1,4 +1,32 @@
-# ostrom-core
+<p align="center">
+  <a href="https://ostrom.run">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.svg">
+      <img alt="Ostrom. Agents propose. Your team decides." src=".github/assets/banner-light.svg" width="100%">
+    </picture>
+  </a>
+</p>
+
+<p align="center">
+  <strong>Ostrom runs a company's AI coding agents in the cloud and makes them follow the team's rules.</strong><br>
+  Every change they make leaves a receipt, and the few that matter wait for a person's yes.
+</p>
+
+<p align="center">
+  <a href="https://ostrom.run">Website</a> ·
+  <a href="https://ostrom.run/docs">Docs</a> ·
+  <a href="https://github.com/ostrom-hq/ostrom-core/discussions">Discussions</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="SECURITY.md">Security</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/ostrom-hq/ostrom-core/actions/workflows/build.yml"><img alt="CI" src="https://github.com/ostrom-hq/ostrom-core/actions/workflows/build.yml/badge.svg?branch=main"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-8E1B3A"></a>
+  <img alt="Version: pre-1.0" src="https://img.shields.io/badge/version-pre--1.0-44393C">
+</p>
+
+## What this is
 
 The Kotlin Multiplatform library shared by the Ostrom CLI and server: the protocol models, the signed receipts and the
 API contract. Targets: `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (Kotlin/Native only, no JVM). Apache 2.0.
@@ -11,6 +39,44 @@ API contract. Targets: `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (Kotli
 
 Receipts and packages are byte-compatible with the TypeScript prototype: the tests replay its golden vectors
 (`compat/`, see its README).
+
+## Quick start
+
+```sh
+git clone https://github.com/ostrom-hq/ostrom-core.git && cd ostrom-core
+./gradlew linuxX64Test     # on a Mac: ./gradlew macosArm64Test
+```
+
+## How it fits
+
+```mermaid
+flowchart LR
+  dev(["Developer"]) --> cli["ostrom CLI"]
+  cli -- "launches, under the rules" --> agent[["Coding agent<br/>Claude Code, Codex, ..."]]
+  agent -. "every action, through hooks" .-> cli
+  cli -- "sessions, gate requests" --> server["Ostrom server"]
+  server --- db[("PostgreSQL")]
+  server -- "reads the diff, runs checks" --> gh["GitHub"]
+  server -- "a yes is needed" --> person(["Approver"])
+  person --> web["Web console"] & app["Mobile app"]
+  web & app -- "API" --> server
+  server -- "signed receipt" --> receipt[/"Receipt"/]
+  core{{"ostrom-core<br/>contract, workflow model, receipts"}} -.- cli & server & web & app
+  helm["Helm chart"] -. "deploys" .-> server
+  classDef here fill:#8E1B3A,stroke:#8E1B3A,color:#FFFFFF
+  class core here
+```
+
+## Status
+
+Ostrom is before its first public release.
+
+| Part | Status |
+| --- | --- |
+| Protocol models, signed receipts, session packages | Available, byte-compatible with the prototype's golden vectors |
+| OpenAPI contract of the server routes | Available; ahead of the server, which does not serve every route yet |
+| Artifacts (`dev.ostrom:ostrom-*`, `@ostrom-hq/api-types`) | GitHub Packages of the organization, `0.1.<run number>` on every merge |
+| Public artifacts (Maven Central, npm) and tagged releases | At the launch |
 
 ## Use it from another repository
 
@@ -120,6 +186,25 @@ npm run build
 - [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md): the engineering conventions of every Ostrom repository.
 - [`compat/README.md`](compat/README.md): the golden vectors and the byte-level rules they freeze.
 
-## Licence
+## Repositories
 
-Apache 2.0, see [`LICENSE`](LICENSE).
+| Repository | What it is | License |
+| --- | --- | --- |
+| **ostrom-core** (this one) | Shared Kotlin Multiplatform library: API contract, workflow model, signed receipts | Apache-2.0 |
+| [ostrom-cli](https://github.com/ostrom-hq/ostrom-cli) | The `ostrom` command line: runs coding agents under the team's rules | Apache-2.0 |
+| [ostrom-server](https://github.com/ostrom-hq/ostrom-server) | The server: gates, receipts, policies, the API | AGPL-3.0 + ee |
+| [ostrom-web](https://github.com/ostrom-hq/ostrom-web) | The web console | AGPL-3.0 + ee |
+| [ostrom-app](https://github.com/ostrom-hq/ostrom-app) | The iOS and Android app | AGPL-3.0 + ee |
+| [ostrom-e2e](https://github.com/ostrom-hq/ostrom-e2e) | Full-stack end-to-end and load tests | Apache-2.0 |
+| [ostrom-site](https://github.com/ostrom-hq/ostrom-site) | ostrom.run: website, documentation, blog | Apache-2.0 |
+| [ostrom-helm](https://github.com/ostrom-hq/ostrom-helm) | Helm chart and Docker Compose for self-hosting | AGPL-3.0 |
+
+## Contributing
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) (setup, tests, Conventional Commits, DCO), the
+[Code of Conduct](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md) to report a vulnerability privately. Questions
+go to [Discussions](https://github.com/ostrom-hq/ostrom-core/discussions); help options are in [SUPPORT.md](SUPPORT.md).
+
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE). You can use it in any project, open source or not.
