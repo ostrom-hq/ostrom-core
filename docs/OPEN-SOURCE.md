@@ -26,7 +26,7 @@ is about the repository as a public product.
 | `SECURITY.md` | Private reporting (`security@ostrom.run` and GitHub advisories), deadlines, scope written for Ostrom, safe harbor | Cal.com and Supabase (scope lists), Bun (acknowledgement deadline), Tailscale (coordinated disclosure) |
 | `GOVERNANCE.md`, `MAINTAINERS.md` | Roles, lazy consensus, the open core stewardship promise | Biome (roles), GitLab (buyer-based open core, "we never move an open feature into ee") |
 | `SUPPORT.md` | Where to ask what | Supabase, PostHog |
-| `CHANGELOG.md` | Written by release-please, never by hand. Not in ostrom-core yet: `build.yml` publishes `0.1.<run number>` on every push to `main`, so a release-please tag would name a version no artifact carries; it arrives with tag-based publication | uv, Ruff, Biome |
+| `CHANGELOG.md` | Written by release-please, never by hand. Not in ostrom-core nor ostrom-helm, which already publish without tags: core's `build.yml` publishes `0.1.<run number>` on every push to `main`, helm's `release.yml` publishes the chart when `Chart.yaml` changes version. A release-please tag would name a version no artifact carries; release-please arrives there with tag-based publication | uv, Ruff, Biome |
 
 ## `.github/`
 
@@ -48,7 +48,7 @@ Ruff, Supabase and Tailscale.
 
 | Workflow | Check name | What it does |
 | --- | --- | --- |
-| `release-please.yml` | `release-please` | All repositories but ostrom-core (see `CHANGELOG.md` above). Keeps a release pull request from Conventional Commit titles; merging it tags the bare version (CONVENTIONS.md section 12), writes the changelog, creates the release, and starts the tag workflows a `GITHUB_TOKEN` tag would not start |
+| `release-please.yml` | `release-please` | All repositories but ostrom-core and ostrom-helm (see `CHANGELOG.md` above). Keeps a release pull request from Conventional Commit titles; merging it tags the bare version (CONVENTIONS.md section 12), writes the changelog, creates the release, and starts the tag workflows a `GITHUB_TOKEN` tag would not start |
 | `pr-title.yml` | `pr-title` | The title is a Conventional Commit: with squash merge it is the commit on `main` and the changelog line (Resend, Cal.com) |
 | `dco.yml` | `dco` | Every commit of a contributor without write access is signed off (Developer Certificate of Origin instead of a CLA, like GitLab since 2017); collaborators with write, maintain or admin permission and bots are exempt (a read-only organization member is checked) |
 | `license-headers.yml` | `spdx` | Every new source file carries its `SPDX-License-Identifier`, the right one for its path (`ee/` is `LicenseRef-Ostrom-Enterprise`); `LICENSE` exists, and `ee/LICENSE` wherever `ee/` exists (Tailscale's `license_test.go`) |
