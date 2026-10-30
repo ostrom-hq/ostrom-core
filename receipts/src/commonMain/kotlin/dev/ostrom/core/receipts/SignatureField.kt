@@ -56,6 +56,6 @@ public class SignatureField(
 /** Decodes standard base64 with padding; null when [text] is not base64. */
 internal fun decodeBase64OrNull(text: String): ByteArray? = try {
     Base64.decode(text)
-} catch (e: IllegalArgumentException) {
+} catch (ignored: IllegalArgumentException) {
     null
 }

@@ -31,7 +31,8 @@ class SubjectPreimagesTest {
             ci = null, shown = "d",
         )
         assertEquals(
-            """{"ci":null,"class":"push-main","command":"git push","gate":"g","repo":null,"sessionId":"s","shown":"d"}""",
+            """{"ci":null,"class":"push-main","command":"git push","gate":"g",""" +
+                """"repo":null,"sessionId":"s","shown":"d"}""",
             CanonicalJson.encode(gate),
         )
     }

@@ -5,6 +5,8 @@ coroutines = "1.11.0"
 serialization = "1.11.0"
 kotlinx-io = "0.9.1"
 cryptography = "0.6.0"
+# What cryptography-provider-jdk 0.6.0 is built against; it derives an Ed25519 public key only through it.
+bouncycastle = "1.83"
 junit = "5.11.4"
 junit-platform = "1.11.4"
 kover = "0.9.11"
@@ -32,6 +34,7 @@ kotlinx-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-openssl3 = { module = "dev.whyoleg.cryptography:cryptography-provider-openssl3-prebuilt", version.ref = "cryptography" }
 cryptography-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
+bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }

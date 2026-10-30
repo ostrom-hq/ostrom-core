@@ -1,7 +1,6 @@
 package dev.ostrom.core.receipts
 
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -58,25 +57,39 @@ public object PackageEnvelopes {
      */
     public fun verify(envelope: JsonObject, trustedKeys: List<ReceiptPublicKey>): PackageVerification {
         fun text(name: String) = (envelope[name] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
-        fun failed(reason: String) = PackageVerification.Failed(reason)
-        if (text("format") != FORMAT) return failed("not an $FORMAT envelope")
-        if (text("alg") != SignatureField.ED25519) return failed("unknown algorithm")
-        val payload = text("payload") ?: return failed("missing payload")
-        val bytes = payload.encodeToByteArray()
-        if (Digests.sha256Hex(bytes) != text("digest")) return failed("digest mismatch (package was modified)")
-        val key = trustedKeys.firstOrNull { it.kid == text("kid") } ?: return failed("unknown key id")
-        val signature = text("signature")?.let(::decodeBase64OrNull) ?: return failed("bad signature")
-        if (!key.verify(bytes, signature)) return failed("bad signature")
-        if (envelope["revoked"] == JsonPrimitive(true)) return failed("package revoked")
-        val signed = try {
-            Json.parseToJsonElement(payload) as? JsonObject
-        } catch (e: SerializationException) {
-            null
-        } ?: return failed("payload is not a package")
-        val copied = COPIED_FIELDS.firstOrNull { it in envelope && envelope[it] != signed[it] }
-        if (copied != null) return failed("envelope $copied does not match the signed payload")
-        return PackageVerification.Verified(payload, key.kid)
+        val payload = text("payload")?.let { it to it.encodeToByteArray() }
+        val key = trustedKeys.firstOrNull { it.kid == text("kid") }
+        val signature = text("signature")?.let(::decodeBase64OrNull)
+        return when {
+            text("format") != FORMAT -> failed("not an $FORMAT envelope")
+            text("alg") != SignatureField.ED25519 -> failed("unknown algorithm")
+            payload == null -> failed("missing payload")
+            Digests.sha256Hex(payload.second) != text("digest") -> failed("digest mismatch (package was modified)")
+            key == null -> failed("unknown key id")
+            signature == null || !key.verify(payload.second, signature) -> failed("bad signature")
+            envelope["revoked"] == JsonPrimitive(true) -> failed("package revoked")
+            else -> matchSignedPayload(envelope, payload.first, key.kid)
+        }
     }
+
+    /** Refuses a payload that is not a JSON object, and an envelope whose copied fields differ from it. */
+    private fun matchSignedPayload(envelope: JsonObject, payload: String, kid: String): PackageVerification {
+        val signed = try {
+            CanonicalJson.parse(payload) as? JsonObject
+        } catch (expected: SerializationException) {
+            null
+        }
+        val copied = signed?.let { payloadObject ->
+            COPIED_FIELDS.firstOrNull { it in envelope && envelope[it] != payloadObject[it] }
+        }
+        return when {
+            signed == null -> failed("payload is not a package")
+            copied != null -> failed("envelope $copied does not match the signed payload")
+            else -> PackageVerification.Verified(payload, kid)
+        }
+    }
+
+    private fun failed(reason: String) = PackageVerification.Failed(reason)
 }
 
 /** The outcome of a package envelope verification. */

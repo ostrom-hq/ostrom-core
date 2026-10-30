@@ -59,6 +59,8 @@ public object SubjectPreimages {
      *
      * @return The preimage.
      */
+    // one parameter per field of the prototype's preimage, passed by name at every call site
+    @Suppress("LongParameterList")
     public fun session(
         id: String,
         repo: String?,
@@ -119,6 +121,8 @@ public object SubjectPreimages {
      *
      * @return The preimage.
      */
+    // one parameter per field of the prototype's preimage, passed by name at every call site
+    @Suppress("LongParameterList")
     public fun gate(
         gate: JsonElement,
         cls: String,

@@ -38,7 +38,11 @@ kotlin {
         }
         // OpenSSL 3, linked in, on every native target; the JDK provider for the jvm() test target.
         nativeMain.dependencies { implementation(libs.cryptography.openssl3) }
-        jvmMain.dependencies { implementation(libs.cryptography.jdk) }
+        jvmMain.dependencies {
+            implementation(libs.cryptography.jdk)
+            // the JDK alone cannot derive an Ed25519 public key from a private key; the provider does it through this
+            runtimeOnly(libs.bouncycastle)
+        }
         commonTest {
             kotlin.srcDir(generateVectorsPath)
             dependencies {
