@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Prints every line and branch a Kover XML report (JaCoCo format) leaves uncovered, so that a failed koverVerify
 says where without downloading the report."""
 

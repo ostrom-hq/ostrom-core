@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 @file:OptIn(ExperimentalAtomicApi::class)
 
 package dev.ostrom.core.telemetry.metrics

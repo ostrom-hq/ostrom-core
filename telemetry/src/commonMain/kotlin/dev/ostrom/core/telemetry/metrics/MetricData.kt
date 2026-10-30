@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package dev.ostrom.core.telemetry.metrics
 
 import dev.ostrom.core.telemetry.Attributes

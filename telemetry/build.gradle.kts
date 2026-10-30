@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.serialization)
