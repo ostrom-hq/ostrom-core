@@ -1,14 +1,29 @@
 package dev.ostrom.core.api.models
 
-import kotlinx.serialization.SerialName
+import dev.ostrom.core.api.UnknownFallbackEnumSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 /** What starts an automation. */
-@Serializable
-public enum class AutomationTriggerKind {
-    @SerialName("cron") CRON,
-    @SerialName("webhook") WEBHOOK,
+@Serializable(with = AutomationTriggerKind.Serializer::class)
+public enum class AutomationTriggerKind(
+    /** The JSON value. */
+    public val value: String,
+) {
+    CRON("cron"),
+    WEBHOOK("webhook"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<AutomationTriggerKind>(
+        "dev.ostrom.core.api.models.AutomationTriggerKind",
+        AutomationTriggerKind.entries,
+        AutomationTriggerKind.UNKNOWN,
+        AutomationTriggerKind::value,
+    )
 }
 
 /**
@@ -115,14 +130,29 @@ public data class Automation(
 )
 
 /** Status of a workflow run. */
-@Serializable
-public enum class RunStatus {
-    @SerialName("queued") QUEUED,
-    @SerialName("running") RUNNING,
-    @SerialName("waiting") WAITING,
-    @SerialName("succeeded") SUCCEEDED,
-    @SerialName("failed") FAILED,
-    @SerialName("cancelled") CANCELLED,
+@Serializable(with = RunStatus.Serializer::class)
+public enum class RunStatus(
+    /** The JSON value. */
+    public val value: String,
+) {
+    QUEUED("queued"),
+    RUNNING("running"),
+    WAITING("waiting"),
+    SUCCEEDED("succeeded"),
+    FAILED("failed"),
+    CANCELLED("cancelled"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<RunStatus>(
+        "dev.ostrom.core.api.models.RunStatus",
+        RunStatus.entries,
+        RunStatus.UNKNOWN,
+        RunStatus::value,
+    )
 }
 
 /**
@@ -202,11 +232,26 @@ public data class NodeVisit(
 )
 
 /** Status of a wait. */
-@Serializable
-public enum class WaitStatus {
-    @SerialName("open") OPEN,
-    @SerialName("resolved") RESOLVED,
-    @SerialName("cancelled") CANCELLED,
+@Serializable(with = WaitStatus.Serializer::class)
+public enum class WaitStatus(
+    /** The JSON value. */
+    public val value: String,
+) {
+    OPEN("open"),
+    RESOLVED("resolved"),
+    CANCELLED("cancelled"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<WaitStatus>(
+        "dev.ostrom.core.api.models.WaitStatus",
+        WaitStatus.entries,
+        WaitStatus.UNKNOWN,
+        WaitStatus::value,
+    )
 }
 
 /**

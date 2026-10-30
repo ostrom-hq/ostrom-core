@@ -1,6 +1,6 @@
 package dev.ostrom.core.api.models
 
-import kotlinx.serialization.SerialName
+import dev.ostrom.core.api.UnknownFallbackEnumSerializer
 import kotlinx.serialization.Serializable
 
 /**
@@ -48,12 +48,27 @@ public data class CheckRun(
 )
 
 /** The verdict of a check. */
-@Serializable
-public enum class CheckOutcome {
-    @SerialName("passed") PASSED,
-    @SerialName("failed") FAILED,
-    @SerialName("timeout") TIMEOUT,
-    @SerialName("skipped") SKIPPED,
+@Serializable(with = CheckOutcome.Serializer::class)
+public enum class CheckOutcome(
+    /** The JSON value. */
+    public val value: String,
+) {
+    PASSED("passed"),
+    FAILED("failed"),
+    TIMEOUT("timeout"),
+    SKIPPED("skipped"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<CheckOutcome>(
+        "dev.ostrom.core.api.models.CheckOutcome",
+        CheckOutcome.entries,
+        CheckOutcome.UNKNOWN,
+        CheckOutcome::value,
+    )
 }
 
 /**
@@ -89,12 +104,27 @@ public data class ReportCheckRequest(
 )
 
 /** Delivery status of a notification. */
-@Serializable
-public enum class NotificationStatus {
-    @SerialName("queued") QUEUED,
-    @SerialName("sent") SENT,
-    @SerialName("logged-only") LOGGED_ONLY,
-    @SerialName("not-sent") NOT_SENT,
+@Serializable(with = NotificationStatus.Serializer::class)
+public enum class NotificationStatus(
+    /** The JSON value. */
+    public val value: String,
+) {
+    QUEUED("queued"),
+    SENT("sent"),
+    LOGGED_ONLY("logged-only"),
+    NOT_SENT("not-sent"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<NotificationStatus>(
+        "dev.ostrom.core.api.models.NotificationStatus",
+        NotificationStatus.entries,
+        NotificationStatus.UNKNOWN,
+        NotificationStatus::value,
+    )
 }
 
 /**

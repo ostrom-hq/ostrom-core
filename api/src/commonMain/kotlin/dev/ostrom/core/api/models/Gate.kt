@@ -1,31 +1,62 @@
 package dev.ostrom.core.api.models
 
+import dev.ostrom.core.api.UnknownFallbackEnumSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 /** How a gate request is enforced. */
-@Serializable
-public enum class GateMode {
+@Serializable(with = GateMode.Serializer::class)
+public enum class GateMode(
+    /** The JSON value. */
+    public val value: String,
+) {
     /** The action waits for a yes. */
-    @SerialName("enforced") ENFORCED,
+    ENFORCED("enforced"),
 
     /** Logged only (the workflow is proposed). */
-    @SerialName("shadow") SHADOW,
+    SHADOW("shadow"),
 
     /** No gate covers the action. */
-    @SerialName("ungated") UNGATED,
+    UNGATED("ungated"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<GateMode>(
+        "dev.ostrom.core.api.models.GateMode",
+        GateMode.entries,
+        GateMode.UNKNOWN,
+        GateMode::value,
+    )
 }
 
 /** Status of a gate request. A yes serves once: it is `consumed` by the action it allowed. */
-@Serializable
-public enum class GateStatus {
-    @SerialName("pending") PENDING,
-    @SerialName("approved") APPROVED,
-    @SerialName("rejected") REJECTED,
-    @SerialName("shadow") SHADOW,
-    @SerialName("ungated") UNGATED,
-    @SerialName("consumed") CONSUMED,
+@Serializable(with = GateStatus.Serializer::class)
+public enum class GateStatus(
+    /** The JSON value. */
+    public val value: String,
+) {
+    PENDING("pending"),
+    APPROVED("approved"),
+    REJECTED("rejected"),
+    SHADOW("shadow"),
+    UNGATED("ungated"),
+    CONSUMED("consumed"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<GateStatus>(
+        "dev.ostrom.core.api.models.GateStatus",
+        GateStatus.entries,
+        GateStatus.UNKNOWN,
+        GateStatus::value,
+    )
 }
 
 /**
@@ -195,12 +226,27 @@ public data class GateAskRequest(
 )
 
 /** Status of an approval. */
-@Serializable
-public enum class ApprovalStatus {
-    @SerialName("pending") PENDING,
-    @SerialName("approved") APPROVED,
-    @SerialName("rejected") REJECTED,
-    @SerialName("expired") EXPIRED,
+@Serializable(with = ApprovalStatus.Serializer::class)
+public enum class ApprovalStatus(
+    /** The JSON value. */
+    public val value: String,
+) {
+    PENDING("pending"),
+    APPROVED("approved"),
+    REJECTED("rejected"),
+    EXPIRED("expired"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<ApprovalStatus>(
+        "dev.ostrom.core.api.models.ApprovalStatus",
+        ApprovalStatus.entries,
+        ApprovalStatus.UNKNOWN,
+        ApprovalStatus::value,
+    )
 }
 
 /**
@@ -263,15 +309,35 @@ public data class Approval(
  * @property url Link.
  */
 @Serializable
-public data class ApprovalCommit(val sha: String, val title: String, val author: String? = null, val url: String? = null)
+public data class ApprovalCommit(
+    val sha: String,
+    val title: String,
+    val author: String? = null,
+    val url: String? = null,
+)
 
 /** State of a CI check. */
-@Serializable
-public enum class CheckState {
-    @SerialName("success") SUCCESS,
-    @SerialName("failure") FAILURE,
-    @SerialName("pending") PENDING,
-    @SerialName("skipped") SKIPPED,
+@Serializable(with = CheckState.Serializer::class)
+public enum class CheckState(
+    /** The JSON value. */
+    public val value: String,
+) {
+    SUCCESS("success"),
+    FAILURE("failure"),
+    PENDING("pending"),
+    SKIPPED("skipped"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<CheckState>(
+        "dev.ostrom.core.api.models.CheckState",
+        CheckState.entries,
+        CheckState.UNKNOWN,
+        CheckState::value,
+    )
 }
 
 /**
@@ -307,13 +373,13 @@ public enum class ApprovalAnswer {
  *
  * @property answer Yes or no.
  * @property shownDigest Digest of what the approver saw.
- * @property comment Comment.
+ * @property note What the approver tells the agent with the answer; sent to its session, written on the receipt.
  */
 @Serializable
 public data class AnswerApprovalRequest(
     val answer: ApprovalAnswer,
     val shownDigest: String,
-    val comment: String? = null,
+    val note: String? = null,
 )
 
 /**

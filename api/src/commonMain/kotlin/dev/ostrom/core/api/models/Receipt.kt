@@ -1,14 +1,15 @@
 package dev.ostrom.core.api.models
 
+import dev.ostrom.core.api.UnknownFallbackEnumSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
  * A signed receipt: who asked for what, under which rules, who said yes, and when.
  *
- * The body is every field except [signature]; its canonical JSON (see `dev.ostrom.core.receipts.CanonicalJson`) is what is
- * signed. A receipt received from elsewhere may carry fields this model does not know: verify the raw JSON object, not
- * this model, or those fields are lost and the digest no longer matches.
+ * The body is every field except [signature]; its canonical JSON (see `dev.ostrom.core.receipts.CanonicalJson`) is
+ * what is signed. A receipt received from elsewhere may carry fields this model does not know: verify the raw JSON
+ * object, not this model, or those fields are lost and the digest no longer matches.
  *
  * @property id Receipt id, `rcpt_<uuid>`.
  * @property subject What the receipt is about, with the digest of its preimage.
@@ -44,7 +45,8 @@ public data class Receipt(
  *
  * @property kind What kind of thing was decided or run.
  * @property id Id of the subject (session id, gate id, `<session>@<package version>` for a workflow…).
- * @property digest SHA-256 hex of the canonical form of the subject preimage (`dev.ostrom.core.receipts.SubjectPreimages`).
+ * @property digest SHA-256 hex of the canonical form of the subject preimage
+ *   (`dev.ostrom.core.receipts.SubjectPreimages`).
  */
 @Serializable
 public data class ReceiptSubject(
@@ -54,16 +56,31 @@ public data class ReceiptSubject(
 )
 
 /** The kinds of receipt subjects. Serial names are part of the signed format and never change. */
-@Serializable
-public enum class ReceiptSubjectKind {
-    @SerialName("task") TASK,
-    @SerialName("workflow") WORKFLOW,
-    @SerialName("rule-change") RULE_CHANGE,
-    @SerialName("owner-change") OWNER_CHANGE,
-    @SerialName("harness") HARNESS,
-    @SerialName("gate") GATE,
-    @SerialName("session") SESSION,
-    @SerialName("policy") POLICY,
+@Serializable(with = ReceiptSubjectKind.Serializer::class)
+public enum class ReceiptSubjectKind(
+    /** The JSON value. */
+    public val value: String,
+) {
+    TASK("task"),
+    WORKFLOW("workflow"),
+    RULE_CHANGE("rule-change"),
+    OWNER_CHANGE("owner-change"),
+    HARNESS("harness"),
+    GATE("gate"),
+    SESSION("session"),
+    POLICY("policy"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<ReceiptSubjectKind>(
+        "dev.ostrom.core.api.models.ReceiptSubjectKind",
+        ReceiptSubjectKind.entries,
+        ReceiptSubjectKind.UNKNOWN,
+        ReceiptSubjectKind::value,
+    )
 }
 
 /**

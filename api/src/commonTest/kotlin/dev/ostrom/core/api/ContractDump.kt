@@ -31,7 +31,8 @@ internal object ContractDump {
             if (name in out) continue
             out[name] = when (descriptor.kind) {
                 SerialKind.ENUM -> buildJsonObject {
-                    put("enum", JsonArray((0 until descriptor.elementsCount).map { JsonPrimitive(descriptor.getElementName(it)) }))
+                    val names = (0 until descriptor.elementsCount).map { JsonPrimitive(descriptor.getElementName(it)) }
+                    put("enum", JsonArray(names))
                 }
                 else -> buildJsonObject {
                     put("properties", JsonObject((0 until descriptor.elementsCount).associate { i ->

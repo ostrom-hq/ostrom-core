@@ -123,6 +123,8 @@ public fun Span.setAttributes(attributes: Attributes) {
  * race (a timeout and the normal path), so only the end flag is atomic.
  */
 @OptIn(ExperimentalAtomicApi::class)
+// Built in one place, TracerImpl, with named arguments: a holder class would only move the list.
+@Suppress("LongParameterList")
 internal class RecordingSpan(
     override val context: SpanContext,
     private val parentSpanId: Long,
@@ -144,7 +146,8 @@ internal class RecordingSpan(
     override fun setAttribute(key: String, value: AttributeValue) {
         // Bounded: a loop that sets attributes cannot grow a span without limit; overwriting a key costs nothing.
         val known = key in attributes
-        if (recording && !ended.load() && (known || count < maxAttributes)) {
+        val fits = known || count < maxAttributes
+        if (recording && !ended.load() && fits) {
             attributes.put(Attribute(key, value))
             if (!known) count++
         }

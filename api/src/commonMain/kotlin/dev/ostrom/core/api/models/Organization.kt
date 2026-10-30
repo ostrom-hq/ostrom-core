@@ -1,6 +1,6 @@
 package dev.ostrom.core.api.models
 
-import kotlinx.serialization.SerialName
+import dev.ostrom.core.api.UnknownFallbackEnumSerializer
 import kotlinx.serialization.Serializable
 
 /**
@@ -24,10 +24,25 @@ public data class Organization(
 )
 
 /** How an organization's GitHub is connected. */
-@Serializable
-public enum class GitHubConnection {
-    @SerialName("github-app") GITHUB_APP,
-    @SerialName("gh-token") GH_TOKEN,
+@Serializable(with = GitHubConnection.Serializer::class)
+public enum class GitHubConnection(
+    /** The JSON value. */
+    public val value: String,
+) {
+    GITHUB_APP("github-app"),
+    GH_TOKEN("gh-token"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<GitHubConnection>(
+        "dev.ostrom.core.api.models.GitHubConnection",
+        GitHubConnection.entries,
+        GitHubConnection.UNKNOWN,
+        GitHubConnection::value,
+    )
 }
 
 /**
@@ -55,13 +70,28 @@ public data class Member(
 )
 
 /** Roles of a member. An admin never answers a gate in an approver's place. */
-@Serializable
-public enum class MemberRole {
-    @SerialName("owner") OWNER,
-    @SerialName("admin") ADMIN,
-    @SerialName("member") MEMBER,
-    @SerialName("approver") APPROVER,
-    @SerialName("invited") INVITED,
+@Serializable(with = MemberRole.Serializer::class)
+public enum class MemberRole(
+    /** The JSON value. */
+    public val value: String,
+) {
+    OWNER("owner"),
+    ADMIN("admin"),
+    MEMBER("member"),
+    APPROVER("approver"),
+    INVITED("invited"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<MemberRole>(
+        "dev.ostrom.core.api.models.MemberRole",
+        MemberRole.entries,
+        MemberRole.UNKNOWN,
+        MemberRole::value,
+    )
 }
 
 /**
@@ -137,17 +167,47 @@ public data class Rule(
 )
 
 /** Strength of a rule. */
-@Serializable
-public enum class RuleStrength {
-    @SerialName("required") REQUIRED,
-    @SerialName("recommended") RECOMMENDED,
+@Serializable(with = RuleStrength.Serializer::class)
+public enum class RuleStrength(
+    /** The JSON value. */
+    public val value: String,
+) {
+    REQUIRED("required"),
+    RECOMMENDED("recommended"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<RuleStrength>(
+        "dev.ostrom.core.api.models.RuleStrength",
+        RuleStrength.entries,
+        RuleStrength.UNKNOWN,
+        RuleStrength::value,
+    )
 }
 
 /** Status of a rule. */
-@Serializable
-public enum class RuleStatus {
-    @SerialName("proposed") PROPOSED,
-    @SerialName("accepted") ACCEPTED,
-    @SerialName("edited") EDITED,
-    @SerialName("rejected") REJECTED,
+@Serializable(with = RuleStatus.Serializer::class)
+public enum class RuleStatus(
+    /** The JSON value. */
+    public val value: String,
+) {
+    PROPOSED("proposed"),
+    ACCEPTED("accepted"),
+    EDITED("edited"),
+    REJECTED("rejected"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<RuleStatus>(
+        "dev.ostrom.core.api.models.RuleStatus",
+        RuleStatus.entries,
+        RuleStatus.UNKNOWN,
+        RuleStatus::value,
+    )
 }

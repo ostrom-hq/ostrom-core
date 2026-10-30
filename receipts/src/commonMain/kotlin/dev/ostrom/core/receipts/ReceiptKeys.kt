@@ -5,6 +5,10 @@ import dev.whyoleg.cryptography.algorithms.EdDSA
 
 private val edDsa: EdDSA get() = CryptographyProvider.Default.get(EdDSA)
 
+private const val SEED_BYTES = 32
+private const val SIGNATURE_BYTES = 64
+private const val KID_HEX_CHARACTERS = 16
+
 /**
  * The Ed25519 private key of an Ostrom instance: signs receipts and session packages.
  *
@@ -51,8 +55,9 @@ public class ReceiptSigningKey private constructor(
          * @return The signing key.
          */
         public fun fromSeed(seed: ByteArray): ReceiptSigningKey {
-            require(seed.size == 32) { "an Ed25519 seed is 32 bytes" }
-            return of(edDsa.privateKeyDecoder(EdDSA.Curve.Ed25519).decodeFromByteArrayBlocking(EdDSA.PrivateKey.Format.RAW, seed))
+            require(seed.size == SEED_BYTES) { "an Ed25519 seed is 32 bytes" }
+            val decoder = edDsa.privateKeyDecoder(EdDSA.Curve.Ed25519)
+            return of(decoder.decodeFromByteArrayBlocking(EdDSA.PrivateKey.Format.RAW, seed))
         }
 
         /** Generates a new random key, as an instance does on its first start. */
@@ -91,7 +96,7 @@ public class ReceiptPublicKey private constructor(
      * @return True when the signature is valid for this key.
      */
     public fun verify(bytes: ByteArray, signature: ByteArray): Boolean =
-        signature.size == 64 && publicKey.signatureVerifier().tryVerifySignatureBlocking(bytes, signature)
+        signature.size == SIGNATURE_BYTES && publicKey.signatureVerifier().tryVerifySignatureBlocking(bytes, signature)
 
     /** Readers of public keys. */
     public companion object {
@@ -121,7 +126,7 @@ public class ReceiptPublicKey private constructor(
 
         internal fun of(publicKey: EdDSA.PublicKey): ReceiptPublicKey {
             val der = publicKey.encodeToByteArrayBlocking(EdDSA.PublicKey.Format.DER)
-            return ReceiptPublicKey(publicKey, Digests.sha256Hex(der).substring(0, 16), der)
+            return ReceiptPublicKey(publicKey, Digests.sha256Hex(der).substring(0, KID_HEX_CHARACTERS), der)
         }
     }
 }

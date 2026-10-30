@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 plugins {
-    alias(libs.plugins.multiplatform)
-    alias(libs.plugins.serialization)
-    alias(libs.plugins.maven)
-    alias(libs.plugins.kover)
+    id("ostrom.kmp")
+    id("ostrom.publish")
 }
 
 description = "Ostrom telemetry: W3C trace context, spans, metrics and logs exported as OTLP/HTTP protobuf " +
@@ -11,21 +9,14 @@ description = "Ostrom telemetry: W3C trace context, spans, metrics and logs expo
 
 kotlin {
     explicitApi()
-    // jvm() is for tests and Kover coverage of commonMain only (CONVENTIONS 7.2), never shipped in a binary. Its
-    // artifact is published to GitHub Packages all the same: the Gradle metadata of the module lists the jvm variant,
-    // and the server's and the CLI's own test-only jvm() targets resolve it (without it, their jvmTest cannot build).
-    jvm()
-    macosArm64(); linuxX64(); linuxArm64(); mingwX64()
+    compilerOptions {
+        optIn.addAll("kotlin.io.encoding.ExperimentalEncodingApi", "kotlin.concurrent.atomics.ExperimentalAtomicApi")
+    }
     sourceSets {
-        all {
-            languageSettings.optIn("kotlin.io.encoding.ExperimentalEncodingApi")
-            languageSettings.optIn("kotlin.concurrent.atomics.ExperimentalAtomicApi")
-            languageSettings.optIn("kotlin.time.ExperimentalTime")
-        }
         commonMain.dependencies {
             api(libs.coroutines.core)
             api(libs.ktor.client.core)
-            implementation(libs.serialization)
+            implementation(libs.serialization.json)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -38,20 +29,13 @@ kotlin {
     }
 }
 
-// 100 % of lines and branches of commonMain, measured through the jvm() test run (BRIEF, rule TESTS).
-// An exclusion is added here with a one-line reason, and reviewed.
+// A reviewed exclusion of this module (ostrom-core#7): each use carries a `// coverage: <why>` line right above it
+// (compare-and-set retry loops). The 100 % rule itself comes from ostrom.kmp.
 kover {
     reports {
         filters {
             excludes {
-                // Each use carries a `// coverage: <why>` line right above it (compare-and-set retry loops).
                 annotatedBy("dev.ostrom.core.telemetry.ExcludeFromCoverage")
-            }
-        }
-        verify {
-            rule {
-                minBound(100, kotlinx.kover.gradle.plugin.dsl.CoverageUnit.LINE)
-                minBound(100, kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
             }
         }
     }
