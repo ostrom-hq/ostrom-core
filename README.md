@@ -7,6 +7,7 @@ API contract. Targets: `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (Kotli
 |---|---|---|
 | `api` | `dev.ostrom:ostrom-api` | serializable models (`dev.ostrom.core.api.models`) |
 | `receipts` | `dev.ostrom:ostrom-receipts` | canonical JSON v1, SHA-256 digests, Ed25519 signing and offline verification of receipts and session packages, subject preimages |
+| `telemetry` | `dev.ostrom:ostrom-telemetry` | W3C trace context, spans, metrics and logs exported as OTLP/HTTP protobuf (Grafana Cloud, any collector), model-call spans for Langfuse, PostHog product events and their taxonomy ([docs/telemetry.md](docs/telemetry.md)) |
 
 Receipts and packages are byte-compatible with the TypeScript prototype: the tests replay its golden vectors
 (`compat/`, see its README).

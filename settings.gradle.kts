@@ -11,4 +11,4 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-include(":api", ":receipts")
+include(":api", ":receipts", ":telemetry")
