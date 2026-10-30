@@ -3456,11 +3456,17 @@ paths:
                   type: boolean
       responses:
         '200':
-          description: OK
+          description: 'A dry run (dryRun: true): nothing starts'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowRun'
+                $ref: '#/components/schemas/AutomationDryRun'
+        '202':
+          description: A test run, started with the saved definition (Idempotency-Key required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationRun'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -3476,13 +3482,25 @@ paths:
       operationId: listAutomationRuns
       tags:
       - automations
-      summary: Runs started by an automation
+      summary: The runs of an automation, newest first, kept 14 days
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+      - name: before
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
       responses:
         '200':
           description: OK
@@ -3494,7 +3512,7 @@ paths:
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/WorkflowRun'
+                      $ref: '#/components/schemas/AutomationRun'
                   next:
                     type: string
                 required:
@@ -3537,13 +3555,22 @@ paths:
                 properties:
                   runId:
                     type: string
+                  status:
+                    type: string
+                    description: The run's status (started, failed, invalid_payload, skipped_overlap…)
                   deduplicated:
                     type: boolean
                 required:
                 - deduplicated
         '400':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
           $ref: '#/components/responses/Error'
   /api/v1/waits:
     get:
@@ -5168,7 +5195,7 @@ paths:
       operationId: listCloudSessions
       tags:
       - runners
-      summary: Cloud agent sessions
+      summary: The caller's cloud agent sessions, newest first
       parameters:
       - name: status
         in: query
@@ -5180,6 +5207,13 @@ paths:
         required: false
         schema:
           type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
       responses:
         '200':
           description: OK
@@ -5224,13 +5258,17 @@ paths:
                   type: string
                 repo:
                   type: string
+                  description: https://github.com/<owner>/<name>, cloned through the organization's GitHub App
+                ref:
+                  type: string
+                  description: Branch, tag or commit; the default branch when absent
                 prompt:
                   type: string
+                  description: The agent's first message, up to 20,000 characters; an interactive agent when absent
                 name:
                   type: string
               required:
               - agent
-              - prompt
       responses:
         '201':
           description: OK
@@ -5281,7 +5319,7 @@ paths:
       operationId: stopCloudSession
       tags:
       - runners
-      summary: Stop a cloud session
+      summary: Terminate a cloud session; its workspace is deleted
       parameters:
       - name: id
         in: path
@@ -5289,8 +5327,193 @@ paths:
         schema:
           type: string
       responses:
-        '204':
-          description: Done
+        '202':
+          description: Accepted, the reconciler stops it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/pause:
+    post:
+      operationId: pauseCloudSession
+      tags:
+      - runners
+      summary: Pause a cloud session; the workspace is kept
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Accepted, the reconciler pauses it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/resume:
+    post:
+      operationId: resumeCloudSession
+      tags:
+      - runners
+      summary: Resume a paused cloud session, within the plan's running cap and hours
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Accepted, the reconciler starts a new execution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/terminal/ticket:
+    post:
+      operationId: issueCloudTerminalTicket
+      tags:
+      - runners
+      summary: A single-use ticket to attach a browser to the session's terminal
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticket:
+                    type: string
+                  expiresAt:
+                    type: string
+                required:
+                - ticket
+                - expiresAt
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/terminal:
+    get:
+      operationId: attachCloudTerminal
+      tags:
+      - runners
+      summary: 'WebSocket: the session''s terminal. Bearer token on the upgrade, or ?ticket= from a browser. Binary frames
+        carry the terminal''s bytes; text frames are JSON controls: {"type":"resize","columns":c,"rows":r} from the
+        client, {"type":"runner","connected":b} from the server. Close codes 4000 + the HTTP status (4401, 4403, 4404,
+        4409)'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ticket
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '101':
+          description: Switching protocols
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/heartbeat:
+    post:
+      operationId: cloudRunnerHeartbeat
+      tags:
+      - runners
+      summary: The runner in a session's pod reports; its bearer is the execution's runner token, not a member's
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                epoch:
+                  type: integer
+                  format: int64
+                ready:
+                  type: boolean
+                stopped:
+                  type: boolean
+                lastModelRequestAt:
+                  type: string
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instruction:
+                    type: string
+                    description: run or stop
+                  state:
+                    type: string
+                required:
+                - instruction
+                - state
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -7469,6 +7692,15 @@ components:
           type: string
         updatedAt:
           type: string
+        nextRunAt:
+          type: string
+          description: The next cron slot, while the automation is enabled
+        previousSecretValidUntil:
+          type: string
+          description: Until when the webhook's former secret is still accepted after a rotation
+        secret:
+          type: string
+          description: The webhook secret, only in the answer to its creation (whsec_…); never readable again
       required:
       - id
       - name
@@ -7495,6 +7727,100 @@ components:
           type: string
         maxRuntimeMinutes:
           type: integer
+    AutomationRun:
+      type: object
+      description: One trigger of an automation (cron, webhook or test) and the session it started, kept 14 days
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+        source:
+          type: string
+          description: cron, webhook or test
+        status:
+          type: string
+          description: queued, started, failed, invalid_payload, skipped_overlap or skipped_budget
+        version:
+          type: integer
+          description: The automation's version that ran
+        sessionId:
+          type: [string, 'null']
+        reason:
+          type: [string, 'null']
+          description: A stable code when it failed (cloud_session_limit, cloud_hours_exhausted, owner_unavailable…)
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationPayloadProblem'
+        slotAt:
+          type: [string, 'null']
+          description: The cron slot it ran for
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+      - id
+      - automationId
+      - source
+      - status
+      - version
+      - problems
+      - createdAt
+      - updatedAt
+      x-ostrom-kotlin: pending
+    AutomationPayloadProblem:
+      type: object
+      description: A webhook payload value that does not fit its variable
+      properties:
+        path:
+          type: string
+        rule:
+          type: string
+          description: required, type:<type>, enum, max_length or not_scalar
+      required:
+      - path
+      - rule
+      x-ostrom-kotlin: pending
+    AutomationDryRun:
+      type: object
+      description: What a run would do, without starting anything
+      properties:
+        renderedPrompt:
+          type: string
+        variables:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              value:
+                type: [string, 'null']
+                description: Masked (••••) when the variable is sensitive
+              sensitive:
+                type: boolean
+            required:
+            - name
+            - sensitive
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationPayloadProblem'
+        wouldSkip:
+          type: [string, 'null']
+          description: disabled, overlap or budget
+        nextRuns:
+          type: array
+          items:
+            type: string
+      required:
+      - renderedPrompt
+      - variables
+      - problems
+      - nextRuns
+      x-ostrom-kotlin: pending
     AutomationTrigger:
       type: object
       description: The trigger of an automation
@@ -7920,7 +8246,7 @@ components:
       - skipped
     CloudSession:
       type: object
-      description: An agent session run on a runner
+      description: 'A cloud agent session: one pod (or local container) per execution, with a workspace kept across pauses'
       properties:
         id:
           type: string
@@ -7930,9 +8256,38 @@ components:
           type: string
         agent:
           type: string
+          description: claude, codex, opencode, gemini or shell
         model:
           type: string
+        repo:
+          type: string
+          description: The GitHub repository cloned at the first start, https://github.com/<owner>/<name>
+        ref:
+          type: string
         status:
+          type: string
+          description: creating, running, pausing, paused, resuming, terminated or failed
+        desiredStatus:
+          type: string
+          description: What the owner asked for, running, paused or terminated
+        phase:
+          type: string
+          description: An open label of the current step (scheduling, cloning, starting…)
+        epoch:
+          type: integer
+          format: int64
+          description: The execution number, raised at each start or resume
+        failure:
+          $ref: '#/components/schemas/CloudSessionFailure'
+        limits:
+          $ref: '#/components/schemas/CloudSessionLimits'
+        updatedAt:
+          type: string
+        readyAt:
+          type: string
+        lastActivityAt:
+          type: string
+        pausedAt:
           type: string
         runnerId:
           type: string
@@ -7950,6 +8305,36 @@ components:
       - agent
       - status
       - createdAt
+      x-ostrom-kotlin: pending
+    CloudSessionFailure:
+      type: object
+      description: Why a cloud session failed or paused on its own
+      properties:
+        code:
+          type: string
+          description: start_failed, execution_lost, idle_timeout, max_duration or hours_exhausted
+        message:
+          type: string
+      required:
+      - code
+      - message
+      x-ostrom-kotlin: pending
+    CloudSessionLimits:
+      type: object
+      description: The bounds a cloud session runs under, from its organization's plan
+      properties:
+        idleTimeoutMinutes:
+          type: integer
+          description: Minutes without a model request nor terminal input before it pauses
+        maxRunMinutes:
+          type: integer
+          description: Minutes an execution may run before it pauses
+        restrictedEgress:
+          type: boolean
+      required:
+      - idleTimeoutMinutes
+      - maxRunMinutes
+      - restrictedEgress
       x-ostrom-kotlin: pending
     CompiledHook:
       type: object
