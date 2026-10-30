@@ -10,14 +10,12 @@ plugins {
 description = "Ostrom frontier actions: classifies a shell command or a tool call, and reads what a yes to it binds."
 
 // The build-logic convention plugin is not on main yet (ostrom-core#8): the test-only jvm() target and the Kover rule
-// of ostrom.kmp.gradle.kts are declared here, and this file becomes `id("ostrom.kmp")` when it lands.
+// of ostrom.kmp.gradle.kts are declared here, as in :telemetry, and this file becomes `id("ostrom.kmp")` when it lands.
 kotlin {
     explicitApi()
-    jvmToolchain(21)
-    // Test-only: Kover cannot measure Kotlin/Native, so commonMain runs and is measured on the JVM; never shipped.
-    jvm {
-        testRuns.named("test") { executionTask.configure { useJUnitPlatform() } }
-    }
+    // jvm() is for tests and Kover coverage of commonMain only (CONVENTIONS 7.2), never shipped in a binary. Its
+    // artifact is published all the same: the CLI's and the server's own test-only jvm() targets resolve it.
+    jvm()
     macosArm64(); linuxX64(); linuxArm64(); mingwX64()
     sourceSets {
         commonMain.dependencies {
@@ -26,10 +24,6 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
-        jvmTest.dependencies {
-            runtimeOnly(libs.junit.jupiter.engine)
-            runtimeOnly(libs.junit.platform.launcher)
-        }
     }
 }
 
@@ -37,13 +31,10 @@ kotlin {
 kover {
     reports {
         verify {
-            rule("100 % of lines and branches (Lyes, 30/10/2026)") {
+            rule {
                 minBound(100, CoverageUnit.LINE)
                 minBound(100, CoverageUnit.BRANCH)
             }
         }
     }
 }
-
-// The jvm target exists for tests only: never publish it (ostrom-e2e templates, docs/CONVENTIONS.md section 7.2).
-tasks.matching { it.name.contains("JvmPublication") }.configureEach { enabled = false }

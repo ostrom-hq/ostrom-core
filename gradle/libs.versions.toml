@@ -4,9 +4,11 @@ serialization = "1.11.0"
 cryptography = "0.6.0"
 kotlinx-io = "0.9.1"
 maven = "0.37.0"
+coroutines = "1.11.0"
+ktor = "3.6.1"
 kover = "0.9.11"
-junit = "5.11.4"
-junit-platform = "1.11.4"
+# Test-only (jvmTest): the official OTLP classes decode what the telemetry encoder writes.
+opentelemetry-proto = "1.11.1-alpha"
 
 [plugins]
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -19,5 +21,8 @@ serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", v
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-openssl3 = { module = "dev.whyoleg.cryptography:cryptography-provider-openssl3-prebuilt", version.ref = "cryptography" }
 kotlinx-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+opentelemetry-proto = { module = "io.opentelemetry.proto:opentelemetry-proto", version.ref = "opentelemetry-proto" }

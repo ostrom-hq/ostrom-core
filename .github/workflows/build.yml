@@ -16,8 +16,6 @@ concurrency:
   group: build-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  # The required check of main is named `native`: the job keeps that name (the brief's `native-tests` would block
-  # every pull request until the protection changes).
   native:
     timeout-minutes: 45
     runs-on: ubuntu-latest
@@ -43,6 +41,32 @@ jobs:
           name: test-reports
           path: '**/build/reports/tests/'
           retention-days: 3
+  coverage:
+    # jvmTest + koverVerify: 100 % of lines and branches of commonMain for every module with the test-only jvm() target.
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      - run: ./gradlew --no-daemon --no-build-cache jvmTest koverXmlReport koverLog
+      - name: Uncovered lines and branches
+        if: always()
+        run: python3 .github/scripts/kover_missed.py
+      - run: ./gradlew --no-daemon --no-build-cache koverVerify
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-reports
+          path: |
+            **/build/reports/kover/
+            **/build/reports/tests/
+          retention-days: 7
   contract:
     # api/openapi.yaml is the contract: its TypeScript types must generate, and api/contract/shapes.json (read by the
     # Kotlin ContractTest) must be the one derived from it.
@@ -63,42 +87,6 @@ jobs:
       - name: api/contract/shapes.json is up to date with api/openapi.yaml
         run: git diff --exit-code -- ../api/contract/shapes.json
       - run: npm run build
-  # commonMain of the modules with a test-only jvm() target, measured by Kover: 100 % of lines and branches.
-  coverage:
-    name: coverage
-    timeout-minutes: 30
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-provider: basic
-      - run: ./gradlew --no-daemon :actions:jvmTest :actions:koverXmlReport :actions:koverHtmlReport :actions:koverVerify
-      - name: Coverage summary
-        if: always()
-        run: |
-          report=actions/build/reports/kover/report.xml
-          if [ -f "$report" ]; then
-            python3 - "$report" >> "$GITHUB_STEP_SUMMARY" <<'PY'
-          import sys, xml.etree.ElementTree as ET
-          root = ET.parse(sys.argv[1]).getroot()
-          print("| module | counter | covered | missed |\n|---|---|---|---|")
-          for c in root.findall("counter"):
-              print(f"| actions | {c.get('type')} | {c.get('covered')} | {c.get('missed')} |")
-          PY
-          fi
-      - if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: coverage-actions
-          path: |
-            actions/build/reports/kover/
-            actions/build/reports/tests/
-          retention-days: 7
   other-hosts:
     if: github.event_name == 'workflow_dispatch' && inputs.full_validation
     strategy:
@@ -124,7 +112,7 @@ jobs:
         shell: bash
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [native, contract, coverage]
+    needs: [native, contract]
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:
@@ -149,7 +137,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_GRADLE_PROJECT_ostromCoreVersion: 0.1.${{ github.run_number }}
         run: ./gradlew --no-daemon publishAllPublicationsToGitHubPackagesRepository
-      - run: echo "Published dev.ostrom:ostrom-api, dev.ostrom:ostrom-receipts and dev.ostrom:ostrom-actions 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+      - run: echo "Published dev.ostrom:ostrom-api, dev.ostrom:ostrom-receipts, dev.ostrom:ostrom-telemetry and dev.ostrom:ostrom-actions 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
