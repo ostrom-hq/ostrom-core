@@ -44,8 +44,8 @@ A self-hosted install that sets none of them sends nothing anywhere.
   truncated to 32 768 characters.
 - Metric attributes are bounded enums and route templates, never identifiers (ENG-003). Org and session ids may appear
   on traces (Langfuse groups calls by session), never on metrics.
-- PostHog events carry the user's opaque id, never an e-mail; `$ip` is sent as null, and the PostHog project discards
-  client IPs.
+- PostHog events carry the user's opaque id, never an e-mail; `$ip` is sent as null, `$geoip_disable` as true (the web
+  console and the app send it too), and the PostHog project discards client IPs.
 
 ## Product events (PostHog)
 

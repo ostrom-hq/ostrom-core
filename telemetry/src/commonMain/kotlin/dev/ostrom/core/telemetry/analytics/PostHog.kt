@@ -66,6 +66,8 @@ public class PostHogEncoder(
             put("\$lib_version", libraryVersion)
             // The server never sends the user's IP; the CLI's would only identify its network.
             put("\$ip", JsonNull)
+            // And no city or country derived from the request's address.
+            put("\$geoip_disable", true)
             event.organizationId?.let { orgId -> putJsonObject("\$groups") { put("organization", orgId) } }
         }
     }

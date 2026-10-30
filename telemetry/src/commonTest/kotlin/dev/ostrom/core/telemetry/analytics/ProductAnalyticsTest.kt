@@ -114,7 +114,8 @@ class ProductAnalyticsTest {
                 """
                 {"event":"gate_answered","distinct_id":"u2","timestamp":"2026-10-26T07:33:20Z",
                  "properties":{"answer":"no","channel":"web","seconds_to_answer":1.5,"${'$'}lib":"ostrom-server",
-                 "${'$'}lib_version":"1.0.0","${'$'}ip":null,"${'$'}groups":{"organization":"o1"}}}
+                 "${'$'}lib_version":"1.0.0","${'$'}ip":null,
+                 "${'$'}geoip_disable":true,"${'$'}groups":{"organization":"o1"}}}
                 """.trimIndent(),
             ),
             batch[0],
