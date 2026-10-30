@@ -6487,7 +6487,7 @@ paths:
       tags:
       - billing
       summary: Start buying a plan (Stripe Checkout)
-      description: 'Owners and billing admins. Opens a Stripe Checkout session with automatic tax, tax ids and the billing address; the console redirects to `url`. Monthly plans are billed per active person in arrears; yearly plans are bought for the people active now (at least one). 409 while a subscription is running (change its plan instead), 400 for Free or Enterprise (sold on quote).'
+      description: 'Owners, admins and billing admins. Opens a Stripe Checkout session with automatic tax, tax ids and the billing address; the console redirects to `url`. Monthly plans are billed per active person in arrears; yearly plans are bought for the people active now (at least one). 409 while a subscription is running (change its plan instead), 400 for Free or Enterprise (sold on quote).'
       parameters:
       - name: orgId
         in: path
@@ -6524,7 +6524,7 @@ paths:
       tags:
       - billing
       summary: Open the Stripe customer portal
-      description: 'Owners and billing admins: payment methods, invoices and receipts, billing address and tax id, cancellation at the period end. 409 for an organization that never bought.'
+      description: 'Owners, admins and billing admins: payment methods, invoices and receipts, billing address and tax id, cancellation at the period end. 409 for an organization that never bought.'
       parameters:
       - name: orgId
         in: path
@@ -6553,7 +6553,7 @@ paths:
       tags:
       - billing
       summary: Change the plan or the interval of the subscription
-      description: 'Owners and billing admins. An upgrade (Team to Business, monthly to yearly) is invoiced now, prorated; a downgrade is credited on the next invoice. Returns the billing after the change.'
+      description: 'Owners, admins and billing admins. An upgrade (Team to Business, monthly to yearly) is invoiced now, prorated; a downgrade is credited on the next invoice. Returns the billing after the change.'
       parameters:
       - name: orgId
         in: path
@@ -6590,7 +6590,7 @@ paths:
       tags:
       - billing
       summary: End the subscription at the end of the period
-      description: 'Owners and billing admins. The plan stays until the period end; 409 if it already ends.'
+      description: 'Owners, admins and billing admins. The plan stays until the period end; 409 if it already ends.'
       parameters:
       - name: orgId
         in: path
@@ -6619,7 +6619,7 @@ paths:
       tags:
       - billing
       summary: Keep a subscription that was set to end
-      description: 'Owners and billing admins. 409 if the subscription is not ending; a subscription already ended is bought again through checkout.'
+      description: 'Owners, admins and billing admins. 409 if the subscription is not ending; a subscription already ended is bought again through checkout.'
       parameters:
       - name: orgId
         in: path
@@ -6648,7 +6648,7 @@ paths:
       tags:
       - billing
       summary: Invoices and receipts, newest first
-      description: 'Owners and billing admins. Empty for an organization that never bought.'
+      description: 'Owners, admins and billing admins. Empty for an organization that never bought.'
       parameters:
       - name: orgId
         in: path
@@ -7317,7 +7317,7 @@ components:
       x-ostrom-kotlin: pending
     BillingPlanLimits:
       type: object
-      description: The limits in force; null means unlimited
+      description: 'The limits in force; null means unlimited. A request that would go past one (a member, a cloud agent, an agent hour, SSO, policies) is answered 402 `payment_required`, with a message naming the limit and where to upgrade.'
       properties:
         maxPeople:
           type: [integer, 'null']
