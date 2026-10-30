@@ -46,20 +46,43 @@ as its action requires) and the minimum per job, `persist-credentials: false` on
 of [zizmor](https://docs.zizmor.sh) and of the [OpenSSF Scorecard](https://scorecard.dev), followed by Linear, uv,
 Ruff, Supabase and Tailscale.
 
-| Workflow | Check name | What it does |
-| --- | --- | --- |
-| `release-please.yml` | `release-please` | All repositories but ostrom-core and ostrom-helm (see `CHANGELOG.md` above). Keeps a release pull request from Conventional Commit titles; merging it tags the bare version (CONVENTIONS.md section 12), writes the changelog, creates the release, and starts the tag workflows a `GITHUB_TOKEN` tag would not start |
-| `community.yml` | `community` | One job, so a pull request costs one runner (organization CI rule: few jobs, none on drafts). Its steps: the title is a Conventional Commit, since with squash merge it is the commit on `main` and the changelog line (Resend, Cal.com); every commit of a contributor without write access is signed off (Developer Certificate of Origin instead of a CLA, like GitLab since 2017; collaborators with write, maintain or admin permission and bots are exempt, a read-only organization member is checked); every new source file carries its `SPDX-License-Identifier`, the right one for its path (`ee/` is `LicenseRef-Ostrom-Enterprise`), `LICENSE` exists, and `ee/LICENSE` wherever `ee/` exists (Tailscale's `license_test.go`); zizmor reads the workflows (Linear, uv, Supabase, Tailscale); lychee checks every Markdown link |
-| `codeql.yml` | `analyze (actions)` everywhere, plus `analyze (javascript-typescript)` in web, app, e2e and site | CodeQL `security-extended` on the workflows and the TypeScript code. Kotlin is not analysed: CodeQL needs a JVM build of Kotlin and our product is native |
-| `scorecard.yml` | `analysis` | OpenSSF Scorecard, weekly and on every push to `main`, once the repositories are public: on a private repository `GITHUB_TOKEN` cannot read what it needs, so the job is skipped until `OSTROM_PUBLIC` is `true` |
-| `labels.yml` | `labels` | Syncs the labels from `.github/labels.yml` |
+The organization has 19 concurrent jobs for every repository together, so a pull request costs one job of these
+workflows (`community`), none on a draft, and everything else runs weekly or by hand (orchestrator, 04:15).
+
+| Workflow | Check name | When | What it does |
+| --- | --- | --- | --- |
+| `community.yml` | `community` | every pull request, not drafts | One job. The title is a Conventional Commit, since with squash merge it is the commit on `main` and the changelog line (Resend, Cal.com); every commit of a contributor without write access is signed off (Developer Certificate of Origin instead of a CLA, like GitLab since 2017; collaborators with write, maintain or admin permission and bots are exempt, a read-only organization member is checked); every source file carries its `SPDX-License-Identifier`, the right one for its path (`ee/` is `LicenseRef-Ostrom-Enterprise`), `LICENSE` exists, and `ee/LICENSE` wherever `ee/` exists (Tailscale's `license_test.go`); zizmor reads the workflows (Linear, uv, Supabase, Tailscale) |
+| `links.yml` | `links` | weekly, by hand | lychee checks every Markdown link (external links break without any commit) |
+| `codeql.yml` | `analyze (actions)`, plus `analyze (javascript-typescript)` in web, app, e2e and site | weekly, by hand | CodeQL `security-extended` on the workflows and the TypeScript code. Kotlin is not analysed: CodeQL needs a JVM build of Kotlin and our product is native |
+| `scorecard.yml` | `analysis` | weekly, by hand, once public | OpenSSF Scorecard. On a private repository `GITHUB_TOKEN` cannot read what it needs, so the job is skipped until `OSTROM_PUBLIC` is `true` |
+| `release-please.yml` | `release-please` | by hand | All repositories but ostrom-core and ostrom-helm (see `CHANGELOG.md` above). Opens or updates the release pull request from the Conventional Commit titles; merging it and running the workflow again tags the bare version (CONVENTIONS.md section 12), writes the changelog and creates the release. No release pull request is merged before Lyes's go (orchestrator, 06:05) |
+| `labels.yml` | `labels` | when `.github/labels.yml` changes on `main` | Syncs the labels |
+
+The SPDX check covers every source file (`scope: all` in `.github/spdx.json`) in cli, server, site, helm and e2e;
+in core, web and app it still covers only the files a pull request adds (`scope: added`) until their existing files
+get a header, when no other pull request is touching them. Generated code is excluded per repository (`exclude`).
+
+### Exceptions to close before going public
+
+zizmor runs at `high` severity in every pull request. These temporary exceptions live in each repository's
+`.github/zizmor.yml`; none survives the launch. Each owner removes its line in the pull request that fixes the
+workflow.
+
+| Repository | File | Finding | Owner | Fix |
+| --- | --- | --- | --- | --- |
+| ostrom-web | `.github/workflows/image.yml` | `cache-poisoning`: Docker build cache in a workflow that also runs on release tags | DEPLOY | no cache on tag runs, or a separate release job |
+| ostrom-app | `.github/workflows/ci.yml` | `cache-poisoning`: npm cache in a workflow that also runs on release tags | APP | same |
+| ostrom-web, ostrom-app | `.github/workflows/ci.yml` | `unpinned-uses`: actions by tag (`@v4`, `@v5`), against CONVENTIONS.md section 11 | WEB, APP (QA template) | pin each action by commit SHA |
+| ostrom-e2e | `.github/workflows/ci.yml` | `cache-poisoning`: dependency cache, QA template of the single `ci` job | QA | same, in the template too |
+| ostrom-e2e | `.github/actions/*/action.yml` | `template-injection`: inputs expanded inside `run:` | QA | pass each input through `env:` |
+| ostrom-site | `.github/workflows/ci.yml`, `docs.yml` | `cache-poisoning`: dependency cache in workflows that also run on release tags | SITE | no cache on tag runs |
 
 ### Before the launch
 
 Everything stays private until Lyes says go. One organization variable switches the public behaviour on:
 **`OSTROM_PUBLIC`** (`false` today). Set to `true` at launch, it makes CodeQL upload its results to GitHub code
-scanning, turns Scorecard on (results in code scanning, badge data published; add the Scorecard badge to the READMEs then), and lets ostrom-cli's release-please job start its release workflow
-that publishes binaries outside the organization. Until then the SARIF reports are kept as workflow artifacts and an
+scanning, turns Scorecard on (results in code scanning, badge data published; add the Scorecard badge to the READMEs then). The CLI release is cut by its own tag-triggered workflow (DEPLOY), which needs a tag pushed by the release GitHub App,
+not by `GITHUB_TOKEN`. Until the launch the CodeQL SARIF reports are kept as workflow artifacts and an
 error-level CodeQL alert fails the job. Also at launch: remove the two "until the public launch" lines of
 `.lycheeignore`, and turn on GitHub private vulnerability reporting.
 
