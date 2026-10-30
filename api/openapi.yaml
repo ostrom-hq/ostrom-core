@@ -19,7 +19,11 @@ info:
     PATCH, DELETE) also sends `X-CSRF-Token`, equal to the readable `ostrom_csrf` cookie, or is refused with 403.
 
     Every route is under `/api/v1`, except `/health` and the incoming webhooks (`/webhooks/stripe`, `/webhooks/github`,
-    `/webhooks/slack`), each authenticated by its sender''s signature.'
+    `/webhooks/slack`), each authenticated by its sender''s signature.
+
+    A route without `orgs/{orgId}` in its path acts in the caller''s organization. A person who is a member of several
+    organizations names it with the `Ostrom-Org` header (the organization''s id); without it they get 409 with
+    `error.type` `org_required`. With exactly one active membership the header may be left out.'
 servers:
 - url: https://{host}
   variables:
@@ -434,6 +438,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
   /api/v1/launches:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: createLaunch
       x-ostrom-status: planned
@@ -485,6 +491,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/policy/agents:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: checkAgentPolicy
       x-ostrom-status: planned
@@ -534,6 +542,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/auth/me:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMe
       x-ostrom-status: planned
@@ -763,6 +773,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/service-keys:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listServiceKeys
       x-ostrom-status: planned
@@ -835,6 +847,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/service-keys/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteServiceKey
       x-ostrom-status: planned
@@ -861,6 +875,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/devices:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listDevices
       x-ostrom-status: planned
@@ -894,6 +910,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/devices/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteDevice
       x-ostrom-status: planned
@@ -920,6 +938,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/push-devices:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: registerPushDevice
       x-ostrom-status: planned
@@ -963,6 +983,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/push-devices/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deletePushDevice
       x-ostrom-status: planned
@@ -1042,6 +1064,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/activity:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listActivity
       x-ostrom-status: planned
@@ -1086,6 +1110,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/spending:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSpending
       x-ostrom-status: planned
@@ -1116,6 +1142,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/github/app:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGithubApp
       x-ostrom-status: planned
@@ -1151,6 +1179,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/github/app/manifest/start:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: startGithubAppManifest
       x-ostrom-status: planned
@@ -1197,6 +1227,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
   /api/v1/github/app/install/start:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: startGithubAppInstall
       x-ostrom-status: planned
@@ -1303,6 +1335,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
   /api/v1/github/checks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: githubCheck
       x-ostrom-status: planned
@@ -1347,6 +1381,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/org:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getOrganization
       x-ostrom-status: planned
@@ -1371,6 +1407,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/members:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMembers
       x-ostrom-status: planned
@@ -1404,6 +1442,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/members/{login}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMember
       x-ostrom-status: planned
@@ -1502,6 +1542,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/members/invites:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inviteMembers
       x-ostrom-status: planned
@@ -1546,6 +1588,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/teams:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listTeams
       x-ostrom-status: planned
@@ -1579,6 +1623,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/repos:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRepos
       x-ostrom-status: planned
@@ -1612,6 +1658,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/settings:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSettings
       x-ostrom-status: planned
@@ -1665,6 +1713,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/sessions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startSession
       x-ostrom-status: planned
@@ -1748,6 +1798,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/sessions/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSession
       x-ostrom-status: planned
@@ -1778,6 +1830,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/sessions/{id}/alive:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: sessionAlive
       x-ostrom-status: planned
@@ -1817,6 +1871,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/sessions/{id}/end:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: endSession
       x-ostrom-status: planned
@@ -1853,6 +1909,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/sessions/{id}/reopen:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reopenSession
       x-ostrom-status: planned
@@ -1892,6 +1950,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/sessions/{id}/workflow-receipt:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: signWorkflowReceipt
       x-ostrom-status: planned
@@ -1945,6 +2005,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/sessions/{id}/seen:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reportSeen
       x-ostrom-status: planned
@@ -1988,6 +2050,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/gates:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: askGate
       x-ostrom-status: planned
@@ -2071,6 +2135,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/gates/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGate
       x-ostrom-status: planned
@@ -2106,6 +2172,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/gates/{id}/consume:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: consumeGate
       x-ostrom-status: planned
@@ -2136,6 +2204,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/gates/approvers:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApproversGraph
       x-ostrom-status: served
@@ -2169,6 +2239,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/gates/catalog:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGateCatalog
       x-ostrom-status: planned
@@ -2199,6 +2271,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/gates/catalog/signed:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSignedGatePolicy
       x-ostrom-status: planned
@@ -2231,6 +2305,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/gates/policy:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGatePolicy
       x-ostrom-status: planned
@@ -2299,6 +2375,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/approvals:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listApprovals
       x-ostrom-status: planned
@@ -2362,6 +2440,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/approvals/queue:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApprovalQueue
       x-ostrom-status: planned
@@ -2386,6 +2466,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/approvals/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApproval
       x-ostrom-status: planned
@@ -2416,6 +2498,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/approvals/{id}/view:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApprovalView
       x-ostrom-status: planned
@@ -2446,6 +2530,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/approvals/{id}/answer:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: answerApproval
       x-ostrom-status: planned
@@ -2491,6 +2577,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/decisions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listDecisions
       x-ostrom-status: planned
@@ -2540,6 +2628,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/receipts:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listReceipts
       x-ostrom-status: planned
@@ -2615,6 +2705,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
   /api/v1/receipts/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getReceipt
       x-ostrom-status: planned
@@ -2645,6 +2737,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/receipts/{id}/verify:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: verifyReceipt
       x-ostrom-status: planned
@@ -2675,6 +2769,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/receipts/{id}/bundle:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getReceiptBundle
       x-ostrom-status: planned
@@ -2705,6 +2801,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/packages/current:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCurrentPackage
       x-ostrom-status: planned
@@ -2735,6 +2833,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/packages:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listPackages
       x-ostrom-status: planned
@@ -2774,6 +2874,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/packages/preview:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: previewPackage
       x-ostrom-status: planned
@@ -2807,6 +2909,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/packages/audit:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listPackageAudit
       x-ostrom-status: planned
@@ -2840,6 +2944,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/packages/{digest}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getPackage
       x-ostrom-status: planned
@@ -2870,6 +2976,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/packages/{digest}/status:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getPackageStatus
       x-ostrom-status: planned
@@ -2900,6 +3008,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/packages/{digest}/revoke:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: revokePackage
       x-ostrom-status: planned
@@ -2941,6 +3051,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/packages/{digest}/restore:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: restorePackage
       x-ostrom-status: planned
@@ -2971,6 +3083,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/checks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reportCheck
       x-ostrom-status: planned
@@ -3049,6 +3163,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/notifications:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: sendNotification
       x-ostrom-status: planned
@@ -3142,6 +3258,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/rules:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRules
       x-ostrom-status: planned
@@ -3191,6 +3309,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/rules/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getRule
       x-ostrom-status: planned
@@ -3269,6 +3389,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/rules/bulk:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: bulkUpdateRules
       x-ostrom-status: planned
@@ -3314,6 +3436,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/workflows:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listWorkflows
       x-ostrom-status: planned
@@ -3387,6 +3511,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/workflows/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getWorkflow
       x-ostrom-status: planned
@@ -3484,6 +3610,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/workflows/{id}/runs:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startWorkflowRun
       x-ostrom-status: planned
@@ -3573,6 +3701,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/runs:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRuns
       x-ostrom-status: planned
@@ -3617,6 +3747,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/runs/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getRun
       x-ostrom-status: planned
@@ -3647,6 +3779,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/runs/{id}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cancelRun
       x-ostrom-status: planned
@@ -3677,6 +3811,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/automations:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listAutomations
       x-ostrom-status: planned
@@ -3739,6 +3875,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/automations/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getAutomation
       x-ostrom-status: planned
@@ -3829,6 +3967,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/automations/{id}/enable:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: enableAutomation
       x-ostrom-status: planned
@@ -3859,6 +3999,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/automations/{id}/disable:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: disableAutomation
       x-ostrom-status: planned
@@ -3889,6 +4031,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/automations/{id}/webhook/rotate-secret:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: rotateAutomationSecret
       x-ostrom-status: planned
@@ -3924,6 +4068,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/automations/{id}/run:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: testAutomation
       x-ostrom-status: planned
@@ -3970,6 +4116,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/automations/{id}/runs:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listAutomationRuns
       x-ostrom-status: planned
@@ -4067,6 +4215,8 @@ paths:
         '429':
           $ref: '#/components/responses/Error'
   /api/v1/waits:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listWaits
       x-ostrom-status: planned
@@ -4163,6 +4313,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/waits/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getWait
       x-ostrom-status: planned
@@ -4193,6 +4345,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/waits/{id}/answer:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: answerWait
       x-ostrom-status: planned
@@ -4237,6 +4391,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/waits/{id}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cancelWait
       x-ostrom-status: planned
@@ -4267,6 +4423,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/servers:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpServers
       x-ostrom-status: planned
@@ -4338,6 +4496,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/servers/{name}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: saveMcpServer
       x-ostrom-status: planned
@@ -4399,6 +4559,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/servers/{name}/assignments:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpAssignments
       x-ostrom-status: planned
@@ -4429,6 +4591,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/servers/{name}/assignments/{member}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: assignMcpServer
       x-ostrom-status: planned
@@ -4502,6 +4666,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/servers/{name}/policies:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpArgumentPolicies
       x-ostrom-status: planned
@@ -4567,6 +4733,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/servers/{name}/policies/{policyId}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteMcpArgumentPolicy
       x-ostrom-status: planned
@@ -4598,6 +4766,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/settings:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMcpSettings
       x-ostrom-status: planned
@@ -4651,6 +4821,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/{server}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: relayMcp
       x-ostrom-status: planned
@@ -4685,6 +4857,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/calls:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpCalls
       x-ostrom-status: planned
@@ -4734,6 +4908,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/usage:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMcpUsage
       x-ostrom-status: planned
@@ -4770,6 +4946,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/secrets:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listSecrets
       x-ostrom-status: served
@@ -4832,6 +5010,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/secrets/{name}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: rotateSecret
       x-ostrom-status: served
@@ -4893,6 +5073,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/import/teamcode:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: importTeamCode
       x-ostrom-status: planned
@@ -4930,6 +5112,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/inference/v1/messages:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceMessages
       x-ostrom-status: planned
@@ -4958,6 +5142,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/inference/v1/responses:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceResponses
       x-ostrom-status: planned
@@ -4986,6 +5172,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/inference/v1/chat/completions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceChatCompletions
       x-ostrom-status: planned
@@ -5014,6 +5202,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/inference/v1/models:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: inferenceModels
       x-ostrom-status: planned
@@ -5046,6 +5236,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/inference/settings:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getInferenceSettings
       x-ostrom-status: planned
@@ -5099,6 +5291,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/policy/models:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getModelPolicy
       x-ostrom-status: planned
@@ -5152,6 +5346,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/routes:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listInferenceRoutes
       x-ostrom-status: planned
@@ -5214,6 +5410,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/routes/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteInferenceRoute
       x-ostrom-status: planned
@@ -5240,6 +5438,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/budgets:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listBudgets
       x-ostrom-status: served
@@ -5314,6 +5514,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/budgets/me:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMyBudget
       x-ostrom-status: served
@@ -5338,6 +5540,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/usage:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getUsage
       x-ostrom-status: served
@@ -5378,6 +5582,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/usage/summary:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getUsageSummary
       x-ostrom-status: served
@@ -5423,6 +5629,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/usage/events:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listUsageEvents
       x-ostrom-status: served
@@ -5516,6 +5724,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/usage/live:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: streamUsage
       x-ostrom-status: served
@@ -5542,6 +5752,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/usage/pending:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listPendingUsage
       x-ostrom-status: planned
@@ -5585,6 +5797,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/usage/reconciliations:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listUsageReconciliations
       x-ostrom-status: planned
@@ -5628,6 +5842,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/usage/reservations/{id}/reconcile:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reconcileUsage
       x-ostrom-status: planned
@@ -5677,6 +5893,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/members/{login}/budget-overrides:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listBudgetOverrides
       x-ostrom-status: planned
@@ -5762,6 +5980,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/members/{login}/budget-overrides/{id}/revoke:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: revokeBudgetOverride
       x-ostrom-status: planned
@@ -5797,6 +6017,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/runners:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRunners
       x-ostrom-status: planned
@@ -5871,6 +6093,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/runners/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteRunner
       x-ostrom-status: planned
@@ -5897,6 +6121,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/runners/{id}/heartbeat:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: runnerHeartbeat
       x-ostrom-status: planned
@@ -5934,6 +6160,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listCloudSessions
       x-ostrom-status: served
@@ -6032,6 +6260,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCloudSession
       x-ostrom-status: served
@@ -6091,6 +6321,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/pause:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: pauseCloudSession
       x-ostrom-status: served
@@ -6121,6 +6353,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/resume:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: resumeCloudSession
       x-ostrom-status: served
@@ -6151,6 +6385,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/terminal/ticket:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: issueCloudTerminalTicket
       x-ostrom-status: planned
@@ -6189,6 +6425,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/terminal:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: attachCloudTerminal
       x-ostrom-status: planned
@@ -6223,6 +6461,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/runner/heartbeat:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cloudRunnerHeartbeat
       x-ostrom-status: served
@@ -6277,6 +6517,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/messages:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: sendCloudMessage
       x-ostrom-status: planned
@@ -6323,6 +6565,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/events:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: streamCloudSession
       x-ostrom-status: planned
@@ -6353,6 +6597,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listArtifacts
       x-ostrom-status: planned
@@ -6442,6 +6688,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getArtifact
       x-ostrom-status: planned
@@ -6537,6 +6785,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts/{id}/versions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listArtifactVersions
       x-ostrom-status: planned
@@ -6618,6 +6868,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts/{id}/versions/{number}/file:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getArtifactFile
       x-ostrom-status: planned
@@ -6659,6 +6911,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts/{id}/members:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listArtifactMembers
       x-ostrom-status: planned
@@ -6697,6 +6951,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts/{id}/members/{memberId}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: shareArtifact
       x-ostrom-status: planned
@@ -6765,6 +7021,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts/{id}/tickets:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: createArtifactTicket
       x-ostrom-status: planned
@@ -6806,6 +7064,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/accounts:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listSharedAccounts
       x-ostrom-status: planned
@@ -6885,6 +7145,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/accounts/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     patch:
       operationId: updateSharedAccount
       x-ostrom-status: planned
@@ -6955,6 +7217,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/capacity:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCapacity
       x-ostrom-status: planned
@@ -6979,6 +7243,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/groups:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listGroups
       x-ostrom-status: planned
@@ -7054,6 +7320,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/groups/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGroup
       x-ostrom-status: planned
@@ -7151,6 +7419,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/groups/{id}/members/{login}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: addGroupMember
       x-ostrom-status: planned
@@ -7212,6 +7482,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/groups/{id}/members/{login}/pause:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: pauseGroupMember
       x-ostrom-status: planned
@@ -7252,6 +7524,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/skills:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listSkills
       x-ostrom-status: planned
@@ -7285,6 +7559,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/skills/{name}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: publishSkill
       x-ostrom-status: planned
@@ -7360,6 +7636,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/skill-delivery:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSkillDelivery
       x-ostrom-status: planned
@@ -7391,6 +7669,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/hooks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listHooks
       x-ostrom-status: planned
@@ -7424,6 +7704,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/hook-delivery:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getHookDelivery
       x-ostrom-status: planned
@@ -7455,6 +7737,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/webhooks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listWebhooks
       x-ostrom-status: planned
@@ -7527,6 +7811,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/webhooks/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteWebhook
       x-ostrom-status: planned
@@ -7553,6 +7839,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/webhooks/{id}/deliveries:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listWebhookDeliveries
       x-ostrom-status: planned
@@ -7591,6 +7879,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/audit:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listAudit
       x-ostrom-status: planned
@@ -7640,6 +7930,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/events:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: streamEvents
       x-ostrom-status: planned
@@ -7664,6 +7956,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/events/history:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listEvents
       x-ostrom-status: planned
@@ -7702,6 +7996,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/analysis/start:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startAnalysis
       x-ostrom-status: planned
@@ -7731,6 +8027,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/analysis/restart:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: restartAnalysis
       x-ostrom-status: planned
@@ -7760,6 +8058,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/analysis/state:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getAnalysisState
       x-ostrom-status: planned
@@ -7784,6 +8084,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/analysis/replay:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startReplay
       x-ostrom-status: planned
@@ -7844,6 +8146,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/tasks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listTasks
       x-ostrom-status: planned
@@ -7877,6 +8181,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/tasks/{id}/run:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: runTask
       x-ostrom-status: planned
@@ -8219,6 +8525,18 @@ components:
       description: 'The browser session of the console: HttpOnly, Secure, SameSite=Lax, Path=/. Set by a sign-in, never
         carried in a body, a URL or a redirect. With it, every POST, PUT, PATCH and DELETE also sends the `X-CSRF-Token`
         header, equal to the readable `ostrom_csrf` cookie set beside it; otherwise 403. Sign-out expires both cookies.'
+  parameters:
+    OstromOrg:
+      name: Ostrom-Org
+      in: header
+      required: false
+      description: The id of the organization the request acts in. Required when the signed-in person is a member of
+        several organizations; without it, a person with exactly one active membership acts in that organization. Missing
+        while several memberships are active, 409 `org_required` (`error.type`, the usual `ApiError` body); an
+        organization the person is not a member of, 404, as for anything of another organization. A token bound to one
+        organization (device, agent, runner, service key) acts in its own organization
+      schema:
+        type: string
   responses:
     Error:
       description: A refusal
