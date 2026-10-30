@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package dev.ostrom.core.api
 
 import dev.ostrom.core.api.models.AgentEvent
@@ -89,7 +90,8 @@ class UnknownFallbackEnumTest {
     fun aMessageWithANewStatusStillDecodes() {
         val wait = OstromJson.decodeFromString(
             Wait.serializer(),
-            """{"id":"w1","kind":"question","status":"snoozed","assignee":"ana","question":{"title":"Ship?"},"createdAt":"t"}""",
+            """{"id":"w1","kind":"question","status":"snoozed","assignee":"ana",""" +
+                """"question":{"title":"Ship?"},"createdAt":"t"}""",
         )
         assertEquals(WaitStatus.UNKNOWN, wait.status)
     }
