@@ -88,6 +88,14 @@ public interface Span {
     /** Sets the outcome. @param message A short, non-sensitive reason. */
     public fun setStatus(code: StatusCode, message: String = "")
 
+    /**
+     * Renames the span, for a name known only after it started (an HTTP route is matched after the request began).
+     * Ignored once ended.
+     *
+     * @param name The new low-cardinality name.
+     */
+    public fun updateName(name: String)
+
     /** Ends the span now and hands it to the processor if it is sampled. */
     public fun end()
 }
@@ -117,7 +125,7 @@ public fun Span.setAttributes(attributes: Attributes) {
 internal class RecordingSpan(
     override val context: SpanContext,
     private val parentSpanId: Long,
-    private val name: String,
+    private var name: String,
     private val kind: SpanKind,
     private val startEpochNanos: Long,
     initialAttributes: Attributes,
@@ -144,6 +152,10 @@ internal class RecordingSpan(
             status = code
             statusMessage = message
         }
+    }
+
+    override fun updateName(name: String) {
+        if (!ended.load()) this.name = name
     }
 
     override fun end() {

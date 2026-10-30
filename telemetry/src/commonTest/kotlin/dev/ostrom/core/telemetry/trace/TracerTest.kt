@@ -82,11 +82,14 @@ class TracerTest {
 
     @Test
     fun writesAfterTheEndAreIgnored() {
-        val span = tracer.startSpan("done")
+        val span = tracer.startSpan("GET")
+        span.updateName("GET /v1/gates/{id}")
         span.end()
         span.setAttribute("late", true)
         span.setStatus(StatusCode.ERROR, "late")
+        span.updateName("late")
 
+        assertEquals("GET /v1/gates/{id}", ended.single().name)
         assertNull(ended.single().attributes["late"])
         assertEquals(StatusCode.UNSET, ended.single().status)
     }
