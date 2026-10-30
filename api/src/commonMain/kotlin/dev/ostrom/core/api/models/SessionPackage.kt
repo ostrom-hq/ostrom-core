@@ -1,6 +1,6 @@
 package dev.ostrom.core.api.models
 
-import kotlinx.serialization.SerialName
+import dev.ostrom.core.api.UnknownFallbackEnumSerializer
 import kotlinx.serialization.Serializable
 
 /**
@@ -111,31 +111,76 @@ public data class PackageWorkflow(
 )
 
 /** Whether a compiled element acts (`enforce`) or is only logged (`shadow`). */
-@Serializable
-public enum class PackageMode {
-    @SerialName("enforce") ENFORCE,
-    @SerialName("shadow") SHADOW,
+@Serializable(with = PackageMode.Serializer::class)
+public enum class PackageMode(
+    /** The JSON value. */
+    public val value: String,
+) {
+    ENFORCE("enforce"),
+    SHADOW("shadow"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<PackageMode>(
+        "dev.ostrom.core.api.models.PackageMode",
+        PackageMode.entries,
+        PackageMode.UNKNOWN,
+        PackageMode::value,
+    )
 }
 
 /** Agent events, with Claude Code's names (each launcher adapter translates them). */
-@Serializable
-public enum class AgentEvent {
-    @SerialName("SessionStart") SESSION_START,
-    @SerialName("UserPromptSubmit") USER_PROMPT_SUBMIT,
-    @SerialName("PreToolUse") PRE_TOOL_USE,
-    @SerialName("PostToolUse") POST_TOOL_USE,
-    @SerialName("Stop") STOP,
-    @SerialName("SessionEnd") SESSION_END,
+@Serializable(with = AgentEvent.Serializer::class)
+public enum class AgentEvent(
+    /** The JSON value. */
+    public val value: String,
+) {
+    SESSION_START("SessionStart"),
+    USER_PROMPT_SUBMIT("UserPromptSubmit"),
+    PRE_TOOL_USE("PreToolUse"),
+    POST_TOOL_USE("PostToolUse"),
+    STOP("Stop"),
+    SESSION_END("SessionEnd"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<AgentEvent>(
+        "dev.ostrom.core.api.models.AgentEvent",
+        AgentEvent.entries,
+        AgentEvent.UNKNOWN,
+        AgentEvent::value,
+    )
 }
 
 /** Where a script or a notification runs. */
-@Serializable
-public enum class RunLocation {
+@Serializable(with = RunLocation.Serializer::class)
+public enum class RunLocation(
+    /** The JSON value. */
+    public val value: String,
+) {
     /** In a sandbox on the developer's machine. */
-    @SerialName("workstation") WORKSTATION,
+    WORKSTATION("workstation"),
 
     /** On the Ostrom server (the secret never reaches the machine). */
-    @SerialName("ostrom") OSTROM,
+    OSTROM("ostrom"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<RunLocation>(
+        "dev.ostrom.core.api.models.RunLocation",
+        RunLocation.entries,
+        RunLocation.UNKNOWN,
+        RunLocation::value,
+    )
 }
 
 /**
@@ -302,17 +347,32 @@ public data class CompiledNode(
 )
 
 /** The kinds of artifacts a node produces. */
-@Serializable
-public enum class ArtifactType {
-    @SerialName("skill") SKILL,
-    @SerialName("context") CONTEXT,
-    @SerialName("hook") HOOK,
-    @SerialName("script") SCRIPT,
-    @SerialName("mcp") MCP,
-    @SerialName("approval") APPROVAL,
-    @SerialName("notify") NOTIFY,
-    @SerialName("subagent") SUBAGENT,
-    @SerialName("receipt") RECEIPT,
+@Serializable(with = ArtifactType.Serializer::class)
+public enum class ArtifactType(
+    /** The JSON value. */
+    public val value: String,
+) {
+    SKILL("skill"),
+    CONTEXT("context"),
+    HOOK("hook"),
+    SCRIPT("script"),
+    MCP("mcp"),
+    APPROVAL("approval"),
+    NOTIFY("notify"),
+    SUBAGENT("subagent"),
+    RECEIPT("receipt"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<ArtifactType>(
+        "dev.ostrom.core.api.models.ArtifactType",
+        ArtifactType.entries,
+        ArtifactType.UNKNOWN,
+        ArtifactType::value,
+    )
 }
 
 /**
@@ -401,8 +461,23 @@ public data class PackageFile(
 )
 
 /** File modes of a package. */
-@Serializable
-public enum class PackageFileMode {
-    @SerialName("file") FILE,
-    @SerialName("executable") EXECUTABLE,
+@Serializable(with = PackageFileMode.Serializer::class)
+public enum class PackageFileMode(
+    /** The JSON value. */
+    public val value: String,
+) {
+    FILE("file"),
+    EXECUTABLE("executable"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<PackageFileMode>(
+        "dev.ostrom.core.api.models.PackageFileMode",
+        PackageFileMode.entries,
+        PackageFileMode.UNKNOWN,
+        PackageFileMode::value,
+    )
 }

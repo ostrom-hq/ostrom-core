@@ -1,5 +1,6 @@
 package dev.ostrom.core.api.models
 
+import dev.ostrom.core.api.UnknownFallbackEnumSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -8,39 +9,69 @@ import kotlinx.serialization.json.JsonElement
  * The kinds of workflow nodes. One model for everything Ostrom runs: the harness nodes compiled into session packages
  * (`trigger` to `agent`), and the nodes the server runs itself (`wait`, `workflow`), from TeamCode's workflow engine.
  */
-@Serializable
-public enum class WorkflowNodeKind {
+@Serializable(with = WorkflowNodeKind.Serializer::class)
+public enum class WorkflowNodeKind(
+    /** The JSON value. */
+    public val value: String,
+) {
     /** Starts the workflow: a line of session context; with an [Automation], what launches a run. */
-    @SerialName("trigger") TRIGGER,
+    TRIGGER("trigger"),
 
     /** Instructions and linked rules, delivered as a skill. */
-    @SerialName("step") STEP,
+    STEP("step"),
 
     /** A command run before an action, in a sandbox; a failure blocks the action. */
-    @SerialName("check") CHECK,
+    CHECK("check"),
 
     /** A human yes before an action, bound to what is shown (repository, SHA, commits), then a signed receipt. */
-    @SerialName("gate") GATE,
+    GATE("gate"),
 
     /** A message sent by the server after an action. */
-    @SerialName("notify") NOTIFY,
+    NOTIFY("notify"),
 
     /** A sub-agent of the session, or an agent session the server starts for a run. */
-    @SerialName("agent") AGENT,
+    AGENT("agent"),
 
     /** A question to a person (TeamCode wait): the run moves on with the answer. */
-    @SerialName("wait") WAIT,
+    WAIT("wait"),
 
     /** A child workflow run. */
-    @SerialName("workflow") WORKFLOW,
+    WORKFLOW("workflow"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<WorkflowNodeKind>(
+        "dev.ostrom.core.api.models.WorkflowNodeKind",
+        WorkflowNodeKind.entries,
+        WorkflowNodeKind.UNKNOWN,
+        WorkflowNodeKind::value,
+    )
 }
 
 /** Status of a workflow: proposed by the analysis (shadow only) or decided by a person. */
-@Serializable
-public enum class WorkflowStatus {
-    @SerialName("proposed") PROPOSED,
-    @SerialName("accepted") ACCEPTED,
-    @SerialName("edited") EDITED,
+@Serializable(with = WorkflowStatus.Serializer::class)
+public enum class WorkflowStatus(
+    /** The JSON value. */
+    public val value: String,
+) {
+    PROPOSED("proposed"),
+    ACCEPTED("accepted"),
+    EDITED("edited"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<WorkflowStatus>(
+        "dev.ostrom.core.api.models.WorkflowStatus",
+        WorkflowStatus.entries,
+        WorkflowStatus.UNKNOWN,
+        WorkflowStatus::value,
+    )
 }
 
 /**
@@ -174,11 +205,26 @@ public data class NodeWhen(
 )
 
 /** Risk levels. */
-@Serializable
-public enum class RiskLevel {
-    @SerialName("low") LOW,
-    @SerialName("medium") MEDIUM,
-    @SerialName("high") HIGH,
+@Serializable(with = RiskLevel.Serializer::class)
+public enum class RiskLevel(
+    /** The JSON value. */
+    public val value: String,
+) {
+    LOW("low"),
+    MEDIUM("medium"),
+    HIGH("high"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<RiskLevel>(
+        "dev.ostrom.core.api.models.RiskLevel",
+        RiskLevel.entries,
+        RiskLevel.UNKNOWN,
+        RiskLevel::value,
+    )
 }
 
 /**

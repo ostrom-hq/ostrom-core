@@ -1,5 +1,6 @@
 package dev.ostrom.core.api.models
 
+import dev.ostrom.core.api.UnknownFallbackEnumSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -55,16 +56,31 @@ public data class ReceiptSubject(
 )
 
 /** The kinds of receipt subjects. Serial names are part of the signed format and never change. */
-@Serializable
-public enum class ReceiptSubjectKind {
-    @SerialName("task") TASK,
-    @SerialName("workflow") WORKFLOW,
-    @SerialName("rule-change") RULE_CHANGE,
-    @SerialName("owner-change") OWNER_CHANGE,
-    @SerialName("harness") HARNESS,
-    @SerialName("gate") GATE,
-    @SerialName("session") SESSION,
-    @SerialName("policy") POLICY,
+@Serializable(with = ReceiptSubjectKind.Serializer::class)
+public enum class ReceiptSubjectKind(
+    /** The JSON value. */
+    public val value: String,
+) {
+    TASK("task"),
+    WORKFLOW("workflow"),
+    RULE_CHANGE("rule-change"),
+    OWNER_CHANGE("owner-change"),
+    HARNESS("harness"),
+    GATE("gate"),
+    SESSION("session"),
+    POLICY("policy"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<ReceiptSubjectKind>(
+        "dev.ostrom.core.api.models.ReceiptSubjectKind",
+        ReceiptSubjectKind.entries,
+        ReceiptSubjectKind.UNKNOWN,
+        ReceiptSubjectKind::value,
+    )
 }
 
 /**
