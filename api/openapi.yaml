@@ -7097,7 +7097,7 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /v1/orgs/{orgId}/billing:
+  /api/v1/orgs/{orgId}/billing:
     get:
       operationId: getBilling
       tags:
@@ -7122,7 +7122,7 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
-  /v1/orgs/{orgId}/billing/checkout:
+  /api/v1/orgs/{orgId}/billing/checkout:
     post:
       operationId: startBillingCheckout
       tags:
@@ -7159,7 +7159,7 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /v1/orgs/{orgId}/billing/portal:
+  /api/v1/orgs/{orgId}/billing/portal:
     post:
       operationId: openBillingPortal
       tags:
@@ -7188,7 +7188,7 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /v1/orgs/{orgId}/billing/plan:
+  /api/v1/orgs/{orgId}/billing/plan:
     post:
       operationId: changeBillingPlan
       tags:
@@ -7225,7 +7225,7 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /v1/orgs/{orgId}/billing/cancel:
+  /api/v1/orgs/{orgId}/billing/cancel:
     post:
       operationId: cancelBillingSubscription
       tags:
@@ -7254,7 +7254,7 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /v1/orgs/{orgId}/billing/resume:
+  /api/v1/orgs/{orgId}/billing/resume:
     post:
       operationId: resumeBillingSubscription
       tags:
@@ -7283,7 +7283,7 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /v1/orgs/{orgId}/billing/invoices:
+  /api/v1/orgs/{orgId}/billing/invoices:
     get:
       operationId: listBillingInvoices
       tags:
@@ -7318,7 +7318,7 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
-  /v1/billing/stripe/webhook:
+  /api/v1/billing/stripe/webhook:
     post:
       operationId: receiveStripeWebhook
       tags:
