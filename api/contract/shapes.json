@@ -2793,6 +2793,38 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "gate": {
+        "type": {
+          "ref": "RuleGate"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "RuleGate": {
+    "properties": {
+      "actions": {
+        "type": {
+          "array": {
+            "ref": "GateAction"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "approvers": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
       }
     }
   },

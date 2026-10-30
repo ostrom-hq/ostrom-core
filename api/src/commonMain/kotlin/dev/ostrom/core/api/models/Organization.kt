@@ -163,6 +163,7 @@ public data class Dev(
  * @property decidedBy Who decided it.
  * @property decidedAt When.
  * @property origin `learned` (default) or `written` (imported as written by the team).
+ * @property gate The gate the rule puts on boundary actions; absent = none.
  */
 @Serializable
 public data class Rule(
@@ -182,6 +183,22 @@ public data class Rule(
     val decidedBy: String? = null,
     val decidedAt: String? = null,
     val origin: String? = null,
+    val gate: RuleGate? = null,
+)
+
+/**
+ * The gate a rule puts on boundary actions. An accepted or edited rule blocks the actions until one of the approvers
+ * says yes; a proposed rule only records them (shadow); a rejected rule gates nothing.
+ *
+ * @property actions The boundary actions gated.
+ * @property approvers GitHub logins of those who can say yes.
+ * @property reason Why the gate exists.
+ */
+@Serializable
+public data class RuleGate(
+    val actions: List<GateAction>,
+    val approvers: List<String>,
+    val reason: String? = null,
 )
 
 /** Strength of a rule. */
