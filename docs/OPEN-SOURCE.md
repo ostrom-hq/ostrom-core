@@ -1,0 +1,85 @@
+# How the Ostrom repositories are run in the open
+
+Every repository of the `ostrom-hq` organization (core, cli, server, web, app, e2e, site, helm) follows the same
+open source standard. This page records what we took from the best open source projects, and why. Studied on
+30/10/2026 from shallow clones of their default branch (root files and `.github/` only):
+[Supabase](https://github.com/supabase/supabase), [PostHog](https://github.com/PostHog/posthog),
+[Cal.com](https://github.com/calcom/cal.com), [Biome](https://github.com/biomejs/biome),
+[Bun](https://github.com/oven-sh/bun), [uv](https://github.com/astral-sh/uv) and [Ruff](https://github.com/astral-sh/ruff)
+(Astral), [Tailscale](https://github.com/tailscale/tailscale), [React Email](https://github.com/resend/react-email)
+(Resend), [Linear's SDK](https://github.com/linear/linear), [Dub](https://github.com/dubinc/dub) and
+[Zed](https://github.com/zed-industries/zed).
+
+The engineering rules themselves (architecture, Kotlin, tests, CI) are in [CONVENTIONS.md](CONVENTIONS.md). This page
+is about the repository as a public product.
+
+## What every repository has
+
+| File | Content | Taken from |
+| --- | --- | --- |
+| `README.md` | Banner (light and dark through `<picture>`), the locked value proposition, badges, three-command start, a Mermaid architecture diagram, honest status | PostHog and Supabase (banner, links row), uv (one sentence then proof), Biome (status honesty) |
+| `LICENSE` | Exact SPDX text, detected by GitHub: Apache-2.0 (core, cli, e2e, site), AGPL-3.0 (server, web, app, helm) | all |
+| `ee/LICENSE`, `LICENSING.md` | Commercial license of `ee/` and the table of what is under which license | PostHog and GitLab (`ee/` model), Cal.com |
+| `NOTICE` | Apache-2.0 repositories only, "The Ostrom Authors" | Apache Software Foundation practice |
+| `CONTRIBUTING.md` | Setup, the test bar, Conventional Commits, DCO, license headers, AI policy, releases | uv (concise), Biome (AI disclosure), PostHog (AI policy) |
+| `CODE_OF_CONDUCT.md` | Contributor Covenant 2.1, verbatim, contact `conduct@ostrom.run` | Biome, Bun, Zed, Cal.com |
+| `SECURITY.md` | Private reporting (`security@ostrom.run` and GitHub advisories), deadlines, scope written for Ostrom, safe harbor | Cal.com and Supabase (scope lists), Bun (acknowledgement deadline), Tailscale (coordinated disclosure) |
+| `GOVERNANCE.md`, `MAINTAINERS.md` | Roles, lazy consensus, the open core stewardship promise | Biome (roles), GitLab (buyer-based open core, "we never move an open feature into ee") |
+| `SUPPORT.md` | Where to ask what | Supabase, PostHog |
+| `CHANGELOG.md` | Written by release-please, never by hand | uv, Ruff, Biome |
+
+## `.github/`
+
+| What | Choice | Why |
+| --- | --- | --- |
+| Issue forms | YAML forms (bug, feature, question), blank issues off, links to security, docs and discussions | uv, Bun, Tailscale: structured reports are reproducible reports |
+| Discussion forms | `ideas` and `q-a` categories | Zed |
+| Pull request template | What changes for a person, why, how it was tested, checklist, **Agent context** | PostHog (problem first, agent context), Biome (AI disclosure). Ostrom sells trust in agent work: we disclose ours |
+| `CODEOWNERS` | `@ostrom-hq/maintainers` on everything, `ee/` and `.github/` explicit | Supabase, Bun, Ruff |
+| Dependencies | Renovate (`config:best-practices`, actions pinned by digest, 3-day release age, grouped minor updates, dependency dashboard) plus Dependabot security alerts | uv, Ruff, Biome, Zed, PostHog use Renovate; the release age floor is uv's `cargo-cooldowns` idea |
+| Labels | Declared in `.github/labels.yml`, synced by a workflow, brand colours (garnet is kept for "a person has to decide") | Biome |
+
+## Workflows
+
+All third party actions are pinned by commit SHA with the version in a comment, `permissions: {}` at the top and the
+minimum per job, `persist-credentials: false` on every checkout, `timeout-minutes` on every job. These are the rules
+of [zizmor](https://docs.zizmor.sh) and of the [OpenSSF Scorecard](https://scorecard.dev), followed by Linear, uv,
+Ruff, Supabase and Tailscale.
+
+| Workflow | Check name | What it does |
+| --- | --- | --- |
+| `release-please.yml` | `release-please` | Keeps a release pull request from Conventional Commit titles; merging it tags the bare version (CONVENTIONS.md section 12), writes the changelog, creates the release, and starts the tag workflows a `GITHUB_TOKEN` tag would not start |
+| `pr-title.yml` | `pr-title` | The title is a Conventional Commit: with squash merge it is the commit on `main` and the changelog line (Resend, Cal.com) |
+| `dco.yml` | `dco` | Every commit of an outside contributor is signed off (Developer Certificate of Origin instead of a CLA, like GitLab since 2017); organization members and bots are exempt |
+| `license-headers.yml` | `spdx` | Every new source file carries its `SPDX-License-Identifier`, the right one for its path (`ee/` is `LicenseRef-Ostrom-Enterprise`); `LICENSE` and `ee/LICENSE` exist (Tailscale's `license_test.go`) |
+| `codeql.yml` | `analyze (actions)`, `analyze (javascript-typescript)` | CodeQL `security-extended` on the workflows and the TypeScript code. Kotlin is not analysed: CodeQL needs a JVM build of Kotlin and our product is native |
+| `scorecard.yml` | `analysis` | OpenSSF Scorecard, weekly and on every push to `main` |
+| `zizmor.yml` | `zizmor` | Static analysis of the workflows themselves (Linear, uv, Supabase, Tailscale) |
+| `links.yml` | `links` | lychee on every Markdown file: no dead link in a README or a doc |
+| `labels.yml` | `labels` | Syncs the labels from `.github/labels.yml` |
+
+### Before the launch
+
+Everything stays private until Lyes says go. One organization variable switches the public behaviour on:
+**`OSTROM_PUBLIC`** (`false` today). Set to `true` at launch, it makes CodeQL and Scorecard upload their results to
+GitHub code scanning and publish the Scorecard badge data, and lets release-please start the CLI release workflow
+that publishes binaries outside the organization. Until then the SARIF reports are kept as workflow artifacts and an
+error-level CodeQL alert fails the job. Also at launch: remove the two "until the public launch" lines of
+`.lycheeignore`, and turn on GitHub private vulnerability reporting.
+
+## Repository settings
+
+Description and topics set, homepage `https://ostrom.run`, Discussions on, wiki off (the docs live on the site),
+squash merge only with the pull request title as the commit message, branches deleted after merge, Dependabot
+security alerts on. Visibility is never changed by an agent. Required checks on `main` are set by the QA owner of
+the branch protection.
+
+## What we did not take
+
+- **A CLA** (Cal.com's old one, Supabase's): the DCO is lighter for contributors and enough for an Apache/AGPL split.
+- **Bots that comment on every pull request** (welcome messages, stale closers, AI reviewers): noise for a young
+  project. A stale workflow can come when the issue volume needs it.
+- **Shields.io badges that need a public repository** for counts (contributors, downloads): added at launch, when
+  they mean something.
+- **A `.github` organization repository for shared health files**: it must be public to apply, and nothing is public
+  yet. Each repository carries its own copy, generated from the same source.

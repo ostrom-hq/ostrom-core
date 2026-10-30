@@ -1,0 +1,39 @@
+name: DCO
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+jobs:
+  dco:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Every commit is signed off
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
+        run: |
+          # Members of the organization have signed the DCO once for all; bots do not hold copyright.
+          case "$ASSOCIATION" in OWNER|MEMBER) echo "dco: author is a member of the organization"; exit 0;; esac
+          if [ "$AUTHOR_TYPE" = "Bot" ]; then echo "dco: bot author"; exit 0; fi
+          missing=0
+          while IFS=$'\t' read -r sha email msg; do
+            if ! printf '%s' "$msg" | base64 -d | grep -qiE "^Signed-off-by: .+ <$email>$"; then
+              echo "::error::commit ${sha:0:12} has no 'Signed-off-by: ... <$email>' line"
+              missing=1
+            fi
+          done < <(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR/commits" --paginate \
+            --jq '.[] | select(.parents | length == 1) | [.sha, .commit.author.email, (.commit.message | @base64)] | @tsv')
+          if [ "$missing" = 1 ]; then
+            echo "Sign off with: git rebase --signoff origin/main && git push --force-with-lease (see CONTRIBUTING.md)"
+            exit 1
+          fi
+          echo "dco: every commit is signed off"
