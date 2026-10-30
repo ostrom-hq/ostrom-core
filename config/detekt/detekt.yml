@@ -75,6 +75,8 @@ style:
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
     ignoreNamedArgument: true
+    # An enum entry names its number (OTLP severity 9 is INFO): the entry is the constant.
+    ignoreEnums: true
   MaxLineLength:
     active: true
     maxLineLength: 120

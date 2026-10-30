@@ -189,7 +189,10 @@ class OtlpEncoderProtoTest {
         val decoded = ExportLogsServiceRequest.parseFrom(encoder.encodeLogs(logs))
             .getResourceLogs(0).getScopeLogs(0).logRecordsList
 
-        val (warn, info, error, debug) = decoded
+        val warn = decoded[0]
+        val info = decoded[1]
+        val error = decoded[2]
+        val debug = decoded[3]
         assertEquals(5_000L, warn.timeUnixNano)
         assertEquals(5_000L, warn.observedTimeUnixNano)
         assertEquals(13, warn.severityNumberValue)
