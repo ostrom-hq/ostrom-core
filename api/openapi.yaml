@@ -6210,7 +6210,7 @@ paths:
       - name: cutover
         in: query
         required: false
-        description: "The final run, once TeamCode is stopped: owners only (403 otherwise), recorded in the audit log before anything is written (503 on a server without one). It also revives the shared accounts waiting for a reconnection, testing TeamCode's tokens first (renewing rotates them, so a normal run never does)."
+        description: "The final run, once TeamCode is stopped: owners only (403 otherwise), recorded in the audit log in the name of the person who runs it, before anything is written (503 on a server without an audit log or without shared accounts). It also revives the shared accounts waiting for a reconnection, testing TeamCode's tokens first (renewing rotates them, so a normal run never does)."
         schema:
           type: boolean
       requestBody:
@@ -11918,12 +11918,16 @@ components:
           type: integer
         skipped:
           type: integer
+        reviveAtCutover:
+          type: integer
+          description: Shared accounts left waiting for a reconnection until the cutover run (`revive_at_cutover` lines)
       required:
       - items
       - created
       - updated
       - unchanged
       - skipped
+      - reviveAtCutover
       x-ostrom-kotlin: pending
     InferenceRoute:
       type: object
