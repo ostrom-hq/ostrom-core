@@ -331,7 +331,8 @@ try {
   `withTimeoutOrNull` (`teamcode:Application.kt`).
 - Someone else's cancellation (writing to a dead SSE or WebSocket call): contain it with
   `currentCoroutineContext().ensureActive()` in the catch, so only *our* cancellation propagates (`kotlin-bp`).
-- A narrow catch (`IOException`, `ClientRequestException`) needs nothing extra.
+- `RuntimeException`, `IllegalStateException` and `Error` count as broad: `CancellationException` is an
+  `IllegalStateException`. A narrow catch (`IOException`, `ClientRequestException`) needs nothing extra.
 - Outside coroutines (parsing a payload, reading a config file), catch the narrow type (`SerializationException`,
   `IllegalArgumentException`, `IOException`) rather than `Exception`.
 - CI enforces this lexically with [`check-conventions.py`](conventions/scripts/check-conventions.py): a broad catch with
@@ -654,9 +655,10 @@ Template: [`docs/conventions/.github/workflows/build.yml`](conventions/.github/w
   generated TypeScript package (Zodable, section 13.4) to GitHub Packages npm as `@ostrom-hq/core`. While the
   repositories are developed together, consumers may use a Gradle `includeBuild("../ostrom-core")` locally; CI always
   resolves the published version. A consuming workflow needs `permissions: packages: read` and passes
-  `GITHUB_TOKEN` to Gradle (see the CI template), and the `ostrom-core` package grants each consuming repository read
-  access (package settings, "Manage Actions access"): without it, resolution answers 401. If `ostrom-core` becomes public, it moves to Maven Central and npm like Nathan's
-  public libraries (`publishToMavenCentral()`, `signAllPublications()`).
+  `GITHUB_TOKEN` to its Gradle steps only (see the CI template), and the `ostrom-core` package grants each consuming
+  repository read access (package settings, "Manage Actions access"): without it, resolution answers 401. If
+  `ostrom-core` becomes public, it moves to Maven Central and npm like Nathan's public libraries
+  (`publishToMavenCentral()`, `signAllPublications()`).
 - CLI releases attach one binary per target with its SHA-256 checksum, signed; document the dynamic libraries each one
   needs (`teamcode:docs/architecture.md`). Never advertise a target or a command before its artifact passed the matrix.
 - Server releases publish a container image (multi-architecture) built from the native `linuxX64`/`linuxArm64`

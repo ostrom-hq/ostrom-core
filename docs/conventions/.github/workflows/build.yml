@@ -16,8 +16,6 @@ env:
   # A tag is the version (no "v" prefix); everything else builds a snapshot.
   ORG_GRADLE_PROJECT_ostromVersion: ${{ github.ref_type == 'tag' && github.ref_name || '0.1.0-SNAPSHOT' }}
   KOTLIN_VERSION: '2.4.21'
-  # settings.gradle.kts reads GITHUB_ACTOR (set by Actions) and GITHUB_TOKEN to resolve ostrom-core from GitHub Packages.
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 permissions:
   contents: read
   packages: read # dev.ostrom artifacts of ostrom-core on GitHub Packages
@@ -72,6 +70,9 @@ jobs:
       # A repository that ships an executable (cli, server app) adds its link task, e.g. :cli:linkReleaseExecutableLinuxX64,
       # then its end-to-end and load tests against that binary.
       - run: ./gradlew detekt jvmTest koverVerify koverXmlReport linuxX64Test --continue
+        # settings.gradle.kts reads GITHUB_ACTOR (set by Actions) and GITHUB_TOKEN to resolve ostrom-core.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -98,6 +99,9 @@ jobs:
           restore-keys: konan-${{ runner.os }}-${{ runner.arch }}-${{ env.KOTLIN_VERSION }}-
       # Kotlin/Native cross-compiles linuxArm64 from Linux x64; the test executable runs on an arm64 runner below.
       - run: ./gradlew linkDebugTestLinuxArm64
+        # settings.gradle.kts reads GITHUB_ACTOR (set by Actions) and GITHUB_TOKEN to resolve ostrom-core.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: linux-arm64
@@ -142,4 +146,7 @@ jobs:
           key: konan-${{ runner.os }}-${{ runner.arch }}-${{ env.KOTLIN_VERSION }}-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: konan-${{ runner.os }}-${{ runner.arch }}-${{ env.KOTLIN_VERSION }}-
       - run: ./gradlew "${{ matrix.target == 'MacosArm64' && 'macosArm64Test' || 'mingwX64Test' }}"
+        # settings.gradle.kts reads GITHUB_ACTOR (set by Actions) and GITHUB_TOKEN to resolve ostrom-core.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash

@@ -18,46 +18,55 @@ import sys
 MODULE_GRAPH: dict = {}
 
 PRODUCTION_SOURCE_SET = re.compile(r"/src/[A-Za-z0-9]*Main/")
+# Every production source set except the JVM ones: commonMain, nativeMain, posixMain, linuxX64Main, androidNativeArm64Main...
+NON_JVM_SOURCE_SET = re.compile(r"/src/(?!jvm|android(?!Native))[A-Za-z0-9]*Main/")
 PROJECT_DEPENDENCY = re.compile(r"projects\.([A-Za-z0-9_.]+)")
-BROAD_CATCH = re.compile(r"catch\s*\(\s*\w+\s*:\s*(kotlin\.)?(Exception|Throwable)\s*\)")
-CANCELLATION_CATCH = re.compile(r"catch\s*\(\s*\w+\s*:\s*(kotlinx\.coroutines\.|kotlin\.coroutines\.cancellation\.)?CancellationException\s*\)")
-TRY = re.compile(r"\btry\s*\{")
-# Every production source set except the JVM ones: commonMain, nativeMain, posixMain, linuxX64Main, mingwX64Main...
-NON_JVM_SOURCE_SET = re.compile(r"/src/(?!jvm|android)[A-Za-z0-9]*Main/")
+# Catches that also catch CancellationException (a subclass of IllegalStateException), qualified or not.
+BROAD_CATCH = re.compile(
+    r"\bcatch\s*\(\s*\w+\s*:\s*(?:[\w.]+\.)?(Exception|Throwable|RuntimeException|IllegalStateException|Error)\s*\)")
+CANCELLATION_CATCH = re.compile(r"\bcatch\s*\(\s*(\w+)\s*:\s*(?:[\w.]+\.)?CancellationException\s*\)")
 TOKEN = re.compile(r"\{|\}|\bcatch\s*\([^)]*\)|\btry\b")
 RUN_CATCHING = re.compile(r"\brunCatching\b")
 NOT_COROUTINE_REACHABLE = "not coroutine-reachable:"
 JVM_ONLY_IMPORT = re.compile(r"^\s*import\s+(io\.mockk|org\.slf4j|ch\.qos\.logback|org\.jetbrains\.exposed|java\.|javax\.)")
 FORBIDDEN = [
     (re.compile(r"\bGlobalScope\b"), "GlobalScope: launch in a scope the application owns (section 4.3)"),
-    (re.compile(r"\binstall\(Koin\)|org\.koin\.ktor"), "no koin-ktor plugin: its per-call scope outlives cancelled calls (INF-074); build the Koin application in app and pass XxxRoutesDependencies (section 1.5)"),
+    (re.compile(r"\binstall\(Koin\)|org\.koin\.ktor"), "no koin-ktor plugin: its per-call scope outlives cancelled calls "
+     "(INF-074); build the Koin application in app and pass XxxRoutesDependencies (section 1.5)"),
 ]
 
 
-def check_kotlin(path: str, text: str) -> list:
-    """Returns the violations of one production Kotlin file."""
-    errors = []
-    lines = text.splitlines()
-    native_or_common = NON_JVM_SOURCE_SET.search(path) is not None
-    for index, line in enumerate(lines):
-        number = index + 1
-        justified = NOT_COROUTINE_REACHABLE in line or (index > 0 and NOT_COROUTINE_REACHABLE in lines[index - 1])
-        if RUN_CATCHING.search(line) and not justified:
-            errors.append(f"{path}:{number}: runCatching catches CancellationException; write try/catch with the "
-                          f"rethrow, or justify with `// {NOT_COROUTINE_REACHABLE} <reason>` (section 4.1)")
-        if BROAD_CATCH.search(line) and not justified and not cancellation_handled(lines, index):
-            errors.append(f"{path}:{number}: broad catch without `catch (e: CancellationException) {{ throw e }}` "
-                          f"before it nor ensureActive() in it (section 4.1, INF-019)")
-        for pattern, reason in FORBIDDEN:
-            if pattern.search(line):
-                errors.append(f"{path}:{number}: {reason}")
-        if native_or_common and JVM_ONLY_IMPORT.search(line):
-            errors.append(f"{path}:{number}: JVM-only import in common or native code (section 10)")
-    return errors
+def strip_comments_and_strings(text: str) -> str:
+    """Blanks comments and string or char literals, keeping every newline, so braces and words inside them are ignored.
+    Template expressions inside strings are blanked too: a catch never lives there."""
+    out = []
+    i, n = 0, len(text)
+    while i < n:
+        if text.startswith("//", i):
+            end = text.find("\n", i)
+            end = n if end < 0 else end
+        elif text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            end = n if end < 0 else end + 2
+        elif text.startswith('"""', i):
+            end = text.find('"""', i + 3)
+            end = n if end < 0 else end + 3
+        elif text[i] in "\"'":
+            quote, end = text[i], i + 1
+            while end < n and text[end] != quote and text[end] != "\n":
+                end += 2 if text[end] == "\\" else 1
+            end = min(end + 1, n)
+        else:
+            out.append(text[i])
+            i += 1
+            continue
+        out.append("".join(c if c == "\n" else " " for c in text[i:end]))
+        i = end
+    return "".join(out)
 
 
 def block_after(text: str, start: int) -> str:
-    """The text of the first `{ ... }` block at or after start (braces in strings and comments are not special)."""
+    """The text of the first `{ ... }` block at or after start."""
     opening = text.find("{", start)
     if opening < 0:
         return ""
@@ -72,15 +81,13 @@ def block_after(text: str, start: int) -> str:
     return text[opening:]
 
 
-def cancellation_handled(lines: list, catch_index: int) -> bool:
-    """True when the broad catch on this line calls ensureActive() in its block, or an earlier catch of the same try
-    catches CancellationException and rethrows it."""
-    before = "\n".join(lines[:catch_index]) + "\n" + lines[catch_index][:BROAD_CATCH.search(lines[catch_index]).start()]
-    after = "\n".join(lines[catch_index:])
-    if "ensureActive()" in block_after(after, BROAD_CATCH.search(after).end()):
+def cancellation_handled(code: str, tokens: list, catch: re.Match) -> bool:
+    """True when the broad catch calls ensureActive() in its own block, or an earlier catch of the same try catches
+    CancellationException and rethrows that very exception."""
+    if "ensureActive()" in block_after(code, catch.end()):
         return True
     depth = 0
-    for token in reversed(list(TOKEN.finditer(before))):
+    for token in reversed([t for t in tokens if t.start() < catch.start()]):
         text = token.group(0)
         if text == "}":
             depth += 1
@@ -90,9 +97,41 @@ def cancellation_handled(lines: list, catch_index: int) -> bool:
                 return False
         elif depth == 0 and text.startswith("try"):
             return False
-        elif depth == 0 and CANCELLATION_CATCH.match(text) and "throw" in block_after(before, token.end()):
-            return True
+        elif depth == 0:
+            cancellation = CANCELLATION_CATCH.match(text)
+            if cancellation and re.search(rf"\bthrow\s+{cancellation.group(1)}\b", block_after(code, token.end())):
+                return True
     return False
+
+
+def check_kotlin(path: str, text: str) -> list:
+    """Returns the violations of one production Kotlin file."""
+    errors = []
+    lines = text.splitlines()
+    code = strip_comments_and_strings(text)
+    code_lines = code.splitlines()
+    tokens = list(TOKEN.finditer(code))
+
+    def justified(index: int) -> bool:
+        return any(NOT_COROUTINE_REACHABLE in lines[i] for i in (index - 1, index) if 0 <= i < len(lines))
+
+    for catch in BROAD_CATCH.finditer(code):
+        index = code.count("\n", 0, catch.start())
+        if not justified(index) and not cancellation_handled(code, tokens, catch):
+            errors.append(f"{path}:{index + 1}: broad catch without `catch (e: CancellationException) {{ throw e }}` "
+                          f"before it nor ensureActive() in it (section 4.1, INF-019)")
+    native_or_common = NON_JVM_SOURCE_SET.search(path) is not None
+    for index, line in enumerate(code_lines):
+        number = index + 1
+        if RUN_CATCHING.search(line) and not justified(index):
+            errors.append(f"{path}:{number}: runCatching catches CancellationException; write try/catch with the "
+                          f"rethrow, or justify with `// {NOT_COROUTINE_REACHABLE} <reason>` (section 4.1)")
+        for pattern, reason in FORBIDDEN:
+            if pattern.search(line):
+                errors.append(f"{path}:{number}: {reason}")
+        if native_or_common and JVM_ONLY_IMPORT.search(line):
+            errors.append(f"{path}:{number}: JVM-only import in common or native code (section 10)")
+    return sorted(errors, key=lambda error: int(error.split(":")[1]))
 
 
 def check_module_graph(root: pathlib.Path) -> list:
@@ -178,6 +217,33 @@ def self_test() -> None:
     assert len(found) == 6, found
     assert sum("broad catch" in e for e in found) == 3 and any("runCatching" in e for e in found)
     assert any("GlobalScope" in e for e in found) and any("JVM-only" in e for e in found)
+    tricky_good = """
+        suspend fun e() {
+            try { a() } catch (e: java.util.concurrent.CancellationException) {
+                throw e
+            } catch (
+                error: kotlin.Exception
+            ) {
+                // try again later { not a block
+                log("will not throw {")
+            }
+        }
+    """
+    assert check_kotlin(path, tricky_good) == [], check_kotlin(path, tricky_good)
+    tricky_bad = """
+        suspend fun f() { try { a() } catch (e: RuntimeException) { log(e) } }
+        suspend fun g() { try { a() } catch (e: IllegalStateException) { log(e) } }
+        suspend fun h() { try { a() } catch (e: CancellationException) { log("throw") } catch (e: Exception) { } }
+        suspend fun i() { try { a() } catch (e: CancellationException) { throw IllegalStateException() } catch (e: Exception) { } }
+        suspend fun j() {
+            try { a() } catch (
+                e: java.lang.Exception
+            ) { log(e) }
+        }
+    """
+    found = check_kotlin(path, tricky_bad)
+    assert len(found) == 5 and all("broad catch" in e for e in found), found
+    assert check_kotlin("/x/src/androidNativeArm64Main/kotlin/A.kt", "import java.io.File\n") != []
     native = check_kotlin("/x/src/linuxX64Main/kotlin/A.kt", "import java.io.File\n")
     assert len(native) == 1 and "JVM-only" in native[0], native
     assert check_kotlin("/x/src/jvmMain/kotlin/A.kt", "import java.io.File\n") == []
