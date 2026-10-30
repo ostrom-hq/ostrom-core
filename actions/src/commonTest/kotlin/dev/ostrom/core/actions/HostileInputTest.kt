@@ -88,7 +88,7 @@ class HostileInputTest {
             listOf(
                 DeclaredAction("custom-slow", patterns = listOf(".*a.*a.*a.*b")),
                 DeclaredAction("custom-next", patterns = listOf("never-there")),
-                DeclaredAction("custom-mcp", listOf("mcp"), listOf("never-there")),
+                DeclaredAction("custom-mcp", tools = listOf("mcp"), patterns = listOf("never-there")),
             ),
         )
         val classification = slow.classify(ToolSubject.shell("echo " + "a".repeat(10_000)))
@@ -104,7 +104,7 @@ class HostileInputTest {
         val custom = ActionClassifierImpl(
             listOf(
                 DeclaredAction("custom-a", patterns = listOf("never-there")),
-                DeclaredAction("custom-b", listOf("Write"), listOf("never-there")),
+                DeclaredAction("custom-b", tools = listOf("Write"), patterns = listOf("never-there")),
             ),
         )
         val long = "echo " + "x".repeat(ActionClassifier.MAX_PATTERN_TEXT)
