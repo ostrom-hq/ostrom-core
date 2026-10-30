@@ -63,8 +63,9 @@ the serial descriptors of the models with `api/contract/shapes.json`, and CI che
 `api-types/scripts/contract-shapes.mjs` derives from `openapi.yaml`. To change the contract: edit `openapi.yaml`, run
 `npm run contract` in `api-types/`, change the Kotlin model, commit the three.
 
-The contract also describes routes the server does not serve yet. An operation the server serves carries
-`x-ostrom-server: implemented`; the public [API reference](https://ostrom.run/docs/reference/api) lists only those.
+The contract is ahead of the server: it also describes routes the server does not serve yet. The public
+[API reference](https://ostrom.run/docs/reference/api) lists an operation once the contract marks it
+`x-ostrom-server: implemented`; no operation carries the mark yet.
 
 TypeScript: `@ostrom-hq/api-types`, published to GitHub Packages npm with the same `0.1.<run>` version as the Kotlin
 artifacts. `.npmrc`:
@@ -95,15 +96,23 @@ so read the repository and version from the decoded payload, never from the enve
 
 ## Build and test
 
-What CI runs on every pull request (`.github/workflows/build.yml`), on Linux:
+On every pull request and on `main`, `.github/workflows/build.yml` runs two jobs on Linux. `native`:
 
 ```sh
-./gradlew linuxX64Test compileTestKotlinLinuxArm64 compileTestKotlinMingwX64 compileKotlinMacosArm64
-cd api-types && npm ci && npm run contract && git diff --exit-code -- ../api/contract/shapes.json && npm run build
+./gradlew --no-daemon linuxX64Test compileTestKotlinLinuxArm64 compileTestKotlinMingwX64 compileKotlinMacosArm64
 ```
 
-`macosArm64Test` and `mingwX64Test` run on their own runners. Locally: `./gradlew linuxX64Test` on Linux,
-`./gradlew macosArm64Test` on a Mac.
+`contract`, in `api-types/`:
+
+```sh
+npm ci --no-audit --no-fund
+npm run contract
+git diff --exit-code -- ../api/contract/shapes.json
+npm run build
+```
+
+`macosArm64Test` and `mingwX64Test` run only when the workflow is started by hand with `full_validation`. Locally:
+`./gradlew linuxX64Test` on Linux, `./gradlew macosArm64Test` on a Mac.
 
 ## Documentation
 
