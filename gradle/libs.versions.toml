@@ -4,14 +4,20 @@ serialization = "1.11.0"
 cryptography = "0.6.0"
 kotlinx-io = "0.9.1"
 maven = "0.37.0"
+kover = "0.9.11"
+junit = "5.11.4"
+junit-platform = "1.11.4"
 
 [plugins]
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 maven = { id = "com.vanniktech.maven.publish", version.ref = "maven" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 [libraries]
 serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-openssl3 = { module = "dev.whyoleg.cryptography:cryptography-provider-openssl3-prebuilt", version.ref = "cryptography" }
 kotlinx-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }

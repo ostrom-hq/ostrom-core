@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.multiplatform) apply false
     alias(libs.plugins.serialization) apply false
     alias(libs.plugins.maven) apply false
+    alias(libs.plugins.kover) apply false
 }
 
 // CI passes -PostromCoreVersion=0.1.<run number> on main; local builds and includeBuild consumers see the snapshot.
