@@ -160,8 +160,80 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "action": {
+        "type": {
+          "ref": "ApprovalAction"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "diffStats": {
+        "type": {
+          "ref": "DiffStats"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "diffTruncated": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
       }
     }
+  },
+  "ApprovalAction": {
+    "properties": {
+      "kind": {
+        "type": {
+          "ref": "ApprovalActionKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "headSha": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "baseSha": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "risk": {
+        "type": {
+          "ref": "ApprovalActionRisk"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ApprovalActionKind": {
+    "enum": [
+      "push",
+      "merge",
+      "deploy",
+      "tool",
+      "other"
+    ]
+  },
+  "ApprovalActionRisk": {
+    "enum": [
+      "low",
+      "high"
+    ]
   },
   "ApprovalAnswer": {
     "enum": [
@@ -962,6 +1034,25 @@
       "organizationId": {
         "type": "string",
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DiffStats": {
+    "properties": {
+      "files": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "additions": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "deletions": {
+        "type": "integer",
+        "required": true,
         "nullable": false
       }
     }

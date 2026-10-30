@@ -4,6 +4,7 @@ package dev.ostrom.core.api
 import dev.ostrom.core.api.models.AnswerApprovalRequest
 import dev.ostrom.core.api.models.ApiError
 import dev.ostrom.core.api.models.Approval
+import dev.ostrom.core.api.models.ApprovalAction
 import dev.ostrom.core.api.models.ApprovalCheck
 import dev.ostrom.core.api.models.ApprovalCommit
 import dev.ostrom.core.api.models.Automation
@@ -20,6 +21,7 @@ import dev.ostrom.core.api.models.Decision
 import dev.ostrom.core.api.models.DecisionSubject
 import dev.ostrom.core.api.models.Deliverable
 import dev.ostrom.core.api.models.Dev
+import dev.ostrom.core.api.models.DiffStats
 import dev.ostrom.core.api.models.EndSessionRequest
 import dev.ostrom.core.api.models.ErrorDetail
 import dev.ostrom.core.api.models.Evidence
@@ -87,6 +89,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     AnswerApprovalRequest.serializer(),
     ApiError.serializer(),
     Approval.serializer(),
+    ApprovalAction.serializer(),
     ApprovalCheck.serializer(),
     ApprovalCommit.serializer(),
     Automation.serializer(),
@@ -103,6 +106,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     DecisionSubject.serializer(),
     Deliverable.serializer(),
     Dev.serializer(),
+    DiffStats.serializer(),
     EndSessionRequest.serializer(),
     ErrorDetail.serializer(),
     Evidence.serializer(),
