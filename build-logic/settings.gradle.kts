@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Included build holding the convention plugins (docs/CONVENTIONS.md section 9), as pkg includes gradle-plugin/.
 // The root settings.gradle.kts declares: pluginManagement { includeBuild("build-logic") }
 rootProject.name = "build-logic"

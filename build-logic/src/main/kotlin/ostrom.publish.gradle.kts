@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.SourcesJar

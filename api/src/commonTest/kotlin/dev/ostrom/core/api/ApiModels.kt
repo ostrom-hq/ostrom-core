@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package dev.ostrom.core.api
 
 import dev.ostrom.core.api.models.AnswerApprovalRequest
