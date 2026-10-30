@@ -661,19 +661,32 @@ so native is the right target; on hot paths:
 Template: [`docs/conventions/.github/workflows/build.yml`](conventions/.github/workflows/build.yml) (Kotlin) and
 [`build-ts.yml`](conventions/.github/workflows/build-ts.yml) (web, app). Rules from `teamcode:.github/workflows/build.yml`:
 
-- Triggers: `pull_request`, `push` on `main`, version tags `[0-9]*`, `workflow_dispatch` with a `full_validation`
-  input.
+The organization shares one pool of hosted runners (30/10/2026: about 90 runs queued at once). These rules keep the
+queue short:
+
+- **One job named `ci` per pull request.** It runs everything a pull request needs, in order (lint, unit tests and
+  coverage, native tests, integration on PostgreSQL, end-to-end, load). `ci` is the required check on `main`.
+  Matrices and extra jobs exist only outside pull requests.
+- **No CI on a draft.** Pull request triggers are `types: [opened, synchronize, reopened, ready_for_review]`, and every
+  job that runs on a pull request has `if: github.event_name != 'pull_request' || !github.event.pull_request.draft`.
+  Mark the pull request ready when you want CI.
+- **Push once.** Group a round of fixes into one push: every push starts a run.
+- **`concurrency` in every workflow**: `group: ${{ github.workflow }}-${{ github.ref }}` and
+  `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}`. A new push cancels the previous run of its branch; on
+  `main`, every commit's run completes (publication).
+- **macOS, Windows and linuxArm64 jobs run only on `main`, version tags and `workflow_dispatch`**
+  (`if: github.event_name != 'pull_request'`), never on a pull request (`teamcode:AGENTS.md`: paid runners batched,
+  never per commit). Image builds and publication: same. A versioned release requires the full native matrix green.
+- Other triggers: `push` on `main`, version tags `[0-9]*` (section 12), `workflow_dispatch` with a `full_validation`
+  input. No self-hosted runner on a shared production cluster.
 - `permissions: contents: read` at the top; a job gets more only if it publishes.
-- `concurrency: build-${{ github.ref }}`, `cancel-in-progress: true`: the last push cancels the previous run.
 - `timeout-minutes` on every job.
 - **Every third-party action pinned by commit SHA**, the version in a comment
   (`actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`).
 - `gradle/actions/setup-gradle` (`cache-provider: basic`) caches Gradle; **`~/.konan` is cached separately** with
   `actions/cache`, keyed on the OS and the Kotlin version, or every job downloads the Kotlin/Native toolchain again.
-- Pull requests run on Linux only: detekt, `check-conventions.py`, `jvmTest` + `koverVerify` (100 %),
-  `linuxX64Test`, integration tests with a PostgreSQL service container, end-to-end and load tests of the repository.
-- **Paid runners (macOS, Windows) run only on version tags or `full_validation=true`**, batched, never per commit
-  (`teamcode:AGENTS.md`). A versioned release requires the full native matrix green.
+- The Kotlin `ci` job, on Linux: `check-conventions.py`, detekt, `jvmTest` + `koverVerify` (100 %), `linuxX64Test`,
+  integration tests with a PostgreSQL service container, then the repository's end-to-end and load tests.
 - Test tasks always execute in CI: never `FROM-CACHE` or `UP-TO-DATE` (`ENG-032`; the template's init script does it).
 - No secret in clear; publication uses `GITHUB_TOKEN` with `packages: write` on the publishing job only.
 - Package managers: Gradle for Kotlin; **npm** for `ostrom-app` (Expo's default) and **pnpm** for `ostrom-web`. The
@@ -818,8 +831,8 @@ every repository. "Organization" (`org_id`) is the tenant everywhere: in tables,
 
 - Every table holding an organization's data has an `org_id` column, first in its access indexes (equality column
   first, `teamcode:AGENTS.md` index rule).
-- **Isolation is enforced by Row-Level Security**, not only by `WHERE org_id = ?`. Every such table, `organizations`,
-  memberships and tokens included, has `ENABLE ROW LEVEL SECURITY`, `FORCE ROW LEVEL SECURITY` and policies that
+- **Isolation is enforced by Row-Level Security**, not only by `WHERE org_id = ?`. **Every table with an `org_id`**,
+  in every module (secrets, relays, runners, billing, sharing...), `organizations`, memberships and tokens included, has `ENABLE ROW LEVEL SECURITY`, `FORCE ROW LEVEL SECURITY` and policies that
   **fail closed**:
 
 ```sql
@@ -849,7 +862,8 @@ CREATE POLICY gates_org ON gates
   them. Everything else goes through `withOrganization`.
 - The PostgreSQL flavour of a migration that creates a tenant table creates its policies in the same file; the SQLite
   flavour has no RLS. SQLite (tests, local single-user mode) relies on the same repository code filtering on `org_id`.
-- **One end-to-end test per resource** proves another organization neither sees nor changes it (list, read, update,
+- **One isolation test per table** in CI (the serving role, another organization set: no row read or written), plus
+  **one end-to-end test per resource** proving another organization neither sees nor changes it (list, read, update,
   delete: 404 and nothing changed), on PostgreSQL and on SQLite, on top of the route tests of section 1.6 (`ENG-054`).
 
 ### 16.2 Credentials and scopes
@@ -866,6 +880,16 @@ CREATE POLICY gates_org ON gates
   owner, their organization and their session, with no identity provider needed. Its redemption route is in the
   unauthenticated list. The local single-user launcher runs the same bootstrap itself.
 - Console write routes (workflows, policies, gate actions, rules, members) require a user session and the right role.
+- **Every route checks the token's type and scope**, not only that a token is valid. An agent token is refused outside
+  its scope: never on gates (answering a yes), secrets, the local relay's privileged calls or billing. The CLI's own
+  token cannot answer a gate either (no `approve` scope). Each refusal has a test.
+- **No security setting comes from a file the agent can modify.** What is guarded, and whether to block when Ostrom does
+  not answer, come from a session package signed by the server, verified at every load (signature, short expiry, server
+  clock), and the CLI fails closed when it is absent or invalid. Likewise, a secret the agent must not use (the local
+  relay's token) is never in the agent's environment or in a file it can read.
+- **Web sessions never put a token in `localStorage` or `sessionStorage`** (any script on the page can read them): the
+  session is an `HttpOnly; Secure; SameSite=Lax` cookie, and every state-changing request carries a CSRF token. The
+  mobile app keeps its token in the platform's secure storage (Keychain, Keystore), never in plain storage.
 - The token given to an agent is scoped to its own session: it cannot mark a check as passed, close or reopen another
   session, or set its own cost. Check results are signed or recomputed by the server.
 - What an approver is shown (diff, commits) is computed by the server from the source of truth, never from a ref the
