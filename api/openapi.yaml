@@ -23,6 +23,7 @@ tags:
 - name: audit
 - name: auth
 - name: automations
+- name: billing
 - name: budgets
 - name: checks
 - name: delivery
@@ -6455,6 +6456,261 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing:
+    get:
+      operationId: getBilling
+      tags:
+      - billing
+      summary: The organization's plan, limits, usage and payment state
+      description: 'Members only. Usage and alerts are for the current period: Stripe''s billing period while a subscription is live, the UTC calendar month otherwise. `purchasable` is false on a self-hosted instance (limits come from the license key).'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingOverview'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/checkout:
+    post:
+      operationId: startBillingCheckout
+      tags:
+      - billing
+      summary: Start buying a plan (Stripe Checkout)
+      description: 'Owners, admins and billing admins. Opens a Stripe Checkout session with automatic tax, tax ids and the billing address; the console redirects to `url`. Monthly plans are billed per active person in arrears; yearly plans are bought for the people active now (at least one). 409 while a subscription is running (change its plan instead), 400 for Free or Enterprise (sold on quote).'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingPlanRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingRedirect'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/portal:
+    post:
+      operationId: openBillingPortal
+      tags:
+      - billing
+      summary: Open the Stripe customer portal
+      description: 'Owners, admins and billing admins: payment methods, invoices and receipts, billing address and tax id, cancellation at the period end. 409 for an organization that never bought.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingRedirect'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/plan:
+    post:
+      operationId: changeBillingPlan
+      tags:
+      - billing
+      summary: Change the plan or the interval of the subscription
+      description: 'Owners, admins and billing admins. An upgrade (Team to Business, monthly to yearly) is invoiced now, prorated; a downgrade is credited on the next invoice. Returns the billing after the change.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingPlanRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingOverview'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/cancel:
+    post:
+      operationId: cancelBillingSubscription
+      tags:
+      - billing
+      summary: End the subscription at the end of the period
+      description: 'Owners, admins and billing admins. The plan stays until the period end; 409 if it already ends.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingOverview'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/resume:
+    post:
+      operationId: resumeBillingSubscription
+      tags:
+      - billing
+      summary: Keep a subscription that was set to end
+      description: 'Owners, admins and billing admins. 409 if the subscription is not ending; a subscription already ended is bought again through checkout.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingOverview'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /v1/orgs/{orgId}/billing/invoices:
+    get:
+      operationId: listBillingInvoices
+      tags:
+      - billing
+      summary: Invoices and receipts, newest first
+      description: 'Owners, admins and billing admins. Empty for an organization that never bought.'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 24
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingInvoiceList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /v1/billing/stripe/webhook:
+    post:
+      operationId: receiveStripeWebhook
+      tags:
+      - billing
+      summary: Stripe events (subscriptions, invoices, checkout)
+      description: 'Called by Stripe only, authenticated by the `Stripe-Signature` header (HMAC-SHA256 of the timestamp and
+        the body, 5 minutes of tolerance). Each event is applied once; a replay answers `duplicate`. Bodies over 256 KiB
+        are refused (413).'
+      security: []
+      parameters:
+      - name: Stripe-Signature
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: A Stripe event, as Stripe sends it
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingWebhookAck'
+        '400':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearer:
@@ -6916,6 +7172,254 @@ components:
       - name
       - path
       - type
+    BillingInvoice:
+      type: object
+      description: An invoice or receipt. Amounts are in the currency's smallest unit (cents)
+      properties:
+        id:
+          type: string
+        number:
+          type: [string, 'null']
+        status:
+          type: string
+          description: Stripe's status (paid, open, void, uncollectible, draft)
+        total:
+          type: integer
+          format: int64
+          description: Amount including tax
+        tax:
+          type: integer
+          format: int64
+        currency:
+          type: string
+          description: ISO 4217, lowercase
+        created:
+          type: string
+          format: date-time
+        hostedInvoiceUrl:
+          type: [string, 'null']
+          description: Stripe's page of the invoice (pay it, download the receipt)
+        pdfUrl:
+          type: [string, 'null']
+      required:
+      - id
+      - number
+      - status
+      - total
+      - tax
+      - currency
+      - created
+      - hostedInvoiceUrl
+      - pdfUrl
+      x-ostrom-kotlin: pending
+    BillingInvoiceList:
+      type: object
+      description: Invoices and receipts, newest first
+      properties:
+        invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingInvoice'
+      required:
+      - invoices
+      x-ostrom-kotlin: pending
+    BillingOverview:
+      type: object
+      description: 'What the console''s billing page shows: plan, period, limits, usage, alerts and payment state'
+      properties:
+        orgId:
+          type: string
+          format: uuid
+        plan:
+          type: string
+          enum: [free, team, business, enterprise]
+          description: The plan of the subscription (free without one)
+        effectivePlan:
+          type: string
+          enum: [free, team, business, enterprise]
+          description: The plan whose limits apply now (free once a subscription has ended or is unpaid past retries)
+        interval:
+          type: [string, 'null']
+          enum: [month, year, null]
+        status:
+          type: [string, 'null']
+          description: Stripe's subscription status (active, trialing, past_due, incomplete, canceled…), null without one
+        cancelAtPeriodEnd:
+          type: boolean
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+          description: First instant after the period (renewal, or reset of the Free hours)
+        activePeople:
+          type: integer
+          description: People who launched an agent or answered a gate this period (billed on Team and Business)
+        committedPeople:
+          type: integer
+          description: People paid in advance on a yearly plan (0 on a monthly plan)
+        limits:
+          $ref: '#/components/schemas/BillingPlanLimits'
+        usage:
+          $ref: '#/components/schemas/BillingUsage'
+        alerts:
+          type: array
+          description: Usage alerts raised this period, in percent of the agent hours (80, 100)
+          items:
+            type: integer
+        paymentIssue:
+          oneOf:
+          - $ref: '#/components/schemas/BillingPaymentIssue'
+          - type: 'null'
+        purchasable:
+          type: boolean
+          description: Whether plans can be bought on this instance (false when self-hosted)
+        prices:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingPrice'
+      required:
+      - orgId
+      - plan
+      - effectivePlan
+      - interval
+      - status
+      - cancelAtPeriodEnd
+      - periodStart
+      - periodEnd
+      - activePeople
+      - committedPeople
+      - limits
+      - usage
+      - alerts
+      - paymentIssue
+      - purchasable
+      - prices
+      x-ostrom-kotlin: pending
+    BillingPaymentIssue:
+      type: object
+      description: A payment waiting for the customer; the console shows a banner linking to Stripe's invoice page
+      properties:
+        kind:
+          type: string
+          enum: [payment_failed, action_required]
+          description: payment_failed (card declined, Stripe retries) or action_required (3-D Secure)
+        hostedInvoiceUrl:
+          type: [string, 'null']
+        at:
+          type: string
+          format: date-time
+      required:
+      - kind
+      - hostedInvoiceUrl
+      - at
+      x-ostrom-kotlin: pending
+    BillingPlanLimits:
+      type: object
+      description: 'The limits in force; null means unlimited. A request that would go past one (a member, a cloud agent, an agent hour, SSO, policies) is answered 402 `payment_required`, with a message naming the limit and where to upgrade.'
+      properties:
+        maxPeople:
+          type: [integer, 'null']
+        maxConcurrentCloudAgents:
+          type: [integer, 'null']
+        agentHoursPerPeriod:
+          type: [integer, 'null']
+        sso:
+          type: boolean
+        policies:
+          type: boolean
+        receiptRetentionDays:
+          type: [integer, 'null']
+      required:
+      - maxPeople
+      - maxConcurrentCloudAgents
+      - agentHoursPerPeriod
+      - sso
+      - policies
+      - receiptRetentionDays
+      x-ostrom-kotlin: pending
+    BillingPlanRequest:
+      type: object
+      description: A plan to buy or switch to
+      properties:
+        plan:
+          type: string
+          enum: [team, business]
+        interval:
+          type: string
+          enum: [month, year]
+      required:
+      - plan
+      - interval
+      x-ostrom-kotlin: pending
+    BillingPrice:
+      type: object
+      description: 'A price of the catalog: per active person per month (monthly), per person per year (yearly, 20 % off)'
+      properties:
+        plan:
+          type: string
+          enum: [team, business]
+        interval:
+          type: string
+          enum: [month, year]
+        unitAmount:
+          type: integer
+          format: int64
+          description: In cents, before tax
+        currency:
+          type: string
+      required:
+      - plan
+      - interval
+      - unitAmount
+      - currency
+      x-ostrom-kotlin: pending
+    BillingRedirect:
+      type: object
+      description: A Stripe page to send the browser to
+      properties:
+        url:
+          type: string
+          format: uri
+      required:
+      - url
+      x-ostrom-kotlin: pending
+    BillingUsage:
+      type: object
+      description: Cloud agent usage of the current period
+      properties:
+        agentSeconds:
+          type: integer
+          format: int64
+        agentHours:
+          type: integer
+          format: int64
+          description: Whole hours, rounded down
+        sessions:
+          type: integer
+          format: int64
+        percentOfHours:
+          type: [integer, 'null']
+          description: Share of the plan's agent hours used, null without an hour limit
+      required:
+      - agentSeconds
+      - agentHours
+      - sessions
+      - percentOfHours
+      x-ostrom-kotlin: pending
+    BillingWebhookAck:
+      type: object
+      properties:
+        received:
+          type: boolean
+        outcome:
+          type: string
+          enum: [processed, duplicate, ignored]
+      required:
+      - received
+      - outcome
+      x-ostrom-kotlin: pending
     Budget:
       type: object
       description: A spending limit
