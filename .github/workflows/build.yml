@@ -41,6 +41,26 @@ jobs:
           name: test-reports
           path: '**/build/reports/tests/'
           retention-days: 3
+  contract:
+    # api/openapi.yaml is the contract: its TypeScript types must generate, and api/contract/shapes.json (read by the
+    # Kotlin ContractTest) must be the one derived from it.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api-types
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: api-types/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run contract
+      - name: api/contract/shapes.json is up to date with api/openapi.yaml
+        run: git diff --exit-code -- ../api/contract/shapes.json
+      - run: npm run build
   other-hosts:
     if: github.event_name == 'workflow_dispatch' && inputs.full_validation
     strategy:
@@ -66,7 +86,7 @@ jobs:
         shell: bash
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: native
+    needs: [native, contract]
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:
@@ -92,3 +112,18 @@ jobs:
           ORG_GRADLE_PROJECT_ostromCoreVersion: 0.1.${{ github.run_number }}
         run: ./gradlew --no-daemon publishAllPublicationsToGitHubPackagesRepository
       - run: echo "Published dev.ostrom:ostrom-api and dev.ostrom:ostrom-receipts 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          registry-url: https://npm.pkg.github.com
+          scope: '@ostrom-hq'
+      - name: Publish @ostrom-hq/api-types 0.1.<run> to GitHub Packages
+        working-directory: api-types
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          npm version --no-git-tag-version "0.1.${{ github.run_number }}"
+          npm publish
+      - run: echo "Published @ostrom-hq/api-types 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
