@@ -46,6 +46,8 @@ public data class ToolSubject(val kind: SubjectKind, val tool: String, val text:
             "write", "edit", "multiedit", "apply_patch", "write_file", "replace", "edit_file", "search_replace",
             "patch",
         )
+        /** `["bash", "-lc", "<script>"]`: a shell, its flags, the script. */
+        private const val SHELL_ARGV = 3
         private val SHELLS = setOf("sh", "bash", "zsh", "dash", "ksh", "ash", "fish")
 
         /** A shell command. */
@@ -81,7 +83,7 @@ public data class ToolSubject(val kind: SubjectKind, val tool: String, val text:
         private fun commandOf(element: JsonElement?): String {
             if (element !is JsonArray) return element.stringOrNull().orEmpty()
             val argv = element.map { it.stringOrNull().orEmpty() }
-            val shellScript = argv.size == 3 && argv[0].substringAfterLast('/') in SHELLS &&
+            val shellScript = argv.size == SHELL_ARGV && argv[0].substringAfterLast('/') in SHELLS &&
                 argv[1].startsWith("-") && 'c' in argv[1]
             return if (shellScript) argv[2] else argv.joinToString(" ", transform = ::quote)
         }

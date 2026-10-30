@@ -99,8 +99,15 @@ private const val OCTAL = 8
 private const val OCTAL_DIGITS = 3
 private const val HEX = 16
 
+/** The hex digits of `\u` and of `\U` in `$'…'`. */
+private const val UNICODE_DIGITS = 4
+private const val LONG_UNICODE_DIGITS = 8
+
+/** Characters that end a segment, run together (`&&`, `||`, `;;`). */
+private const val SEPARATORS = "&|;"
 
 /** Lexes one script, one level: nested scripts go to [queue], one level deeper. */
+@Suppress("TooManyFunctions") // The lexer's states, one function each.
 private class Lexer(
     private val script: PendingScript,
     private val out: MutableList<ShellSegment>,
@@ -130,6 +137,7 @@ private class Lexer(
         if (heredocs.isNotEmpty()) malformed = true
     }
 
+    @Suppress("CyclomaticComplexMethod") // One branch per shell character class, in the order the shell reads them.
     private fun step() {
         val c = s[i]
         val next = if (i + 1 < n) s[i + 1] else ' '
@@ -223,8 +231,8 @@ private class Lexer(
             }
             c in '0'..'7' -> codePoint(k, OCTAL, OCTAL_DIGITS)
             c == 'x' -> codePoint(k + 1, HEX, 2)
-            c == 'u' -> codePoint(k + 1, HEX, 4)
-            c == 'U' -> codePoint(k + 1, HEX, 8)
+            c == 'u' -> codePoint(k + 1, HEX, UNICODE_DIGITS)
+            c == 'U' -> codePoint(k + 1, HEX, LONG_UNICODE_DIGITS)
             else -> {
                 add('\\')
                 add(c)
@@ -327,6 +335,7 @@ private class Lexer(
     }
 
     /** The index of the [close] that matches an [open] already read before [from], quotes skipped; -1 if none. */
+    @Suppress("NestedBlockDepth") // Nested quotes and substitutions, read in one pass.
     private fun closing(from: Int, open: Char, close: Char): Int {
         var depth = 1
         var j = from
@@ -350,6 +359,7 @@ private class Lexer(
         return j
     }
 
+    @Suppress("CyclomaticComplexMethod") // One branch per redirection operator.
     private fun redirection() {
         // A word of digits right before the operator is its file descriptor (`2>`), not an argument.
         if (hasToken && token.isNotEmpty() && token.all { it in '0'..'9' }) {
@@ -388,7 +398,7 @@ private class Lexer(
         if (c == '(' || c == ')') subshells = true
         endSegment()
         i++
-        while (i < n && (s[i] == '&' || s[i] == '|' || s[i] == ';')) i++
+        while (i < n && s[i] in SEPARATORS) i++
     }
 
     private fun flush() {
@@ -421,6 +431,7 @@ private class Lexer(
     }
 
     /** The bodies of the here-documents opened on the line that just ended: they may be scripts (`bash <<EOF`). */
+    @Suppress("NestedBlockDepth") // Here-documents of a line, each read to its delimiter in one pass.
     private fun hereDocumentBodies() {
         for ((delimiter, tabs) in heredocs) {
             val body = StringBuilder()

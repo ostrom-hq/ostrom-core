@@ -50,7 +50,8 @@ class CornerCaseTest {
         for (command in listOf(
             "gh api -X PUT repos/o/r/issues/3/pulls/1/merge", "gh api -X PUT 'repos/o/r/pulls/3/close?x=/merges'",
             "gh api -X PUT repos/o/merges", "gh api -X PUT repos/o/r/pulls/3/mergedx/pulls/4/merge",
-            "gh pr merge https://github.com/o!/r/pull/9",
+            "gh pr merge https://github.com/o!/r/pull/9", "gh pr merge https://github.com/o/r!/pull/9",
+            "gh pr merge https://github.com/o/r/issues/9",
         )) {
             assertNull(classify(command).pullRequest, command)
         }

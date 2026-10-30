@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+@file:Suppress("TooManyFunctions") // The readers of a git command line, kept next to each other.
 package dev.ostrom.core.actions
 
 /**
@@ -15,6 +16,8 @@ internal class GitInvocation(
 )
 
 /** Reads the git invocation whose `git` word is at [gitIndex]; null when no verb follows. */
+// One branch per global option of git, in git's own order; a missing value refuses early.
+@Suppress("CyclomaticComplexMethod", "ReturnCount")
 internal fun gitInvocation(words: List<String>, gitIndex: Int): GitInvocation? {
     val directories = ArrayList<String>()
     var redirect: String? = null
@@ -152,6 +155,8 @@ internal fun pushOption(name: String): String? {
 }
 
 /** Reads the words after `push`. */
+// One branch per option of git push (unique prefixes, short clusters).
+@Suppress("CyclomaticComplexMethod", "LoopWithTooManyJumpStatements")
 internal fun pushArguments(args: List<String>): PushArguments {
     val positionals = ArrayList<String>()
     var repoOption: String? = null
@@ -236,6 +241,8 @@ internal class PushInvocation(
     }
 
     /** Where this push lands in [state], or why that cannot be told. */
+    // One rule per step of git's resolution (remote, refspec, push.default).
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     fun resolve(state: GitState): Resolution {
         val config = state.config
         val branch = state.currentBranch

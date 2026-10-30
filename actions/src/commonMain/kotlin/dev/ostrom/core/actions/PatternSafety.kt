@@ -24,6 +24,8 @@ internal object PatternSafety {
     }
 
     /** Null when [pattern] is acceptable, else why not. */
+    // One pass over the pattern, one branch per regular-expression token.
+    @Suppress("CyclomaticComplexMethod", "NestedBlockDepth", "ReturnCount")
     fun problem(pattern: String): String? {
         if (pattern.isEmpty() || pattern.length > MAX_LENGTH) return "a pattern has 1 to $MAX_LENGTH characters"
         val open = ArrayDeque<Group>()
@@ -59,7 +61,8 @@ internal object PatternSafety {
                         repeats = pattern.substring(i + 1, end) !in SINGLE
                         i = end
                     }
-                    if (repeats && closed != null && (closed.repeats || closed.alternates)) {
+                    val backtracks = closed != null && (closed.repeats || closed.alternates)
+                    if (repeats && backtracks) {
                         return "a repeated group that repeats or alternates inside can backtrack without end"
                     }
                     if (repeats) open.last().repeats = true

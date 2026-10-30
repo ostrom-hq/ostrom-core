@@ -56,17 +56,19 @@ public data class ExportConfig(
  */
 internal suspend fun sendWithRetries(config: ExportConfig, send: suspend () -> ExportResult): DropReason? {
     var backoff = config.initialBackoff
-    repeat(config.maxRetries + 1) { attempt ->
-        when (val result = send()) {
-            ExportResult.Success -> return null
-            is ExportResult.Rejected -> return DropReason.REJECTED
-            is ExportResult.Retryable -> if (attempt < config.maxRetries) {
-                delay(minOf(result.retryAfter ?: backoff, config.maxBackoff))
-                backoff *= 2
-            }
-        }
+    var retries = 0
+    var result = send()
+    while (result is ExportResult.Retryable && retries < config.maxRetries) {
+        delay(minOf(result.retryAfter ?: backoff, config.maxBackoff))
+        backoff *= 2
+        retries++
+        result = send()
     }
-    return DropReason.RETRIES_EXHAUSTED
+    return when (result) {
+        ExportResult.Success -> null
+        is ExportResult.Rejected -> DropReason.REJECTED
+        is ExportResult.Retryable -> DropReason.RETRIES_EXHAUSTED
+    }
 }
 
 /**

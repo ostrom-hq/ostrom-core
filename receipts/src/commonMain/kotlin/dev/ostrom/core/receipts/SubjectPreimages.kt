@@ -1,6 +1,7 @@
 package dev.ostrom.core.receipts
 
 import dev.ostrom.core.api.models.ReceiptNode
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -25,7 +26,13 @@ public object SubjectPreimages {
      * @property status Gate status (`consumed`, `approved`, `rejected`…).
      * @property receiptId The gate's own receipt, when signed.
      */
-    public data class SessionGate(val id: String, val cls: String, val mode: String, val status: String, val receiptId: String?)
+    public data class SessionGate(
+        val id: String,
+        val cls: String,
+        val mode: String,
+        val status: String,
+        val receiptId: String?,
+    )
 
     /**
      * The resume fields of a resumed segment.
@@ -52,6 +59,8 @@ public object SubjectPreimages {
      *
      * @return The preimage.
      */
+    // one parameter per field of the prototype's preimage, passed by name at every call site
+    @Suppress("LongParameterList")
     public fun session(
         id: String,
         repo: String?,
@@ -112,6 +121,8 @@ public object SubjectPreimages {
      *
      * @return The preimage.
      */
+    // one parameter per field of the prototype's preimage, passed by name at every call site
+    @Suppress("LongParameterList")
     public fun gate(
         gate: JsonElement,
         cls: String,
@@ -147,11 +158,12 @@ public object SubjectPreimages {
      *
      * @return The preimage.
      */
-    public fun workflow(session: String, packageDigest: String, nodes: List<ReceiptNode>): JsonObject = buildJsonObject {
-        put("session", session)
-        put("package", packageDigest)
-        put("nodes", ReceiptJson.encodeToJsonElement(kotlinx.serialization.builtins.ListSerializer(ReceiptNode.serializer()), nodes))
-    }
+    public fun workflow(session: String, packageDigest: String, nodes: List<ReceiptNode>): JsonObject =
+        buildJsonObject {
+            put("session", session)
+            put("package", packageDigest)
+            put("nodes", ReceiptJson.encodeToJsonElement(ListSerializer(ReceiptNode.serializer()), nodes))
+        }
 
     /**
      * The preimage of a rule change (`decisions.ts` recordRuleChange).
@@ -163,12 +175,13 @@ public object SubjectPreimages {
      *
      * @return The preimage.
      */
-    public fun ruleChange(ruleId: String, action: String, before: JsonElement?, after: JsonElement): JsonObject = buildJsonObject {
-        put("ruleId", ruleId)
-        put("action", action)
-        put("before", before ?: JsonNull)
-        put("after", after)
-    }
+    public fun ruleChange(ruleId: String, action: String, before: JsonElement?, after: JsonElement): JsonObject =
+        buildJsonObject {
+            put("ruleId", ruleId)
+            put("action", action)
+            put("before", before ?: JsonNull)
+            put("after", after)
+        }
 
     /**
      * The preimage of any other signed decision (`decisions.ts` recordSigned: workflow, gate actions, owner change,
@@ -181,12 +194,13 @@ public object SubjectPreimages {
      *
      * @return The preimage.
      */
-    public fun decision(subject: String, action: String, before: JsonElement?, after: JsonElement?): JsonObject = buildJsonObject {
-        put("subject", subject)
-        put("action", action)
-        put("before", before ?: JsonNull)
-        put("after", after ?: JsonNull)
-    }
+    public fun decision(subject: String, action: String, before: JsonElement?, after: JsonElement?): JsonObject =
+        buildJsonObject {
+            put("subject", subject)
+            put("action", action)
+            put("before", before ?: JsonNull)
+            put("after", after ?: JsonNull)
+        }
 
     /**
      * The key of a push gate request (not signed): it finds the same request again and binds the yes to the commits.
@@ -200,15 +214,16 @@ public object SubjectPreimages {
      *
      * @return The preimage; its [Digests.digestOf] is the key.
      */
-    public fun pushActionKey(repo: String?, realRepo: String?, cls: String, push: Push, scope: String): JsonObject = buildJsonObject {
-        put("repo", repo)
-        put("realRepo", realRepo)
-        put("cls", cls)
-        put("action", "push")
-        put("remote", push.remote)
-        put("refs", JsonArray(push.refs.map { (ref, sha) -> "$ref=$sha" }.sorted().map { JsonPrimitive(it) }))
-        put("scope", scope)
-    }
+    public fun pushActionKey(repo: String?, realRepo: String?, cls: String, push: Push, scope: String): JsonObject =
+        buildJsonObject {
+            put("repo", repo)
+            put("realRepo", realRepo)
+            put("cls", cls)
+            put("action", "push")
+            put("remote", push.remote)
+            put("refs", JsonArray(push.refs.map { (ref, sha) -> "$ref=$sha" }.sorted().map { JsonPrimitive(it) }))
+            put("scope", scope)
+        }
 
     private fun pushObject(push: Push): JsonObject = buildJsonObject {
         put("remote", push.remote)

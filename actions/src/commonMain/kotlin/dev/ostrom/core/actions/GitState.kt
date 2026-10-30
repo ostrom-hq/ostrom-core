@@ -27,8 +27,8 @@ public class GitConfig private constructor(private val entries: List<Pair<String
     public fun getBoolean(key: String): Boolean {
         val k = normalize(key)
         val last = entries.lastOrNull { it.first == k } ?: return false
-        val value = last.second ?: return true
-        return value.lowercase() in TRUE_VALUES
+        val value = last.second
+        return value == null || value.lowercase() in TRUE_VALUES
     }
 
     /** The entries whose key starts with [prefix] (normalized) and ends with [suffix] (lower-case), in order. */

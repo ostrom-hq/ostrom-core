@@ -6,8 +6,9 @@ package dev.ostrom.core.telemetry.analytics
  * property. The activation funnel is `signed_up` → `org_created` → `agent_session_started` → `gate_requested` →
  * `first_yes` (the "aha" moment). Documented in docs/telemetry.md.
  */
-// One parameter per property of the event schema: grouping them in a class would only hide the schema.
-@Suppress("LongParameterList")
+// One parameter per property of the event schema: grouping them in a class would only hide the schema. One factory per
+// event of the taxonomy: splitting the object would split the taxonomy.
+@Suppress("LongParameterList", "TooManyFunctions")
 public object ProductEvents {
     /** An account was created. */
     public fun signedUp(userId: String, method: SignupMethod, epochMillis: Long): ProductEvent =

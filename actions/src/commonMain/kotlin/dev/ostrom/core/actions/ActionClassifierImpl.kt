@@ -58,6 +58,8 @@ public class ActionClassifierImpl(
             .map { (id, list) -> Compiled(id, classes.getValue(id).kinds, list) }
     }
 
+    // One short step per kind of subject and per refusal, in the order the hook reads them.
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     override fun classify(subject: ToolSubject, git: GitStateReader?): Classification {
         val text = subject.text
         if (subject.kind == SubjectKind.OTHER || text.isEmpty()) return Classification(emptyList())

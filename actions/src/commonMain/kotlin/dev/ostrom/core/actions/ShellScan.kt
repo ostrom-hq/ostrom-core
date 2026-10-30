@@ -7,6 +7,7 @@ package dev.ostrom.core.actions
  * (so `sudo kubectl apply`, `xargs kubectl delete` are seen), and only where a command may stand in a quoted word,
  * which may be plain text (`git commit -m "fix kubectl apply"` is not a deploy).
  */
+@Suppress("TooManyFunctions") // One reader per tool family.
 internal class ShellScan(private val protectedBranches: Set<String>) {
     val found = HashSet<String>()
     val pushes = ArrayList<PushInvocation>()
@@ -46,6 +47,7 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
     private var apiFrom = -1
 
     /** Scans a parsed command; [quoteBlind] for the fallback parse of a malformed one (no push there is plain). */
+    @Suppress("CyclomaticComplexMethod") // One check per kind of segment, in one pass.
     fun scan(script: ShellScript, quoteBlind: Boolean) {
         cdDirectories.clear()
         onlyCdAndPushes = true
@@ -76,6 +78,7 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
         severalMerges = severalMerges || merges.size > 1 || mergeUnread
     }
 
+    @Suppress("CyclomaticComplexMethod") // One branch per tool family.
     private fun tool(segment: ShellSegment, i: Int, top: Boolean, subshells: Boolean, quoteBlind: Boolean) {
         val w = segment.words
         when (toolName(w[i])) {
@@ -135,6 +138,9 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
     private fun startsWith(word: String?, prefix: String): Boolean =
         word.orEmpty().startsWith(prefix, ignoreCase = true)
 
+    // One branch per git verb that reaches a boundary; guard clauses that refuse early read better than one nested
+    // condition.
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     private fun git(segment: ShellSegment, i: Int, top: Boolean, subshells: Boolean, quoteBlind: Boolean) {
         val w = segment.words
         val invocation = gitInvocation(w, i) ?: return
@@ -212,9 +218,7 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
     private fun githubApi(w: List<String>) {
         val writes by lazy { writesWithMethod(w) }
         for (word in w) {
-            if (hasPullsMerge(word) || hasMerges(word) || GRAPHQL_MERGES.any { containsWord(word, it) } ||
-                word.contains("/merge-upstream", ignoreCase = true)
-            ) {
+            if (mergesThroughApi(word)) {
                 found += BuiltInActions.MERGE
                 val target = apiPullRequest(word)
                 merges += if (target == null) "api: $word" else target.toString()
@@ -230,6 +234,8 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
     }
 
     /** The pull request of `gh pr merge` arguments: a URL, else a number (and `-R owner/repo`). */
+    // One branch per option of gh pr merge; guard clauses that refuse early read better than one nested condition.
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     private fun mergeArguments(w: List<String>, gh: Int, pr: Int, merge: Int): PullRequestRef? {
         var url: PullRequestRef? = null
         var repo: Pair<String, String>? = null
@@ -262,6 +268,10 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
         return number?.let { PullRequestRef(it, repo?.first, repo?.second) }
     }
 }
+
+/** A word of `gh api` that merges: a pull request, a branch, an upstream, by REST or GraphQL. */
+private fun mergesThroughApi(word: String): Boolean = hasPullsMerge(word) || hasMerges(word) ||
+    GRAPHQL_MERGES.any { containsWord(word, it) } || word.contains("/merge-upstream", ignoreCase = true)
 
 /** Pushes read one by one in a command; more are refused. */
 private const val MAX_PUSHES = 16

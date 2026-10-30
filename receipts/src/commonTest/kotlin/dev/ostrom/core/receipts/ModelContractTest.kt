@@ -28,7 +28,8 @@ class ModelContractTest {
     fun aPackageEnvelopeDecodesAndEncodesBack() {
         val envelope = Vectors.read("private/package.json").jsonObject.obj("envelope")
         val typed = OstromJson.decodeFromJsonElement(PackageEnvelope.serializer(), envelope)
-        assertEquals(CanonicalJson.encode(envelope), CanonicalJson.encode(OstromJson.encodeToJsonElement(PackageEnvelope.serializer(), typed)))
+        val encoded = OstromJson.encodeToJsonElement(PackageEnvelope.serializer(), typed)
+        assertEquals(CanonicalJson.encode(envelope), CanonicalJson.encode(encoded))
     }
 
     @Test
@@ -37,13 +38,17 @@ class ModelContractTest {
         val gate = Vectors.receipt("gate-push-sha").obj("subjectPreimage").obj("gate")
         val typed = OstromJson.decodeFromJsonElement(GateRef.serializer(), gate)
         assertEquals(WorkflowStatus.ACCEPTED, typed.status)
-        assertEquals(Digests.digestOf(gate), Digests.digestOf(OstromJson.encodeToJsonElement(GateRef.serializer(), typed)))
+        val encoded = OstromJson.encodeToJsonElement(GateRef.serializer(), typed)
+        assertEquals(Digests.digestOf(gate), Digests.digestOf(encoded))
     }
 
     @Test
     fun unknownFieldsFromANewerServerAreIgnored() {
         val gate = Vectors.receipt("gate-push-sha").obj("subjectPreimage").obj("gate")
         val newer = JsonObject(gate + ("addedLater" to Json.parseToJsonElement("{\"x\":1}")))
-        assertEquals(OstromJson.decodeFromJsonElement(GateRef.serializer(), gate), OstromJson.decodeFromJsonElement(GateRef.serializer(), newer))
+        assertEquals(
+            OstromJson.decodeFromJsonElement(GateRef.serializer(), gate),
+            OstromJson.decodeFromJsonElement(GateRef.serializer(), newer),
+        )
     }
 }

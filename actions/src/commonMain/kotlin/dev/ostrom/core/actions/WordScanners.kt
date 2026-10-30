@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+@file:Suppress("TooManyFunctions") // Small word readers shared by the scan, kept in one file.
 package dev.ostrom.core.actions
 
 /** The program a word names: its file name, lower-cased, without `.exe` (`/usr/bin/GIT` → `git`). */
@@ -13,6 +14,7 @@ internal fun same(word: String?, expected: String): Boolean = word.equals(expect
  * Options may take their value as the next word (`kubectl -n prod apply`), and a word right after an option may be that
  * value or the verb: both readings are tried, as the prototype's patterns did (`kubectl --insecure apply`).
  */
+@Suppress("ReturnCount") // Guard clauses that refuse early read better than one nested condition.
 internal fun findVerb(words: List<String>, from: Int, isVerb: (String) -> Boolean): Int {
     var valueAllowed = false
     for (j in from until words.size) {
@@ -97,13 +99,15 @@ private const val REF_END = "?#\"',;{}&"
 internal fun validName(name: String): Boolean = name.isNotEmpty() && name.all { it.isLetterOrDigit() || it in "_.-" }
 
 /** `repos/<owner>/<repo>/pulls/<n>/merge` → the pull request. */
+@Suppress("ReturnCount") // Guard clauses that refuse early read better than one nested condition.
 internal fun apiPullRequest(word: String): PullRequestRef? {
     val k = word.indexOf("repos/", ignoreCase = true)
     if (k < 0) return null
     val parts = word.substring(k + "repos/".length).split('/')
-    if (parts.size < 5 || !same(parts[2], "pulls") || !parts[4].startsWith("merge", ignoreCase = true)) return null
-    if (isWordChar(parts[4].getOrNull("merge".length))) return null
-    val number = parts[3].takeIf { it.all(Char::isDigit) }?.toIntOrNull() ?: return null
+    if (parts.size <= API_ACTION || !same(parts[API_PULLS], "pulls")) return null
+    val action = parts[API_ACTION]
+    if (!action.startsWith("merge", ignoreCase = true) || isWordChar(action.getOrNull("merge".length))) return null
+    val number = parts[API_NUMBER].takeIf { it.all(Char::isDigit) }?.toIntOrNull() ?: return null
     // `gh api` fills `{owner}` and `{repo}` with the repository of the current directory.
     if (parts[0] == "{owner}" && parts[1] == "{repo}") return PullRequestRef(number)
     if (!validName(parts[0]) || !validName(parts[1])) return null
@@ -111,23 +115,33 @@ internal fun apiPullRequest(word: String): PullRequestRef? {
 }
 
 /** `github.com/<owner>/<repo>/pull/<n>` → the pull request. */
+@Suppress("ReturnCount") // Guard clauses that refuse early read better than one nested condition.
 internal fun pullRequestUrl(word: String): PullRequestRef? {
     val k = word.indexOf("github.com/", ignoreCase = true)
     if (k < 0) return null
     val parts = word.substring(k + "github.com/".length).split('/')
-    if (parts.size < 4 || !same(parts[2], "pull") || !validName(parts[0]) || !validName(parts[1])) return null
-    val number = parts[3].takeWhile(Char::isDigit).toIntOrNull() ?: return null
+    if (parts.size <= URL_NUMBER || !same(parts[URL_PULL], "pull")) return null
+    if (!validName(parts[0]) || !validName(parts[1])) return null
+    val number = parts[URL_NUMBER].takeWhile(Char::isDigit).toIntOrNull() ?: return null
     return PullRequestRef(number, parts[0], parts[1])
 }
 
 /** `OWNER/REPO` or `HOST/OWNER/REPO` (the `-R` of gh) → owner to repo. */
 internal fun repoSpec(value: String): Pair<String, String>? {
     val parts = value.split('/')
-    if (parts.size !in 2..3 || !validName(parts[parts.size - 2]) || !validName(parts.last())) return null
+    if (parts.size !in 2..HOST_OWNER_REPO || !validName(parts[parts.size - 2]) || !validName(parts.last())) return null
     return parts[parts.size - 2] to parts.last()
 }
 
 private val WRITE_METHODS = setOf("PUT", "DELETE")
+
+/** The parts of `repos/<owner>/<repo>/pulls/<n>/merge` and of `github.com/<owner>/<repo>/pull/<n>`, and of `-R`. */
+private const val API_PULLS = 2
+private const val API_NUMBER = 3
+private const val API_ACTION = 4
+private const val URL_PULL = 2
+private const val URL_NUMBER = 3
+private const val HOST_OWNER_REPO = 3
 private val METHOD_OPTIONS = setOf("-X", "--method", "--request")
 
 /** Whether an HTTP call of the segment writes (`-X PUT`, `--method DELETE`, `-XPUT`, `--request=PUT`). */
@@ -168,6 +182,7 @@ private val KEYWORDS = setOf("!", "{", "if", "then", "do", "else", "elif", "whil
  * Where the command of a segment may stand: after assignments, keywords and wrappers (with their options). A word right
  * after a wrapper's option may be its value (`sudo -u deploy kubectl`), so the word after it is a candidate too.
  */
+@Suppress("ReturnCount") // Guard clauses that refuse early read better than one nested condition.
 internal fun commandPositions(words: List<String>): List<Int> {
     var afterWrapper = false
     var optionBefore = false

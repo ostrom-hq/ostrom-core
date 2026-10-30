@@ -12,7 +12,7 @@ public object RemoteUrls {
         val u = url.trim().trimEnd('/').removeSuffix(".git")
         val scheme = u.indexOf("://")
         val path = if (scheme >= 0) {
-            val rest = u.substring(scheme + 3)
+            val rest = u.substring(scheme + "://".length)
             val slash = rest.indexOf('/')
             if (slash >= 0) rest.substring(slash + 1) else ""
         } else {

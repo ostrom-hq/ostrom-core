@@ -4,8 +4,10 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -47,13 +49,14 @@ class CanonicalJsonTest {
 
     @Test
     fun numbersAreWrittenAsEcmaScriptWritesThem() {
-        // 4 060 doubles written by Node (compat/extra/js-numbers.mjs): fixed edge cases and random bit patterns
+        // 4 072 doubles written by Node (compat/extra/js-numbers.mjs): fixed edge cases and random bit patterns
         val path = Path(COMPAT_VECTORS_DIR, "../extra/js-numbers.json")
         val pairs = SystemFileSystem.source(path).buffered().use { Json.parseToJsonElement(it.readString()) }.jsonArray
         assertTrue(pairs.size > 4000)
         for (pair in pairs.map { it.jsonArray }) {
             val bits = pair[0].jsonPrimitive.content.toULong(16).toLong()
-            assertEquals(pair[1].jsonPrimitive.content, JsNumber.format(Double.fromBits(bits)), pair[0].jsonPrimitive.content)
+            val expected = pair[1].jsonPrimitive.content
+            assertEquals(expected, JsNumber.format(Double.fromBits(bits)), pair[0].jsonPrimitive.content)
         }
     }
 
@@ -71,9 +74,27 @@ class CanonicalJsonTest {
     @Test
     fun aDocumentNestedTooDeepIsRefusedNotRecursedInto() {
         val deep = "[".repeat(10_000) + "]".repeat(10_000)
-        assertFailsWith<CanonicalJsonException> { CanonicalJson.encode(Json.parseToJsonElement(deep)) }
+        assertFailsWith<CanonicalJsonException> { CanonicalJson.parse(deep) }
+        val deepObjects = "{\"a\":".repeat(10_000) + "1" + "}".repeat(10_000)
+        assertFailsWith<CanonicalJsonException> { CanonicalJson.parse(deepObjects) }
         val shallow = "[".repeat(CanonicalJson.MAX_DEPTH + 1) + "]".repeat(CanonicalJson.MAX_DEPTH + 1)
-        assertEquals(shallow, CanonicalJson.encode(Json.parseToJsonElement(shallow)))
+        assertEquals(shallow, CanonicalJson.encode(CanonicalJson.parse(shallow)))
+        var built: JsonElement = JsonArray(emptyList())
+        repeat(10_000) { built = JsonArray(listOf(built)) }
+        assertFailsWith<CanonicalJsonException> { CanonicalJson.encode(built) }
+    }
+
+    @Test
+    fun bracketsInsideStringsDoNotCountAsNesting() {
+        val text = """{"a":"[[[{{{\\\"]]","b":[{"c":"\\"}]}"""
+        assertEquals(text, CanonicalJson.encode(CanonicalJson.parse(text)))
+        val inString = "\"" + "[".repeat(10_000) + "\""
+        assertEquals(inString, CanonicalJson.encode(CanonicalJson.parse(inString)))
+    }
+
+    @Test
+    fun parseRefusesTextThatIsNotJson() {
+        assertFailsWith<SerializationException> { CanonicalJson.parse("{\"a\":") }
     }
 
     @Test

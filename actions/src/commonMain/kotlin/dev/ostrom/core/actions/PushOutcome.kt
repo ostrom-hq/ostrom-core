@@ -17,6 +17,7 @@ internal class PushOutcome(
 ) {
     companion object {
         /** The outcome of the pushes of [scan]; null when it has none, aliases that may push included. */
+        @Suppress("CyclomaticComplexMethod") // Every push of a command folded into one outcome, one rule per refusal.
         fun of(scan: ShellScan, git: GitStateReader?, protectedBranches: Set<String>): PushOutcome? {
             val pushes = scan.pushes
             // An alias is read where it runs; one that may push is a push Ostrom cannot read.
@@ -60,6 +61,7 @@ internal class PushOutcome(
         }
 
         /** Where every push of the command lands: one destination URL, or a refusal. */
+        @Suppress("ReturnCount") // Guard clauses that refuse early read better than one nested condition.
         private fun resolveAll(pushes: List<PushInvocation>, git: GitStateReader): Resolution {
             val first = resolveOne(pushes[0], git)
             if (first !is Resolution.Landed) return first

@@ -27,8 +27,8 @@ public object Digests {
         CryptographyProvider.Default.get(SHA256).hasher().hashBlocking(bytes)
 
     /**
-     * Returns `digestOf(value)` of the prototype: the SHA-256 of the UTF-8 canonical form of [value]. Every digest cited
-     * inside a receipt (`subject.digest`, `rules[].digest`, `shownDigest`) and every gate request key is one.
+     * Returns `digestOf(value)` of the prototype: the SHA-256 of the UTF-8 canonical form of [value]. Every digest
+     * cited inside a receipt (`subject.digest`, `rules[].digest`, `shownDigest`) and every gate request key is one.
      *
      * @param value The JSON value.
      *
@@ -38,10 +38,13 @@ public object Digests {
 }
 
 private const val HEX = "0123456789abcdef"
+private const val BYTE_MASK = 0xFF
+private const val NIBBLE_BITS = 4
+private const val NIBBLE_MASK = 0x0F
 
 internal fun ByteArray.toHex(): String = buildString(size * 2) {
     for (byte in this@toHex) {
-        val v = byte.toInt() and 0xFF
-        append(HEX[v ushr 4]).append(HEX[v and 0x0F])
+        val v = byte.toInt() and BYTE_MASK
+        append(HEX[v ushr NIBBLE_BITS]).append(HEX[v and NIBBLE_MASK])
     }
 }
