@@ -49,13 +49,9 @@ Ruff, Supabase and Tailscale.
 | Workflow | Check name | What it does |
 | --- | --- | --- |
 | `release-please.yml` | `release-please` | All repositories but ostrom-core and ostrom-helm (see `CHANGELOG.md` above). Keeps a release pull request from Conventional Commit titles; merging it tags the bare version (CONVENTIONS.md section 12), writes the changelog, creates the release, and starts the tag workflows a `GITHUB_TOKEN` tag would not start |
-| `pr-title.yml` | `pr-title` | The title is a Conventional Commit: with squash merge it is the commit on `main` and the changelog line (Resend, Cal.com) |
-| `dco.yml` | `dco` | Every commit of a contributor without write access is signed off (Developer Certificate of Origin instead of a CLA, like GitLab since 2017); collaborators with write, maintain or admin permission and bots are exempt (a read-only organization member is checked) |
-| `license-headers.yml` | `spdx` | Every new source file carries its `SPDX-License-Identifier`, the right one for its path (`ee/` is `LicenseRef-Ostrom-Enterprise`); `LICENSE` exists, and `ee/LICENSE` wherever `ee/` exists (Tailscale's `license_test.go`) |
+| `community.yml` | `community` | One job, so a pull request costs one runner (organization CI rule: few jobs, none on drafts). Its steps: the title is a Conventional Commit, since with squash merge it is the commit on `main` and the changelog line (Resend, Cal.com); every commit of a contributor without write access is signed off (Developer Certificate of Origin instead of a CLA, like GitLab since 2017; collaborators with write, maintain or admin permission and bots are exempt, a read-only organization member is checked); every new source file carries its `SPDX-License-Identifier`, the right one for its path (`ee/` is `LicenseRef-Ostrom-Enterprise`), `LICENSE` exists, and `ee/LICENSE` wherever `ee/` exists (Tailscale's `license_test.go`); zizmor reads the workflows (Linear, uv, Supabase, Tailscale); lychee checks every Markdown link |
 | `codeql.yml` | `analyze (actions)` everywhere, plus `analyze (javascript-typescript)` in web, app, e2e and site | CodeQL `security-extended` on the workflows and the TypeScript code. Kotlin is not analysed: CodeQL needs a JVM build of Kotlin and our product is native |
 | `scorecard.yml` | `analysis` | OpenSSF Scorecard, weekly and on every push to `main` |
-| `zizmor.yml` | `zizmor` | Static analysis of the workflows themselves (Linear, uv, Supabase, Tailscale) |
-| `links.yml` | `links` | lychee on every Markdown file: no dead link in a README or a doc |
 | `labels.yml` | `labels` | Syncs the labels from `.github/labels.yml` |
 
 ### Before the launch
