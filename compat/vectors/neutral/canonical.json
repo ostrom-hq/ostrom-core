@@ -1,0 +1,99 @@
+{
+  "format": "compat.canonical/1",
+  "cases": [
+    {
+      "name": "empty-object",
+      "inputJson": "{}",
+      "canonical": "{}",
+      "utf8Hex": "7b7d",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "name": "empty-array",
+      "inputJson": "[]",
+      "canonical": "[]",
+      "utf8Hex": "5b5d",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "name": "scalars",
+      "inputJson": "[null,true,false,0,1,-1,\"x\"]",
+      "canonical": "[null,true,false,0,1,-1,\"x\"]",
+      "utf8Hex": "5b6e756c6c2c747275652c66616c73652c302c312c2d312c2278225d",
+      "sha256": "6c402882e7eb7821abd7c7ee67eb9060ecb61586591db33ce6fc428ee7554de4"
+    },
+    {
+      "name": "key-order-ascii",
+      "note": "keys sorted by UTF-16 code units, like Array.prototype.sort; no locale",
+      "inputJson": "{\"9\":7,\"10\":6,\"b\":1,\"a\":2,\"B\":3,\"A\":4,\"_\":5,\"\":8,\"aa\":9,\"a-b\":10,\"a_b\":11,\"a.b\":12}",
+      "canonical": "{\"\":8,\"10\":6,\"9\":7,\"A\":4,\"B\":3,\"_\":5,\"a\":2,\"a-b\":10,\"a.b\":12,\"a_b\":11,\"aa\":9,\"b\":1}",
+      "utf8Hex": "7b22223a382c223130223a362c2239223a372c2241223a342c2242223a332c225f223a352c2261223a322c22612d62223a31302c22612e62223a31322c22615f62223a31312c226161223a392c2262223a317d",
+      "sha256": "8d06c1ff9ac43d7f8c811884771955164af45d59fd68c3f3a2c4dcf72af4263b"
+    },
+    {
+      "name": "key-order-unicode",
+      "note": "astral keys (surrogate pairs, 0xD8xx) sort BEFORE U+FF61 in UTF-16 order; code-point order would put them after",
+      "inputJson": "{\"é\":1,\"z\":2,\"ｱ\":3,\"｡\":4,\"😀\":5,\"𝔘\":6,\"Ω\":7,\" \":8}",
+      "canonical": "{\"z\":2,\" \":8,\"é\":1,\"Ω\":7,\"𝔘\":6,\"😀\":5,\"｡\":4,\"ｱ\":3}",
+      "utf8Hex": "7b227a223a322c22c2a0223a382c22c3a9223a312c22cea9223a372c22f09d9498223a362c22f09f9880223a352c22efbda1223a342c22efbdb1223a337d",
+      "sha256": "a60fcb0dfbac27c1b1933840bd17b980255eb4628d27ef30b1a1764bf1fa3a7f"
+    },
+    {
+      "name": "nested",
+      "inputJson": "{\"z\":{\"y\":[3,{\"b\":1,\"a\":[]}],\"x\":null},\"a\":[{\"d\":1,\"c\":2},[],{}]}",
+      "canonical": "{\"a\":[{\"c\":2,\"d\":1},[],{}],\"z\":{\"x\":null,\"y\":[3,{\"a\":[],\"b\":1}]}}",
+      "utf8Hex": "7b2261223a5b7b2263223a322c2264223a317d2c5b5d2c7b7d5d2c227a223a7b2278223a6e756c6c2c2279223a5b332c7b2261223a5b5d2c2262223a317d5d7d7d",
+      "sha256": "10b56bc9ea1ec9e8a52088e8f4b865d180db993de69de396bd2abdc2e9b1aade"
+    },
+    {
+      "name": "numbers-integers",
+      "inputJson": "[0,-0,1,-1,42,9007199254740991,-9007199254740991,9007199254740992,123456789012345680000,100000000000000000000,1e+21,-1e+21]",
+      "canonical": "[0,0,1,-1,42,9007199254740991,-9007199254740991,9007199254740992,123456789012345680000,100000000000000000000,1e+21,-1e+21]",
+      "utf8Hex": "5b302c302c312c2d312c34322c393030373139393235343734303939312c2d393030373139393235343734303939312c393030373139393235343734303939322c3132333435363738393031323334353638303030302c3130303030303030303030303030303030303030302c31652b32312c2d31652b32315d",
+      "sha256": "95baac65bd33444392c52cc1c871be3f2b81fca77cba0f36f17b92f346346883"
+    },
+    {
+      "name": "numbers-fractions",
+      "inputJson": "[0.1,0.2,0.30000000000000004,1.5,-1.5,0.000001,1e-7,1.7976931348623157e+308,5e-324,2.5e-8,0.4213,123.456,0.3333333333333333]",
+      "canonical": "[0.1,0.2,0.30000000000000004,1.5,-1.5,0.000001,1e-7,1.7976931348623157e+308,5e-324,2.5e-8,0.4213,123.456,0.3333333333333333]",
+      "utf8Hex": "5b302e312c302e322c302e33303030303030303030303030303030342c312e352c2d312e352c302e3030303030312c31652d372c312e37393736393331333438363233313537652b3330382c35652d3332342c322e35652d382c302e343231332c3132332e3435362c302e333333333333333333333333333333335d",
+      "sha256": "33c1ffffd8842dd106d0ebbe880da84676b70042a9411717e5543efc860ce329"
+    },
+    {
+      "name": "strings-escapes",
+      "inputJson": "[\"\\\"\",\"\\\\\",\"/\",\"\\b\\f\\n\\r\\t\",\"\\u0000\\u0001\\u001f\",\"  \",\"<>&'\",\"café\",\"ｱ😀𝔘\"]",
+      "canonical": "[\"\\\"\",\"\\\\\",\"/\",\"\\b\\f\\n\\r\\t\",\"\\u0000\\u0001\\u001f\",\"  \",\"<>&'\",\"café\",\"ｱ😀𝔘\"]",
+      "utf8Hex": "5b225c22222c225c5c222c222f222c225c625c665c6e5c725c74222c225c75303030305c75303030315c75303031667f222c22e280a8e280a9222c223c3e2627222c22636166c3a9222c22efbdb1f09f9880f09d9498225d",
+      "sha256": "5851d8a915727fdcb151997c283c45c10f812da7437535c8e4d31da66c899acc"
+    },
+    {
+      "name": "strings-lone-surrogates",
+      "note": "lone surrogates are written as \\uXXXX escapes (well-formed JSON.stringify, ES2019)",
+      "inputJson": "[\"\\ud800\",\"\\udfff\",\"a\\ud83db\",\"\\ude00\\ud83d\"]",
+      "canonical": "[\"\\ud800\",\"\\udfff\",\"a\\ud83db\",\"\\ude00\\ud83d\"]",
+      "utf8Hex": "5b225c7564383030222c225c7564666666222c22615c756438336462222c225c75646530305c7564383364225d",
+      "sha256": "1dd21188d287ef999cb0064e1cefb66897cfaf0f1cd46079baff6b656f3bd9ef"
+    },
+    {
+      "name": "array-order-kept",
+      "inputJson": "[3,1,2,\"b\",\"a\"]",
+      "canonical": "[3,1,2,\"b\",\"a\"]",
+      "utf8Hex": "5b332c312c322c2262222c2261225d",
+      "sha256": "50300122e6fdfef79ecb31e0447247453c80bc9fd0c146af68c052638f73572c"
+    },
+    {
+      "name": "unicode-text",
+      "inputJson": "{\"initiator\":\"dévelopeur·e « test » ✓ 𝔘\",\"label\":\"big 1e21 and small 0.000001\"}",
+      "canonical": "{\"initiator\":\"dévelopeur·e « test » ✓ 𝔘\",\"label\":\"big 1e21 and small 0.000001\"}",
+      "utf8Hex": "7b22696e69746961746f72223a2264c3a976656c6f70657572c2b76520c2ab207465737420c2bb20e29c9320f09d9498222c226c6162656c223a22626967203165323120616e6420736d616c6c20302e303030303031227d",
+      "sha256": "03a0a6fa6594bcf36c0dda1422a93e752edab673d6fab3274699811bc362207a"
+    }
+  ],
+  "codeOnly": [
+    {
+      "name": "undefined-omitted",
+      "note": "built in code: { a: 1, b: undefined, c: [1, undefined] } (undefined cannot appear in a JSON input)",
+      "canonical": "{\"a\":1,\"c\":[1,null]}"
+    }
+  ]
+}
