@@ -2,7 +2,6 @@ package dev.ostrom.core.receipts
 
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 
 /** Verifies receipts offline, against the public keys the caller trusts. */
 public interface ReceiptVerifier {
@@ -96,8 +95,8 @@ public class ReceiptVerifierImpl(trustedKeys: List<ReceiptPublicKey>) : ReceiptV
             return ReceiptVerification.Failed(ReceiptVerificationFailure.MALFORMED, null)
         }
         val digest = Digests.sha256Hex(bytes)
-        val field = (receipt[ReceiptSignerImpl.SIGNATURE] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
-            ?.let(SignatureField::parse)
+        val field = (receipt[ReceiptSignerImpl.SIGNATURE] as? JsonPrimitive)?.takeIf { it.isString }
+            ?.let { SignatureField.parse(it.content) }
         val key = field?.let { keys[it.kid] }
         val signature = field?.signature
         // same order of checks as the prototype's verifyReceipt

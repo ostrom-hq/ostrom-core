@@ -46,7 +46,7 @@ public class SignatureField(
                 if (i < 0) part to "" else part.substring(0, i) to part.substring(i + 1)
             }
             val counts = pairs.groupingBy { it.first }.eachCount()
-            val values = pairs.filter { counts[it.first] == 1 }.toMap()
+            val values = pairs.filter { counts.getValue(it.first) == 1 }.toMap()
             val signature = values["sig"]?.let(::decodeBase64OrNull)
             return SignatureField(parts.first(), values["kid"], values["sha256"], signature)
         }
