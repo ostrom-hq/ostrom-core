@@ -74,7 +74,7 @@ internal fun assignedVariable(word: String): String? {
 
 /** Whether a word assigns a variable that redirects git. */
 internal fun redirectingAssignment(word: String): Boolean {
-    val name = assignedVariable(word)?.uppercase() ?: return false
+    val name = (assignedVariable(word) ?: return false).uppercase()
     return name in REDIRECT_VARIABLES || name.startsWith("GIT_CONFIG")
 }
 

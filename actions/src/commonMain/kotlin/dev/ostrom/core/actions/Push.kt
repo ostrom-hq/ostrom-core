@@ -123,11 +123,10 @@ public data class PushTargets(
         }
         return PushBindResult.Bound(PushBinding(repository, bound.distinct().sortedWith(BOUND_ORDER), force))
     }
-
-    private companion object {
-        val BOUND_ORDER: Comparator<BoundRef> = compareBy<BoundRef> { it.ref }.thenBy { it.sha }
-    }
 }
+
+/** Bound refs sorted by name, then commit: the same push always binds the same list. */
+private val BOUND_ORDER: Comparator<BoundRef> = compareBy<BoundRef> { it.ref }.thenBy { it.sha }
 
 /**
  * One ref of a [PushBinding].

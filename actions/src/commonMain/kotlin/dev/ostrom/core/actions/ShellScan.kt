@@ -172,7 +172,7 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
         if (merge >= 0) {
             found += BuiltInActions.MERGE
             val target = mergeArguments(w, i, pr, merge)
-            merges += target?.toString() ?: "the current branch"
+            merges += if (target == null) "the current branch" else target.toString()
             // The first `gh pr merge` of the command names the pull request, as the prototype's `prOfCommand` read it.
             if (!mergeRead) mergePullRequest = target
             mergeRead = true
@@ -217,7 +217,7 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
             ) {
                 found += BuiltInActions.MERGE
                 val target = apiPullRequest(word)
-                merges += target?.toString() ?: "api: $word"
+                merges += if (target == null) "api: $word" else target.toString()
                 apiPull = apiPull ?: target
             }
             val ref = refAfter(word, "git/refs/heads/")
@@ -261,57 +261,55 @@ internal class ShellScan(private val protectedBranches: Set<String>) {
         if (url != null) return url
         return number?.let { PullRequestRef(it, repo?.first, repo?.second) }
     }
-
-    private companion object {
-        /** Pushes read one by one in a command; more are refused. */
-        const val MAX_PUSHES = 16
-        val HELM_VERBS = setOf("upgrade", "install", "rollback", "uninstall")
-        val TERRAFORM_VERBS = setOf("apply", "destroy")
-        val PULUMI_VERBS = setOf("up", "update", "destroy")
-        val HELMFILE_VERBS = setOf("apply", "sync", "destroy", "delete")
-        val ARGOCD_VERBS = setOf("sync", "rollback", "delete", "set")
-        val PUBLISH_VERBS = setOf("deploy", "publish", "redeploy", "rollback", "remove")
-        val KUBECTL_VERBS = setOf(
-            "apply", "rollout", "delete", "scale", "patch", "replace", "edit", "set", "create", "run", "expose",
-            "autoscale", "label", "annotate", "taint", "drain", "cordon",
-        )
-        val IMAGE_GROUPS = setOf("image", "compose", "manifest")
-
-        /** git commands that push without being `git push`. */
-        val PUSH_PLUMBING = setOf("send-pack", "http-push")
-
-        /** GraphQL mutations that merge, and those that write on a branch. */
-        val GRAPHQL_MERGES = listOf("mergePullRequest", "enablePullRequestAutoMerge", "mergeBranch")
-        val GRAPHQL_WRITES = listOf("createCommitOnBranch", "updateRef", "updateRefs")
-
-        /**
-         * The commands of git (porcelain and plumbing, `git help -a`): an alias cannot take their name, so only another
-         * verb may be an alias that pushes.
-         */
-        val GIT_COMMANDS = setOf(
-            "add", "am", "annotate", "apply", "archive", "bisect", "blame", "branch", "bugreport", "bundle", "cat-file",
-            "check-attr", "check-ignore", "check-mailmap", "check-ref-format", "checkout", "checkout-index", "cherry",
-            "cherry-pick", "citool", "clean", "clone", "column", "commit", "commit-graph", "commit-tree", "config",
-            "count-objects", "credential", "describe", "diagnose", "diff", "diff-files", "diff-index", "diff-tree",
-            "difftool", "fast-export", "fast-import", "fetch", "fetch-pack", "filter-branch", "fmt-merge-msg",
-            "for-each-ref", "for-each-repo", "format-patch", "fsck", "gc", "get-tar-commit-id", "grep", "gui",
-            "hash-object", "help", "hook", "index-pack", "init", "instaweb", "interpret-trailers", "log", "ls-files",
-            "ls-remote", "ls-tree", "mailinfo", "mailsplit", "maintenance", "merge", "merge-base", "merge-file",
-            "merge-index", "merge-tree", "mergetool", "mktag", "mktree", "multi-pack-index", "mv", "name-rev", "notes",
-            "pack-objects", "pack-refs", "patch-id", "prune", "prune-packed", "pull", "range-diff", "read-tree",
-            "rebase", "reflog", "remote", "repack", "replace", "replay", "request-pull", "rerere", "reset", "restore",
-            "rev-list", "rev-parse", "revert", "rm", "send-email", "shortlog", "show", "show-branch", "show-index",
-            "show-ref", "sparse-checkout", "stash", "status", "stripspace", "submodule", "switch", "symbolic-ref",
-            "tag", "unpack-file", "unpack-objects", "update-index", "update-ref", "update-server-info", "var",
-            "verify-commit", "verify-pack", "verify-tag", "version", "whatchanged", "worktree", "write-tree", "lfs",
-        )
-        val PRODUCTION = setOf("prod", "production")
-        val EAS_VERBS = setOf("submit", "build")
-
-        /** Options of `gh pr merge` that take a value: the value is never the pull request number. */
-        val GH_MERGE_VALUE_OPTIONS = listOf(
-            "-R", "--repo", "-b", "--body", "-F", "--body-file", "-t", "--subject", "-A", "--author-email",
-            "--match-head-commit",
-        )
-    }
 }
+
+/** Pushes read one by one in a command; more are refused. */
+private const val MAX_PUSHES = 16
+private val HELM_VERBS = setOf("upgrade", "install", "rollback", "uninstall")
+private val TERRAFORM_VERBS = setOf("apply", "destroy")
+private val PULUMI_VERBS = setOf("up", "update", "destroy")
+private val HELMFILE_VERBS = setOf("apply", "sync", "destroy", "delete")
+private val ARGOCD_VERBS = setOf("sync", "rollback", "delete", "set")
+private val PUBLISH_VERBS = setOf("deploy", "publish", "redeploy", "rollback", "remove")
+private val KUBECTL_VERBS = setOf(
+    "apply", "rollout", "delete", "scale", "patch", "replace", "edit", "set", "create", "run", "expose",
+    "autoscale", "label", "annotate", "taint", "drain", "cordon",
+)
+private val IMAGE_GROUPS = setOf("image", "compose", "manifest")
+
+/** git commands that push without being `git push`. */
+private val PUSH_PLUMBING = setOf("send-pack", "http-push")
+
+/** GraphQL mutations that merge, and those that write on a branch. */
+private val GRAPHQL_MERGES = listOf("mergePullRequest", "enablePullRequestAutoMerge", "mergeBranch")
+private val GRAPHQL_WRITES = listOf("createCommitOnBranch", "updateRef", "updateRefs")
+
+/**
+ * The commands of git (porcelain and plumbing, `git help -a`): an alias cannot take their name, so only another
+ * verb may be an alias that pushes.
+ */
+private val GIT_COMMANDS = setOf(
+    "add", "am", "annotate", "apply", "archive", "bisect", "blame", "branch", "bugreport", "bundle", "cat-file",
+    "check-attr", "check-ignore", "check-mailmap", "check-ref-format", "checkout", "checkout-index", "cherry",
+    "cherry-pick", "citool", "clean", "clone", "column", "commit", "commit-graph", "commit-tree", "config",
+    "count-objects", "credential", "describe", "diagnose", "diff", "diff-files", "diff-index", "diff-tree",
+    "difftool", "fast-export", "fast-import", "fetch", "fetch-pack", "filter-branch", "fmt-merge-msg",
+    "for-each-ref", "for-each-repo", "format-patch", "fsck", "gc", "get-tar-commit-id", "grep", "gui",
+    "hash-object", "help", "hook", "index-pack", "init", "instaweb", "interpret-trailers", "log", "ls-files",
+    "ls-remote", "ls-tree", "mailinfo", "mailsplit", "maintenance", "merge", "merge-base", "merge-file",
+    "merge-index", "merge-tree", "mergetool", "mktag", "mktree", "multi-pack-index", "mv", "name-rev", "notes",
+    "pack-objects", "pack-refs", "patch-id", "prune", "prune-packed", "pull", "range-diff", "read-tree",
+    "rebase", "reflog", "remote", "repack", "replace", "replay", "request-pull", "rerere", "reset", "restore",
+    "rev-list", "rev-parse", "revert", "rm", "send-email", "shortlog", "show", "show-branch", "show-index",
+    "show-ref", "sparse-checkout", "stash", "status", "stripspace", "submodule", "switch", "symbolic-ref",
+    "tag", "unpack-file", "unpack-objects", "update-index", "update-ref", "update-server-info", "var",
+    "verify-commit", "verify-pack", "verify-tag", "version", "whatchanged", "worktree", "write-tree", "lfs",
+)
+private val PRODUCTION = setOf("prod", "production")
+private val EAS_VERBS = setOf("submit", "build")
+
+/** Options of `gh pr merge` that take a value: the value is never the pull request number. */
+private val GH_MERGE_VALUE_OPTIONS = listOf(
+    "-R", "--repo", "-b", "--body", "-F", "--body-file", "-t", "--subject", "-A", "--author-email",
+    "--match-head-commit",
+)

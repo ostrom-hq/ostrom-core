@@ -127,9 +127,6 @@ public class ActionClassifierImpl(
         val MIGRATION_PATHS = listOf("db/migration/", "db/migrate/", "prisma/migrations/")
 
         fun migrationPath(text: String): Boolean = MIGRATION_PATHS.any { text.contains(it, ignoreCase = true) }
-        val CLIENT_MESSAGE_TOOLS = listOf(
-            "send_validated_message", "discord_send", "discord_reply", "chat_postmessage", "send_email", "slack_post",
-        )
 
         fun kindOfTool(tool: String): SubjectKind? {
             val lower = tool.lowercase()
@@ -156,3 +153,8 @@ public class ActionClassifierImpl(
         const val BLINDED = "'\"`$(){}"
     }
 }
+
+/** The MCP tools that write to a client (the support's validated message, Discord, Slack, e-mail). */
+private val CLIENT_MESSAGE_TOOLS = listOf(
+    "send_validated_message", "discord_send", "discord_reply", "chat_postmessage", "send_email", "slack_post",
+)

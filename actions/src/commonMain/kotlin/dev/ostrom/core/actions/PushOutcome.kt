@@ -21,7 +21,8 @@ internal class PushOutcome(
             val pushes = scan.pushes
             // An alias is read where it runs; one that may push is a push Ostrom cannot read.
             val aliasPush = git != null && scan.aliases.any { alias ->
-                aliasMayPush(git.read(alias.directories)?.config?.get("alias.${alias.verb}"))
+                val state = git.read(alias.directories)
+                state != null && aliasMayPush(state.config.get("alias.${alias.verb}"))
             }
             if (pushes.isEmpty() && !aliasPush) return null
             val explicit = pushes.flatMap { it.explicitDestinations() }
@@ -41,7 +42,7 @@ internal class PushOutcome(
                     is Resolution.Landed -> targets = resolution.targets
                 }
             }
-            val destinations = targets?.refs?.map { it.destination } ?: explicit
+            val destinations = if (targets == null) explicit else targets.refs.map { it.destination }
             val classes = HashSet<String>()
             // A push Ostrom cannot read may land on main: the gate of main refuses it.
             val protected = destinations.any { d -> protectedBranches.any { it.equals(d, ignoreCase = true) } }
