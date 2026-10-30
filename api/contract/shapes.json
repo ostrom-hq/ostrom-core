@@ -599,6 +599,13 @@
       }
     }
   },
+  "CheckAttestation": {
+    "enum": [
+      "workstation_declared",
+      "isolated_runner",
+      "ci"
+    ]
+  },
   "CheckOutcome": {
     "enum": [
       "passed",
@@ -2565,6 +2572,13 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "attestation": {
+        "type": {
+          "ref": "CheckAttestation"
+        },
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -2823,6 +2837,29 @@
       },
       "reason": {
         "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "checks": {
+        "type": {
+          "array": {
+            "ref": "RuleGateCheck"
+          }
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "RuleGateCheck": {
+    "properties": {
+      "check": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "attested": {
+        "type": "boolean",
         "required": false,
         "nullable": false
       }

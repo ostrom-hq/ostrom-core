@@ -4,7 +4,6 @@
 # A "!" line, kept by hand when regenerating, is a route main serves in another shape than the contract's: its
 # operation stays planned until the server serves the contract's shape. Regenerate in the pull request that changes
 # what main serves.
-! POST /api/v1/auth/device/token  old status body on main; the contract's 428/400/200 come with ostrom-server#62
 ! GET /api/v1/auth/me  main answers Profile, the contract's getMe answers Me
 DELETE /api/v1/accounts/{}
 DELETE /api/v1/artifacts/{}

@@ -65,6 +65,7 @@ import dev.ostrom.core.api.models.ReceiptSubject
 import dev.ostrom.core.api.models.ReportCheckRequest
 import dev.ostrom.core.api.models.Rule
 import dev.ostrom.core.api.models.RuleGate
+import dev.ostrom.core.api.models.RuleGateCheck
 import dev.ostrom.core.api.models.RuleSource
 import dev.ostrom.core.api.models.ScriptApproval
 import dev.ostrom.core.api.models.ScriptSuggestion
@@ -155,6 +156,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ReportCheckRequest.serializer(),
     Rule.serializer(),
     RuleGate.serializer(),
+    RuleGateCheck.serializer(),
     RuleSource.serializer(),
     ScriptApproval.serializer(),
     ScriptSuggestion.serializer(),

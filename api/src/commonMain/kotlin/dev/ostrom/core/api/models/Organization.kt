@@ -193,12 +193,28 @@ public data class Rule(
  * @property actions The boundary actions gated.
  * @property approvers GitHub logins of those who can say yes.
  * @property reason Why the gate exists.
+ * @property checks Checks the gated actions need, each with the attestation it requires; absent, a check run
+ *   declared by the workstation is accepted (and shown as declared).
  */
 @Serializable
 public data class RuleGate(
     val actions: List<GateAction>,
     val approvers: List<String>,
     val reason: String? = null,
+    val checks: List<RuleGateCheck>? = null,
+)
+
+/**
+ * A check a rule gate requires before its actions pass.
+ *
+ * @property check Id of the check node in the organization's workflows.
+ * @property attested When true, only a run attested by an Ostrom runner or the CI ([CheckAttestation.ISOLATED_RUNNER],
+ *   [CheckAttestation.CI]) satisfies the gate; a run declared by the workstation does not.
+ */
+@Serializable
+public data class RuleGateCheck(
+    val check: String,
+    val attested: Boolean = false,
 )
 
 /** Strength of a rule. */

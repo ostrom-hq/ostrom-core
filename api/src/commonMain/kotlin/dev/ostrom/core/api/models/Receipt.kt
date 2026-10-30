@@ -135,6 +135,9 @@ public data class ReceiptPackage(
  * @property outcome What happened (`passed`, `failed`, `approved`, `sent`…).
  * @property detail Free text detail.
  * @property ref Id of a related record (the gate's receipt, `rcpt_…`, for a gate node).
+ * @property attestation Where the run of a check node comes from: required when [kind] is `check`, absent on the
+ *   others. Signed with the rest of the node. A check node of a receipt signed before the field has none, and reads
+ *   as [CheckAttestation.WORKSTATION_DECLARED].
  */
 @Serializable
 public data class ReceiptNode(
@@ -145,7 +148,38 @@ public data class ReceiptNode(
     val outcome: String,
     val detail: String? = null,
     val ref: String? = null,
+    val attestation: CheckAttestation? = null,
 )
+
+/**
+ * Where a check run comes from. Serial names are part of the signed format and never change.
+ */
+@Serializable(with = CheckAttestation.Serializer::class)
+public enum class CheckAttestation(
+    /** The JSON value. */
+    public val value: String,
+) {
+    /** The developer's machine ran the check and reported the result; nothing proves it ran. */
+    WORKSTATION_DECLARED("workstation_declared"),
+
+    /** An Ostrom runner ran the check in an isolated session. */
+    ISOLATED_RUNNER("isolated_runner"),
+
+    /** The GitHub check run of the Ostrom App, read and verified by the server. */
+    CI("ci"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<CheckAttestation>(
+        "dev.ostrom.core.api.models.CheckAttestation",
+        CheckAttestation.entries,
+        CheckAttestation.UNKNOWN,
+        CheckAttestation::value,
+    )
+}
 
 /**
  * A receipt before signing: every field of [Receipt] but the signature. The signer adds nothing else: the caller

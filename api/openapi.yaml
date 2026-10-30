@@ -485,7 +485,7 @@ paths:
   /api/v1/auth/device/token:
     post:
       operationId: pollDeviceLogin
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Exchange a confirmed device code for a token (RFC 8628 section 3.5). 428 `authorization_pending` while
@@ -11031,6 +11031,16 @@ components:
       - failed
       - timeout
       - skipped
+    CheckAttestation:
+      type: string
+      description: 'Where a check run comes from. `workstation_declared`: the developer''s machine ran it and reported
+        the result, nothing proves it ran. `isolated_runner`: an Ostrom runner ran it in an isolated session. `ci`:
+        the GitHub check run of the Ostrom App, read and verified by the server. Shown on every check of a receipt;
+        a rule gate can refuse a declared run (RuleGateCheck).'
+      enum:
+      - workstation_declared
+      - isolated_runner
+      - ci
     CheckRun:
       type: object
       description: A run of a check script, reported by the launcher. A failed enforced check blocks the action it guards
@@ -13310,12 +13320,26 @@ components:
           type: string
         ref:
           type: string
+        attestation:
+          $ref: '#/components/schemas/CheckAttestation'
+          description: Where the check run comes from. Required on a check node (`kind` is `check`), absent on the
+            others; part of the signed receipt (the receipt's signature and the workflow subject's preimage). A check
+            node of a receipt signed before this field has none, and reads as `workstation_declared`.
       required:
       - id
       - workflowId
       - kind
       - label
       - outcome
+      if:
+        properties:
+          kind:
+            const: check
+        required:
+        - kind
+      then:
+        required:
+        - attestation
     ReceiptPackage:
       type: object
       description: The session package a workflow receipt reports on
@@ -13498,9 +13522,28 @@ components:
           description: GitHub logins
         reason:
           type: string
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleGateCheck'
+          description: Checks the gated actions need, each with the attestation it requires. Absent or empty, a
+            check run declared by the workstation is accepted, and shown as declared.
       required:
       - actions
       - approvers
+    RuleGateCheck:
+      type: object
+      description: A check a rule gate requires before its actions pass
+      properties:
+        check:
+          type: string
+          description: Id of the check node in the organization's workflows
+        attested:
+          type: boolean
+          description: When true, only a run attested by an Ostrom runner or the CI (`isolated_runner`, `ci`)
+            satisfies the gate; a run declared by the workstation (`workstation_declared`) does not. False by default.
+      required:
+      - check
     NewRule:
       type: object
       description: A rule written by the team

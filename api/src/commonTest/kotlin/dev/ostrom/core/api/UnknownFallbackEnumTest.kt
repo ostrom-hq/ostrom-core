@@ -9,6 +9,7 @@ import dev.ostrom.core.api.models.ApprovalStatus
 import dev.ostrom.core.api.models.DiffStats
 import dev.ostrom.core.api.models.ArtifactType
 import dev.ostrom.core.api.models.AutomationTriggerKind
+import dev.ostrom.core.api.models.CheckAttestation
 import dev.ostrom.core.api.models.CheckOutcome
 import dev.ostrom.core.api.models.CheckState
 import dev.ostrom.core.api.models.GateMode
@@ -72,6 +73,7 @@ class UnknownFallbackEnumTest {
             AutomationTriggerKind.entries, AutomationTriggerKind.Serializer, AutomationTriggerKind.UNKNOWN,
             AutomationTriggerKind::value,
         )
+        check(CheckAttestation.entries, CheckAttestation.Serializer, CheckAttestation.UNKNOWN, CheckAttestation::value)
         check(CheckOutcome.entries, CheckOutcome.Serializer, CheckOutcome.UNKNOWN, CheckOutcome::value)
         check(CheckState.entries, CheckState.Serializer, CheckState.UNKNOWN, CheckState::value)
         check(GateMode.entries, GateMode.Serializer, GateMode.UNKNOWN, GateMode::value)
