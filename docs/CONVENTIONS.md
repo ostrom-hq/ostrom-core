@@ -398,8 +398,8 @@ Cleanup that must run when the caller is cancelled (kill a child process, close 
 // worker-tutorial: Env.kt (expect) + Env.native.kt (actual, platform.posix.getenv)
 expect fun getEnv(name: String): String?
 
-// The serving process only ever reads OSTROM_DATABASE_URL (runtime role); `ostrom-server migrate` reads
-// OSTROM_DATABASE_MIGRATION_URL (owner role) in its own process (section 16.1).
+// The serving process reads OSTROM_DATABASE_URL (runtime role) and never the migration URL; `ostrom-server migrate`
+// has its own MigrationConfig that reads only OSTROM_DATABASE_MIGRATION_URL (section 16.1).
 data class ServerConfig(val port: Int, val databaseUrl: String, val publicUrl: String) {
     companion object {
         fun fromEnvironment(): ServerConfig = ServerConfig(
@@ -564,7 +564,8 @@ Every module also has `jvm()` for tests and coverage only (section 7.2).
   `hfhbd/postgres-native-sqldelight`, itself unmaintained since 2023 and limited to one connection: not usable as is).
 - Queries are written with bound parameters only; never string interpolation of a value into SQL.
 - **Migrations are versioned SQL files**, applied by sqlx4k's migrator in a separate step (`ostrom-server migrate`, its
-  own process and job, with the owner credentials), never by the serving process; a published migration is never edited
+  own process and job, with the owner credentials), never by the serving process; in local single-user mode (SQLite,
+  no roles) the launcher runs `migrate` itself before starting the server. A published migration is never edited
   (`teamcode:AGENTS.md`, the Flyway rule). Each migration exists in a PostgreSQL and a SQLite flavour when the dialects
   differ, and the contract test suite (section 7.3) runs on both. Row-Level Security exists only in the PostgreSQL
   flavour (section 16.1).
@@ -649,7 +650,7 @@ Template: [`docs/conventions/.github/workflows/build.yml`](conventions/.github/w
 - Package managers: Gradle for Kotlin; **npm** for `ostrom-app` (Expo's default) and **pnpm** for `ostrom-web`. The
   pnpm variant of `build-ts.yml` is written in it, commented out: `pnpm/action-setup` (pinned by SHA) **before**
   `setup-node`, the version taken from `packageManager` in `package.json` (required), then `cache: pnpm`,
-  `pnpm install --frozen-lockfile` and `pnpm run <script>`.
+  `pnpm install --frozen-lockfile` and `pnpm run <script>` (no `--` before script arguments: `pnpm run test --coverage`).
 
 ---
 
@@ -800,15 +801,16 @@ CREATE POLICY gates_org ON gates
 
   Without an organization set, `current_setting(..., true)` gives NULL (or `''`, mapped to NULL): no row matches,
   nothing errors, nothing leaks. `organizations` uses `id` in place of `org_id`.
-- **Three roles, two processes.**
-  - *Owner* (`ostrom_owner`, `BYPASSRLS`): owns tables, policies and functions. Used only by `ostrom-server migrate`,
-    a separate process and deployment job reading `OSTROM_DATABASE_MIGRATION_URL`. `BYPASSRLS` lets schema and data
-    migrations see every row; each data migration has a test that asserts the number of rows it changes.
-  - *Runtime* (`ostrom_app`): the serving process, `OSTROM_DATABASE_URL` only; it never receives the migration URL.
-    Owns nothing, neither superuser nor `BYPASSRLS`, only `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the tables it needs and
-    `EXECUTE` on the lookup functions below.
-  - *Authentication lookup* (`ostrom_auth`, no login): owns the lookup functions and has its own `SELECT` policy on the
-    tables read before an organization is known.
+- **Three PostgreSQL roles, two processes** (SQLite has no roles and no RLS):
+  - *Owner* (`ostrom_owner`, `BYPASSRLS`, member of `ostrom_auth`): owns the tables and policies. Used only by
+    `ostrom-server migrate`, a separate process and deployment job reading `OSTROM_DATABASE_MIGRATION_URL`. `BYPASSRLS`
+    lets schema and data migrations see every row; each data migration has a test that asserts the rows it changes.
+  - *Runtime* (`ostrom_app`): the serving process and `ostrom-server bootstrap`, `OSTROM_DATABASE_URL` only. Owns
+    nothing, neither superuser nor `BYPASSRLS`; `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the tables it needs and `EXECUTE`
+    on the cross-organization functions below.
+  - *Cross-organization* (`ostrom_auth`, no login): owns the cross-organization functions (the migration creates them,
+    then `ALTER FUNCTION ... OWNER TO ostrom_auth`, `REVOKE EXECUTE ... FROM PUBLIC`, `GRANT EXECUTE ... TO ostrom_app`)
+    and has its own policies on exactly the tables those functions touch.
   A CI integration test connects as `ostrom_app` and proves it can neither read another organization's rows nor
   `ALTER`/`DROP` a table or a policy.
 - **No query outside an organization's transaction.** The infrastructure exposes one entry point,
@@ -816,11 +818,13 @@ CREATE POLICY gates_org ON gates
   `SELECT set_config('ostrom.org_id', $1, true)` first (`true`: transaction-local; `SET LOCAL` takes no bind parameter,
   and a session-level setting would leak to the next request on the pooled connection). Repositories of tenant tables
   only receive that transaction; they never see the pool.
-- **Before the organization is known** (resolving a token, a device or a session from its secret, redeeming a sign-in
-  link), the server calls a `SECURITY DEFINER` function owned by `ostrom_auth`, with a fixed `search_path`, that takes
-  the secret's hash and returns at most one principal (`org_id`, user, scopes). Tenant routes that list members or
-  tokens go through `withOrganization` like any other table. The functions are listed in `ostrom-server`'s
-  `docs/tenancy.md`, each with a test that it returns nothing for a wrong hash and cannot enumerate rows.
+- **Work before or across organizations** (resolving a token, device or session from its secret; signing in and
+  creating the account and session; issuing and redeeming a magic link or a device code; creating an organization;
+  listing a user's organizations; accepting an invitation) goes through `SECURITY DEFINER` functions owned by
+  `ostrom_auth`, one per operation, with a fixed `search_path`. Each takes exactly what the operation needs (a secret's
+  hash, the authenticated user) and returns or changes only that user's rows. They are listed in `ostrom-server`'s
+  `docs/tenancy.md`, each with a test that it does nothing for a wrong secret or another user and cannot enumerate rows.
+  Everything else, members and tokens of an organization included, goes through `withOrganization`.
 - The PostgreSQL flavour of a migration that creates a tenant table creates its policies in the same file; the SQLite
   flavour has no RLS. SQLite (tests, local single-user mode) relies on the same repository code filtering on `org_id`.
 - **One end-to-end test per resource** proves another organization neither sees nor changes it (list, read, update,
@@ -834,10 +838,11 @@ CREATE POLICY gates_org ON gates
   documentation. Every other route requires a credential.
 - Creating an organization, an account, a member or a long-lived token requires a **user session** from one of those
   sign-ins (or the device flow approved by such a session); an agent or device token never creates or replaces an
-  account, a member or a token. **Bootstrap** never goes through an open "create operator" route: either the first
-  sign-in of a fresh server becomes owner of the first organization, or, without an identity provider (local SQLite
-  mode, self-hosted offline), `ostrom-server bootstrap` run on the host (filesystem access to its configuration) creates
-  the first owner and prints a one-time sign-in link.
+  account, a member or a token. **Bootstrap** never goes through an open "create operator" route, nor "the first
+  sign-in wins": while a server has no organization, it accepts only the one-time setup link that
+  `ostrom-server bootstrap` prints on the host (runtime role, through a cross-organization function), and the sign-in
+  that presents it becomes owner of the first organization. The link expires and is single-use; this is the only
+  offline path too (local SQLite mode, self-hosted without an identity provider).
 - Console write routes (workflows, policies, gate actions, rules, members) require a user session and the right role.
 - The token given to an agent is scoped to its own session: it cannot mark a check as passed, close or reopen another
   session, or set its own cost. Check results are signed or recomputed by the server.
@@ -852,8 +857,13 @@ CREATE POLICY gates_org ON gates
 | --- | --- | --- |
 | CLI start-up | < 30 ms | `ostrom --version`, release binary, process start to exit |
 | CLI hook | < 15 ms | one hook invocation with its input on stdin, release binary, process start to exit (the hook path loads less than `--version`'s full command tree: keep it that way) |
-| Server start-up | < 200 ms | process start to the first `200` on the readiness route, with zero pending migrations. Readiness stays false while the schema version differs from the one the binary expects; `ostrom-server migrate` duration is reported by its own job, not in this budget |
+| Server start-up | < 200 ms | process start to the first `200` on the readiness route, on an already migrated database; `migrate` time is reported by its own job |
 | API p95 | < 50 ms | k6 at the nominal load written in the test, server and PostgreSQL on the same runner |
+
+Readiness is false while the schema is older than the minimum version the binary needs; a newer schema is accepted.
+Migrations follow **expand then contract**: a release only adds (columns nullable or defaulted, new tables); what the
+previous release still reads is removed one release later. So version N keeps serving on the N+1 schema during a
+rolling deploy, and rolling back one version needs no down-migration.
 
 How the gate stays meaningful on shared runners:
 
@@ -862,7 +872,7 @@ How the gate stays meaningful on shared runners:
 - Runner class: `ubuntu-24.04` (x64), written in the job. A failing budget is investigated, never retried until green;
   a budget changes only by a pull request that says why, with measurements.
 - Besides the absolute budget, each job builds `main` and the pull request in the same job and alternates their runs
-  (A/B on the same runner, no stored baseline). It fails when the pull request's median is over 20 % **and** over an
+  (A/B on the same runner, no stored baseline), each arm on its own database migrated by its own binary. It fails when the pull request's median is over 20 % **and** over an
   absolute margin (2 ms for CLI start-up and hook, 10 ms for server start-up, 5 ms for API p95) above `main`'s. A pull
   request that moves a measured value by more than 10 % says so with before/after.
 
