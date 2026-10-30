@@ -64,4 +64,13 @@ class AttributesTest {
         assertSame(left, left + Attributes.EMPTY)
         assertEquals("{a=Text(value=1), b=Text(value=3), c=Text(value=4)}", merged.toString())
     }
+
+    @Test
+    fun withoutDropsKeysAndKeepsTheSameSetWhenThereIsNothingToDrop() {
+        val set = Attributes.of("a" to "1", "b" to "2")
+
+        assertEquals(Attributes.of("b" to "2"), set.without(setOf("a", "z")))
+        assertSame(set, set.without(setOf("z")))
+        assertNotEquals(set, Attributes.of("a" to "1", "c" to "2"))
+    }
 }

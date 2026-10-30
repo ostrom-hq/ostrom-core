@@ -106,6 +106,35 @@ class TracerTest {
     }
 
     @Test
+    fun overwritingAKeyDoesNotUseTheBound() {
+        val bounded = TracerImpl(SteppingClock(), SequentialIds(), Sampler.parentBasedRatio(1.0), { ended += it }, 2)
+        val span = bounded.startSpan("loop", attributes = Attributes.of("a" to "1"))
+        repeat(5) { span.setAttribute("a", it.toLong()) }
+        span.setAttribute("b", true)
+        span.end()
+
+        assertEquals(listOf("a", "b"), ended.single().attributes.entries.map { it.key })
+        assertEquals(AttributeValue.Integer(4), ended.single().attributes["a"])
+    }
+
+    @Test
+    fun unsampledSpansCanBeRecordedForAProcessorThatKeepsSome() {
+        val tracer = TracerImpl(
+            SteppingClock(),
+            SequentialIds(),
+            Sampler.parentBasedRatio(0.0),
+            { ended += it },
+            recordUnsampled = true,
+        )
+        val span = tracer.startSpan("gen_ai.chat")
+        span.setAttribute("gen_ai.system", "openrouter")
+        span.end()
+
+        assertFalse(ended.single().context.sampled)
+        assertEquals(AttributeValue.Text("openrouter"), ended.single().attributes["gen_ai.system"])
+    }
+
+    @Test
     fun setAttributesCopiesEveryEntry() {
         val span = tracer.startSpan("bulk")
         span.setAttributes(Attributes.of("x" to "1", "y" to "2"))

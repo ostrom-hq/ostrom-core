@@ -125,6 +125,8 @@ private class HistogramInstrument(
     private val series = SeriesMap(maxSeries) { HistogramCell(bounds.size + 1) }
 
     override fun record(value: Double, attributes: Attributes) {
+        // NaN or an infinity would stay in the cumulative sum, min and max until the process restarts.
+        if (!value.isFinite()) return
         val cell = series.cell(attributes)
         var bucket = 0
         while (bucket < bounds.size && value > bounds[bucket]) bucket++

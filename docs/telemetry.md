@@ -13,8 +13,8 @@ dependency on an OpenTelemetry SDK: `opentelemetry-kotlin` publishes no Linux, m
 | Meter | `metrics/MeterImpl.kt` | counters, explicit-bucket histograms, gauges; lock-free recording; cumulative temporality; 1 000 series per instrument then one `otel.metric.overflow=true` series |
 | Logs | `logs/LogRecord.kt` | records linked to their trace and span (Loki ↔ Tempo) |
 | OTLP encoder | `otlp/OtlpEncoder.kt` | protobuf, decoded in tests by the official `opentelemetry-proto` classes |
-| Export | `export/` | bounded queue (2 048), batches of 512 every 5 s, retries on 429/502/503/504 with `Retry-After` up to 30 s; never blocks a request, every drop counted in `ostrom.telemetry.dropped{destination,reason}` |
-| Langfuse | `genai/ModelCall.kt` | a model call is a span with the GenAI conventions and Langfuse's `langfuse.*` keys; only those spans go to Langfuse |
+| Export | `export/` | bounded queue (2 048), batches of 512 every 5 s, retries on 429/502/503/504 with `Retry-After` up to 30 s; never blocks a request, every drop counted in `ostrom.telemetry.dropped{destination,reason}` (`queue_full`, `rejected`, `retries_exhausted`, `closed`, `collect_failed`) |
+| Langfuse | `genai/ModelCall.kt` | a model call is a span with the GenAI conventions and Langfuse's `langfuse.*` keys; only those spans go to Langfuse, every one of them whatever `OTEL_TRACES_SAMPLER_ARG` (Langfuse is the cost record); the trace backend gets them without prompt or completion |
 | PostHog | `analytics/` | typed factories for every event, `/batch/` encoder and client |
 | Wiring | `Telemetry.kt`, `TelemetrySettings.kt` | one object built in the composition root; nothing configured = nothing sent |
 

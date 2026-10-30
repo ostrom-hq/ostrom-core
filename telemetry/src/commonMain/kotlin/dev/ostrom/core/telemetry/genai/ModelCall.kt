@@ -78,8 +78,8 @@ public data class ModelCall(
         orgId?.let { put("langfuse.trace.metadata.org_id", it) }
         sessionId?.let { put("langfuse.session.id", it) }
         if (capture == ContentCapture.FULL) {
-            input?.let { put("langfuse.observation.input", it.take(MAX_CONTENT_CHARS)) }
-            output?.let { put("langfuse.observation.output", it.take(MAX_CONTENT_CHARS)) }
+            input?.let { put(INPUT, it.take(MAX_CONTENT_CHARS)) }
+            output?.let { put(OUTPUT, it.take(MAX_CONTENT_CHARS)) }
         }
     }.build()
 
@@ -92,6 +92,21 @@ public data class ModelCall(
         public const val MAX_CONTENT_CHARS: Int = 32_768
 
         private const val OBSERVATION_TYPE = "langfuse.observation.type"
+        private const val INPUT = "langfuse.observation.input"
+        private const val OUTPUT = "langfuse.observation.output"
+        private val CONTENT = setOf(INPUT, OUTPUT)
+
+        /**
+         * The span without the prompt and the completion: what the trace backend (Tempo) receives, whatever the
+         * organization's choice. Content only ever goes to Langfuse.
+         *
+         * @param span A finished span.
+         * @return The same span, or a copy without the content attributes.
+         */
+        public fun withoutContent(span: SpanData): SpanData {
+            val kept = span.attributes.without(CONTENT)
+            return if (kept === span.attributes) span else span.copy(attributes = kept)
+        }
 
         /**
          * True for the spans Langfuse should receive: model calls only. The rest of a trace goes to Tempo.

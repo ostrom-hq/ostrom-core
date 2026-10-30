@@ -24,7 +24,6 @@ import dev.ostrom.core.telemetry.trace.Tracer
 import dev.ostrom.core.telemetry.trace.TracerImpl
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Clock
@@ -87,7 +86,8 @@ public interface Telemetry {
 }
 
 private class DisabledTelemetry(clock: Clock) : Telemetry {
-    override val tracer: Tracer = TracerImpl(clock, RandomIdGenerator(), { _, _ -> false }, {})
+    // Keeps the parent's decision, so a hop without telemetry does not cut the trace of the services after it.
+    override val tracer: Tracer = TracerImpl(clock, RandomIdGenerator(), { parent, _ -> parent?.sampled == true }, {})
     override val meter: Meter = NoopMeter
     override fun log(record: LogRecord) = Unit
     override fun capture(event: ProductEvent) = Unit
@@ -105,13 +105,21 @@ private class RunningTelemetry(
     config: ExportConfig,
 ) : Telemetry {
     private val meterImpl = MeterImpl(clock)
-    private val encoder = OtlpEncoder(resource)
+
+    // The service name and environment of the settings (OTEL_SERVICE_NAME, OTEL_RESOURCE_ATTRIBUTES) win, so every
+    // destination names the process the same way.
+    private val encoder = OtlpEncoder(
+        resource.copy(serviceName = settings.serviceName, environment = settings.environment),
+    )
+    private val clients = mutableListOf<HttpClient>()
+
+    private fun client(): HttpClient = httpClient().also { clients += it }
     private val dropped = meterImpl.counter(
         name = "ostrom.telemetry.dropped",
         unit = "{item}",
         description = "Telemetry items dropped because a backend was slow, down or refused them.",
     )
-    private val otlp = settings.otlp?.let { KtorOtlpTransport(httpClient(), it) }
+    private val otlp = settings.otlp?.let { KtorOtlpTransport(client(), it) }
     private val spans = otlp?.let { transport ->
         BatchExporter(encoder::encodeSpans, { body -> transport.send(Signal.TRACES, body) }, config, drops("traces"))
     }
@@ -122,11 +130,11 @@ private class RunningTelemetry(
         PeriodicMetricReader(meterImpl::collect, encoder::encodeMetrics, transport, onDrop = drops("metrics"))
     }
     private val langfuse = settings.langfuse?.let { endpoint ->
-        val transport = KtorOtlpTransport(httpClient(), endpoint)
+        val transport = KtorOtlpTransport(client(), endpoint)
         BatchExporter(encoder::encodeSpans, { body -> transport.send(Signal.TRACES, body) }, config, drops("langfuse"))
     }
     private val events = settings.postHog?.let { postHog ->
-        val client = PostHogClient(httpClient(), postHog)
+        val client = PostHogClient(client(), postHog)
         val postHogEncoder = PostHogEncoder(postHog, settings.serviceName, resource.serviceVersion)
         BatchExporter(postHogEncoder::encode, client::send, config, drops("posthog"))
     }
@@ -134,7 +142,14 @@ private class RunningTelemetry(
     private val batchJobs = batches.map { it.start(scope) }
     private val metricsJob = metrics?.start(scope)
 
-    override val tracer: Tracer = TracerImpl(clock, ids, Sampler.parentBasedRatio(settings.samplingRatio), ::onSpanEnd)
+    override val tracer: Tracer = TracerImpl(
+        clock = clock,
+        ids = ids,
+        sampler = Sampler.parentBasedRatio(settings.samplingRatio),
+        processor = ::onSpanEnd,
+        // Langfuse is the cost and token record: every model call reaches it, whatever the trace sampling.
+        recordUnsampled = langfuse != null,
+    )
     override val meter: Meter = meterImpl
 
     override fun log(record: LogRecord) {
@@ -153,10 +168,12 @@ private class RunningTelemetry(
             batchJobs.joinAll()
         }
         batchJobs.forEach { it.cancel() }
+        clients.forEach { it.close() }
     }
 
     private fun onSpanEnd(span: SpanData) {
-        spans?.offer(span)
+        // Prompts and completions never reach the trace backend, only Langfuse (and only when the org allows it).
+        if (span.context.sampled) spans?.offer(ModelCall.withoutContent(span))
         if (ModelCall.isModelCall(span)) langfuse?.offer(span)
     }
 

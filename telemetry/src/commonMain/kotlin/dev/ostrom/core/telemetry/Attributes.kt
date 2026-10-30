@@ -54,9 +54,24 @@ public class Attributes private constructor(public val entries: List<Attribute>)
         return Attributes(entries.filterNot { it.key in overridden } + other.entries)
     }
 
-    override fun equals(other: Any?): Boolean = other is Attributes && other.key == key
+    /**
+     * Removes [keys].
+     *
+     * @param keys The keys to drop.
+     * @return This set when it holds none of them, else a new set.
+     */
+    public fun without(keys: Set<String>): Attributes =
+        if (entries.none { it.key in keys }) this else Attributes(entries.filterNot { it.key in keys })
 
-    override fun hashCode(): Int = key.hashCode()
+    // Keys are unique in a set, so two sets are equal when they have the same size and every entry of one is in the
+    // other. Neither check allocates: a meter looks a series up by its attributes on every recording.
+    override fun equals(other: Any?): Boolean =
+        other is Attributes && other.entries.size == entries.size && entries.all { other[it.key] == it.value }
+
+    // Order-independent, like equals; computed once.
+    private val hash: Int by lazy(LazyThreadSafetyMode.PUBLICATION) { entries.sumOf { it.hashCode() } }
+
+    override fun hashCode(): Int = hash
 
     override fun toString(): String = entries.joinToString(prefix = "{", postfix = "}") { "${it.key}=${it.value}" }
 
@@ -81,6 +96,9 @@ public class Attributes private constructor(public val entries: List<Attribute>)
 
         /** Sets an attribute of any supported type. @return This builder. */
         public fun put(attribute: Attribute): Builder = apply { values[attribute.key] = attribute.value }
+
+        /** @return True when [key] is already set. */
+        public operator fun contains(key: String): Boolean = key in values
 
         /** @return The set built so far. */
         public fun build(): Attributes =

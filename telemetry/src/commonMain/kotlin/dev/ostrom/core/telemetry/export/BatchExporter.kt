@@ -19,6 +19,12 @@ public enum class DropReason(public val wire: String) {
 
     /** The backend kept failing after every retry. */
     RETRIES_EXHAUSTED("retries_exhausted"),
+
+    /** Offered after shutdown: the process is stopping. */
+    CLOSED("closed"),
+
+    /** Reading the instruments failed (a gauge callback threw): that export is lost, the next one is not. */
+    COLLECT_FAILED("collect_failed"),
 }
 
 /**
@@ -88,9 +94,9 @@ public class BatchExporter<T>(
      * @return False when the queue was full or closed and the item was dropped.
      */
     public fun offer(item: T): Boolean {
-        val queued = queue.trySend(item).isSuccess
-        if (!queued) onDrop(DropReason.QUEUE_FULL, 1)
-        return queued
+        val result = queue.trySend(item)
+        if (result.isFailure) onDrop(if (result.isClosed) DropReason.CLOSED else DropReason.QUEUE_FULL, 1)
+        return result.isSuccess
     }
 
     /**

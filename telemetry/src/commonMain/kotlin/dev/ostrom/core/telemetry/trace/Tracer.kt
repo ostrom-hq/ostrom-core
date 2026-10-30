@@ -107,8 +107,11 @@ public suspend fun <T> Tracer.inSpan(
  * @param clock Reads the time; tests inject a fixed clock.
  * @param ids Makes ids.
  * @param sampler Decides which traces are recorded.
- * @param processor Receives every finished, sampled span.
+ * @param processor Receives every finished span that was recorded: the sampled ones, and with [recordUnsampled] the
+ * others too (`context.sampled` is then false, and they must not reach the trace backend).
  * @param maxAttributesPerSpan The attribute bound of one span.
+ * @param recordUnsampled Records spans the sampler left out, so that a processor can keep some of them whatever the
+ * sampling (model calls, which are the cost record in Langfuse).
  */
 public class TracerImpl(
     private val clock: Clock,
@@ -116,6 +119,7 @@ public class TracerImpl(
     private val sampler: Sampler,
     private val processor: (SpanData) -> Unit,
     private val maxAttributesPerSpan: Int = DEFAULT_MAX_ATTRIBUTES,
+    private val recordUnsampled: Boolean = false,
 ) : Tracer {
     override fun startSpan(name: String, kind: SpanKind, parent: SpanContext?, attributes: Attributes): Span {
         val validParent = parent?.takeIf { it.isValid }
@@ -137,6 +141,7 @@ public class TracerImpl(
             nowEpochNanos = { clock.epochNanos() },
             onEnd = processor,
             maxAttributes = maxAttributesPerSpan,
+            recording = context.sampled || recordUnsampled,
         )
     }
 

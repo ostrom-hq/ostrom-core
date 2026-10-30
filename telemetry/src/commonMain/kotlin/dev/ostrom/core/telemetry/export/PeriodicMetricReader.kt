@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -36,12 +37,22 @@ public class PeriodicMetricReader(
         }
     }
 
-    /** Collects and sends once; called by the loop and at shutdown so the last totals are not lost. */
+    /**
+     * Collects and sends once; called by the loop and at shutdown so the last totals are not lost. A gauge callback
+     * that throws loses this export (counted as [DropReason.COLLECT_FAILED]), never the loop nor the process.
+     */
     public suspend fun exportNow() {
-        val metrics = collect()
-        if (metrics.isNotEmpty()) {
-            val body = encode(metrics)
-            sendWithRetries(config) { transport.send(Signal.METRICS, body) }?.let { onDrop(it, metrics.size) }
+        val batch = try {
+            collect().takeIf { it.isNotEmpty() }?.let { metrics -> metrics.size to encode(metrics) }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            onDrop(DropReason.COLLECT_FAILED, 1)
+            null
+        }
+        if (batch != null) {
+            val (count, body) = batch
+            sendWithRetries(config) { transport.send(Signal.METRICS, body) }?.let { onDrop(it, count) }
         }
     }
 }

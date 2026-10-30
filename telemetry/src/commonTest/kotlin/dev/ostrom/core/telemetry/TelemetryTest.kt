@@ -15,15 +15,18 @@ import dev.ostrom.core.telemetry.metrics.MetricData
 import dev.ostrom.core.telemetry.metrics.increment
 import dev.ostrom.core.telemetry.otlp.Resource
 import dev.ostrom.core.telemetry.trace.SequentialIds
+import dev.ostrom.core.telemetry.trace.SpanContext
 import dev.ostrom.core.telemetry.trace.SteppingClock
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,6 +36,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class TelemetryTest {
     private val requests = mutableListOf<String>()
+    private val bodies = mutableMapOf<String, String>()
     private val resource = Resource("ostrom-server", "1.0.0", "ci", "pod-1")
     private var status = HttpStatusCode.OK
 
@@ -43,6 +47,9 @@ class TelemetryTest {
                 dispatcher = StandardTestDispatcher(testScheduler)
                 addHandler { request ->
                     requests += request.url.toString()
+                    // Protobuf, read as Latin-1 so that the strings it carries can be searched.
+                    val bytes = (request.body as OutgoingContent.ByteArrayContent).bytes()
+                    bodies[request.url.toString()] = bytes.joinToString("") { Char(it.toInt() and 0xFF).toString() }
                     respond("", status)
                 }
             },
@@ -150,5 +157,72 @@ class TelemetryTest {
         assertEquals(Attributes.of("destination" to "traces", "reason" to "rejected"), dropped.attributes)
         assertEquals(1.0, dropped.value)
         assertEquals(listOf("http://collector:4318/v1/traces", "http://collector:4318/v1/metrics"), requests)
+    }
+
+    private val prompt = ModelCall(
+        ModelCallSource.GATEWAY,
+        "openrouter",
+        "m",
+        input = "the secret prompt",
+        output = "the secret answer",
+    ).toAttributes(ContentCapture.FULL)
+
+    @Test
+    fun promptsReachLangfuseOnlyNeverTheTraceBackend() = runTest {
+        val telemetry = Telemetry.start(everything.copy(postHog = null), resource, backgroundScope, clients())
+
+        telemetry.tracer.startSpan(ModelCall.SPAN_NAME, attributes = prompt).end()
+        telemetry.shutdown()
+
+        val tempo = bodies.getValue("http://collector:4318/v1/traces")
+        val langfuse = bodies.getValue("https://cloud.langfuse.com/api/public/otel/v1/traces")
+        assertTrue(tempo.contains("gen_ai.system") && !tempo.contains("secret"), tempo)
+        assertTrue(langfuse.contains("the secret prompt"), langfuse)
+    }
+
+    @Test
+    fun everyModelCallReachesLangfuseWhateverTheTraceSampling() = runTest {
+        val settings = everything.copy(postHog = null, samplingRatio = 0.0)
+        val telemetry = Telemetry.start(settings, resource, backgroundScope, clients())
+
+        telemetry.tracer.startSpan("GET /v1/gates").end()
+        telemetry.tracer.startSpan(ModelCall.SPAN_NAME, attributes = prompt).end()
+        telemetry.shutdown()
+
+        assertEquals(listOf("https://cloud.langfuse.com/api/public/otel/v1/traces"), requests)
+    }
+
+    @Test
+    fun theServiceNameAndEnvironmentOfTheSettingsNameEveryExport() = runTest {
+        val settings =
+            everything.copy(langfuse = null, postHog = null, serviceName = "ostrom-eu", environment = "staging")
+        val telemetry = Telemetry.start(settings, resource, backgroundScope, clients())
+
+        telemetry.tracer.startSpan("command").end()
+        telemetry.shutdown()
+
+        val body = bodies.getValue("http://collector:4318/v1/traces")
+        assertTrue(body.contains("ostrom-eu") && body.contains("staging") && !body.contains("ostrom-server"), body)
+    }
+
+    @Test
+    fun shutdownClosesTheClientsItMade() = runTest {
+        val made = mutableListOf<HttpClient>()
+        val factory = clients()
+        val telemetry = Telemetry.start(everything, resource, backgroundScope, { factory().also { made += it } })
+
+        telemetry.shutdown()
+
+        assertEquals(3, made.size)
+        assertTrue(made.none { it.isActive })
+    }
+
+    @Test
+    fun aHopWithoutTelemetryKeepsTheParentsSamplingDecision() {
+        val tracer = Telemetry.disabled().tracer
+        val sampledParent = SpanContext(traceIdHigh = 1, traceIdLow = 2, spanId = 3, sampled = true)
+
+        assertTrue(tracer.startSpan("hop", parent = sampledParent).context.sampled)
+        assertFalse(tracer.startSpan("hop", parent = sampledParent.copy(sampled = false)).context.sampled)
     }
 }

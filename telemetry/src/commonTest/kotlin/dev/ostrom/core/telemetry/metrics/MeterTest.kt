@@ -48,6 +48,18 @@ class MeterTest {
     }
 
     @Test
+    fun aHistogramIgnoresValuesThatAreNotFinite() {
+        val histogram = meter.histogram("latency", "s", "Latency.", listOf(1.0))
+        histogram.record(Double.NaN)
+        histogram.record(Double.POSITIVE_INFINITY)
+        histogram.record(0.5)
+
+        val point = (meter.collect().single() as MetricData.Distribution).points.single()
+        assertEquals(1L, point.count)
+        assertEquals(0.5, point.sum)
+    }
+
+    @Test
     fun histogramBoundsMustIncrease() {
         assertFailsWith<IllegalArgumentException> { meter.histogram("bad", "s", "Bad.", listOf(1.0, 1.0)) }
     }

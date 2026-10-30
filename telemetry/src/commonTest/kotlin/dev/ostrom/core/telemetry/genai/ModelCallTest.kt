@@ -98,4 +98,19 @@ class ModelCallTest {
         assertEquals("4", endpoint.headers["x-langfuse-ingestion-version"])
         assertEquals(setOf(Signal.TRACES), endpoint.signals)
     }
+
+    @Test
+    fun theTraceBackendCopyHasNoContent() {
+        val context = SpanContext(1, 1, 1, true)
+        fun span(attributes: Attributes) =
+            SpanData(context, 0, ModelCall.SPAN_NAME, SpanKind.CLIENT, 0, 1, attributes, StatusCode.UNSET, "")
+
+        val full = span(call.toAttributes(ContentCapture.FULL))
+        val stripped = ModelCall.withoutContent(full).attributes
+        assertNull(stripped["langfuse.observation.input"])
+        assertNull(stripped["langfuse.observation.output"])
+        assertEquals("openrouter", stripped.text("gen_ai.system"))
+        val none = span(call.toAttributes(ContentCapture.NONE))
+        assertTrue(ModelCall.withoutContent(none) === none)
+    }
 }

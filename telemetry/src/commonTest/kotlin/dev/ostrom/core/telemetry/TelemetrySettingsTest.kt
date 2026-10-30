@@ -106,6 +106,10 @@ class TelemetrySettingsTest {
             TelemetrySettings.parsePairs("a=100%,b=%zz,c=%C3%A9,d=x%2", "V"),
         )
         assertEquals(mapOf("e" to "ü"), TelemetrySettings.parsePairs("e=ü", "V"))
+        assertEquals(
+            mapOf("f" to "a%+fb", "g" to "%az", "h" to "AB", "i" to "x😀y"),
+            TelemetrySettings.parsePairs("f=a%+fb,g=%az,h=%41%42,i=x😀y", "V"),
+        )
     }
 
     @Test

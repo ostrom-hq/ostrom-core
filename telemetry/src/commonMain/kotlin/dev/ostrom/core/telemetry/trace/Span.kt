@@ -132,6 +132,7 @@ internal class RecordingSpan(
     private val nowEpochNanos: () -> Long,
     private val onEnd: (SpanData) -> Unit,
     private val maxAttributes: Int,
+    private val recording: Boolean = context.sampled,
 ) : Span {
     private val attributes = Attributes.Builder().apply { initialAttributes.entries.forEach { put(it) } }
     private var count = initialAttributes.entries.size
@@ -140,10 +141,11 @@ internal class RecordingSpan(
     private val ended = AtomicBoolean(false)
 
     override fun setAttribute(key: String, value: AttributeValue) {
-        // Bounded: a loop that sets attributes cannot grow a span without limit.
-        if (context.sampled && !ended.load() && count < maxAttributes) {
+        // Bounded: a loop that sets attributes cannot grow a span without limit; overwriting a key costs nothing.
+        val known = key in attributes
+        if (recording && !ended.load() && (known || count < maxAttributes)) {
             attributes.put(Attribute(key, value))
-            count++
+            if (!known) count++
         }
     }
 
@@ -159,7 +161,7 @@ internal class RecordingSpan(
     }
 
     override fun end() {
-        if (ended.compareAndSet(expectedValue = false, newValue = true) && context.sampled) {
+        if (ended.compareAndSet(expectedValue = false, newValue = true) && recording) {
             onEnd(
                 SpanData(
                     context = context,

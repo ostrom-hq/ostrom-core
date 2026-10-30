@@ -50,7 +50,7 @@ class BatchExporterTest {
         val exporter = BatchExporter(::encode, { body ->
             sent += currentTime to body.decodeToString()
             ExportResult.Success
-        })
+        }) { reason, count -> drops += reason to count }
         val job = exporter.start(backgroundScope)
         exporter.offer("last")
         exporter.shutdown()
@@ -59,6 +59,7 @@ class BatchExporterTest {
         assertEquals(listOf(0L to "last"), sent)
         assertFalse(exporter.offer("after"))
         assertTrue(job.isCompleted)
+        assertEquals(listOf(DropReason.CLOSED to 1), drops)
     }
 
     @Test
@@ -124,6 +125,9 @@ class BatchExporterTest {
         exporter.shutdown()
         advanceTimeBy(1_000)
 
-        assertEquals(listOf("queue_full", "rejected", "retries_exhausted"), DropReason.entries.map { it.wire })
+        assertEquals(
+            listOf("queue_full", "rejected", "retries_exhausted", "closed", "collect_failed"),
+            DropReason.entries.map { it.wire },
+        )
     }
 }

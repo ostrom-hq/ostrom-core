@@ -96,24 +96,39 @@ public data class TelemetrySettings(
 
         private const val PROTOBUF = "http/protobuf"
         private const val HEX_RADIX = 16
+        private const val HEX_DIGITS = "0123456789abcdef"
         private const val ESCAPE_LENGTH = 3
 
         private fun percentDecode(value: String): String {
             val bytes = ArrayList<Byte>(value.length)
+            var runStart = 0
             var index = 0
+            // Text between escapes is copied as a whole, so a character outside the BMP (two UTF-16 units) survives.
+            fun copyRun(end: Int) = value.substring(runStart, end).encodeToByteArray().forEach { bytes += it }
             while (index < value.length) {
-                val escaped = value[index] == '%' && index + 2 < value.length
-                val hex = if (escaped) value.substring(index + 1, index + ESCAPE_LENGTH) else null
-                val decoded = hex?.toIntOrNull(HEX_RADIX)
-                if (decoded != null) {
-                    bytes += decoded.toByte()
-                    index += ESCAPE_LENGTH
+                val decoded = if (value[index] == '%' && index + 2 < value.length) {
+                    hexByte(value[index + 1], value[index + 2])
                 } else {
-                    value[index].toString().encodeToByteArray().forEach { bytes += it }
+                    null
+                }
+                if (decoded != null) {
+                    copyRun(index)
+                    bytes += decoded
+                    index += ESCAPE_LENGTH
+                    runStart = index
+                } else {
                     index++
                 }
             }
+            copyRun(value.length)
             return bytes.toByteArray().decodeToString()
+        }
+
+        /** Two hexadecimal digits as a byte; null for anything else (a sign, a letter past f, a non-ASCII digit). */
+        private fun hexByte(high: Char, low: Char): Byte? {
+            val first = HEX_DIGITS.indexOf(high.lowercaseChar())
+            val second = HEX_DIGITS.indexOf(low.lowercaseChar())
+            return if (first < 0 || second < 0) null else (first * HEX_RADIX + second).toByte()
         }
     }
 }
