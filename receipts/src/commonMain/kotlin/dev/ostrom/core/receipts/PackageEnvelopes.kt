@@ -1,4 +1,4 @@
-package dev.ostrom.receipts
+package dev.ostrom.core.receipts
 
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive

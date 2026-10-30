@@ -1,4 +1,4 @@
-package dev.ostrom.receipts
+package dev.ostrom.core.receipts
 
 import kotlinx.io.buffered
 import kotlinx.io.files.Path

@@ -1,6 +1,6 @@
-package dev.ostrom.receipts
+package dev.ostrom.core.receipts
 
-import dev.ostrom.api.models.ReceiptNode
+import dev.ostrom.core.api.models.ReceiptNode
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull

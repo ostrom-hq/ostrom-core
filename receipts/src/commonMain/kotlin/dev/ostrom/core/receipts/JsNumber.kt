@@ -1,4 +1,4 @@
-package dev.ostrom.receipts
+package dev.ostrom.core.receipts
 
 /**
  * Numbers as ECMAScript `Number.prototype.toString` writes them (what `JSON.stringify` writes): the shortest decimal

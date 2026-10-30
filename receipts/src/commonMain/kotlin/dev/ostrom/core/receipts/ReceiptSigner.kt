@@ -1,7 +1,7 @@
-package dev.ostrom.receipts
+package dev.ostrom.core.receipts
 
-import dev.ostrom.api.models.Receipt
-import dev.ostrom.api.models.ReceiptDraft
+import dev.ostrom.core.api.models.Receipt
+import dev.ostrom.core.api.models.ReceiptDraft
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 

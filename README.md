@@ -5,7 +5,7 @@ API contract. Targets: `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (Kotli
 
 | Module | Artifact | Contents |
 |---|---|---|
-| `api` | `dev.ostrom:ostrom-api` | serializable models (`dev.ostrom.api.models`) |
+| `api` | `dev.ostrom:ostrom-api` | serializable models (`dev.ostrom.core.api.models`) |
 | `receipts` | `dev.ostrom:ostrom-receipts` | canonical JSON v1, SHA-256 digests, Ed25519 signing and offline verification of receipts and session packages, subject preimages |
 
 Receipts and packages are byte-compatible with the TypeScript prototype: the tests replay its golden vectors
@@ -45,10 +45,14 @@ access in the package settings (Package settings → Manage Actions access).
 To work on core and a consumer together, without publishing, in the consumer's `settings.gradle.kts`:
 
 ```kotlin
-includeBuild("../ostrom-core")
+includeBuild("../ostrom-core") {
+    // the published artifact ids carry an ostrom- prefix the project names do not have
+    dependencySubstitution {
+        substitute(module("dev.ostrom:ostrom-api")).using(project(":api"))
+        substitute(module("dev.ostrom:ostrom-receipts")).using(project(":receipts"))
+    }
+}
 ```
-
-Gradle then substitutes `dev.ostrom:ostrom-api` and `dev.ostrom:ostrom-receipts` with the local projects.
 
 ## Receipts in three calls
 

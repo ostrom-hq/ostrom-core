@@ -13,10 +13,10 @@ val generateVectorsPath = tasks.register("generateVectorsPath") {
     inputs.property("vectors", vectorsDirectory)
     outputs.dir(generatedTestDirectory)
     doLast {
-        val output = generatedTestDirectory.get().file("dev/ostrom/receipts/CompatVectorsPath.kt").asFile
+        val output = generatedTestDirectory.get().file("dev/ostrom/core/receipts/CompatVectorsPath.kt").asFile
         output.parentFile.mkdirs()
         output.writeText(
-            "package dev.ostrom.receipts\n\n" +
+            "package dev.ostrom.core.receipts\n\n" +
                 "/** Absolute path of compat/vectors, written at build time. */\n" +
                 "internal const val COMPAT_VECTORS_DIR: String = \"${vectorsDirectory.replace("\\", "/")}\"\n"
         )

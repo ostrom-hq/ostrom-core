@@ -1,4 +1,4 @@
-package dev.ostrom.receipts
+package dev.ostrom.core.receipts
 
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.EdDSA
