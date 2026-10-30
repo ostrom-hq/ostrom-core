@@ -132,8 +132,15 @@ the serial descriptors of the models with `api/contract/shapes.json`, and CI che
 
 The contract is ahead of the server: it also describes routes the server does not serve yet. Every operation carries
 `x-ostrom-status`: `served` when ostrom-server's `main` answers it, `planned` otherwise (`npm run contract` refuses an
-operation without it). The public [API reference](https://ostrom.run/docs/reference/api) lists the `served` ones; a
-server PR that serves a route sets its operation to `served` here.
+operation without it). The public [API reference](https://ostrom.run/docs/reference/api) lists the `served` ones.
+`api/contract/served-routes.txt` lists the routes `main` serves, read from the server's sources by
+`scripts/served-routes.py`, and `npm run contract` fails when a marker disagrees with it. When a server PR lands that
+serves (or stops serving) a route, regenerate the list against that `main` and flip the marker in the same PR:
+
+    python3 scripts/served-routes.py ../ostrom-server   # then keep the file's header, `+` and `!` lines
+
+A `+` line names a literal path `main` serves through a parameter route; a `!` line keeps `planned` a route `main`
+serves in another shape than the contract's.
 
 TypeScript: `@ostrom-hq/api-types`, published to GitHub Packages npm with the same `0.1.<run>` version as the Kotlin
 artifacts. `.npmrc`:

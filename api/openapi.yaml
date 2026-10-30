@@ -181,7 +181,7 @@ paths:
   /api/v1/auth/github/start:
     get:
       operationId: startGithubLogin
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: 'Start the GitHub OAuth sign-in. Browser: `redirect`. Mobile app: `redirect_uri` (ostrom://auth/callback),
@@ -269,7 +269,7 @@ paths:
   /api/v1/auth/github/callback:
     get:
       operationId: githubLoginCallback
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: GitHub OAuth callback
@@ -295,7 +295,7 @@ paths:
   /api/v1/auth/device:
     post:
       operationId: startDeviceLogin
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Start the device flow (CLI sign-in)
@@ -412,7 +412,7 @@ paths:
   /api/v1/auth/launcher/login:
     post:
       operationId: launcherLogin
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Exchange a GitHub token proven by the CLI for a device token
@@ -559,7 +559,7 @@ paths:
   /api/v1/auth/me:
     get:
       operationId: getMe
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: 'The caller: login, member, organization'
@@ -585,7 +585,7 @@ paths:
   /api/v1/auth/email:
     post:
       operationId: requestSignInEmail
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: E-mail a sign-in link; the answer is the same whether the address has an account or not
@@ -620,7 +620,7 @@ paths:
   /api/v1/auth/email/verify:
     post:
       operationId: verifySignInEmail
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: 'Sign in with the token of an e-mailed link, read by the console from the link''s fragment
@@ -2148,7 +2148,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: askGate
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: Ask the gate of a boundary action (hook PreToolUse, CI, MCP); 409 session_closed in a closed session
@@ -2233,7 +2233,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGate
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: A gate request; `wait` long-polls up to that many seconds for an answer
@@ -2270,7 +2270,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: consumeGate
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: 'Consume a yes: it serves the action once'
@@ -2302,7 +2302,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApproversGraph
-      x-ostrom-status: served
+      x-ostrom-status: planned
       tags:
       - gates
       summary: 'Who approves what in a repository (scope `packages:read`, `workflows:read`, an agent session or a browser
@@ -2473,7 +2473,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listApprovals
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: Approvals, most recent first; `mine` lists those waiting for the caller
@@ -2564,7 +2564,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApproval
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: An approval, with what it shows
@@ -2628,7 +2628,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: answerApproval
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: Say yes or no, as the caller. 409 shown_digest_mismatch when the shown digest differs, 409 approval_closed
@@ -2726,7 +2726,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listReceipts
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - receipts
       summary: Receipts
@@ -2775,7 +2775,7 @@ paths:
   /api/v1/receipts/keys:
     get:
       operationId: listReceiptKeys
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - receipts
       summary: Public keys of the instance
@@ -2803,7 +2803,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getReceipt
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - receipts
       summary: A receipt
@@ -2835,7 +2835,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: verifyReceipt
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - receipts
       summary: Verify a receipt with the instance keys
@@ -3909,7 +3909,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listAutomations
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Automations
@@ -3941,7 +3941,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createAutomation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Create an automation
@@ -3973,7 +3973,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getAutomation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: An automation
@@ -4002,7 +4002,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveAutomation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Save an automation
@@ -4037,7 +4037,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteAutomation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Delete an automation
@@ -4065,7 +4065,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: enableAutomation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Enable
@@ -4097,7 +4097,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: disableAutomation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Disable
@@ -4129,7 +4129,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: rotateAutomationSecret
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Rotate the webhook secret (the old one stays valid 10 minutes); returned once
@@ -4166,7 +4166,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: testAutomation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Test run, optionally dry
@@ -4214,7 +4214,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listAutomationRuns
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: The runs of an automation, newest first, kept 14 days
@@ -4265,7 +4265,7 @@ paths:
   /api/v1/automations/{id}/trigger:
     post:
       operationId: triggerAutomation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: Signed webhook trigger (Ostrom-Timestamp, Ostrom-Signature v1=HMAC-SHA256, Ostrom-Delivery)
@@ -4313,7 +4313,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listWaits
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - waits
       summary: Waits; `mine` lists those for the caller
@@ -4366,7 +4366,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createWait
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - waits
       summary: Ask a person (agent ask_human); Idempotency-Key header
@@ -4411,7 +4411,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getWait
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - waits
       summary: A wait
@@ -4443,7 +4443,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: answerWait
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - waits
       summary: Answer a wait; first answer wins (409 wait_closed)
@@ -4489,7 +4489,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cancelWait
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - waits
       summary: Cancel a wait
@@ -4521,7 +4521,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpServers
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: MCP servers relayed by Ostrom
@@ -4562,7 +4562,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Add a relayed MCP server (credentials as secret names)
@@ -4594,7 +4594,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: saveMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Change a relayed MCP server
@@ -4629,7 +4629,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Remove a relayed MCP server
@@ -4657,7 +4657,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpAssignments
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Who reaches a relayed server, with which tools (scope mcp:read)
@@ -4689,7 +4689,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: assignMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Give a member (or everyone) a relayed server, all tools or an allowlist (scope mcp:admin)
@@ -4730,7 +4730,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unassignMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Take a relayed server back from a member (scope mcp:admin)
@@ -4764,7 +4764,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpArgumentPolicies
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Argument policies of a relayed server (scope mcp:read)
@@ -4793,7 +4793,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createMcpArgumentPolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Allow, deny or ask for approval of a tool call by its arguments (scope mcp:admin)
@@ -4831,7 +4831,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteMcpArgumentPolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Remove an argument policy (scope mcp:admin)
@@ -4864,7 +4864,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMcpSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: The prefix of relayed server names as agents see them (scope mcp:read)
@@ -4887,7 +4887,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: putMcpSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Change the prefix (scope mcp:admin)
@@ -4919,7 +4919,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: relayMcp
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: MCP Streamable HTTP endpoint of a relayed server (`ostrom` and `ostrom-workflow` are built in)
@@ -4955,7 +4955,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpCalls
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Relayed calls
@@ -5006,7 +5006,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMcpUsage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Calls per server and tool
@@ -6483,7 +6483,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: issueCloudTerminalTicket
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: A single-use ticket to attach a browser to the session's terminal
@@ -6523,7 +6523,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: attachCloudTerminal
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: 'WebSocket: the session''s terminal. Bearer token on the upgrade, or ?ticket= from a browser. Binary frames
@@ -6695,7 +6695,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listArtifacts
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Artifacts the caller can read, newest first
@@ -6742,7 +6742,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: publishArtifact
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Publish an artifact
@@ -6786,7 +6786,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getArtifact
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: An artifact
@@ -6815,7 +6815,7 @@ paths:
           $ref: '#/components/responses/Error'
     patch:
       operationId: updateArtifact
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Change an artifact's title or access; absent fields stay as they are
@@ -6855,7 +6855,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteArtifact
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Delete an artifact
@@ -6883,7 +6883,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listArtifactVersions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Versions
@@ -6921,7 +6921,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: publishArtifactVersion
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Publish a new version
@@ -6966,7 +6966,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getArtifactFile
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: A file of a version
@@ -7009,7 +7009,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listArtifactMembers
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: The ids of the members it is shared with
@@ -7049,7 +7049,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: shareArtifact
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Share with a member
@@ -7085,7 +7085,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unshareArtifact
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Stop sharing with a member
@@ -7119,7 +7119,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: createArtifactTicket
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: 'A reading ticket: a signed address of the entry page on the content origin, valid one hour (rounded to
@@ -7162,7 +7162,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listSharedAccounts
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Subscriptions shared with the caller or owned by them
@@ -7194,7 +7194,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: enrollSharedAccount
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Enroll a personal subscription (credentials encrypted on the server)
@@ -7243,7 +7243,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     patch:
       operationId: updateSharedAccount
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Change sharing, allocation, pause
@@ -7287,7 +7287,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: removeSharedAccount
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Stop sharing and delete the credentials
@@ -7315,7 +7315,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCapacity
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Remaining capacity of shared subscriptions
@@ -8309,7 +8309,7 @@ paths:
   /api/v1/orgs/{orgId}/billing:
     get:
       operationId: getBilling
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - billing
       summary: The organization's plan, limits, usage and payment state
@@ -8335,7 +8335,7 @@ paths:
   /api/v1/orgs/{orgId}/billing/checkout:
     post:
       operationId: startBillingCheckout
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - billing
       summary: Start buying a plan (Stripe Checkout)
@@ -8373,7 +8373,7 @@ paths:
   /api/v1/orgs/{orgId}/billing/portal:
     post:
       operationId: openBillingPortal
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - billing
       summary: Open the Stripe customer portal
@@ -8403,7 +8403,7 @@ paths:
   /api/v1/orgs/{orgId}/billing/plan:
     post:
       operationId: changeBillingPlan
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - billing
       summary: Change the plan or the interval of the subscription
@@ -8441,7 +8441,7 @@ paths:
   /api/v1/orgs/{orgId}/billing/cancel:
     post:
       operationId: cancelBillingSubscription
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - billing
       summary: End the subscription at the end of the period
@@ -8471,7 +8471,7 @@ paths:
   /api/v1/orgs/{orgId}/billing/resume:
     post:
       operationId: resumeBillingSubscription
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - billing
       summary: Keep a subscription that was set to end
@@ -8501,7 +8501,7 @@ paths:
   /api/v1/orgs/{orgId}/billing/invoices:
     get:
       operationId: listBillingInvoices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - billing
       summary: Invoices and receipts, newest first
