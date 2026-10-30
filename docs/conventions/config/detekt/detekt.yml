@@ -36,6 +36,11 @@ comments:
     active: true
     excludes: ['**/test/**', '**/commonTest/**', '**/jvmTest/**', '**/nativeTest/**', '**/linuxTest/**', '**/macosTest/**', '**/mingwTest/**', '**/posixTest/**']
 
+# UnsafeCallOnNullableType (`!!`) lives under potential-bugs in detekt 1.23.8; config validation refuses it under style.
+potential-bugs:
+  UnsafeCallOnNullableType:
+    active: true
+
 empty-blocks:
   EmptyCatchBlock:
     active: true
@@ -75,8 +80,6 @@ style:
     maxLineLength: 120
     excludeCommentStatements: false
     excludeRawStrings: true
-  UnsafeCallOnNullableType:
-    active: true
   WildcardImport:
     active: false
 

@@ -16,7 +16,7 @@ concurrency:
   group: build-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  native:
+  linux:
     timeout-minutes: 45
     runs-on: ubuntu-latest
     steps:
@@ -33,14 +33,29 @@ jobs:
         with:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
-      # linuxX64 tests run here; linuxArm64 and mingwX64 tests and the macosArm64 klibs are cross-compiled.
-      - run: ./gradlew --no-daemon linuxX64Test compileTestKotlinLinuxArm64 compileTestKotlinMingwX64 compileKotlinMacosArm64
-      - if: failure()
+      - name: Never serve a test task from the cache (ENG-032)
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/always-run-tests.gradle.kts <<'KTS'
+          allprojects {
+              tasks.withType<AbstractTestTask>().configureEach {
+                  outputs.cacheIf { false }
+                  outputs.upToDateWhen { false }
+              }
+          }
+          KTS
+      - run: python3 scripts/check-conventions.py
+      # detekt, the jvm() test run with Kover at 100 % of commonMain, the linuxX64 tests; linuxArm64 and mingwX64 tests
+      # and the macosArm64 klibs are cross-compiled.
+      - run: >-
+          ./gradlew --no-daemon --continue detekt jvmTest koverVerify koverXmlReport linuxX64Test
+          compileTestKotlinLinuxArm64 compileTestKotlinMingwX64 compileKotlinMacosArm64
+      - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: test-reports
-          path: '**/build/reports/tests/'
-          retention-days: 3
+          name: reports
+          path: '**/build/reports/**'
+          retention-days: 7
   contract:
     # api/openapi.yaml is the contract: its TypeScript types must generate, and api/contract/shapes.json (read by the
     # Kotlin ContractTest) must be the one derived from it.
@@ -86,7 +101,7 @@ jobs:
         shell: bash
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [native, contract]
+    needs: [linux, contract]
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:

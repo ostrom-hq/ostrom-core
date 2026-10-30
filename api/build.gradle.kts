@@ -1,6 +1,5 @@
 plugins {
-    alias(libs.plugins.multiplatform)
-    alias(libs.plugins.serialization)
+    id("ostrom.kmp")
     alias(libs.plugins.maven)
 }
 
@@ -30,10 +29,9 @@ tasks.withType<AbstractTestTask>().configureEach {
 
 kotlin {
     explicitApi()
-    macosArm64(); linuxX64(); linuxArm64(); mingwX64()
     sourceSets {
         commonMain.dependencies {
-            api(libs.serialization)
+            api(libs.serialization.json)
         }
         commonTest {
             kotlin.srcDir(generateContractPath)

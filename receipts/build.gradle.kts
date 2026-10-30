@@ -1,6 +1,5 @@
 plugins {
-    alias(libs.plugins.multiplatform)
-    alias(libs.plugins.serialization)
+    id("ostrom.kmp")
     alias(libs.plugins.maven)
 }
 
@@ -30,15 +29,16 @@ tasks.withType<AbstractTestTask>().configureEach {
 
 kotlin {
     explicitApi()
-    macosArm64(); linuxX64(); linuxArm64(); mingwX64()
     sourceSets {
         all { languageSettings.optIn("kotlin.io.encoding.ExperimentalEncodingApi") }
         commonMain.dependencies {
-            api(project(":api"))
-            api(libs.serialization)
+            api(projects.api)
+            api(libs.serialization.json)
             implementation(libs.cryptography.core)
-            implementation(libs.cryptography.openssl3)
         }
+        // OpenSSL 3, linked in, on every native target; the JDK provider for the jvm() test target.
+        nativeMain.dependencies { implementation(libs.cryptography.openssl3) }
+        jvmMain.dependencies { implementation(libs.cryptography.jdk) }
         commonTest {
             kotlin.srcDir(generateVectorsPath)
             dependencies {

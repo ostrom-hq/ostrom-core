@@ -1,6 +1,5 @@
 plugins {
-    alias(libs.plugins.multiplatform) apply false
-    alias(libs.plugins.serialization) apply false
+    // Kotlin, serialization, Kover and detekt come from build-logic (the ostrom.kmp convention plugin).
     alias(libs.plugins.maven) apply false
 }
 
