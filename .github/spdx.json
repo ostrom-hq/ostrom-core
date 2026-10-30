@@ -1,0 +1,10 @@
+{
+  "default": "Apache-2.0",
+  "rules": [],
+  "allowed": [],
+  "exclude": [
+    "compat/vectors/*",
+    "compat/extra/*.json"
+  ],
+  "scope": "added"
+}
