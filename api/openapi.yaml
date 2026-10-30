@@ -4408,6 +4408,33 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/inference/v1/responses:
+    post:
+      operationId: inferenceResponses
+      tags:
+      - inference
+      summary: OpenAI-compatible Responses endpoint, metered against budgets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: {}
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/chat/completions:
     post:
       operationId: inferenceChatCompletions
@@ -4456,6 +4483,57 @@ paths:
                       additionalProperties: {}
                 required:
                 - data
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/inference/settings:
+    get:
+      operationId: getInferenceSettings
+      tags:
+      - inference
+      summary: The org's provider keys (named by their org secret, never sent) and whether shared accounts serve first
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setInferenceSettings
+      tags:
+      - inference
+      summary: Replace the org's inference settings (owners and admins, `inference:admin`)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferenceSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceSettings'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -8760,6 +8838,24 @@ components:
       - secretNames
       - enabled
       - scope
+      x-ostrom-kotlin: pending
+    InferenceSettings:
+      type: object
+      description: How the gateway reaches model providers for the org (bring your own key)
+      properties:
+        anthropicKeySecret:
+          type: string
+          description: Name of the org secret holding an Anthropic API key, used when no shared Claude account serves
+        openaiKeySecret:
+          type: string
+          description: Name of the org secret holding an OpenAI API key
+        openrouterKeySecret:
+          type: string
+          description: Name of the org secret holding an OpenRouter key (models named `vendor/model`)
+        useSharedAccounts:
+          type: boolean
+          default: true
+          description: Whether members' shared subscription accounts serve before the org's keys
       x-ostrom-kotlin: pending
     McpSettings:
       type: object
