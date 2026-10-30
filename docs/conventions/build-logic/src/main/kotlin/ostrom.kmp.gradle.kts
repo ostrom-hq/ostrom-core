@@ -72,6 +72,9 @@ kover {
                 // which no test can reach). Its JSON is tested by the routes and contract tests. Decided 30/10/2026
                 // (.coord/QUESTIONS.md, SERVER-SOCLE 04:35, adopted for every Kotlin repository).
                 annotatedBy("kotlinx.serialization.Serializable")
+                // Compatibility bridges the compiler writes for an interface's default methods on the JVM: the test
+                // target never calls them (the default methods themselves are measured).
+                classes("*\$DefaultImpls")
             }
         }
         verify {
