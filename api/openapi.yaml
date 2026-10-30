@@ -2453,7 +2453,8 @@ paths:
       - approvals
       summary: Say yes or no, as the caller. 409 shown_digest_mismatch when the shown digest differs, 409 approval_closed
         when already answered (a signed answer never changes); 403 self_approval_refused when the asker answers while another
-        approver exists
+        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old (sign in again, then
+        answer)
       parameters:
       - name: id
         in: path
@@ -2478,11 +2479,13 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          description: self_approval_refused, or not an approver
+          description: self_approval_refused, step_up_required, or not an approver (the key is `error.type`)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SelfApprovalRefused'
+                oneOf:
+                - $ref: '#/components/schemas/SelfApprovalRefused'
+                - $ref: '#/components/schemas/StepUpRequired'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6703,7 +6706,8 @@ paths:
       description: Works on every access, `personal` included. A `personal` artifact stays `personal`, which already
         means its owner, the members it is shared with and the organization's administrators; sharing never changes
         `access` (`ArtifactAccess` has no `members` value). A `team` or `link` artifact is already readable by every
-        member, so sharing it only adds the member to the list
+        member, so sharing it only adds the member to the list. The console shows a `personal` artifact shared with
+        members as "shared with N members", N being the length of `listArtifactMembers`
       parameters:
       - name: id
         in: path
@@ -8133,10 +8137,47 @@ paths:
   /webhooks/stripe:
     post:
       operationId: receiveStripeWebhook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - billing
       summary: Stripe events (subscriptions, invoices, checkout)
+      description: 'Called by Stripe only, authenticated by the `Stripe-Signature` header (HMAC-SHA256 of the timestamp and
+        the body, 5 minutes of tolerance). Each event is applied once; a replay answers `duplicate`. Bodies over 256 KiB
+        are refused (413).'
+      security: []
+      parameters:
+      - name: Stripe-Signature
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: A Stripe event, as Stripe sends it
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingWebhookAck'
+        '400':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+  /api/v1/billing/stripe/webhook:
+    post:
+      operationId: receiveStripeWebhookAlias
+      deprecated: true
+      x-ostrom-status: served
+      tags:
+      - billing
+      summary: 'Deprecated alias of `POST /webhooks/stripe`, the path the webhook was first served at: same signature,
+        same answers. Removed after the public release; point the Stripe endpoint at `/webhooks/stripe`'
       description: 'Called by Stripe only, authenticated by the `Stripe-Signature` header (HMAC-SHA256 of the timestamp and
         the body, 5 minutes of tolerance). Each event is applied once; a replay answers `duplicate`. Bodies over 256 KiB
         are refused (413).'
@@ -11997,6 +12038,16 @@ components:
       required:
       - id
       - agent
+    StepUpRequired:
+      type: object
+      description: '403 step_up_required: a yes needs a sign-in less than 5 minutes old (a sign-in of unknown age is
+        refused too); sign in again, then answer. A no never needs it'
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - error
+      x-ostrom-kotlin: pending
     StringListSuggestion:
       type: object
       description: A list of strings suggested by the analysis, with what proves it
