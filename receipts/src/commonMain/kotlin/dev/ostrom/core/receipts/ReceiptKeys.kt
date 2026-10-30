@@ -52,7 +52,8 @@ public class ReceiptSigningKey private constructor(
          */
         public fun fromSeed(seed: ByteArray): ReceiptSigningKey {
             require(seed.size == 32) { "an Ed25519 seed is 32 bytes" }
-            return of(edDsa.privateKeyDecoder(EdDSA.Curve.Ed25519).decodeFromByteArrayBlocking(EdDSA.PrivateKey.Format.RAW, seed))
+            val decoder = edDsa.privateKeyDecoder(EdDSA.Curve.Ed25519)
+            return of(decoder.decodeFromByteArrayBlocking(EdDSA.PrivateKey.Format.RAW, seed))
         }
 
         /** Generates a new random key, as an instance does on its first start. */

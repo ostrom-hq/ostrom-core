@@ -60,7 +60,8 @@ public object PackageEnvelopes {
         if (Digests.sha256Hex(bytes) != text("digest")) return failed("digest mismatch (package was modified)")
         val key = trustedKeys.firstOrNull { it.kid == text("kid") } ?: return failed("unknown key id")
         val signature = text("signature")?.let(::decodeBase64OrNull) ?: return failed("bad signature")
-        return if (key.verify(bytes, signature)) PackageVerification.Verified(payload, key.kid) else failed("bad signature")
+        if (!key.verify(bytes, signature)) return failed("bad signature")
+        return PackageVerification.Verified(payload, key.kid)
     }
 }
 

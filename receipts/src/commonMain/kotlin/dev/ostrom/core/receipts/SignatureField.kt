@@ -28,7 +28,8 @@ public class SignatureField(
         public const val ED25519: String = "ed25519"
 
         /**
-         * Parses a signature field. Unknown parts are ignored, missing ones are null; a `sig` that is not base64 is null.
+         * Parses a signature field. Unknown parts are ignored, missing ones are null; a `sig` that is not base64 is
+         * null.
          *
          * @param field The field text.
          *

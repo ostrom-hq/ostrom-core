@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 /**
  * A signed receipt: who asked for what, under which rules, who said yes, and when.
  *
- * The body is every field except [signature]; its canonical JSON (see `dev.ostrom.core.receipts.CanonicalJson`) is what is
- * signed. A receipt received from elsewhere may carry fields this model does not know: verify the raw JSON object, not
- * this model, or those fields are lost and the digest no longer matches.
+ * The body is every field except [signature]; its canonical JSON (see `dev.ostrom.core.receipts.CanonicalJson`) is
+ * what is signed. A receipt received from elsewhere may carry fields this model does not know: verify the raw JSON
+ * object, not this model, or those fields are lost and the digest no longer matches.
  *
  * @property id Receipt id, `rcpt_<uuid>`.
  * @property subject What the receipt is about, with the digest of its preimage.
@@ -44,7 +44,8 @@ public data class Receipt(
  *
  * @property kind What kind of thing was decided or run.
  * @property id Id of the subject (session id, gate id, `<session>@<package version>` for a workflow…).
- * @property digest SHA-256 hex of the canonical form of the subject preimage (`dev.ostrom.core.receipts.SubjectPreimages`).
+ * @property digest SHA-256 hex of the canonical form of the subject preimage
+ *   (`dev.ostrom.core.receipts.SubjectPreimages`).
  */
 @Serializable
 public data class ReceiptSubject(

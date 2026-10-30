@@ -204,7 +204,12 @@ class ContractTest {
 
     private fun differences(name: String, schema: JsonObject, model: JsonObject): List<String> {
         schema["enum"]?.let { values ->
-            return if (values == model["enum"]) emptyList() else listOf("$name: enum $values in the contract, ${model["enum"]} in Kotlin")
+            val actual = model["enum"]
+            return if (values == actual) {
+                emptyList()
+            } else {
+                listOf("$name: enum $values in the contract, $actual in Kotlin")
+            }
         }
         val expected = schema.getValue("properties").jsonObject
         val actual = model["properties"]?.jsonObject ?: return listOf("$name: an object in the contract, not in Kotlin")
@@ -220,10 +225,13 @@ class ContractTest {
         val required = expected.flag("required")
         val nullable = expected.flag("nullable")
         return when {
-            expected["type"] != actual["type"] -> "$name.$property: type ${expected["type"]} in the contract, ${actual["type"]} in Kotlin"
+            expected["type"] != actual["type"] ->
+                "$name.$property: type ${expected["type"]} in the contract, ${actual["type"]} in Kotlin"
             required != actual.flag("required") -> "$name.$property: required=$required in the contract, not in Kotlin"
-            required && nullable != actual.flag("nullable") -> "$name.$property: nullable=$nullable in the contract, not in Kotlin"
-            !required && nullable && !actual.flag("nullable") -> "$name.$property: nullable in the contract, not in Kotlin"
+            required && nullable != actual.flag("nullable") ->
+                "$name.$property: nullable=$nullable in the contract, not in Kotlin"
+            !required && nullable && !actual.flag("nullable") ->
+                "$name.$property: nullable in the contract, not in Kotlin"
             else -> null
         }
     }

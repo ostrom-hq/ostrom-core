@@ -27,8 +27,8 @@ public object Digests {
         CryptographyProvider.Default.get(SHA256).hasher().hashBlocking(bytes)
 
     /**
-     * Returns `digestOf(value)` of the prototype: the SHA-256 of the UTF-8 canonical form of [value]. Every digest cited
-     * inside a receipt (`subject.digest`, `rules[].digest`, `shownDigest`) and every gate request key is one.
+     * Returns `digestOf(value)` of the prototype: the SHA-256 of the UTF-8 canonical form of [value]. Every digest
+     * cited inside a receipt (`subject.digest`, `rules[].digest`, `shownDigest`) and every gate request key is one.
      *
      * @param value The JSON value.
      *

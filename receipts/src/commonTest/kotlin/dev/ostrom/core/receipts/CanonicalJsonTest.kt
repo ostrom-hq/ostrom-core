@@ -53,7 +53,8 @@ class CanonicalJsonTest {
         assertTrue(pairs.size > 4000)
         for (pair in pairs.map { it.jsonArray }) {
             val bits = pair[0].jsonPrimitive.content.toULong(16).toLong()
-            assertEquals(pair[1].jsonPrimitive.content, JsNumber.format(Double.fromBits(bits)), pair[0].jsonPrimitive.content)
+            val expected = pair[1].jsonPrimitive.content
+            assertEquals(expected, JsNumber.format(Double.fromBits(bits)), pair[0].jsonPrimitive.content)
         }
     }
 

@@ -45,7 +45,10 @@ public sealed interface ReceiptVerification {
      * @property reason Why.
      * @property digest Digest of the body as received.
      */
-    public data class Failed(val reason: ReceiptVerificationFailure, override val digest: String?) : ReceiptVerification {
+    public data class Failed(
+        val reason: ReceiptVerificationFailure,
+        override val digest: String?,
+    ) : ReceiptVerification {
         override val ok: Boolean get() = false
     }
 }
@@ -97,7 +100,9 @@ public class ReceiptVerifierImpl(trustedKeys: List<ReceiptPublicKey>) : ReceiptV
             ?: return ReceiptVerification.Failed(ReceiptVerificationFailure.MISSING_SIGNATURE, digest)
         // same order of checks as the prototype's verifyReceipt
         val field = SignatureField.parse(raw)
-        if (field.algorithm != SignatureField.ED25519) return failed(ReceiptVerificationFailure.UNKNOWN_ALGORITHM, digest)
+        if (field.algorithm != SignatureField.ED25519) {
+            return failed(ReceiptVerificationFailure.UNKNOWN_ALGORITHM, digest)
+        }
         val key = keys[field.kid] ?: return failed(ReceiptVerificationFailure.UNKNOWN_KEY_ID, digest)
         if (field.sha256 != digest) return failed(ReceiptVerificationFailure.DIGEST_MISMATCH, digest)
         val signature = field.signature ?: return failed(ReceiptVerificationFailure.BAD_SIGNATURE, digest)
