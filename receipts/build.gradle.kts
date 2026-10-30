@@ -1,7 +1,6 @@
 plugins {
-    alias(libs.plugins.multiplatform)
-    alias(libs.plugins.serialization)
-    alias(libs.plugins.maven)
+    id("ostrom.kmp")
+    id("ostrom.publish")
 }
 
 description = "Ostrom signed receipts: canonical JSON, SHA-256 digests, Ed25519 signing and offline verification."
@@ -30,14 +29,19 @@ tasks.withType<AbstractTestTask>().configureEach {
 
 kotlin {
     explicitApi()
-    macosArm64(); linuxX64(); linuxArm64(); mingwX64()
     sourceSets {
         all { languageSettings.optIn("kotlin.io.encoding.ExperimentalEncodingApi") }
         commonMain.dependencies {
-            api(project(":api"))
-            api(libs.serialization)
+            api(projects.api)
+            api(libs.serialization.json)
             implementation(libs.cryptography.core)
-            implementation(libs.cryptography.openssl3)
+        }
+        // OpenSSL 3, linked in, on every native target; the JDK provider for the jvm() test target.
+        nativeMain.dependencies { implementation(libs.cryptography.openssl3) }
+        jvmMain.dependencies {
+            implementation(libs.cryptography.jdk)
+            // the JDK alone cannot derive an Ed25519 public key from a private key; the provider does it through this
+            runtimeOnly(libs.bouncycastle)
         }
         commonTest {
             kotlin.srcDir(generateVectorsPath)

@@ -52,7 +52,8 @@ class ReceiptVectorsTest {
         for (vector in Vectors.receipts.filter { "subjectPreimage" in it }) {
             val preimage = vector.obj("subjectPreimage")
             assertEquals(vector.text("subjectPreimageCanonical"), CanonicalJson.encode(preimage), vector.text("name"))
-            assertEquals(vector.obj("receipt").obj("subject").text("digest"), Digests.digestOf(preimage), vector.text("name"))
+            val digest = vector.obj("receipt").obj("subject").text("digest")
+            assertEquals(digest, Digests.digestOf(preimage), vector.text("name"))
         }
     }
 
@@ -60,22 +61,24 @@ class ReceiptVectorsTest {
     fun aModifiedReceiptIsRefusedWithThePrototypeReasons() {
         val receipt = Vectors.receipt("session-simple").obj("receipt")
         val modified = JsonObject(receipt + ("initiator" to JsonPrimitive("someone-else")))
-        assertEquals(ReceiptVerificationFailure.DIGEST_MISMATCH, assertIs<ReceiptVerification.Failed>(verifier.verify(modified)).reason)
+        fun reason(of: ReceiptVerifier, json: JsonObject) = assertIs<ReceiptVerification.Failed>(of.verify(json)).reason
+        assertEquals(ReceiptVerificationFailure.DIGEST_MISMATCH, reason(verifier, modified))
         val stranger = ReceiptVerifierImpl(listOf(ReceiptSigningKey.generate().publicKey))
-        assertEquals(ReceiptVerificationFailure.UNKNOWN_KEY_ID, assertIs<ReceiptVerification.Failed>(stranger.verify(receipt)).reason)
+        assertEquals(ReceiptVerificationFailure.UNKNOWN_KEY_ID, reason(stranger, receipt))
         val unsigned = JsonObject(receipt - "signature")
-        assertEquals(ReceiptVerificationFailure.MISSING_SIGNATURE, assertIs<ReceiptVerification.Failed>(verifier.verify(unsigned)).reason)
+        assertEquals(ReceiptVerificationFailure.MISSING_SIGNATURE, reason(verifier, unsigned))
         val field = receipt.text("signature")
-        val forged = JsonObject(receipt + ("signature" to JsonPrimitive(field.substringBefore(";sig=") + ";sig=" + Base64.encode(ByteArray(64)))))
-        assertEquals(ReceiptVerificationFailure.BAD_SIGNATURE, assertIs<ReceiptVerification.Failed>(verifier.verify(forged)).reason)
-        val notBase64 = JsonObject(receipt + ("signature" to JsonPrimitive(field.substringBefore(";sig=") + ";sig=***")))
-        assertEquals(ReceiptVerificationFailure.BAD_SIGNATURE, assertIs<ReceiptVerification.Failed>(verifier.verify(notBase64)).reason)
-        val otherAlgorithm = JsonObject(receipt + ("signature" to JsonPrimitive("rsa;" + field.substringAfter(";"))))
-        assertEquals(ReceiptVerificationFailure.UNKNOWN_ALGORITHM, assertIs<ReceiptVerification.Failed>(verifier.verify(otherAlgorithm)).reason)
+        fun signedWith(signature: String) = JsonObject(receipt + ("signature" to JsonPrimitive(signature)))
+        val forged = signedWith(field.substringBefore(";sig=") + ";sig=" + Base64.encode(ByteArray(64)))
+        assertEquals(ReceiptVerificationFailure.BAD_SIGNATURE, reason(verifier, forged))
+        val notBase64 = signedWith(field.substringBefore(";sig=") + ";sig=***")
+        assertEquals(ReceiptVerificationFailure.BAD_SIGNATURE, reason(verifier, notBase64))
+        val otherAlgorithm = signedWith("rsa;" + field.substringAfter(";"))
+        assertEquals(ReceiptVerificationFailure.UNKNOWN_ALGORITHM, reason(verifier, otherAlgorithm))
         var deep: kotlinx.serialization.json.JsonElement = JsonPrimitive(1)
         repeat(CanonicalJson.MAX_DEPTH + 1) { deep = kotlinx.serialization.json.JsonArray(listOf(deep)) }
         val tooDeep = JsonObject(receipt + ("extra" to deep))
-        assertEquals(ReceiptVerificationFailure.MALFORMED, assertIs<ReceiptVerification.Failed>(verifier.verify(tooDeep)).reason)
+        assertEquals(ReceiptVerificationFailure.MALFORMED, reason(verifier, tooDeep))
     }
 
     @Test
@@ -84,7 +87,8 @@ class ReceiptVectorsTest {
         for (vector in Vectors.receipts.filter { it.text("name") != "odd-values" }) {
             val typed = ReceiptJson.decodeFromJsonElement(Receipt.serializer(), vector.obj("receipt"))
             val encoded = ReceiptJson.encodeToJsonElement(Receipt.serializer(), typed) as JsonObject
-            assertEquals(CanonicalJson.encode(vector.obj("receipt")), CanonicalJson.encode(encoded), vector.text("name"))
+            val expected = CanonicalJson.encode(vector.obj("receipt"))
+            assertEquals(expected, CanonicalJson.encode(encoded), vector.text("name"))
             assertTrue(verifier.verify(encoded).ok, vector.text("name"))
         }
     }
@@ -104,17 +108,27 @@ class ReceiptVectorsTest {
 
     @Test
     fun sessionPreimagesAreBuiltAsThePrototypeBuildsThem() {
-        for (name in listOf("session-simple", "session-resume-superseded", "session-resume-segment-2", "session-wake-lost", "session-wake-reopened", "session-with-gate")) {
+        val names = listOf(
+            "session-simple", "session-resume-superseded", "session-resume-segment-2", "session-wake-lost",
+            "session-wake-reopened", "session-with-gate",
+        )
+        for (name in names) {
             val vector = Vectors.receipt(name)
             val p = vector.obj("subjectPreimage")
             fun opt(key: String) = p[key]?.jsonPrimitive?.takeIf { it.isString }?.content
             val built = SubjectPreimages.session(
-                id = p.text("id"), repo = opt("repo"), dev = p.text("dev"), agent = p.text("agent"), harness = opt("harness"),
+                id = p.text("id"), repo = opt("repo"), dev = p.text("dev"), agent = p.text("agent"),
+                harness = opt("harness"),
                 startedAt = p.text("startedAt"), endedAt = p.text("endedAt"),
                 gates = p.array("gates").map { it.jsonObject }.map {
-                    SubjectPreimages.SessionGate(it.text("id"), it.text("class"), it.text("mode"), it.text("status"), it["receiptId"]?.jsonPrimitive?.takeIf { r -> r.isString }?.content)
+                    val receiptId = it["receiptId"]?.jsonPrimitive?.takeIf { r -> r.isString }?.content
+                    SubjectPreimages.SessionGate(
+                        it.text("id"), it.text("class"), it.text("mode"), it.text("status"), receiptId,
+                    )
                 },
-                resume = opt("resumedFrom")?.let { SubjectPreimages.Resume(it, opt("previousReceiptId"), p["segment"]?.jsonPrimitive?.intOrNull) },
+                resume = opt("resumedFrom")?.let {
+                    SubjectPreimages.Resume(it, opt("previousReceiptId"), p["segment"]?.jsonPrimitive?.intOrNull)
+                },
                 exitCode = p["exitCode"]?.jsonPrimitive?.intOrNull,
             )
             assertEquals(vector.obj("receipt").obj("subject").text("digest"), Digests.digestOf(built), name)
@@ -126,7 +140,8 @@ class ReceiptVectorsTest {
         val vector = Vectors.receipt("gate-push-sha")
         val p = vector.obj("subjectPreimage")
         val pushJson = p.obj("push")
-        val push = SubjectPreimages.Push(pushJson.text("remote"), pushJson.array("refs").map { it.jsonObject.text("ref") to it.jsonObject.text("sha") })
+        val refs = pushJson.array("refs").map { it.jsonObject.text("ref") to it.jsonObject.text("sha") }
+        val push = SubjectPreimages.Push(pushJson.text("remote"), refs)
         val built = SubjectPreimages.gate(
             gate = p.getValue("gate"), cls = p.text("class"), command = p.text("command"), repo = p.text("repo"),
             sessionId = p.text("sessionId"), ci = null, shown = p.text("shown"), push = push,
@@ -137,7 +152,10 @@ class ReceiptVectorsTest {
         assertEquals(actionKey.text("canonical"), CanonicalJson.encode(key))
         assertEquals(actionKey.text("digest"), Digests.digestOf(key))
         val otherCommit = SubjectPreimages.Push(push.remote, listOf("main" to "0".repeat(40)))
-        assertTrue(Digests.digestOf(SubjectPreimages.pushActionKey("acme-api", "acme/acme-api", "push-main", otherCommit, "session:sess-ship")) != actionKey.text("digest"))
+        val otherKey = SubjectPreimages.pushActionKey(
+            "acme-api", "acme/acme-api", "push-main", otherCommit, "session:sess-ship",
+        )
+        assertTrue(Digests.digestOf(otherKey) != actionKey.text("digest"))
     }
 
     @Test
@@ -149,13 +167,17 @@ class ReceiptVectorsTest {
         assertEquals(entry.text("signatureField"), signer.sign(JsonObject(receipt - "signature")).text("signature"))
         val typed = ReceiptJson.decodeFromJsonElement(Receipt.serializer(), receipt)
         assertEquals(ReceiptSubjectKind.WORKFLOW, typed.subject.kind)
-        val nodes = ReceiptJson.decodeFromJsonElement(ListSerializer(ReceiptNode.serializer()), receipt.getValue("nodes"))
+        val nodes = ReceiptJson.decodeFromJsonElement(
+            ListSerializer(ReceiptNode.serializer()),
+            receipt.getValue("nodes"),
+        )
         val session = typed.subject.id.substringBeforeLast('@')
         val preimage = SubjectPreimages.workflow(session, assertNotNull(typed.packageRef).digest, nodes)
         assertEquals(typed.subject.digest, Digests.digestOf(preimage))
         val bundle = vector.obj("bundle")
         for (chained in bundle.array("chain")) assertTrue(verifier.verify(chained.jsonObject).ok)
-        assertIs<PackageVerification.Verified>(PackageEnvelopes.verify(bundle.obj("package"), listOf(Vectors.signingKey.publicKey)))
+        val keys = listOf(Vectors.signingKey.publicKey)
+        assertIs<PackageVerification.Verified>(PackageEnvelopes.verify(bundle.obj("package"), keys))
     }
 
     @Test
@@ -163,12 +185,14 @@ class ReceiptVectorsTest {
         val vector = Vectors.read("private/package.json").jsonObject
         val envelope = vector.obj("envelope")
         val keys = listOf(Vectors.signingKey.publicKey)
-        assertEquals(PackageVerification.Verified(envelope.text("payload"), envelope.text("kid")), PackageEnvelopes.verify(envelope, keys))
+        val verified = PackageVerification.Verified(envelope.text("payload"), envelope.text("kid"))
+        assertEquals(verified, PackageEnvelopes.verify(envelope, keys))
         val signature = PackageEnvelopes.sign(envelope.text("payload"), Vectors.signingKey)
         assertEquals(envelope.text("digest"), signature.digest)
         assertEquals(envelope.text("signature"), signature.signature)
         val tampered = JsonObject(envelope + ("payload" to JsonPrimitive(envelope.text("payload") + " ")))
-        assertEquals(PackageVerification.Failed("digest mismatch (package was modified)"), PackageEnvelopes.verify(tampered, keys))
+        val modified = PackageVerification.Failed("digest mismatch (package was modified)")
+        assertEquals(modified, PackageEnvelopes.verify(tampered, keys))
         val stranger = listOf(ReceiptSigningKey.generate().publicKey)
         assertEquals(PackageVerification.Failed("unknown key id"), PackageEnvelopes.verify(envelope, stranger))
         assertTrue(verifier.verify(vector.obj("harnessReceipt").let { it["receipt"]?.jsonObject ?: it }).ok)

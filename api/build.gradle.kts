@@ -1,7 +1,6 @@
 plugins {
-    alias(libs.plugins.multiplatform)
-    alias(libs.plugins.serialization)
-    alias(libs.plugins.maven)
+    id("ostrom.kmp")
+    id("ostrom.publish")
 }
 
 description = "Ostrom shared contract: the serializable models of the protocol and of the server API."
@@ -30,10 +29,9 @@ tasks.withType<AbstractTestTask>().configureEach {
 
 kotlin {
     explicitApi()
-    macosArm64(); linuxX64(); linuxArm64(); mingwX64()
     sourceSets {
         commonMain.dependencies {
-            api(libs.serialization)
+            api(libs.serialization.json)
         }
         commonTest {
             kotlin.srcDir(generateContractPath)

@@ -12,6 +12,12 @@ internal object JsNumber {
 
     private const val TWO_POW_53 = 9_007_199_254_740_992.0
 
+    /** `n` (the decimal exponent of ECMAScript's `Number::toString`) up to which a number is written without `e`. */
+    private const val MAX_FIXED_N = 21
+
+    /** `n` from which a number below 1 is written without `e`: `0.000001` has `n = -5`, `1e-7` has `n = -6`. */
+    private const val MIN_FIXED_N = -5
+
     /**
      * Formats [value] as ECMAScript does.
      *
@@ -19,174 +25,228 @@ internal object JsNumber {
      *
      * @return Its ECMAScript text; `null` for NaN and infinities, as `JSON.stringify` writes them.
      */
-    fun format(value: Double): String {
-        if (value.isNaN() || value.isInfinite()) return "null"
-        if (value == 0.0) return "0"
-        val sign = if (value < 0) "-" else ""
-        val abs = if (value < 0) -value else value
-        if (abs < TWO_POW_53 && abs == abs.toLong().toDouble()) return sign + abs.toLong().toString()
-        val (digits, n) = shortest(abs)
+    fun format(value: Double): String = when {
+        !value.isFinite() -> "null"
+        value == 0.0 -> "0"
+        value < 0 -> "-" + formatPositive(-value)
+        else -> formatPositive(value)
+    }
+
+    private fun formatPositive(abs: Double): String =
+        if (abs < TWO_POW_53 && abs == abs.toLong().toDouble()) {
+            abs.toLong().toString()
+        } else {
+            val decimal = shortest(abs)
+            layout(decimal.digits, decimal.pos)
+        }
+
+    /** Writes `0.digits × 10^n` as ECMAScript's `Number::toString` steps 6 to 10 do. */
+    private fun layout(digits: String, n: Int): String {
         val k = digits.length
-        val body = when {
-            n in k..21 -> digits + "0".repeat(n - k)
-            n in 1..21 -> digits.substring(0, n) + "." + digits.substring(n)
-            n in -5..0 -> "0." + "0".repeat(-n) + digits
+        return when {
+            n in k..MAX_FIXED_N -> digits + "0".repeat(n - k)
+            n in 1..MAX_FIXED_N -> digits.substring(0, n) + "." + digits.substring(n)
+            n in MIN_FIXED_N..0 -> "0." + "0".repeat(-n) + digits
             else -> {
                 val e = n - 1
                 val exponent = if (e >= 0) "+$e" else "$e"
-                if (k == 1) "${digits}e$exponent" else "${digits[0]}.${digits.substring(1)}e$exponent"
+                val mantissa = if (k == 1) digits else "${digits[0]}.${digits.substring(1)}"
+                "${mantissa}e$exponent"
             }
         }
-        return sign + body
     }
 
-    /** A positive decimal `0.digits × 10^pos`, digits without leading or trailing zeros. */
-    private data class Decimal(val digits: String, val pos: Int) : Comparable<Decimal> {
-        override fun compareTo(other: Decimal): Int {
-            if (pos != other.pos) return pos.compareTo(other.pos)
-            val length = maxOf(digits.length, other.digits.length)
-            for (i in 0 until length) {
-                val a = digits.getOrElse(i) { '0' }
-                val b = other.digits.getOrElse(i) { '0' }
-                if (a != b) return a.compareTo(b)
-            }
-            return 0
-        }
+    /** Returns the shortest decimal of [abs] (> 0, finite) that reads back as [abs]. */
+    private fun shortest(abs: Double): Decimal {
+        val interval = RoundingInterval.of(abs)
+        return (1 until interval.exact.digits.length).firstNotNullOfOrNull(interval::candidate) ?: interval.exact
     }
+}
 
-    /** Returns the shortest round-tripping digits of [abs] (> 0, finite) and ECMAScript's `n`. */
-    private fun shortest(abs: Double): Pair<String, Int> {
-        val bits = abs.toRawBits()
-        val exponentField = ((bits ushr 52) and 0x7FF).toInt()
-        val fraction = bits and 0xFFFFFFFFFFFFFL
-        val mantissa = if (exponentField == 0) fraction else fraction or (1L shl 52)
-        val exponent = if (exponentField == 0) -1074 else exponentField - 1075
-        val exact = decimalOf(mantissa, exponent)
-        val high = decimalOf(2 * mantissa + 1, exponent - 1)
-        val low = if (fraction == 0L && exponentField > 1) decimalOf(4 * mantissa - 1, exponent - 2)
-        else decimalOf(2 * mantissa - 1, exponent - 1)
-        val evenMantissa = mantissa % 2 == 0L
-        fun roundTrips(candidate: Decimal): Boolean {
-            val toLow = candidate.compareTo(low)
-            val toHigh = candidate.compareTo(high)
-            return (toLow > 0 && toHigh < 0) || ((toLow == 0 || toHigh == 0) && evenMantissa)
-        }
-        for (k in 1 until exact.digits.length) {
-            val lower = normalize(exact.digits.substring(0, k), exact.pos)
-            val upper = increment(exact.digits.substring(0, k), exact.pos)
-            val lowerOk = roundTrips(lower)
-            val upperOk = roundTrips(upper)
-            if (!lowerOk && !upperOk) continue
-            val chosen = when {
-                lowerOk && !upperOk -> lower
-                upperOk && !lowerOk -> upper
-                else -> {
-                    val rest = exact.digits.substring(k)
-                    val half = rest.compareTo("5")
-                    when {
-                        half < 0 -> lower
-                        half > 0 -> upper
-                        exact.digits[k - 1].digitToInt() % 2 == 0 -> lower
-                        else -> upper
-                    }
-                }
-            }
-            return chosen.digits to chosen.pos
-        }
-        return exact.digits to exact.pos
-    }
-
-    /** Adds one unit in the last place of `0.digits × 10^pos`. */
-    private fun increment(digits: String, pos: Int): Decimal {
-        val chars = digits.toCharArray()
-        var i = chars.size - 1
-        while (i >= 0 && chars[i] == '9') {
-            chars[i] = '0'
-            i--
-        }
-        return if (i < 0) normalize("1" + chars.concatToString(), pos + 1)
-        else {
-            chars[i] = chars[i] + 1
-            normalize(chars.concatToString(), pos)
-        }
-    }
-
-    private fun normalize(digits: String, pos: Int): Decimal {
-        val leading = digits.indexOfFirst { it != '0' }
-        if (leading < 0) return Decimal("", 0)
-        return Decimal(digits.substring(leading).trimEnd('0'), pos - leading)
-    }
-
-    /** The exact decimal value of `m × 2^e`, for `m > 0`. */
-    private fun decimalOf(m: Long, e: Int): Decimal {
-        val big = BigDecimalDigits(m)
-        return if (e >= 0) {
-            big.multiplyByPowerOf(2, e)
-            val text = big.toDecimalString()
-            normalize(text, text.length)
+/** A positive decimal `0.digits × 10^pos`, digits without leading or trailing zeros. */
+private data class Decimal(val digits: String, val pos: Int) : Comparable<Decimal> {
+    override fun compareTo(other: Decimal): Int =
+        if (pos != other.pos) {
+            pos.compareTo(other.pos)
         } else {
-            // m × 2^e = m × 5^-e / 10^-e
-            big.multiplyByPowerOf(5, -e)
-            val text = big.toDecimalString()
-            normalize(text, text.length + e)
+            // same exponent: equal-length digit strings compare as the numbers they write
+            val length = maxOf(digits.length, other.digits.length)
+            digits.padEnd(length, '0').compareTo(other.digits.padEnd(length, '0'))
+        }
+}
+
+/**
+ * The decimals that read back as one double: strictly between [low] and [high], or on a bound when the mantissa is
+ * even ([inclusive], round half to even).
+ *
+ * @property exact The exact decimal value of the double.
+ */
+private class RoundingInterval(
+    val exact: Decimal,
+    private val low: Decimal,
+    private val high: Decimal,
+    private val inclusive: Boolean,
+) {
+
+    private fun contains(candidate: Decimal): Boolean {
+        val toLow = candidate.compareTo(low)
+        val toHigh = candidate.compareTo(high)
+        return (toLow > 0 && toHigh < 0) || ((toLow == 0 || toHigh == 0) && inclusive)
+    }
+
+    /**
+     * The [k]-digit decimal that reads back as the double, the closest to it when both neighbours do (the even one
+     * when they are exactly as close: `646628074277751.25` is written `646628074277751.2`); null when neither does.
+     */
+    fun candidate(k: Int): Decimal? {
+        val prefix = exact.digits.substring(0, k)
+        val lower = normalize(prefix, exact.pos)
+        val upper = increment(prefix, exact.pos)
+        val lowerInside = contains(lower)
+        val upperInside = contains(upper)
+        return when {
+            lowerInside && upperInside -> if (closerToLower(k)) lower else upper
+            lowerInside -> lower
+            upperInside -> upper
+            else -> null
         }
     }
 
-    /** A non-negative integer in base 10^9 limbs, little-endian; only what [decimalOf] needs. */
-    private class BigDecimalDigits(value: Long) {
-        // 5^1075 and 2^1024 fit in 85 limbs of 9 digits; the array grows if ever needed
-        private var limbs = LongArray(8)
-        private var size = 0
+    /** Whether the exact value is nearer the lower [k]-digit neighbour, ties going to the even one. */
+    private fun closerToLower(k: Int): Boolean {
+        val rest = exact.digits.substring(k)
+        return rest < "5" || (rest == "5" && exact.digits[k - 1].digitToInt() % 2 == 0)
+    }
 
-        init {
-            var v = value
-            while (v > 0) {
-                push(v % BASE)
-                v /= BASE
+    companion object {
+        private const val MANTISSA_BITS = 52
+        private const val EXPONENT_MASK = 0x7FFL
+        private const val FRACTION_MASK = 0xFFFFFFFFFFFFFL
+        private const val SUBNORMAL_EXPONENT = -1074
+        private const val EXPONENT_BIAS = 1075
+
+        /** Below a power of two the gap is half the gap above: the low bound is `(4m - 1) × 2^(e - 2)`. */
+        private const val QUARTER_STEPS = 4L
+
+        fun of(abs: Double): RoundingInterval {
+            val bits = abs.toRawBits()
+            val exponentField = ((bits ushr MANTISSA_BITS) and EXPONENT_MASK).toInt()
+            val fraction = bits and FRACTION_MASK
+            val subnormal = exponentField == 0
+            val mantissa = if (subnormal) fraction else fraction or (1L shl MANTISSA_BITS)
+            val exponent = if (subnormal) SUBNORMAL_EXPONENT else exponentField - EXPONENT_BIAS
+            val low = if (fraction == 0L && exponentField > 1) {
+                decimalOf(QUARTER_STEPS * mantissa - 1, exponent - 2)
+            } else {
+                decimalOf(2 * mantissa - 1, exponent - 1)
             }
+            return RoundingInterval(
+                exact = decimalOf(mantissa, exponent),
+                low = low,
+                high = decimalOf(2 * mantissa + 1, exponent - 1),
+                inclusive = mantissa % 2 == 0L,
+            )
         }
+    }
+}
 
-        private fun push(limb: Long) {
-            if (size == limbs.size) limbs = limbs.copyOf(limbs.size * 2)
-            limbs[size++] = limb
-        }
+/** Adds one unit in the last place of `0.digits × 10^pos`. */
+private fun increment(digits: String, pos: Int): Decimal {
+    val chars = digits.toCharArray()
+    var i = chars.size - 1
+    while (i >= 0 && chars[i] == '9') {
+        chars[i] = '0'
+        i--
+    }
+    return if (i < 0) {
+        normalize("1" + chars.concatToString(), pos + 1)
+    } else {
+        chars[i] = chars[i] + 1
+        normalize(chars.concatToString(), pos)
+    }
+}
 
-        fun multiplyByPowerOf(factor: Int, power: Int) {
-            var left = power
-            // factor^chunk stays below 2^31, so limb × multiplier stays below 2^62
-            val chunk = if (factor == 2) 30 else 13
-            while (left > 0) {
-                val step = minOf(chunk, left)
-                var multiplier = 1L
-                repeat(step) { multiplier *= factor }
-                multiplySmall(multiplier)
-                left -= step
-            }
-        }
+/**
+ * Strips the trailing zeros of `0.digits × 10^pos`. [digits] never starts with a zero here: it is a prefix of an exact
+ * value, that prefix plus one unit, or the decimal text of a positive integer.
+ */
+private fun normalize(digits: String, pos: Int): Decimal = Decimal(digits.trimEnd('0'), pos)
 
-        private fun multiplySmall(multiplier: Long) {
-            var carry = 0L
-            for (i in 0 until size) {
-                val product = limbs[i] * multiplier + carry
-                limbs[i] = product % BASE
-                carry = product / BASE
-            }
-            while (carry > 0) {
-                push(carry % BASE)
-                carry /= BASE
-            }
-        }
+private const val FIVE = 5
 
-        fun toDecimalString(): String {
-            if (size == 0) return "0"
-            val out = StringBuilder(size * 9)
-            out.append(limbs[size - 1].toString())
-            for (i in size - 2 downTo 0) out.append(limbs[i].toString().padStart(9, '0'))
-            return out.toString()
-        }
+/** The exact decimal value of `m × 2^e`, for `m > 0`. */
+private fun decimalOf(m: Long, e: Int): Decimal {
+    val big = BigDecimalDigits(m)
+    return if (e >= 0) {
+        big.multiplyByPowerOf(2, e)
+        val text = big.toDecimalString()
+        normalize(text, text.length)
+    } else {
+        // m × 2^e = m × 5^-e / 10^-e
+        big.multiplyByPowerOf(FIVE, -e)
+        val text = big.toDecimalString()
+        normalize(text, text.length + e)
+    }
+}
 
-        private companion object {
-            const val BASE = 1_000_000_000L
+/** A non-negative integer in base 10^9 limbs, little-endian; only what [decimalOf] needs. */
+private class BigDecimalDigits(value: Long) {
+    // 5^1075 and 2^1024 fit in 85 limbs of 9 digits; the array grows if ever needed
+    private var limbs = LongArray(INITIAL_LIMBS)
+    private var size = 0
+
+    init {
+        var v = value
+        while (v > 0) {
+            push(v % BASE)
+            v /= BASE
         }
+    }
+
+    private fun push(limb: Long) {
+        if (size == limbs.size) limbs = limbs.copyOf(limbs.size * 2)
+        limbs[size++] = limb
+    }
+
+    fun multiplyByPowerOf(factor: Int, power: Int) {
+        var left = power
+        // factor^chunk stays below 2^31, so limb × multiplier stays below 2^62
+        val chunk = if (factor == 2) TWO_CHUNK else FIVE_CHUNK
+        while (left > 0) {
+            val step = minOf(chunk, left)
+            var multiplier = 1L
+            repeat(step) { multiplier *= factor }
+            multiplySmall(multiplier)
+            left -= step
+        }
+    }
+
+    private fun multiplySmall(multiplier: Long) {
+        var carry = 0L
+        for (i in 0 until size) {
+            val product = limbs[i] * multiplier + carry
+            limbs[i] = product % BASE
+            carry = product / BASE
+        }
+        while (carry > 0) {
+            push(carry % BASE)
+            carry /= BASE
+        }
+    }
+
+    // never empty: the value is the mantissa of a non-zero double, times a power of 2 or 5
+    fun toDecimalString(): String {
+        val out = StringBuilder(size * LIMB_DIGITS)
+        out.append(limbs[size - 1].toString())
+        for (i in size - 2 downTo 0) out.append(limbs[i].toString().padStart(LIMB_DIGITS, '0'))
+        return out.toString()
+    }
+
+    private companion object {
+        const val BASE = 1_000_000_000L
+        const val LIMB_DIGITS = 9
+        const val INITIAL_LIMBS = 8
+        const val TWO_CHUNK = 30
+        const val FIVE_CHUNK = 13
     }
 }

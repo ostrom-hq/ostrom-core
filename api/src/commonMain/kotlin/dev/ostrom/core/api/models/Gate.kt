@@ -263,7 +263,12 @@ public data class Approval(
  * @property url Link.
  */
 @Serializable
-public data class ApprovalCommit(val sha: String, val title: String, val author: String? = null, val url: String? = null)
+public data class ApprovalCommit(
+    val sha: String,
+    val title: String,
+    val author: String? = null,
+    val url: String? = null,
+)
 
 /** State of a CI check. */
 @Serializable

@@ -16,13 +16,16 @@ import kotlinx.serialization.json.jsonPrimitive
 internal object Vectors {
 
     fun read(relative: String): JsonElement =
-        SystemFileSystem.source(Path(COMPAT_VECTORS_DIR, relative)).buffered().use { Json.parseToJsonElement(it.readString()) }
+        SystemFileSystem.source(Path(COMPAT_VECTORS_DIR, relative)).buffered()
+            .use { Json.parseToJsonElement(it.readString()) }
 
     val key: JsonObject by lazy { read("neutral/key.json").jsonObject }
 
     val signingKey: ReceiptSigningKey by lazy { ReceiptSigningKey.fromSeed(hex(key.text("seedHex"))) }
 
-    val receipts: List<JsonObject> by lazy { read("neutral/receipts.json").jsonObject.getValue("receipts").jsonArray.map { it.jsonObject } }
+    val receipts: List<JsonObject> by lazy {
+        read("neutral/receipts.json").jsonObject.getValue("receipts").jsonArray.map { it.jsonObject }
+    }
 
     fun receipt(name: String): JsonObject = receipts.first { it.text("name") == name }
 }
@@ -33,4 +36,5 @@ internal fun JsonObject.obj(name: String): JsonObject = getValue(name).jsonObjec
 
 internal fun JsonObject.array(name: String): JsonArray = getValue(name).jsonArray
 
-internal fun hex(text: String): ByteArray = ByteArray(text.length / 2) { text.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+internal fun hex(text: String): ByteArray =
+    ByteArray(text.length / 2) { text.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
