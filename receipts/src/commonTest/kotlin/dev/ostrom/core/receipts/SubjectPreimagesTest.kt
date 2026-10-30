@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 package dev.ostrom.core.receipts
 
+import dev.ostrom.core.api.models.CheckAttestation
+import dev.ostrom.core.api.models.ReceiptNode
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 class SubjectPreimagesTest {
 
@@ -36,5 +39,22 @@ class SubjectPreimagesTest {
                 """"repo":null,"sessionId":"s","shown":"d"}""",
             CanonicalJson.encode(gate),
         )
+    }
+
+    @Test
+    fun theAttestationOfACheckIsSignedAndAnotherNodeWritesNone() {
+        // a declared run and an attested one must not share a preimage: the attestation is in the signed part
+        val gate = ReceiptNode("n2", "w1", "gate", "Push to main", "approved")
+        fun preimage(attestation: CheckAttestation): String {
+            val check = ReceiptNode("n1", "w1", "check", "Tests", "passed", attestation = attestation)
+            return CanonicalJson.encode(SubjectPreimages.workflow("s1", "p1", listOf(check, gate)))
+        }
+        assertEquals(
+            """{"nodes":[{"attestation":"ci","id":"n1","kind":"check","label":"Tests","outcome":"passed",""" +
+                """"workflowId":"w1"},{"id":"n2","kind":"gate","label":"Push to main","outcome":"approved",""" +
+                """"workflowId":"w1"}],"package":"p1","session":"s1"}""",
+            preimage(CheckAttestation.CI),
+        )
+        assertNotEquals(preimage(CheckAttestation.CI), preimage(CheckAttestation.WORKSTATION_DECLARED))
     }
 }
