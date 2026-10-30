@@ -112,6 +112,28 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+  /ready:
+    get:
+      operationId: ready
+      x-ostrom-status: served
+      tags:
+      - meta
+      summary: "Readiness probe, unauthenticated: 200 `ready` when every check passes; 503 `draining` once the server stops
+        taking traffic, or `degraded`"
+      security: []
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '503':
+          description: Draining or degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
   /api/v1/instance:
     get:
       operationId: getInstance
@@ -181,7 +203,9 @@ paths:
   /api/v1/auth/github/start:
     get:
       operationId: startGithubLogin
-      x-ostrom-status: served
+      x-ostrom-status: planned
+      description: "Main serves this path through `startOAuthLogin` (`provider=github`): `redirect` and `reauth`, not the
+        mobile PKCE parameters. Planned until the server takes them."
       tags:
       - auth
       summary: 'Start the GitHub OAuth sign-in. Browser: `redirect`. Mobile app: `redirect_uri` (ostrom://auth/callback),
@@ -269,7 +293,9 @@ paths:
   /api/v1/auth/github/callback:
     get:
       operationId: githubLoginCallback
-      x-ostrom-status: served
+      x-ostrom-status: planned
+      description: "Main serves this path through `oauthLoginCallback` (`provider=github`), for the browser sign-in only.
+        Planned until the mobile sign-in is served."
       tags:
       - auth
       summary: GitHub OAuth callback
@@ -292,7 +318,152 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+  /api/v1/auth/providers:
+    get:
+      operationId: listSignInMethods
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The sign-in methods this instance offers (`github`, `google`, `email`)"
+      security: []
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInMethods'
+  /api/v1/auth/{provider}/start:
+    get:
+      operationId: startOAuthLogin
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Send the browser to the provider's consent page (sets the state cookie). On a refusal, a redirect to the
+        console's `/login?error=` (`unavailable`, `rate_limited`, `expired`, `refused`, `link_required`,
+        `identity_taken`)"
+      parameters:
+      - name: provider
+        in: path
+        required: true
+        description: "`github` or `google`"
+        schema:
+          type: string
+      - name: redirect
+        in: query
+        required: false
+        description: "The console path to return to"
+        schema:
+          type: string
+      - name: reauth
+        in: query
+        required: false
+        description: "Sign in again before a yes: the provider asks again"
+        schema:
+          type: boolean
+      security: []
+      responses:
+        '302':
+          description: "Redirect"
+  /api/v1/auth/{provider}/callback:
+    get:
+      operationId: oauthLoginCallback
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Where the provider sends the browser back: sets the session cookies and redirects to the console (or to
+        `/login?error=`)"
+      parameters:
+      - name: provider
+        in: path
+        required: true
+        description: "`github` or `google`"
+        schema:
+          type: string
+      - name: code
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: error
+        in: query
+        required: false
+        schema:
+          type: string
+      security: []
+      responses:
+        '302':
+          description: "Redirect"
+  /api/v1/auth/{provider}/link:
+    post:
+      operationId: linkSignInProvider
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "A signed-in person (browser session and `X-CSRF-Token`) starts linking a provider to their account: the answer
+        gives the consent page to open, the state cookie is set, and the callback links the identity"
+      parameters:
+      - name: provider
+        in: path
+        required: true
+        description: "`github` or `google`"
+        schema:
+          type: string
+      - name: redirect
+        in: query
+        required: false
+        description: "The console path to return to"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkStarted'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/device:
+    get:
+      operationId: getDeviceLogin
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The pending `ostrom login` the person is about to answer (browser session only)"
+      parameters:
+      - name: userCode
+        in: query
+        required: true
+        description: "The code the CLI shows"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceAuthorization'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
     post:
       operationId: startDeviceLogin
       x-ostrom-status: served
@@ -355,6 +526,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+  /api/v1/auth/device/answer:
+    post:
+      operationId: answerDeviceLogin
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Approve or deny an `ostrom login` (browser session only)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceAnswer'
+      responses:
+        '204':
+          description: "Answered"
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/token/refresh:
     post:
       operationId: refreshToken
@@ -559,7 +756,9 @@ paths:
   /api/v1/auth/me:
     get:
       operationId: getMe
-      x-ostrom-status: served
+      x-ostrom-status: planned
+      description: "Main serves this path with another body, `Profile` (id, login, displayName, primaryEmail, avatarUrl,
+        createdAt, emails, providers, csrfToken). Planned until the server answers `Me`."
       tags:
       - auth
       summary: 'The caller: login, member, organization'
@@ -582,6 +781,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Me'
+  /api/v1/auth/me/audit:
+    get:
+      operationId: listMyAudit
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The person's account-level signed audit events, newest first (scope `profile:read`)"
+      parameters:
+      - name: before
+        in: query
+        required: false
+        description: "The `sequence` of the last event of the previous page"
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: false
+        description: "1 to 200, 50 by default"
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountAuditPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/email:
     post:
       operationId: requestSignInEmail
@@ -834,6 +1066,97 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/tokens:
+    get:
+      operationId: listTokens
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The person's live personal and CLI tokens, newest first (browser session only)"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createToken
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Create a personal token: the answer is the only one with its secret (browser session only)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenCreate'
+      responses:
+        '201':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedToken'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/tokens/{id}:
+    delete:
+      operationId: revokeToken
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Revoke a token (browser session only)"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: "Revoked"
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/tokens/{id}/rotate:
+    post:
+      operationId: rotateToken
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Replace a token's secret: the old one stops working (browser session only)"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '201':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedToken'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
   /api/v1/service-keys:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -1076,6 +1399,7 @@ paths:
     get:
       operationId: listMyOrganizations
       x-ostrom-status: planned
+      description: "Not served: main serves `listOrgs` (`GET /api/v1/orgs`)."
       tags:
       - organization
       summary: The organizations the caller is an active member of, to choose the one sent in `Ostrom-Org`. Needs no
@@ -1474,12 +1798,530 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/orgs:
+    get:
+      operationId: listOrgs
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "The caller's organizations (scope `orgs:read`)"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgViewList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createOrg
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Create an organization; the caller owns it (scope `orgs:write`)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgCreate'
+      responses:
+        '201':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}:
+    get:
+      operationId: getOrg
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "One organization. Every route under `/api/v1/orgs/{org}` first resolves the caller as a member of that
+        organization: a 404 for a missing organization as for someone else's. People only: an agent, device or service
+        token gets 403"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgView'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: renameOrg
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Rename an organization (scope `orgs:write`)"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgRename'
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteOrg
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Delete an organization: its short name typed again in the body; a browser session only, never a token"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgDeleteConfirm'
+      responses:
+        '204':
+          description: "Deleted"
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}/transfer:
+    post:
+      operationId: transferOrg
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Give the ownership to another member; a browser session only, never a token"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgTransfer'
+      responses:
+        '204':
+          description: "Transferred"
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}/leave:
+    post:
+      operationId: leaveOrg
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "The caller leaves the organization (an owner transfers first)"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      responses:
+        '204':
+          description: "Left"
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}/members:
+    get:
+      operationId: listOrgMembers
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "The members (scope `orgs:read`)"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgMemberList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}/members/invites:
+    post:
+      operationId: inviteOrgMembers
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Invite people by e-mail; members and addresses already invited are left out of `invited`"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgInvites'
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgInvited'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}/members/{login}:
+    get:
+      operationId: getOrgMember
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "One member, by login"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      - name: login
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgMember'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: updateOrgMember
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Change a member's role"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      - name: login
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgMemberUpdate'
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgMember'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: removeOrgMember
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Remove a member"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      - name: login
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: "Removed"
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}/invitations:
+    get:
+      operationId: listInvitations
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "The live invitations, by e-mail and by link"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}/invitations/links:
+    post:
+      operationId: createInvitationLink
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Create an invitation link: the answer is the only time its URL is shown"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationLinkCreate'
+      responses:
+        '201':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationLink'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/orgs/{org}/invitations/{id}:
+    delete:
+      operationId: revokeInvitation
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Revoke an invitation"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: "Revoked"
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/invitations/preview:
+    post:
+      operationId: previewInvitation
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "What an invitation leads to, before signing in; the token goes in the body, never in a URL"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationToken'
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationPreview'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/invitations/accept:
+    post:
+      operationId: acceptInvitation
+      x-ostrom-status: served
+      tags:
+      - organization
+      summary: "Join the organization an invitation leads to (scope `orgs:write`)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationToken'
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/org:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getOrganization
       x-ostrom-status: planned
+      description: "Not served: main serves `getOrg` (`GET /api/v1/orgs/{org}`)."
       tags:
       - organization
       summary: The organization
@@ -1506,6 +2348,7 @@ paths:
     get:
       operationId: listMembers
       x-ostrom-status: planned
+      description: "Not served: main serves `listOrgMembers` (`GET /api/v1/orgs/{org}/members`)."
       tags:
       - organization
       summary: Members
@@ -1541,6 +2384,7 @@ paths:
     get:
       operationId: getMember
       x-ostrom-status: planned
+      description: "Not served: main serves `getOrgMember` (`GET /api/v1/orgs/{org}/members/{login}`)."
       tags:
       - organization
       summary: A member
@@ -1570,6 +2414,7 @@ paths:
     patch:
       operationId: updateMember
       x-ostrom-status: planned
+      description: "Not served: main serves `updateOrgMember` (`PATCH /api/v1/orgs/{org}/members/{login}`)."
       tags:
       - organization
       summary: Change a member (role, linked chat accounts)
@@ -1612,6 +2457,7 @@ paths:
     delete:
       operationId: removeMember
       x-ostrom-status: planned
+      description: "Not served: main serves `removeOrgMember` (`DELETE /api/v1/orgs/{org}/members/{login}`)."
       tags:
       - organization
       summary: Remove a member from the organization (or cancel an invitation); the receipts they signed keep naming
@@ -1641,6 +2487,8 @@ paths:
     post:
       operationId: inviteMembers
       x-ostrom-status: planned
+      description: "Not served: main serves `inviteOrgMembers` (`POST /api/v1/orgs/{org}/members/invites`), invitations by
+        e-mail."
       tags:
       - organization
       summary: Invite people
@@ -2283,6 +3131,70 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GateResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/gates/{id}/reserve:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: reserveGate
+      x-ostrom-status: served
+      tags:
+      - gates
+      summary: "Hold a yes for one action before it runs, so that two parallel actions never share it"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GateResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/gates/{id}/release:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: releaseGate
+      x-ostrom-status: served
+      tags:
+      - gates
+      summary: "Give a held yes back when the action did not run"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: "OK"
           content:
             application/json:
               schema:
@@ -4406,6 +5318,54 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/waits/mcp:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: waitsMcp
+      x-ostrom-status: served
+      tags:
+      - waits
+      summary: "The waits MCP server of an agent (Streamable HTTP, JSON answers), bound to its session; 202 for a
+        notification"
+      parameters:
+      - name: session
+        in: query
+        required: false
+        description: "The session the agent runs in"
+        schema:
+          type: string
+      - name: run
+        in: query
+        required: false
+        description: "The workflow run, if any"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              {}
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                {}
+        '202':
+          description: "Notification accepted"
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/waits/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -5171,7 +6131,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: importTeamCode
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - import
       summary: Import a TeamCode team read by `ostrom import teamcode` (owners and admins; scope import:write); idempotent
@@ -6554,6 +7514,33 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/terminal:
+    get:
+      operationId: attachRunnerTerminal
+      x-ostrom-status: served
+      tags:
+      - runners
+      summary: "WebSocket: the runner in a session's pod attaches its PTY. Bearer is the execution's runner token. Same frames
+        as `attachCloudTerminal`; closes 4401 without a valid runner token, 4409 when a newer execution holds the
+        session"
+      parameters:
+      - name: sessionId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: epoch
+        in: query
+        required: true
+        schema:
+          type: integer
+      responses:
+        '101':
+          description: "Switching protocols"
+        '401':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/runner/heartbeat:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6780,6 +7767,108 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/artifacts/mcp:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: artifactsMcp
+      x-ostrom-status: served
+      tags:
+      - artifacts
+      summary: "The artifacts MCP server (Streamable HTTP, JSON answers); 202 for a notification"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              {}
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                {}
+        '202':
+          description: "Notification accepted"
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /a/{id}/{ticket}/{path}:
+    get:
+      operationId: getArtifactContent
+      x-ostrom-status: served
+      tags:
+      - artifacts
+      summary: "A file of an artifact for a member, on the isolated content origin only (the ticket comes from
+        `createArtifactTicket`); `path` may span several segments. Every answer carries the content policy (sandbox, no
+        cookies)"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ticket
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: path
+        required: true
+        description: "The file's path in the version, `/` included"
+        schema:
+          type: string
+      security: []
+      responses:
+        '200':
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/Error'
+  /l/{slug}/{path}:
+    get:
+      operationId: getArtifactLinkContent
+      x-ostrom-status: served
+      tags:
+      - artifacts
+      summary: "A file of an artifact shared by link (`access: link`), on the isolated content origin only; `path` may span
+        several segments"
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: path
+        required: true
+        description: "The file's path in the version, `/` included"
+        schema:
+          type: string
+      security: []
+      responses:
+        '200':
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts/{id}:
     parameters:
@@ -8641,6 +9730,80 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
   schemas:
+    AccountAuditEvent:
+      type: object
+      description: "A signed account-level audit event"
+      properties:
+        id:
+          type: string
+        sequence:
+          type: integer
+        orgId:
+          type:
+          - string
+          - 'null'
+        actorId:
+          type:
+          - string
+          - 'null'
+        action:
+          type: string
+        targetType:
+          type: string
+        targetId:
+          type: string
+        details:
+          type: object
+          additionalProperties:
+            type: string
+        occurredAt:
+          type: string
+          format: date-time
+        previousHash:
+          type:
+          - string
+          - 'null'
+        hash:
+          type: string
+          description: SHA-256 of the canonical form
+        signature:
+          type: string
+          description: The instance's Ed25519 signature of the canonical form (base64)
+        keyId:
+          type: string
+          description: The instance key that signed it (`GET /api/v1/instance/keys`)
+      required:
+      - id
+      - sequence
+      - orgId
+      - actorId
+      - action
+      - targetType
+      - targetId
+      - details
+      - occurredAt
+      - previousHash
+      - hash
+      - signature
+      - keyId
+      x-ostrom-kotlin: pending
+    AccountAuditPage:
+      type: object
+      description: "A page of audit events, newest first"
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountAuditEvent'
+        nextBefore:
+          type:
+          - integer
+          - 'null'
+          description: The `before` of the next page; null on the last
+      required:
+      - events
+      - nextBefore
+      x-ostrom-kotlin: pending
     ActivityActor:
       type: object
       description: Who did it
@@ -10123,6 +11286,19 @@ components:
       - classes
       - patterns
       - resolved
+    CreatedToken:
+      type: object
+      description: "A token just issued: the only answer with its secret"
+      properties:
+        token:
+          $ref: '#/components/schemas/Token'
+        secret:
+          type: string
+          description: 'Use it as `Authorization: Bearer <secret>`'
+      required:
+      - token
+      - secret
+      x-ostrom-kotlin: pending
     Decision:
       type: object
       description: A signed decision on something else than a gate (a rule, a workflow, an owner, a policy)
@@ -10206,6 +11382,34 @@ components:
       - id
       - name
       - platform
+      x-ostrom-kotlin: pending
+    DeviceAnswer:
+      type: object
+      description: "The answer to an `ostrom login`"
+      properties:
+        userCode:
+          type: string
+        approve:
+          type: boolean
+      required:
+      - userCode
+      - approve
+      x-ostrom-kotlin: pending
+    DeviceAuthorization:
+      type: object
+      description: "A pending `ostrom login`, as the console shows it"
+      properties:
+        userCode:
+          type: string
+        clientName:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - userCode
+      - clientName
+      - expiresAt
       x-ostrom-kotlin: pending
     DeviceCode:
       type: object
@@ -10705,6 +11909,118 @@ components:
       - algorithm
       - publicKeyPem
       - firstSeenAt
+      x-ostrom-kotlin: pending
+    Invitation:
+      type: object
+      description: "A live invitation"
+      properties:
+        id:
+          type: string
+        email:
+          type:
+          - string
+          - 'null'
+          description: Null for a link
+        role:
+          type: string
+          description: '`owner`, `admin`, `member`, `approver` or `billing`'
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        maxUses:
+          type:
+          - integer
+          - 'null'
+        uses:
+          type: integer
+      required:
+      - id
+      - email
+      - role
+      - createdAt
+      - expiresAt
+      - maxUses
+      - uses
+      x-ostrom-kotlin: pending
+    InvitationLink:
+      type: object
+      description: "A new invitation link: the only time its URL is shown"
+      properties:
+        invitation:
+          $ref: '#/components/schemas/Invitation'
+        url:
+          type: string
+      required:
+      - invitation
+      - url
+      x-ostrom-kotlin: pending
+    InvitationLinkCreate:
+      type: object
+      description: "A new invitation link"
+      properties:
+        role:
+          type: string
+          description: '`member` by default'
+        maxUses:
+          type: integer
+          description: How many people it can bring in, 1 to 100 (10 by default)
+      x-ostrom-kotlin: pending
+    InvitationList:
+      type: object
+      description: "The live invitations"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invitation'
+      required:
+      - items
+      x-ostrom-kotlin: pending
+    InvitationPreview:
+      type: object
+      description: "What an invitation leads to"
+      properties:
+        orgName:
+          type: string
+        orgSlug:
+          type: string
+        role:
+          type: string
+          description: '`owner`, `admin`, `member`, `approver` or `billing`'
+        email:
+          type:
+          - string
+          - 'null'
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - orgName
+      - orgSlug
+      - role
+      - email
+      - expiresAt
+      x-ostrom-kotlin: pending
+    InvitationToken:
+      type: object
+      description: "An invitation link's token, sent in the body"
+      properties:
+        token:
+          type: string
+      required:
+      - token
+      x-ostrom-kotlin: pending
+    LinkStarted:
+      type: object
+      description: "The consent page of a started link"
+      properties:
+        authorizationUrl:
+          type: string
+      required:
+      - authorizationUrl
       x-ostrom-kotlin: pending
     McpArgumentCondition:
       type: object
@@ -11296,6 +12612,160 @@ components:
       - sent
       - logged-only
       - not-sent
+    OrgCreate:
+      type: object
+      description: "A new organization"
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+          description: Derived from the name when absent
+      required:
+      - name
+      x-ostrom-kotlin: pending
+    OrgDeleteConfirm:
+      type: object
+      description: "Confirms a deletion"
+      properties:
+        confirm:
+          type: string
+          description: The organization's short name, typed again
+      required:
+      - confirm
+      x-ostrom-kotlin: pending
+    OrgInvited:
+      type: object
+      description: "Who was invited"
+      properties:
+        invited:
+          type: array
+          items:
+            type: string
+      required:
+      - invited
+      x-ostrom-kotlin: pending
+    OrgInvites:
+      type: object
+      description: "Invitations by e-mail"
+      properties:
+        invites:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+              role:
+                type: string
+                description: '`member` by default'
+            required:
+            - email
+      required:
+      - invites
+      x-ostrom-kotlin: pending
+    OrgMember:
+      type: object
+      description: "A member as `/api/v1/orgs/{org}/members` serves it (no member id there)"
+      properties:
+        login:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          description: Empty when none
+        email:
+          type:
+          - string
+          - 'null'
+        role:
+          type: string
+          description: '`owner`, `admin`, `member`, `approver` or `billing`'
+        joinedAt:
+          type: string
+          format: date-time
+      required:
+      - login
+      - name
+      - avatarUrl
+      - email
+      - role
+      - joinedAt
+      x-ostrom-kotlin: pending
+    OrgMemberList:
+      type: object
+      description: "The members"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrgMember'
+      required:
+      - items
+      x-ostrom-kotlin: pending
+    OrgMemberUpdate:
+      type: object
+      description: "A member's new role"
+      properties:
+        role:
+          type: string
+          description: '`admin`, `member`, `approver` or `billing`'
+      required:
+      - role
+      x-ostrom-kotlin: pending
+    OrgRename:
+      type: object
+      description: "A new name"
+      properties:
+        name:
+          type: string
+      required:
+      - name
+      x-ostrom-kotlin: pending
+    OrgTransfer:
+      type: object
+      description: "The new owner"
+      properties:
+        login:
+          type: string
+      required:
+      - login
+      x-ostrom-kotlin: pending
+    OrgView:
+      type: object
+      description: "An organization as its member sees it"
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          description: '`owner`, `admin`, `member`, `approver` or `billing`'
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - slug
+      - name
+      - role
+      - createdAt
+      x-ostrom-kotlin: pending
+    OrgViewList:
+      type: object
+      description: "The caller's organizations"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrgView'
+      required:
+      - items
+      x-ostrom-kotlin: pending
     Organization:
       type: object
       description: 'An organization: a GitHub organization connected to Ostrom'
@@ -11514,6 +12984,57 @@ components:
           type: string
       required:
       - type
+    Profile:
+      type: object
+      description: "The signed-in person, as main's `GET /api/v1/auth/me` answers today (see `getMe`)"
+      properties:
+        id:
+          type: string
+        login:
+          type: string
+        displayName:
+          type: string
+        primaryEmail:
+          type:
+          - string
+          - 'null'
+        avatarUrl:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+        emails:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+              verified:
+                type: boolean
+            required:
+            - email
+            - verified
+        providers:
+          type: array
+          items:
+            type: string
+          description: '`github`, `google`, `email`, `oidc:<connection>`'
+        csrfToken:
+          type: string
+          description: For a browser session only
+      required:
+      - id
+      - login
+      - displayName
+      - primaryEmail
+      - avatarUrl
+      - createdAt
+      - emails
+      - providers
+      x-ostrom-kotlin: pending
     PublicKey:
       type: object
       description: A public key of the instance
@@ -12262,6 +13783,17 @@ components:
       - sharedWith
       - paused
       x-ostrom-kotlin: pending
+    SignInMethods:
+      type: object
+      description: "The sign-in methods this instance offers"
+      properties:
+        methods:
+          type: array
+          items:
+            type: string
+      required:
+      - methods
+      x-ostrom-kotlin: pending
     SignedGatePolicy:
       type: object
       description: 'A gate policy signed by the instance: `signature` (base64, Ed25519 by the key `kid` of
@@ -12740,6 +14272,80 @@ components:
       required:
       - launcher
       - packageName
+      x-ostrom-kotlin: pending
+    Token:
+      type: object
+      description: "A personal or CLI token, without its secret"
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          description: '`personal` or `cli`'
+        scopes:
+          type: array
+          items:
+            type: string
+        hint:
+          type: string
+          description: The first characters of its secret
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        lastUsedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: Precise to five minutes
+      required:
+      - id
+      - name
+      - kind
+      - scopes
+      - hint
+      - createdAt
+      - expiresAt
+      - lastUsedAt
+      x-ostrom-kotlin: pending
+    TokenCreate:
+      type: object
+      description: "A personal token to create"
+      properties:
+        name:
+          type: string
+          description: 1 to 100 characters
+        scopes:
+          type: array
+          items:
+            type: string
+          description: '`resource:action`, 1 to 32'
+        expiresInDays:
+          type:
+          - integer
+          - 'null'
+          description: 1 to 366; no expiry when absent
+      required:
+      - name
+      - scopes
+      x-ostrom-kotlin: pending
+    TokenList:
+      type: object
+      description: "The live tokens, newest first"
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Token'
+      required:
+      - tokens
       x-ostrom-kotlin: pending
     Usage:
       type: object
