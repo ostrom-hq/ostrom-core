@@ -27,7 +27,8 @@ Contents: [1 Architecture](#1-architecture) · [2 Kotlin code](#2-kotlin-code) �
 [6 Logs and configuration](#6-logs-and-configuration) · [7 Tests](#7-tests) · [8 Lint and style](#8-lint-and-style) ·
 [9 Gradle](#9-gradle) · [10 Kotlin/Native](#10-kotlinnative) · [11 CI](#11-ci) ·
 [12 Versions, releases, publication](#12-versions-releases-publication) · [13 TypeScript](#13-typescript) ·
-[14 Git and pull requests](#14-git-and-pull-requests) · [15 What Nathan does not do](#15-what-nathan-does-not-do)
+[14 Git and pull requests](#14-git-and-pull-requests) · [15 What Nathan does not do](#15-what-nathan-does-not-do) ·
+[16 Multi-tenancy, security and performance budgets](#16-multi-tenancy-security-and-performance-budgets)
 
 ---
 
@@ -766,3 +767,60 @@ Each item is something his code avoids or his reviews refused.
 - **Kill a process, stop a Gradle daemon, or delete a worktree he did not start** (`teamcode:AGENTS.md`).
 - **`any`, `as` casts, `!`, `@ts-ignore`, `eslint-disable`** in TypeScript (`react-bp`, `cr-app:eslint.config.mjs`).
 - **Present something planned as implemented**, in a README, a doc page or a CLI help text (`teamcode:AGENTS.md`).
+
+---
+
+## 16. Multi-tenancy, security and performance budgets
+
+Product decisions for the public release (30/10/2026) and the findings of the prototype's security audit. They bind
+every repository.
+
+### 16.1 Every row belongs to an organization
+
+- Every table holding customer data has an `org_id` column, part of its primary access index (equality column first,
+  `teamcode:AGENTS.md` index rule).
+- **Isolation is enforced by PostgreSQL Row-Level Security**, not only by `WHERE org_id = ?`: each table has
+  `ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY`, a policy on `current_setting('ostrom.org_id')`, and the
+  application connects with a role that does not bypass RLS. The repository sets the organization at the start of each
+  transaction, from the authenticated principal only. `SET LOCAL` takes no bind parameter, so use
+  `SELECT set_config('ostrom.org_id', $1, true)` (the `true` makes it transaction-local), never a string-built `SET`.
+- The migration that creates a table creates its policy in the same file.
+- **One end-to-end test per resource proves another organization neither sees nor changes it** (list, read, update,
+  delete: 404 and nothing changed in the database), on top of the route tests of section 1.6 (`ENG-054`).
+- SQLite (tests, local single-user mode) has no RLS: the same repository code still filters on `org_id`, and the RLS
+  tests run on PostgreSQL in CI.
+
+### 16.2 Credentials and scopes
+
+- A route that creates or replaces an account, a member or a token requires a strong user authentication; it is never
+  reachable without a token, nor with an agent or device token.
+- Console write routes (workflows, policies, gate actions, rules, members) require an authenticated **user session** and
+  the right role. A device or agent-session token never grants them.
+- The token given to an agent is scoped to its own session: it cannot mark a check as passed, close or reopen another
+  session, or set its own cost. Check results are signed or recomputed by the server.
+- What an approver is shown (diff, commits) is computed by the server from the source of truth, never from a ref the
+  client can move; a "yes" is bound to what was shown, signed in the receipt, and consumed once in a transaction.
+- Each of these properties has a test that tries to break it (the audit cases `audit-gate.test.ts`,
+  `audit-push.test.mjs` of the prototype are ported as end-to-end tests).
+
+### 16.3 Performance budgets, tested in CI
+
+| Budget | Value | Where it is tested |
+| --- | --- | --- |
+| CLI hook (start to exit) | < 15 ms | `ostrom-cli` end-to-end, release binary, median and p95 over repeated runs |
+| CLI start-up (`ostrom --version`) | < 30 ms | `ostrom-cli` end-to-end |
+| Server start-up (process start to ready) | < 200 ms | `ostrom-server` end-to-end, against the CI PostgreSQL |
+| API p95 under nominal load | < 50 ms | `ostrom-server` k6 run on every pull request |
+
+A budget test fails the job when exceeded; it never retries until green. A pull request that moves a measured value by
+more than 10 % says so in its description with before/after numbers. Section 10.3 lists what makes Kotlin/Native slow;
+start-up is where it shines: keep `main` free of eager work (no global `object` initialization doing IO, Koin modules
+built once, no reflection).
+
+### 16.4 Observability
+
+OpenTelemetry to Grafana Cloud. `opentelemetry-kotlin` (0.9.0, 09/10/2026) publishes no Linux, macOS or Windows
+artifacts, so the server exports through a thin OTLP/HTTP (JSON) exporter in `infrastructure`, behind domain interfaces
+(`MetricsService`, `TracingService`), as `asonar` keeps OpenTelemetry behind `TelemetryFactory` and
+`OpenTelemetryMetricsService`. Metric attributes are bounded enums, never ids (`ENG-003`); no prompt, token or body in a
+span or a log (section 6.1).
