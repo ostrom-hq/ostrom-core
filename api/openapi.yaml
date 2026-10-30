@@ -7324,6 +7324,15 @@ components:
           type: string
         updatedAt:
           type: string
+        nextRunAt:
+          type: string
+          description: The next cron slot, while the automation is enabled
+        previousSecretValidUntil:
+          type: string
+          description: Until when the webhook's former secret is still accepted after a rotation
+        secret:
+          type: string
+          description: The webhook secret, only in the answer to its creation (whsec_…); never readable again
       required:
       - id
       - name
