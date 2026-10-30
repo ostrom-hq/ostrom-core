@@ -5,7 +5,7 @@ API contract. Targets: `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (Kotli
 
 | Module | Artifact | Contents |
 |---|---|---|
-| `api` | `dev.ostrom:ostrom-api` | serializable models (`dev.ostrom.core.api.models`) |
+| `api` | `dev.ostrom:ostrom-api` | serializable models (`dev.ostrom.core.api.models`): organization, member, team, dev, rule, session and its segments, gate request, approval (yes bound to repository, SHA and commits), answer, decision, check run, notification, receipt, session package (hooks, scripts, notifications, nodes, MCP, files), workflow (nodes trigger, step, check, gate, notify, agent, wait, workflow), workflow run and visits, automation, wait; and `OstromJson`, the shared JSON configuration |
 | `receipts` | `dev.ostrom:ostrom-receipts` | canonical JSON v1, SHA-256 digests, Ed25519 signing and offline verification of receipts and session packages, subject preimages |
 
 Receipts and packages are byte-compatible with the TypeScript prototype: the tests replay its golden vectors
