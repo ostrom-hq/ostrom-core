@@ -27,7 +27,8 @@ Contents: [1 Architecture](#1-architecture) · [2 Kotlin code](#2-kotlin-code) �
 [6 Logs and configuration](#6-logs-and-configuration) · [7 Tests](#7-tests) · [8 Lint and style](#8-lint-and-style) ·
 [9 Gradle](#9-gradle) · [10 Kotlin/Native](#10-kotlinnative) · [11 CI](#11-ci) ·
 [12 Versions, releases, publication](#12-versions-releases-publication) · [13 TypeScript](#13-typescript) ·
-[14 Git and pull requests](#14-git-and-pull-requests) · [15 What Nathan does not do](#15-what-nathan-does-not-do)
+[14 Git and pull requests](#14-git-and-pull-requests) · [15 What Nathan does not do](#15-what-nathan-does-not-do) ·
+[16 Multi-tenancy, security and performance budgets](#16-multi-tenancy-security-and-performance-budgets)
 
 ---
 
@@ -190,7 +191,8 @@ fun Route.gatesRoutes(dependencies: GatesRoutesDependencies) = with(dependencies
 - Version the management API under `/api/v1` (`teamcode:docs/architecture.md`).
 - Mappers are extension functions in `presentation/mappers/<feature>/`: `Gate.toGateResponse()`
   (`asonar:presentation/mappers/`).
-- **Every route declares who may call it, and a test proves it**: without a token → 401; another team's resource → 404,
+- **Every route declares who may call it, and a test proves it**: without a token → 401 (except the unauthenticated routes listed in `ostrom-server`'s `docs/security.md`,
+  section 16.2, each tested as such); another organization's resource → 404,
   exactly like an unknown id; a list returns only the caller's rows (`ENG-054`). Identity comes from the credential,
   never from a caller-controlled header (`teamcode:docs/architecture.md`).
 
@@ -226,7 +228,7 @@ Keep native files thin: the logic stays in `commonMain`, where it is unit-tested
  *
  * @param principal The authenticated approver; never the requester, unless they are the only declared approver.
  * @return The gate as it is after the answer.
- * @throws GateNotFoundException When the gate does not exist or belongs to another team.
+ * @throws GateNotFoundException When the gate does not exist or belongs to another organization.
  */
 suspend operator fun invoke(principal: Principal, gateId: Uuid, answer: GateAnswer): Gate
 ```
@@ -251,28 +253,57 @@ A refusal the code expects is a **domain exception** (one class per case, in `do
 result; presentation maps it to a status in one StatusPages configuration. Never `return@get call.respond(...)`
 scattered in routes with free-text bodies (that is `asonar`'s shortcut, which `kotlin-bp` explicitly overrides).
 
-```kotlin
-// domain
-class GateNotFoundException : Exception()
-class GateAlreadyAnsweredException : Exception()
+**On Kotlin/Native, StatusPages matches a handler by the exact exception class only** (found by `ostrom-server`,
+30/10/2026: every domain error, being a subclass, answered 500). So domain exceptions extend one base that carries its
+`ErrorKind` (the stable key of section 3.3), presentation maps each kind to its status once, and the single `Throwable`
+handler routes by type:
 
-// presentation/config/ErrorHandling.kt
-fun Application.configureErrorHandling() {
+```kotlin
+// domain of the shared kernel: no Ktor type here
+enum class ErrorKind(val code: String) {
+    INVALID_REQUEST("invalid_request"), UNAUTHENTICATED("unauthenticated"), FORBIDDEN("forbidden"),
+    NOT_FOUND("not_found"), CONFLICT("conflict"), PAYMENT_REQUIRED("payment_required"), INTERNAL("internal_error"),
+}
+
+open class OstromException(val kind: ErrorKind, message: String) : Exception(message)
+
+// domain
+class GateNotFoundException : OstromException(ErrorKind.NOT_FOUND, "Gate not found.")
+class GateAlreadyAnsweredException : OstromException(ErrorKind.CONFLICT, "The gate is already answered.")
+
+// presentation/config/ErrorHandling.kt: the only place a kind becomes a status (section 3.2)
+fun ErrorKind.status(): HttpStatusCode = when (this) {
+    ErrorKind.INVALID_REQUEST -> HttpStatusCode.BadRequest
+    ErrorKind.UNAUTHENTICATED -> HttpStatusCode.Unauthorized
+    ErrorKind.FORBIDDEN -> HttpStatusCode.Forbidden
+    ErrorKind.NOT_FOUND -> HttpStatusCode.NotFound
+    ErrorKind.CONFLICT -> HttpStatusCode.Conflict
+    ErrorKind.PAYMENT_REQUIRED -> HttpStatusCode.PaymentRequired
+    ErrorKind.INTERNAL -> HttpStatusCode.InternalServerError
+}
+
+fun Application.configureErrorHandling(logger: Logger) {
     install(StatusPages) {
-        exception<GateNotFoundException> { call, _ -> call.respondError(HttpStatusCode.NotFound, "gate_not_found") }
-        exception<GateAlreadyAnsweredException> { call, _ ->
-            call.respondError(HttpStatusCode.Conflict, "gate_already_answered")
-        }
         exception<Throwable> { call, cause ->
-            // A cancelled call (client gone, server stopping) is not a defect: let it propagate (section 4.1).
-            if (cause is CancellationException) throw cause
-            // Unexpected only. Log the type and the request id, never the request or response body.
-            call.application.log.error("Unhandled ${cause::class.simpleName} on ${call.request.path()}", cause)
-            call.respondError(HttpStatusCode.InternalServerError, "internal_error")
+            when (cause) {
+                // A cancelled call (client gone, server stopping) is not a defect: let it propagate (section 4.1).
+                is CancellationException -> throw cause
+                is OstromException -> call.respondError(cause.kind, cause.message ?: cause.kind.code)
+                is BadRequestException -> call.respondError(ErrorKind.INVALID_REQUEST, "The request is malformed.")
+                else -> {
+                    // Unexpected only. Log the type and the request id, never the request or response body.
+                    logger.error("unexpected failure", mapOf("request_id" to call.callId), cause)
+                    call.respondError(ErrorKind.INTERNAL, "Internal error.")
+                }
+            }
         }
     }
 }
 ```
+
+A test throws a **subclass** of the base and asserts its status and key (`ostrom-server:HttpTest.
+domainErrorSubclassKeepsItsKindAndMessage`), and another throws an unexpected exception and asserts a 500 that does not
+echo its message.
 
 ### 3.2 The status names the refusal (`ENG-007`)
 
@@ -383,7 +414,7 @@ Cleanup that must run when the caller is cancelled (kill a child process, close 
   Kotlin/Native (`teamcode` uses `io.ktor.util.logging`). No SLF4J/Logback: they are JVM-only.
 - CLI: human output on stdout, diagnostics on stderr, never both mixed in a machine-readable output (`--json`).
 - **Never log credentials, tokens, prompts, response bodies, or raw provider errors** (`teamcode:AGENTS.md`). Identifiers
-  (team, user, run) are not metric labels.
+  (organization, user, run) are not metric labels.
 - A guard that refuses or skips is **counted** (a counter with a bounded `reason` attribute) rather than logged at each
   hit (`ENG-003`), once metrics exist; until then one `debug` line, never an `info` per request.
 
@@ -396,6 +427,8 @@ Cleanup that must run when the caller is cancelled (kill a child process, close 
 // worker-tutorial: Env.kt (expect) + Env.native.kt (actual, platform.posix.getenv)
 expect fun getEnv(name: String): String?
 
+// The serving process reads OSTROM_DATABASE_URL (runtime role) and never the migration URL; `ostrom-server migrate`
+// has its own MigrationConfig that reads only OSTROM_DATABASE_MIGRATION_URL (section 16.1).
 data class ServerConfig(val port: Int, val databaseUrl: String, val publicUrl: String) {
     companion object {
         fun fromEnvironment(): ServerConfig = ServerConfig(
@@ -559,9 +592,12 @@ Every module also has `jvm()` for tests and coverage only (section 7.2).
   only touch `infrastructure`. The fallback, if sqlx4k stalls, is a thin `libpq` cinterop wrapper (the approach of
   `hfhbd/postgres-native-sqldelight`, itself unmaintained since 2023 and limited to one connection: not usable as is).
 - Queries are written with bound parameters only; never string interpolation of a value into SQL.
-- **Migrations are versioned SQL files**, applied at startup by sqlx4k's migrator; a published migration is never edited
+- **Migrations are versioned SQL files**, applied by sqlx4k's migrator in a separate step (`ostrom-server migrate`, its
+  own process and job, with the owner credentials), never by the serving process. The one exception is the local
+  single-user mode (SQLite, no roles, one process), which migrates then serves. A published migration is never edited
   (`teamcode:AGENTS.md`, the Flyway rule). Each migration exists in a PostgreSQL and a SQLite flavour when the dialects
-  differ, and the contract test suite (section 7.3) runs on both.
+  differ, and the contract test suite (section 7.3) runs on both. Row-Level Security exists only in the PostgreSQL
+  flavour (section 16.1).
 - Every new query on a request path comes with its `EXPLAIN ANALYZE` on a table seeded at production scale, before and
   after, in the pull request (`teamcode:AGENTS.md`, `ENG-004`).
 
@@ -640,6 +676,10 @@ Template: [`docs/conventions/.github/workflows/build.yml`](conventions/.github/w
   (`teamcode:AGENTS.md`). A versioned release requires the full native matrix green.
 - Test tasks always execute in CI: never `FROM-CACHE` or `UP-TO-DATE` (`ENG-032`; the template's init script does it).
 - No secret in clear; publication uses `GITHUB_TOKEN` with `packages: write` on the publishing job only.
+- Package managers: Gradle for Kotlin; **npm** for `ostrom-app` (Expo's default) and **pnpm** for `ostrom-web`. The
+  pnpm variant of `build-ts.yml` is written in it, commented out: `pnpm/action-setup` (pinned by SHA) **before**
+  `setup-node`, the version taken from `packageManager` in `package.json` (required), then `cache: pnpm`,
+  `pnpm install --frozen-lockfile` and `pnpm run <script>` (no `--` before script arguments: `pnpm run test --coverage`).
 
 ---
 
@@ -766,3 +806,113 @@ Each item is something his code avoids or his reviews refused.
 - **Kill a process, stop a Gradle daemon, or delete a worktree he did not start** (`teamcode:AGENTS.md`).
 - **`any`, `as` casts, `!`, `@ts-ignore`, `eslint-disable`** in TypeScript (`react-bp`, `cr-app:eslint.config.mjs`).
 - **Present something planned as implemented**, in a README, a doc page or a CLI help text (`teamcode:AGENTS.md`).
+
+---
+
+## 16. Multi-tenancy, security and performance budgets
+
+Product decisions for the public release (30/10/2026) and the findings of the prototype's security audit. They bind
+every repository. "Organization" (`org_id`) is the tenant everywhere: in tables, principals, routes and tests.
+
+### 16.1 Every row belongs to an organization, enforced by PostgreSQL
+
+- Every table holding an organization's data has an `org_id` column, first in its access indexes (equality column
+  first, `teamcode:AGENTS.md` index rule).
+- **Isolation is enforced by Row-Level Security**, not only by `WHERE org_id = ?`. Every such table, `organizations`,
+  memberships and tokens included, has `ENABLE ROW LEVEL SECURITY`, `FORCE ROW LEVEL SECURITY` and policies that
+  **fail closed**:
+
+```sql
+CREATE POLICY gates_org ON gates
+    USING (org_id = nullif(current_setting('ostrom.org_id', true), '')::uuid)
+    WITH CHECK (org_id = nullif(current_setting('ostrom.org_id', true), '')::uuid);
+```
+
+  Without an organization set, `current_setting(..., true)` gives NULL (or `''`, mapped to NULL): no row matches,
+  nothing errors, nothing leaks. `organizations` uses `id` in place of `org_id`.
+- **The serving process cannot bypass RLS.** It connects with a role that owns nothing and is neither superuser nor
+  `BYPASSRLS`; migrations run in a separate step with owner credentials the serving process never receives (section
+  10.2; local single-user mode is the exception). A CI integration test connects with the serving role and proves it
+  can neither read another organization's rows nor alter a table, a policy or a function.
+- **No tenant query outside an organization's transaction.** The infrastructure exposes one entry point,
+  `withOrganization(orgId) { transaction -> ... }`, which opens the transaction and runs
+  `SELECT set_config('ostrom.org_id', $1, true)` first (`true`: transaction-local; `SET LOCAL` takes no bind parameter,
+  and a session-level setting would leak to the next request on the pooled connection). Repositories of tenant tables
+  only receive that transaction; they never see the pool.
+- **Cross-organization operations are few, named and tested.** What must run before or across organizations (resolving
+  a token, device or session from its secret; sign-in and SSO discovery; magic links, device codes and the setup link;
+  creating an organization; listing a user's organizations; invitations; signed billing webhooks) is an enumerated set
+  of narrow database functions, each taking exactly what its operation needs and touching only the rows of that
+  operation, each with a test that it does nothing for a wrong input and cannot enumerate rows. Their mechanism
+  (`SECURITY DEFINER` functions owned by a dedicated role with explicit schema and table grants, ownership re-asserted
+  after every re-creation and checked in CI) is designed and kept in `ostrom-server`'s `docs/tenancy.md`, which lists
+  them. Everything else goes through `withOrganization`.
+- The PostgreSQL flavour of a migration that creates a tenant table creates its policies in the same file; the SQLite
+  flavour has no RLS. SQLite (tests, local single-user mode) relies on the same repository code filtering on `org_id`.
+- **One end-to-end test per resource** proves another organization neither sees nor changes it (list, read, update,
+  delete: 404 and nothing changed), on PostgreSQL and on SQLite, on top of the route tests of section 1.6 (`ENG-054`).
+
+### 16.2 Credentials and scopes
+
+- **Unauthenticated routes are an explicit list** in `ostrom-server`'s `docs/security.md`, each with its test: sign-in
+  start and callback (GitHub, Google, OIDC, SAML), magic-link request and redemption, device authorization (code
+  request, polling, approval page), setup-link redemption, health and readiness, billing webhooks (verified by
+  signature), public documentation. Every other route requires a credential.
+- Creating an organization, an account, a member or a long-lived token requires a **user session** from one of those
+  sign-ins (or the device flow approved by such a session, or the setup link for the very first organization); an
+  agent or device token never creates or replaces an account, a member or a token.
+- **Bootstrap** never goes through an open "create operator" route nor "the first sign-in wins". On the host,
+  `ostrom-server bootstrap` prints a one-time setup link (single use, short expiry); redeeming it creates the first
+  owner, their organization and their session, with no identity provider needed. Its redemption route is in the
+  unauthenticated list. The local single-user launcher runs the same bootstrap itself.
+- Console write routes (workflows, policies, gate actions, rules, members) require a user session and the right role.
+- The token given to an agent is scoped to its own session: it cannot mark a check as passed, close or reopen another
+  session, or set its own cost. Check results are signed or recomputed by the server.
+- What an approver is shown (diff, commits) is computed by the server from the source of truth, never from a ref the
+  client can move; a "yes" is bound to what was shown, signed in the receipt, and consumed once in a transaction.
+- Each property has a test that tries to break it; the prototype's audit cases (`audit-gate.test.ts`,
+  `audit-push.test.mjs`) are ported as end-to-end tests.
+
+### 16.3 Performance budgets, tested in CI
+
+| Budget | Value | Measured |
+| --- | --- | --- |
+| CLI start-up | < 30 ms | `ostrom --version`, release binary, process start to exit |
+| CLI hook | < 15 ms | one hook invocation with its input on stdin, release binary, process start to exit (the hook path loads less than `--version`'s full command tree: keep it that way) |
+| Server start-up | < 200 ms | process start to the first `200` on the readiness route, on an already migrated database; `migrate` time is reported by its own job |
+| API p95 | < 50 ms | k6 at the nominal load written in the test, server and PostgreSQL on the same runner |
+
+Readiness is false while the schema is older than the minimum version the binary needs; a newer schema is accepted.
+Migrations follow **expand then contract**: a release only adds (columns nullable or defaulted, new tables, new
+functions under new names, policies and grants that the previous release also satisfies); what the previous release
+still uses is removed or changed one release later, never in place. So version N keeps serving on the N+1 schema during
+a rolling deploy, and rolling back one version needs no down-migration.
+
+How the gate stays meaningful on shared runners:
+
+- Each start-up budget is measured over 50 runs after 5 warm-up runs; the job fails when the **median** exceeds the
+  budget, and reports p95. The API test fails on p95 over 50 ms or an error rate over 0.1 %.
+- Runner class: `ubuntu-24.04` (x64), written in the job. A failing budget is investigated, never retried until green;
+  a budget changes only by a pull request that says why, with measurements.
+- Besides the absolute budget, each job builds `main` and the pull request in the same job and alternates their runs
+  (A/B on the same runner, no stored baseline), each arm on its own database migrated by its own binary. It fails when
+  the pull request's value (median for start-up, p95 for the API) is over 20 % **and** over an absolute margin above
+  `main`'s: 2 ms for CLI start-up and hook, 10 ms for server start-up, 5 ms for API p95. A pull request that moves a
+  measured value by more than 10 % says so with before/after.
+
+Section 10.3 lists what makes Kotlin/Native slow; start-up is where it shines: keep `main` free of eager work (no global
+`object` initialization doing IO, Koin modules built once, no reflection).
+
+### 16.4 Observability
+
+OpenTelemetry to Grafana Cloud. `opentelemetry-kotlin` (0.9.0, 09/10/2026) publishes no Linux, macOS or Windows
+artifacts, so the server exports through a thin OTLP/HTTP exporter (protobuf, or JSON if the protobuf encoder is not
+ready; both are accepted by the OTLP gateway) in `infrastructure`, behind domain interfaces (`MetricsService`,
+`TracingService`), as `asonar` keeps OpenTelemetry behind `TelemetryFactory` and `OpenTelemetryMetricsService`.
+
+- Export never runs on the request path. **Metrics** are aggregated in memory (counters, histograms) and exported
+  periodically; a failed export keeps the aggregate for the next one. **Spans** go into a bounded queue sent in batches
+  by a background coroutine with a timeout; on overflow the oldest spans are dropped and counted in a metric, which
+  survives in the aggregate until an export succeeds. Telemetry never slows a request or start-up.
+- **Metric** attributes are bounded values, never identifiers (`ENG-003`, section 6.1). Spans and logs may carry
+  organization and run ids for correlation. No prompt, token or body in a span, a metric or a log.
