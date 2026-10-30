@@ -12,7 +12,7 @@ coordination journal at 02:15. Every finding gives its evidence as `repository#P
 Severity: **critical** (an outsider or an agent breaks isolation, a yes or an account today), **high** (a go blocker:
 a rule of § 16 is not met, or the hole opens as soon as the next module lands), **medium**, **low**.
 
-Commits read: server `feat/socle` 77a3e76, `feat/identity` 368121a (+ local `feat/identity-signin` 97fc8e1, not
+Second pass at 04:05 (fetch of every branch; heads in the status column). Commits read at the first pass: server `feat/socle` 77a3e76, `feat/identity` 368121a (+ local `feat/identity-signin` 97fc8e1, not
 pushed), `feat/gates-storage` 298ee4f, `feat/secrets` 9bf908a, `feat/mcp-relay` c9eea2d, `feat/runners-drivers`
 04f2c67, `feat/billing-module` 6011e13; web `feat/api-client`, `feat/yes-screens`, `ci/image`; helm `feat/chart`;
 app `main` bd01382.
@@ -21,17 +21,17 @@ app `main` bd01382.
 
 | Id | Severity | Area | Finding | Where | Status |
 |---|---|---|---|---|---|
-| S2-01 | high | tenancy | RLS does not hold in production: the chart's PostgreSQL user is a superuser (bypasses `FORCE`), gates rely on `FORCE` alone, and secrets, mcp-relay, runners and billing tables have no RLS at all | server#1, #8, #10, #4, #13, #6, #15; helm#1 | open |
-| S2-02 | high | auth | No forwarded-address handling: every sign-in rate limit is keyed on the ingress proxy's address, one bucket for the whole internet (10 `ostrom login` per 10 min, 30 OAuth starts, 10 magic links) | server#1, #10 | open |
-| S2-03 | high | auth (A2) | Console routes do not refuse agent or device credentials by construction: gates, secrets, mcp-relay and billing routes check no scope and no credential kind, and lean on three resolvers not written yet | server#8, #4, #13, #15 | open |
-| S2-04 | high | auth (A1/A2, M2) | The CLI token carries `gates:answer` and `workflows:write` and lives on the developer's machine, readable by the agent: the agent answers other people's gates or removes its own | server#10 `Policies.kt:36` | open |
-| S2-05 | high | gates (A7b) | A push's diff, commits and force flag come from the hook, never from GitHub; nothing checks after the push that what landed is what was shown | server#8 `AskGateUseCase.kt:90-122` | open |
-| S2-06 | high | gates (A8) | A merge gate whose pull request head is unknown (no GitHub integration yet) binds the yes to the command text: commits pushed after the yes are merged under it | server#8 `AskGateUseCase.kt:81-84`, `DefaultGatePorts.kt:43` | open |
+| S2-01 | high | tenancy | RLS does not hold in production: the chart's PostgreSQL user is a superuser (bypasses `FORCE`), gates rely on `FORCE` alone, and secrets, mcp-relay, runners and billing tables have no RLS at all | server#1, #8, #10, #4, #13, #6, #15; helm#1 | **partial** (04:05): chart fixed on `main` (helm#3 97c9d9e: owner and serving roles `NOSUPERUSER NOBYPASSRLS`, migrate init container); secrets, mcp-relay, sharing (`inTenant`: `SET LOCAL ROLE` + FORCE, secrets#4 98a794f), billing, sessions, receipts (FORCE) in PRs, not proven in CI (drafts or pending). Still open: runners without RLS, identity tables not forced, no start-up refusal of a superuser/BYPASSRLS role and `Main.kt:55` still migrates at boot (socle 1457b09) |
+| S2-02 | high | auth | No forwarded-address handling: every sign-in rate limit is keyed on the ingress proxy's address, one bucket for the whole internet (10 `ostrom login` per 10 min, 30 OAuth starts, 10 magic links) | server#1, #10 | open (socle 1457b09, signin 8fb1cf5: no forwarded headers) |
+| S2-03 | high | auth (A2) | Console routes do not refuse agent or device credentials by construction: gates, secrets, mcp-relay and billing routes check no scope and no credential kind, and lean on three resolvers not written yet | server#8, #4, #13, #15 | **partial** (04:05): scope + device refusal on secrets, mcp-relay, sharing, gateway, import (`CallerRoutes.kt` `mayUse`), billing (`Access.kt:46`, a09ad31), runners; gates routes still `requirePrincipal` only (`GatesRoutes.kt:70-102`, d6aaea5); kernel `requireOrgPrincipal` takes no scope (socle `OrgPrincipal.kt:56`) |
+| S2-04 | **critical** with S2-31 | auth (A1/A2, M2) | The CLI token carries `gates:answer` and `workflows:write` and lives on the developer's machine, readable by the agent: the agent answers other people's gates or removes its own | server#10 `Policies.kt:36` | open (identity 5ef9505 `Policies.kt:36-38`; CLI login asks no scope, cli#13 `DeviceLogin.kt:40`) |
+| S2-05 | high | gates (A7b) | A push's diff, commits and force flag come from the hook, never from GitHub; nothing checks after the push that what landed is what was shown | server#8 `AskGateUseCase.kt:90-122` | **partial** (d6aaea5): force ORed with the command, diff labelled "sent by the developer's machine, not checked"; post-push comparison waits for the GitHub webhook; CI not run (draft) |
+| S2-06 | high | gates (A8) | A merge gate whose pull request head is unknown (no GitHub integration yet) binds the yes to the command text: commits pushed after the yes are merged under it | server#8 `AskGateUseCase.kt:81-84`, `DefaultGatePorts.kt:43` | **fixed in code** (d6aaea5 `AskGateUseCase.kt` `pullRequestOf`: 503 without a known head, 400 for a merge without PR number; `AskGateUseCaseTest`); CI not run on the draft, to confirm |
 | S2-07 | high (latent) | auth | Accounts merge on any `email_verified`, whatever the issuer: an organization's own OIDC connection can assert a stranger's address and take their account | server#10 `AccountUseCases.kt:57-66`, signin `OAuthProviders.kt:204-212` | open, before the SSO PR |
-| S2-08 | high | web | The console keeps a bearer token in `localStorage`; any XSS (agent-written diffs, commands, PR titles are rendered) steals it | web#3 `src/shared/auth/authStore.ts` | open |
-| S2-09 | medium | web, headers | No Content-Security-Policy and no HSTS on the console | web#4 `docker/security-headers.conf` | open |
-| S2-10 | high | cloud | Cloud sessions run anyone's code (Free plan) on ControlResell's production nodes with runc only: no sandbox runtime, `nodeSelector`/`tolerations` not applied by the driver, ControlResell's addresses not denied | server#9, helm#1 | open |
-| S2-11 | medium | secrets | The chart passes no `OSTROM_SECRETS_KEY`: each pod generates its own key file in its ephemeral filesystem (secrets lost on restart, unreadable by the other replicas); the file is written before `chmod` | server#4 `SecretsKey.kt:42-51`, helm#1 | open |
+| S2-08 | high | web | The console keeps a bearer token in `localStorage`; any XSS (agent-written diffs, commands, PR titles are rendered) steals it | web#3 `src/shared/auth/authStore.ts` | open **and now on `main`** (web#3 merged 29a78fb: `authStore.ts:23-33` keeps the token in `localStorage`) |
+| S2-09 | medium | web, headers | No Content-Security-Policy and no HSTS on the console | web#4 `docker/security-headers.conf` | open **on `main`** (web#4 merged: `docker/security-headers.conf` has no CSP nor HSTS) |
+| S2-10 | high | cloud | Cloud sessions run anyone's code (Free plan) on ControlResell's production nodes with runc only: no sandbox runtime, `nodeSelector`/`tolerations` not applied by the driver, ControlResell's addresses not denied | server#9, helm#1 | **neutralized by default** (helm#3: `cloudSessions.enabled: false`); the org allow-list decided at 03:20 is not in the server yet, no sandbox runtime |
+| S2-11 | medium | secrets | The chart passes no `OSTROM_SECRETS_KEY`: each pod generates its own key file in its ephemeral filesystem (secrets lost on restart, unreadable by the other replicas); the file is written before `chmod` | server#4 `SecretsKey.kt:42-51`, helm#1 | **partial** (98a794f: key file `O_EXCL` 0600); chart still passes no `OSTROM_SECRETS_KEY` (helm `main`) |
 | S2-12 | medium | auth | Session cookie without the `__Host-` prefix; an artifacts sub-domain of `ostrom.run` could set a parent-domain cookie (session fixation) | server#10 `IdentityRoutes.kt:181` | open |
 | S2-13 | medium | auth | Device-flow phishing: the client name is chosen by the caller and the prefilled `verification_uri_complete` invites a one-click approval of a 90-day token | server#10 `DeviceUseCases.kt:60`, `IdentityRoutes.kt:97` | open |
 | S2-14 | medium | gates | An approved yes never expires, and can be reserved and consumed while its receipt is not signed | server#8 `UseGateUseCase.kt:66-77`, `EnsureGateReceiptUseCase.kt` | open |
@@ -39,18 +39,25 @@ app `main` bd01382.
 | S2-16 | low | auth | Agent tokens are revoked by session id across organizations (session ids are agent strings) | server#10 `TokenUseCases.kt:259`, `CredentialsRepositoriesImpl.kt:130` | open |
 | S2-17 | low | auth | Org SSO over OIDC must verify the ID token signature (JWKS from discovery): the token endpoint is chosen by an org admin | signin `OAuthProviders.kt:146-149` | open, before the SSO PR |
 | S2-18 | low | app | Receipts are verified against the key served by the same server, without pinning | app `src/repositories/ReceiptsRepository.ts` | open |
-| S2-21 | medium | sharing | Shared Claude/Codex accounts: tables without RLS, routes without scope; the shared token must only ever be used server-side | server#17 `SharingMigrations.kt`, `SharingRoutes.kt:48-68` | open |
-| S2-22 | high (contract) | auth | `POST /api/v1/auth/launcher/login` exchanges any GitHub token for an Ostrom device token: a token minted for another OAuth app (or stolen) signs in as its user | core `api/openapi.yaml:314` | open, before it is implemented |
-| S2-23 | medium (contract) | auth | Unauthenticated GitHub App manifest and install callbacks: without a `state` bound to an admin session, anyone completes an instance's App setup | core `api/openapi.yaml:950` | open, before it is implemented |
+| S2-21 | medium | sharing | Shared Claude/Codex accounts: tables without RLS, routes without scope; the shared token must only ever be used server-side | server#17 `SharingMigrations.kt`, `SharingRoutes.kt:48-68` | **fixed in code** (sharing 244eaba: `tenantTableSql` on both tables, scoped routes); CI pending |
+| S2-22 | high (contract) | auth | `POST /api/v1/auth/launcher/login` exchanges any GitHub token for an Ostrom device token: a token minted for another OAuth app (or stolen) signs in as its user | core `api/openapi.yaml:314` | open (core `main` `api/openapi.yaml:315`) |
+| S2-23 | medium (contract) | auth | Unauthenticated GitHub App manifest and install callbacks: without a `state` bound to an admin session, anyone completes an instance's App setup | core `api/openapi.yaml:950` | open (core `main` `api/openapi.yaml:951`) |
 | S2-24 | low | app | Mobile sign-in returns to the custom scheme `ostrom://auth/callback`, claimable by another app (PKCE and `state` limit it to a denial) | app#6 `GithubSignInImpl.ts:6` | open |
-| S2-19 | — | core | Package envelopes ignore `revoked` and `contentDigest`, recursive canonical JSON without a depth limit, duplicated `kid` (review of 02:20) | core `main` | fix in progress by CORE (`3d74405`, not pushed at 02:50) |
-| S2-20 | **critical** | CLI | The hook's gate catalogue is a file the agent can write: empty it and date it in the future (age = now − mtime, negative), or delete it and stop the relay → no gate at all; `failMode` is read from that same file | cli#5 `CatalogueStore.kt:24-55`, `Adapters.kt:99-100` | open |
-| S2-25 | **critical** (A12) | CLI | The relay token is in the agent's environment (`OSTROM_RELAY_TOKEN`): the agent calls the relay itself (fake green check, consume, end session); the launcher passes the developer's whole environment | cli#5 `Adapters.kt:18-30`, `SessionHooks.kt:29`, `AgentLauncher.kt:37-44` | open |
-| S2-26 | high (A4) | CLI | Commands are matched on raw text: `g\it push origin main`, `git pu''sh`, `kube''ctl apply`, `B=main; git push origin $B`, `$(…)`, git aliases (`git config alias.ship push`), a script written then run | cli#5 `PushReader.kt:177-215`, `GateCatalogue.kt:55-61`, `ToolSubject.kt:34-61` | open; core's `actions` classifier (not merged) handles most of it |
-| S2-27 | high (A9) | CLI | Push destination ignores `branch.<b>.pushRemote`, `remote.pushDefault`, `--repo <url>`; redirection only checked when the verb is `push` | cli#5 `PushReader.kt:123,144-146,219`, `GateRequests.kt:129` | open |
-| S2-28 | high (A7b) | CLI | The shown diff uses the local remote-tracking ref and `git diff` without `--no-ext-diff --no-textconv`: the agent shapes the diff | cli#5 `Diffs.kt:23-41` | open |
-| S2-29 | high (A24, A13) | CLI | No reserve at PreToolUse; the yes is kept in `.yes.json` (agent-writable) and consumed at PostToolUse only (a failing command keeps it); `consumed` answer lets the action through | cli#5 `GateHook.kt:96-97`, `SessionIds.kt:59-73`, `GateRequests.kt:113` | open |
-| S2-30 | medium | CLI | Fail-open edges: event over 1 MiB or unreadable → allowed; `git` from `PATH`; `-ud`/`-qd` read as a plain push; no PR number sent (server binds the merge to the text, S2-06); install without mandatory signature check, hook binary writable by the agent | cli#5 `HookRunner.kt:39`, `HookEvent.kt:48-54`, `Adapters.kt:56`, `PushReader.kt:122`; cli#4 `install.sh:62-99` | open |
+| S2-19 | — | core | Package envelopes ignore `revoked` and `contentDigest`, recursive canonical JSON without a depth limit, duplicated `kid` (review of 02:20) | core `main` | in PR core#8 (94e43d5), CI `ci` failing |
+| S2-20 | **critical** | CLI | The hook's gate catalogue is a file the agent can write: empty it and date it in the future (age = now − mtime, negative), or delete it and stop the relay → no gate at all; `failMode` is read from that same file | cli#5 `CatalogueStore.kt:24-55`, `Adapters.kt:99-100` | open (cli#5 0c237dc `CatalogueStore.kt:24-32`, `Adapters.kt:110-111`; cli#10 checks a signed package once at launch, without expiry) |
+| S2-25 | **critical** (A12) | CLI | The relay token is in the agent's environment (`OSTROM_RELAY_TOKEN`): the agent calls the relay itself (fake green check, consume, end session); the launcher passes the developer's whole environment | cli#5 `Adapters.kt:18-30`, `SessionHooks.kt:29`, `AgentLauncher.kt:37-44` | **partial**: the device token and `OSTROM_URL` leave the agent env (cli#10 `AgentLaunchUseCase.kt:227-228`); `OSTROM_RELAY_TOKEN` stays (`:209`), one capability for hooks, MCP and inference (cli#9 `Capability.kt:16-19`), and the relay forwards end/consume/reserve/release/checks to it (`RelayTarget.kt:31-36`) |
+| S2-26 | high (A4) | CLI | Commands are matched on raw text: `g\it push origin main`, `git pu''sh`, `kube''ctl apply`, `B=main; git push origin $B`, `$(…)`, git aliases (`git config alias.ship push`), a script written then run | cli#5 `PushReader.kt:177-215`, `GateCatalogue.kt:55-61`, `ToolSubject.kt:34-61` | open (cli#5 0c237dc) |
+| S2-27 | high (A9) | CLI | Push destination ignores `branch.<b>.pushRemote`, `remote.pushDefault`, `--repo <url>`; redirection only checked when the verb is `push` | cli#5 `PushReader.kt:123,144-146,219`, `GateRequests.kt:129` | open (cli#5 0c237dc) |
+| S2-28 | high (A7b) | CLI | The shown diff uses the local remote-tracking ref and `git diff` without `--no-ext-diff --no-textconv`: the agent shapes the diff | cli#5 `Diffs.kt:23-41` | open (cli#5 0c237dc) |
+| S2-29 | high (A24, A13) | CLI | No reserve at PreToolUse; the yes is kept in `.yes.json` (agent-writable) and consumed at PostToolUse only (a failing command keeps it); `consumed` answer lets the action through | cli#5 `GateHook.kt:96-97`, `SessionIds.kt:59-73`, `GateRequests.kt:113` | open (cli#5 0c237dc) |
+| S2-30 | medium | CLI | Fail-open edges: event over 1 MiB or unreadable → allowed; `git` from `PATH`; `-ud`/`-qd` read as a plain push; no PR number sent (server binds the merge to the text, S2-06); install without mandatory signature check, hook binary writable by the agent | cli#5 `HookRunner.kt:39`, `HookEvent.kt:48-54`, `Adapters.kt:56`, `PushReader.kt:122`; cli#4 `install.sh:62-99` | open (cli#5 0c237dc) |
+| S2-31 | **critical** | CLI (A1/M2) | The agent says yes to itself: `ostrom approve <id> --yes` answers with the developer's device token, `--yes` skips the question, the binary is first in the agent's `PATH`; with S2-04 (`gates:answer` in the CLI scopes) and `SOLE_APPROVER`, a solo developer's agent approves its own push | cli#16 `ApprovalCommands.kt:103-113`; cli#10 `AgentLaunchUseCase.kt:224-225`; server#10 `Policies.kt:36-38` | open |
+| S2-32 | high | CLI (M2) | The device token is readable by the agent: `credentials.json` 0600 under the same user, `OSTROM_TOKEN` takes precedence | cli#13 `Credentials.kt:37-51` | open |
+| S2-33 | high | CLI (A13) | The launch package is checked once, then `package.json`, `scripts/` and `plugin/` stay writable by the agent; no binding to the repository, no expiry | cli#10 `PackageLayout.kt:20-45`, `PackageTrust.kt:69-104` | open |
+| S2-34 | medium | CLI | Any `/policy` error, 5xx included, lets the launch go on | cli#10 `LaunchCalls.kt:18-21` | open |
+| S2-35 | medium | CLI | Server key pinned on first use from the same server; `OSTROM_URL` chooses the server for login and approve; `verificationUri` shown unchecked | cli#10 `PackageTrust.kt:132-139`; cli#13 `AccountCommands.kt:25`, `DeviceLogin.kt:46` | open |
+| S2-36 | low | CLI | Files written with the umask then `chmod` (no 0600 creation, no atomic rename) | cli#10 `LaunchFiles.kt:63-66` | open |
+| S2-37 | medium (to confirm) | CLI | Codex: org MCP tools auto-approved (`default_tools_approval_mode="approve"`) and `--dangerously-bypass-hook-trust` with a signed package | cli#10 `CodexAdapter.kt:31` | open |
 
 ## The prototype's holes in the new code
 
@@ -227,6 +234,24 @@ ControlResell's and the nodes' addresses in `extraDeniedCidrs`; otherwise ship w
   grouped short options; send the PR number; cosign check mandatory in `install.sh`, hook binary owned by another
   user or checked by digest at each launch.
 
+- **S2-31** the server refuses `/approvals/*/answer` from a device or CLI token (no `gates:answer` in `CLI_SCOPES`); a yes
+  comes from a browser session with a passkey, or the phone app with biometrics. The CLI refuses `approve` inside an
+  `ostrom` session and loses `--yes`. Until then, `SOLE_APPROVER` must not apply to a yes answered by a CLI token.
+- **S2-32** system keychain with a per-binary ACL, short-lived device token, minimal scopes; ignore `OSTROM_TOKEN`
+  inside an agent session.
+- **S2-33** the hook re-checks the package signature and expiry at each load and runs scripts from a verified digest.
+- **S2-34 to S2-37** fail closed on `/policy` errors; ship the instance key fingerprint with `ostrom login`; create
+  files 0600 and rename; never auto-approve MCP tools for Codex.
+
+Notes from the second pass (not holes): server observability records route templates only, never the path, query or
+headers (server#27 `Tracing.kt`); model prompts reach Langfuse only when the org turns content capture on (core#7
+`genai/ModelCall.kt`, `ContentCapture` off by default); PostHog in web#7 waits for consent, sends path without
+query, no IP geolocation; CLI telemetry (cli#8) is off by default and sends no arguments, paths or repo. The
+retention and sweep policies (`mcp_relay_calls_retention_read`, `sessions_sessions_sweep`) open every org's rows
+to a transaction that sets a custom setting: acceptable because `ostrom.org_id` is just as settable, RLS here
+guards against a forgotten `WHERE`, not SQL injection. Orgs, GitHub webhook, Slack and artifacts modules are still
+empty stubs (`*Module.kt` only): to audit when written.
+
 ## Log
 
 - 30/10 02:50 — first pass: AUTH (identity, sign-in), tenancy, gates, secrets, mcp-relay, runners, billing, web, helm,
@@ -234,3 +259,5 @@ ControlResell's and the nodes' addresses in `extraDeniedCidrs`; otherwise ship w
 - 30/10 02:55 — sharing (server#17), terminal relay (server#14: bearer or single-use ticket, no cookie, no cross-site
   WebSocket hijacking; good), app sign-in (app#6), the contract's unauthenticated operations.
 - 30/10 02:57 — CLI review (cli#5 `5814c9d`, cli#4 `61cb0e1`): two critical holes (S2-20, S2-25) and five more.
+- 30/10 04:05 — second pass: S2-06 and S2-21 fixed in code, S2-01, S2-03, S2-05, S2-11, S2-25 partial, S2-10
+  neutralized by default; new S2-31 (critical) to S2-37. Nothing proven red-then-green in CI yet (server PRs are drafts or pending).
