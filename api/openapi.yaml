@@ -222,6 +222,169 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+  /api/v1/auth/launcher/config:
+    get:
+      operationId: getLauncherConfig
+      tags:
+      - auth
+      summary: What the CLI needs to sign in (GitHub OAuth client id)
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  githubClientId:
+                    type: string
+                required:
+                - githubClientId
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/launcher/login:
+    post:
+      operationId: launcherLogin
+      tags:
+      - auth
+      summary: Exchange a GitHub token proven by the CLI for a device token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                githubToken:
+                  type: string
+                via:
+                  type: string
+              required:
+              - githubToken
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  login:
+                    type: string
+                  token:
+                    type: string
+                  expiresAt:
+                    type: string
+                required:
+                - login
+                - token
+                - expiresAt
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/launches:
+    post:
+      operationId: createLaunch
+      tags:
+      - auth
+      summary: 'Start an agent launch: returns an agent token scoped to the sessions of this launch, expiring at its end.
+        The device token never enters the agent environment'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repo:
+                  type: string
+                agent:
+                  type: string
+                model:
+                  type: string
+              required:
+              - agent
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  launchId:
+                    type: string
+                  agentToken:
+                    type: string
+                  expiresAt:
+                    type: string
+                required:
+                - launchId
+                - agentToken
+                - expiresAt
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/policy/agents:
+    get:
+      operationId: checkAgentPolicy
+      tags:
+      - auth
+      summary: May this developer launch this agent with this model
+      parameters:
+      - name: agent
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: dev
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: model
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  allowed:
+                    type: boolean
+                  reason:
+                    type: string
+                  note:
+                    type: string
+                required:
+                - allowed
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/me:
     get:
       operationId: getMe
@@ -6993,6 +7156,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GatePushRef'
+        force:
+          type: boolean
       required:
       - remote
       - refs

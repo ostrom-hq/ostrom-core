@@ -61,11 +61,13 @@ public data class GateRef(
  *
  * @property remote Remote repository (`owner/name`).
  * @property refs Refs and SHAs.
+ * @property force True for a forced push (`--force`, `+ref`); not part of the push preimage.
  */
 @Serializable
 public data class GatePush(
     val remote: String,
     val refs: List<GatePushRef>,
+    val force: Boolean? = null,
 )
 
 /**

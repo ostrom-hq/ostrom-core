@@ -1107,6 +1107,11 @@
         },
         "required": true,
         "nullable": false
+      },
+      "force": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
       }
     }
   },
