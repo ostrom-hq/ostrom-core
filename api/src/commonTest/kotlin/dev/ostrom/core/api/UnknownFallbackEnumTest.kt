@@ -2,7 +2,11 @@
 package dev.ostrom.core.api
 
 import dev.ostrom.core.api.models.AgentEvent
+import dev.ostrom.core.api.models.Approval
+import dev.ostrom.core.api.models.ApprovalActionKind
+import dev.ostrom.core.api.models.ApprovalActionRisk
 import dev.ostrom.core.api.models.ApprovalStatus
+import dev.ostrom.core.api.models.DiffStats
 import dev.ostrom.core.api.models.ArtifactType
 import dev.ostrom.core.api.models.AutomationTriggerKind
 import dev.ostrom.core.api.models.CheckOutcome
@@ -55,6 +59,14 @@ class UnknownFallbackEnumTest {
     fun everySharedEnumReadsAnUnknownValueAsUnknownAndNeverWritesIt() {
         check(AgentEvent.entries, AgentEvent.Serializer, AgentEvent.UNKNOWN, AgentEvent::value)
         check(ApprovalStatus.entries, ApprovalStatus.Serializer, ApprovalStatus.UNKNOWN, ApprovalStatus::value)
+        check(
+            ApprovalActionKind.entries, ApprovalActionKind.Serializer, ApprovalActionKind.UNKNOWN,
+            ApprovalActionKind::value,
+        )
+        check(
+            ApprovalActionRisk.entries, ApprovalActionRisk.Serializer, ApprovalActionRisk.UNKNOWN,
+            ApprovalActionRisk::value,
+        )
         check(ArtifactType.entries, ArtifactType.Serializer, ArtifactType.UNKNOWN, ArtifactType::value)
         check(
             AutomationTriggerKind.entries, AutomationTriggerKind.Serializer, AutomationTriggerKind.UNKNOWN,
@@ -94,5 +106,21 @@ class UnknownFallbackEnumTest {
                 """"question":{"title":"Ship?"},"createdAt":"t"}""",
         )
         assertEquals(WaitStatus.UNKNOWN, wait.status)
+    }
+
+    @Test
+    fun anApprovalCarriesItsActionAndAnUnknownKindStillDecodes() {
+        val approval = OstromJson.decodeFromString(
+            Approval.serializer(),
+            """{"id":"a1","title":"Merge #12","requestedFrom":"ana","channel":"app","status":"pending",""" +
+                """"shownDigest":"d","action":{"kind":"release","repo":"o/r","ref":"main","headSha":"h",""" +
+                """"risk":"high"},"diffStats":{"files":3,"additions":40,"deletions":2},"diffTruncated":true}""",
+        )
+        val action = approval.action ?: error("no action")
+        assertEquals(ApprovalActionKind.UNKNOWN, action.kind)
+        assertEquals(ApprovalActionRisk.HIGH, action.risk)
+        assertEquals(null, action.baseSha)
+        assertEquals(DiffStats(files = 3, additions = 40, deletions = 2), approval.diffStats)
+        assertEquals(true, approval.diffTruncated)
     }
 }

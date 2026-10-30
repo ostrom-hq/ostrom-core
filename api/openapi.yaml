@@ -16,7 +16,10 @@ info:
 
     A browser signs in with the `ostrom_session` cookie (HttpOnly, Secure, SameSite=Lax); the CLI, the app, devices,
     runners and service keys send a bearer token. With the cookie, every request that changes something (POST, PUT,
-    PATCH, DELETE) also sends `X-CSRF-Token`, equal to the readable `ostrom_csrf` cookie, or is refused with 403.'
+    PATCH, DELETE) also sends `X-CSRF-Token`, equal to the readable `ostrom_csrf` cookie, or is refused with 403.
+
+    Every route is under `/api/v1`, except `/health` and the incoming webhooks (`/webhooks/stripe`, `/webhooks/github`,
+    `/webhooks/slack`), each authenticated by its sender''s signature.'
 servers:
 - url: https://{host}
   variables:
@@ -556,14 +559,92 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Me'
+  /api/v1/auth/email:
+    post:
+      operationId: requestSignInEmail
+      x-ostrom-status: planned
+      tags:
+      - auth
+      summary: E-mail a sign-in link; the answer is the same whether the address has an account or not
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                redirect:
+                  type: string
+                  description: The console path to return to after signing in
+              required:
+              - email
+      responses:
+        '202':
+          description: Sent if the address may sign in
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/email/verify:
+    post:
+      operationId: verifySignInEmail
+      x-ostrom-status: planned
+      tags:
+      - auth
+      summary: 'Sign in with the token of an e-mailed link, read by the console from the link''s fragment
+        (`/auth/email#token=…`). The `Origin` header must be the console''s'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required:
+              - token
+      responses:
+        '200':
+          description: Signed in; the session is in the cookies, never in the body
+          headers:
+            Set-Cookie:
+              description: '`ostrom_session` (HttpOnly) and the readable `ostrom_csrf`'
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedIn'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/link:
     post:
       operationId: exchangeSignInLink
       x-ostrom-status: planned
       tags:
       - auth
-      summary: 'Exchange the token of an e-mailed sign-in link (`opk_…`, read by the console from the link''s fragment) for
-        the session cookie. The token is single-use and never appears in a URL the server receives'
+      summary: 'Exchange an approver''s link (`/yes#signin=opk_…`) for the session cookie. The console and the app read
+        the token from the fragment, erase it at once (`history.replaceState`) and post it here: it never appears in a
+        URL the server receives. Single-use. Not the e-mail sign-in, which is `/api/v1/auth/email/verify`'
       security: []
       requestBody:
         required: true
@@ -605,7 +686,10 @@ paths:
       x-ostrom-status: planned
       tags:
       - auth
-      summary: Revoke the current token; for a browser session, also expire the `ostrom_session` and `ostrom_csrf` cookies
+      summary: Sign out
+      description: 'Revokes the calling token or browser session, deletes the push devices registered with it (the app
+        receives no more yes requests), and for a browser session expires the `ostrom_session` and `ostrom_csrf`
+        cookies.'
       responses:
         '204':
           description: Done
@@ -1158,7 +1242,7 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
-  /api/v1/github/webhook:
+  /webhooks/github:
     post:
       operationId: githubWebhook
       x-ostrom-status: planned
@@ -1177,6 +1261,46 @@ paths:
         '400':
           $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+  /webhooks/slack:
+    post:
+      operationId: receiveSlackInteraction
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: 'Slack interactions (the Approve and Reject buttons of a yes request). Called by Slack only, authenticated
+        by `X-Slack-Signature` (HMAC-SHA256 of `v0:<timestamp>:<body>`) with `X-Slack-Request-Timestamp` at most 5 minutes
+        old'
+      security: []
+      parameters:
+      - name: X-Slack-Signature
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Slack-Request-Timestamp
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                payload:
+                  type: string
+                  description: The interaction, as Slack sends it (JSON text)
+              required:
+              - payload
+      responses:
+        '200':
+          description: Handled; the message in Slack is updated
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
   /api/v1/github/checks:
     post:
@@ -2007,6 +2131,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GateCatalog'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/gates/catalog/signed:
+    get:
+      operationId: getSignedGatePolicy
+      x-ostrom-status: planned
+      tags:
+      - gates
+      summary: 'The gate policy of a repository signed by the instance (Ed25519, key on `/api/v1/instance/keys`), valid 10
+        minutes (`expiresAt`). The hooks trust only this list of guarded actions; a local file may add guarded actions,
+        never remove one; without a valid policy every action is held'
+      parameters:
+      - name: repo
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedGatePolicy'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -7913,7 +8069,7 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
-  /api/v1/billing/stripe/webhook:
+  /webhooks/stripe:
     post:
       operationId: receiveStripeWebhook
       x-ostrom-status: planned
@@ -8128,6 +8284,13 @@ components:
           type: boolean
         expiresAt:
           type: string
+        action:
+          $ref: '#/components/schemas/ApprovalAction'
+        diffStats:
+          $ref: '#/components/schemas/DiffStats'
+        diffTruncated:
+          type: boolean
+          description: The approver is not shown the whole diff; the app then refuses a mobile yes
       required:
       - id
       - title
@@ -8135,6 +8298,44 @@ components:
       - channel
       - status
       - shownDigest
+    ApprovalAction:
+      type: object
+      description: 'The action a yes lets through. With `commitDetails`, `checks`, `diffStats` and `diffTruncated`, it is
+        the proof an approver is shown (decision of 30/10 04:10)'
+      properties:
+        kind:
+          $ref: '#/components/schemas/ApprovalActionKind'
+        repo:
+          type: string
+        ref:
+          type: string
+        headSha:
+          type: string
+        baseSha:
+          type: string
+        risk:
+          $ref: '#/components/schemas/ApprovalActionRisk'
+      required:
+      - kind
+      - repo
+      - ref
+      - headSha
+      - risk
+    ApprovalActionKind:
+      type: string
+      description: The kind of action (clients keep an unknown kind as UNKNOWN)
+      enum:
+      - push
+      - merge
+      - deploy
+      - tool
+      - other
+    ApprovalActionRisk:
+      type: string
+      description: A high risk needs biometrics for a mobile yes
+      enum:
+      - low
+      - high
     ApprovalAnswer:
       type: string
       enum:
@@ -9445,6 +9646,20 @@ components:
       - interval
       - expiresIn
       x-ostrom-kotlin: pending
+    DiffStats:
+      type: object
+      description: The size of a change
+      properties:
+        files:
+          type: integer
+        additions:
+          type: integer
+        deletions:
+          type: integer
+      required:
+      - files
+      - additions
+      - deletions
     EndSessionRequest:
       type: object
       description: 'Ends a session (hook `SessionEnd` or the launcher): the server signs the segment''s receipt'
@@ -11443,6 +11658,64 @@ components:
       - sharedWith
       - paused
       x-ostrom-kotlin: pending
+    SignedGatePolicy:
+      type: object
+      description: 'A gate policy signed by the instance: `signature` (base64, Ed25519 by the key `kid` of
+        `/api/v1/instance/keys`) over the UTF-8 bytes of `payload`, the JSON text of a `SignedGatePolicyPayload`'
+      properties:
+        format:
+          type: string
+          enum:
+          - ostrom.gates/1
+        alg:
+          type: string
+        kid:
+          type: string
+        signature:
+          type: string
+        payload:
+          type: string
+      required:
+      - format
+      - alg
+      - kid
+      - signature
+      - payload
+      x-ostrom-kotlin: pending
+    SignedGatePolicyPayload:
+      type: object
+      description: 'What `SignedGatePolicy.payload` contains. The hooks refuse it after `expiresAt` (10 minutes after
+        `issuedAt`) or if it claims more than an hour'
+      properties:
+        repo:
+          type: string
+        issuedAt:
+          type: string
+        expiresAt:
+          type: string
+        failMode:
+          type: string
+          enum:
+          - closed
+        waitSeconds:
+          type: integer
+        gates:
+          type: array
+          items:
+            $ref: '#/components/schemas/GateRef'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/GateAction'
+      required:
+      - repo
+      - issuedAt
+      - expiresAt
+      - failMode
+      - waitSeconds
+      - gates
+      - actions
+      x-ostrom-kotlin: pending
     SignedIn:
       type: object
       description: A completed sign-in; the session itself is in the cookies
@@ -11450,6 +11723,9 @@ components:
         redirect:
           type: string
           description: The console path to go to
+        csrfToken:
+          type: string
+          description: The same value as the `ostrom_csrf` cookie, for the `X-CSRF-Token` header
       required:
       - redirect
       x-ostrom-kotlin: pending

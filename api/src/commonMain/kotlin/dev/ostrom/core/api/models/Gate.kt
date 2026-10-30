@@ -275,6 +275,9 @@ public enum class ApprovalStatus(
  * request when another approver exists; a sole approver's yes is marked [selfApproved].
  * @property selfApproved True when the yes came from an asker.
  * @property expiresAt ISO expiry.
+ * @property action The action the yes lets through (the app titles its button after [ApprovalAction.kind]).
+ * @property diffStats The size of the change between [ApprovalAction.baseSha] and [ApprovalAction.headSha].
+ * @property diffTruncated True when the approver is not shown the whole diff; the app then refuses a mobile yes.
  */
 @Serializable
 public data class Approval(
@@ -298,7 +301,87 @@ public data class Approval(
     val askedBy: List<String>? = null,
     val selfApproved: Boolean? = null,
     val expiresAt: String? = null,
+    val action: ApprovalAction? = null,
+    val diffStats: DiffStats? = null,
+    val diffTruncated: Boolean? = null,
 )
+
+/** The kind of action a yes lets through. */
+@Serializable(with = ApprovalActionKind.Serializer::class)
+public enum class ApprovalActionKind(
+    /** The JSON value. */
+    public val value: String,
+) {
+    PUSH("push"),
+    MERGE("merge"),
+    DEPLOY("deploy"),
+    TOOL("tool"),
+    OTHER("other"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<ApprovalActionKind>(
+        "dev.ostrom.core.api.models.ApprovalActionKind",
+        ApprovalActionKind.entries,
+        ApprovalActionKind.UNKNOWN,
+        ApprovalActionKind::value,
+    )
+}
+
+/** The risk of an action; a `high` one needs biometrics for a mobile yes. */
+@Serializable(with = ApprovalActionRisk.Serializer::class)
+public enum class ApprovalActionRisk(
+    /** The JSON value. */
+    public val value: String,
+) {
+    LOW("low"),
+    HIGH("high"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<ApprovalActionRisk>(
+        "dev.ostrom.core.api.models.ApprovalActionRisk",
+        ApprovalActionRisk.entries,
+        ApprovalActionRisk.UNKNOWN,
+        ApprovalActionRisk::value,
+    )
+}
+
+/**
+ * The action a yes lets through.
+ *
+ * @property kind Push, merge, deploy, tool or other.
+ * @property repo Repository (`owner/name`).
+ * @property ref Branch or ref the action lands on.
+ * @property headSha Commit that lands.
+ * @property baseSha Commit it lands on, when known.
+ * @property risk Low or high.
+ */
+@Serializable
+public data class ApprovalAction(
+    val kind: ApprovalActionKind,
+    val repo: String,
+    val ref: String,
+    val headSha: String,
+    val baseSha: String? = null,
+    val risk: ApprovalActionRisk,
+)
+
+/**
+ * The size of a change.
+ *
+ * @property files Files changed.
+ * @property additions Lines added.
+ * @property deletions Lines deleted.
+ */
+@Serializable
+public data class DiffStats(val files: Int, val additions: Int, val deletions: Int)
 
 /**
  * A commit shown with an approval.
