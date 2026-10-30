@@ -18,12 +18,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
-          ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
           AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
         run: |
-          # Members of the organization have signed the DCO once for all; bots do not hold copyright.
-          case "$ASSOCIATION" in OWNER|MEMBER) echo "dco: author is a member of the organization"; exit 0;; esac
+          # Maintainers (write access or more) have signed the DCO once for all; bots do not hold copyright.
+          # The permission is read from the API: author_association says CONTRIBUTOR for a private org membership.
           if [ "$AUTHOR_TYPE" = "Bot" ]; then echo "dco: bot author"; exit 0; fi
+          perm=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$AUTHOR/permission" --jq .permission 2>/dev/null || echo none)
+          case "$perm" in admin|maintain|write) echo "dco: $AUTHOR is a maintainer ($perm)"; exit 0;; esac
           missing=0
           while IFS=$'\t' read -r sha email msg; do
             if ! printf '%s' "$msg" | base64 -d | grep -qiE "^Signed-off-by: .+ <$email>$"; then

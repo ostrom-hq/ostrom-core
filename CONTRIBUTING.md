@@ -69,7 +69,8 @@ git commit -s -m "fix(cli): keep the exit code of the agent"
 ```
 
 This adds `Signed-off-by: Your Name <you@example.com>` to the message. Forgot it? `git rebase --signoff main` then
-push with `--force-with-lease`. The `dco` check verifies every commit of a pull request from outside the organization.
+push with `--force-with-lease`. The `dco` check verifies every commit of a pull request from a contributor
+without write access; maintainers signed it once for all.
 
 Contributions are made under the [Apache License 2.0](LICENSE) (inbound = outbound).
 
