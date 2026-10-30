@@ -76,8 +76,8 @@ public enum class ReceiptSubjectKind(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<ReceiptSubjectKind>(
         "dev.ostrom.core.api.models.ReceiptSubjectKind",
-        entries,
-        UNKNOWN,
+        ReceiptSubjectKind.entries,
+        ReceiptSubjectKind.UNKNOWN,
         ReceiptSubjectKind::value,
     )
 }

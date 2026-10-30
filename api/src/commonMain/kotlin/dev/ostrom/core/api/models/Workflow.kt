@@ -45,8 +45,8 @@ public enum class WorkflowNodeKind(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<WorkflowNodeKind>(
         "dev.ostrom.core.api.models.WorkflowNodeKind",
-        entries,
-        UNKNOWN,
+        WorkflowNodeKind.entries,
+        WorkflowNodeKind.UNKNOWN,
         WorkflowNodeKind::value,
     )
 }
@@ -68,8 +68,8 @@ public enum class WorkflowStatus(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<WorkflowStatus>(
         "dev.ostrom.core.api.models.WorkflowStatus",
-        entries,
-        UNKNOWN,
+        WorkflowStatus.entries,
+        WorkflowStatus.UNKNOWN,
         WorkflowStatus::value,
     )
 }
@@ -221,8 +221,8 @@ public enum class RiskLevel(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<RiskLevel>(
         "dev.ostrom.core.api.models.RiskLevel",
-        entries,
-        UNKNOWN,
+        RiskLevel.entries,
+        RiskLevel.UNKNOWN,
         RiskLevel::value,
     )
 }

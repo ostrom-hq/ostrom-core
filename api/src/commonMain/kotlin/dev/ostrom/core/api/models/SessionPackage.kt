@@ -126,8 +126,8 @@ public enum class PackageMode(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<PackageMode>(
         "dev.ostrom.core.api.models.PackageMode",
-        entries,
-        UNKNOWN,
+        PackageMode.entries,
+        PackageMode.UNKNOWN,
         PackageMode::value,
     )
 }
@@ -152,8 +152,8 @@ public enum class AgentEvent(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<AgentEvent>(
         "dev.ostrom.core.api.models.AgentEvent",
-        entries,
-        UNKNOWN,
+        AgentEvent.entries,
+        AgentEvent.UNKNOWN,
         AgentEvent::value,
     )
 }
@@ -177,8 +177,8 @@ public enum class RunLocation(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<RunLocation>(
         "dev.ostrom.core.api.models.RunLocation",
-        entries,
-        UNKNOWN,
+        RunLocation.entries,
+        RunLocation.UNKNOWN,
         RunLocation::value,
     )
 }
@@ -368,8 +368,8 @@ public enum class ArtifactType(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<ArtifactType>(
         "dev.ostrom.core.api.models.ArtifactType",
-        entries,
-        UNKNOWN,
+        ArtifactType.entries,
+        ArtifactType.UNKNOWN,
         ArtifactType::value,
     )
 }
@@ -475,8 +475,8 @@ public enum class PackageFileMode(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<PackageFileMode>(
         "dev.ostrom.core.api.models.PackageFileMode",
-        entries,
-        UNKNOWN,
+        PackageFileMode.entries,
+        PackageFileMode.UNKNOWN,
         PackageFileMode::value,
     )
 }

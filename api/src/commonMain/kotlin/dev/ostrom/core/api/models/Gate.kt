@@ -27,8 +27,8 @@ public enum class GateMode(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<GateMode>(
         "dev.ostrom.core.api.models.GateMode",
-        entries,
-        UNKNOWN,
+        GateMode.entries,
+        GateMode.UNKNOWN,
         GateMode::value,
     )
 }
@@ -53,8 +53,8 @@ public enum class GateStatus(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<GateStatus>(
         "dev.ostrom.core.api.models.GateStatus",
-        entries,
-        UNKNOWN,
+        GateStatus.entries,
+        GateStatus.UNKNOWN,
         GateStatus::value,
     )
 }
@@ -243,8 +243,8 @@ public enum class ApprovalStatus(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<ApprovalStatus>(
         "dev.ostrom.core.api.models.ApprovalStatus",
-        entries,
-        UNKNOWN,
+        ApprovalStatus.entries,
+        ApprovalStatus.UNKNOWN,
         ApprovalStatus::value,
     )
 }
@@ -329,8 +329,8 @@ public enum class CheckState(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<CheckState>(
         "dev.ostrom.core.api.models.CheckState",
-        entries,
-        UNKNOWN,
+        CheckState.entries,
+        CheckState.UNKNOWN,
         CheckState::value,
     )
 }

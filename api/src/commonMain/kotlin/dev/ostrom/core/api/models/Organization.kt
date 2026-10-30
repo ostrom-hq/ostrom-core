@@ -39,8 +39,8 @@ public enum class GitHubConnection(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<GitHubConnection>(
         "dev.ostrom.core.api.models.GitHubConnection",
-        entries,
-        UNKNOWN,
+        GitHubConnection.entries,
+        GitHubConnection.UNKNOWN,
         GitHubConnection::value,
     )
 }
@@ -88,8 +88,8 @@ public enum class MemberRole(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<MemberRole>(
         "dev.ostrom.core.api.models.MemberRole",
-        entries,
-        UNKNOWN,
+        MemberRole.entries,
+        MemberRole.UNKNOWN,
         MemberRole::value,
     )
 }
@@ -182,8 +182,8 @@ public enum class RuleStrength(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<RuleStrength>(
         "dev.ostrom.core.api.models.RuleStrength",
-        entries,
-        UNKNOWN,
+        RuleStrength.entries,
+        RuleStrength.UNKNOWN,
         RuleStrength::value,
     )
 }
@@ -206,8 +206,8 @@ public enum class RuleStatus(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<RuleStatus>(
         "dev.ostrom.core.api.models.RuleStatus",
-        entries,
-        UNKNOWN,
+        RuleStatus.entries,
+        RuleStatus.UNKNOWN,
         RuleStatus::value,
     )
 }

@@ -20,8 +20,8 @@ public enum class AutomationTriggerKind(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<AutomationTriggerKind>(
         "dev.ostrom.core.api.models.AutomationTriggerKind",
-        entries,
-        UNKNOWN,
+        AutomationTriggerKind.entries,
+        AutomationTriggerKind.UNKNOWN,
         AutomationTriggerKind::value,
     )
 }
@@ -143,8 +143,8 @@ public enum class RunStatus(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<RunStatus>(
         "dev.ostrom.core.api.models.RunStatus",
-        entries,
-        UNKNOWN,
+        RunStatus.entries,
+        RunStatus.UNKNOWN,
         RunStatus::value,
     )
 }
@@ -242,8 +242,8 @@ public enum class WaitStatus(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<WaitStatus>(
         "dev.ostrom.core.api.models.WaitStatus",
-        entries,
-        UNKNOWN,
+        WaitStatus.entries,
+        WaitStatus.UNKNOWN,
         WaitStatus::value,
     )
 }

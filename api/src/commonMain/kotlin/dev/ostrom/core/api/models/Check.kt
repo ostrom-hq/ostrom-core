@@ -65,8 +65,8 @@ public enum class CheckOutcome(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<CheckOutcome>(
         "dev.ostrom.core.api.models.CheckOutcome",
-        entries,
-        UNKNOWN,
+        CheckOutcome.entries,
+        CheckOutcome.UNKNOWN,
         CheckOutcome::value,
     )
 }
@@ -121,8 +121,8 @@ public enum class NotificationStatus(
     /** Reads a value this version does not know as [UNKNOWN]. */
     public object Serializer : UnknownFallbackEnumSerializer<NotificationStatus>(
         "dev.ostrom.core.api.models.NotificationStatus",
-        entries,
-        UNKNOWN,
+        NotificationStatus.entries,
+        NotificationStatus.UNKNOWN,
         NotificationStatus::value,
     )
 }
