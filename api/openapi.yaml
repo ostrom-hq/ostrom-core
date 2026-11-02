@@ -49,6 +49,7 @@ tags:
 - name: events
 - name: gates
 - name: github
+- name: governance
 - name: import
 - name: inference
 - name: mcp
@@ -3401,6 +3402,13 @@ paths:
                     type: string
                 required:
                 - selfApproval
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -3411,6 +3419,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/approvals:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -3613,6 +3627,107 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/confirmations/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getGovernanceConfirmation
+      x-ostrom-status: planned
+      tags:
+      - governance
+      summary: 'A governance confirmation, with the exact change it would make. Its requester (any of their credentials)
+        and the owners and admins of its organization read it; another organization gets 404. `wait` holds a pending one
+        until it is answered or expires (the CLI waits here)'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: wait
+        in: query
+        required: false
+        description: Seconds to wait on a pending confirmation for its answer; absent or 0 reads at once.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 30
+          default: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmation'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/confirmations/{id}/answer:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: answerGovernanceConfirmation
+      x-ostrom-status: planned
+      tags:
+      - governance
+      summary: 'Confirm or refuse a governance confirmation, as an owner or an admin signed in to the console (never with
+        a token). A confirmation applies the change exactly as it was shown and needs a sign-in less than 5 minutes old
+        (403 step_up_required); a refusal does not. 409 confirmation_closed when already answered (once only), 409
+        confirmation_stale when what it changes is no longer what it showed as before (nothing is written), 410
+        confirmation_expired after its 15 minutes. When the confirmed write itself fails, the confirmation is closed as
+        failed with its error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GovernanceConfirmationAnswerRequest'
+      responses:
+        '200':
+          description: The answered confirmation; `result` holds what the write returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmation'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: 'step_up_required (sign in again, then confirm), browser_session_required (a token never answers),
+            or not an owner or an admin (the key is `error.type`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          description: confirmation_closed or confirmation_stale (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '410':
+          description: confirmation_expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/decisions:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4364,6 +4479,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Rule'
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4374,6 +4496,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/rules/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4455,6 +4583,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Rule'
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4465,6 +4600,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
     delete:
       operationId: deleteRule
       x-ostrom-status: served
@@ -4480,6 +4621,13 @@ paths:
       responses:
         '204':
           description: Deleted
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4490,6 +4638,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/rules/bulk:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4527,6 +4681,13 @@ paths:
                     type: integer
                 required:
                 - updated
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4537,6 +4698,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/workflows:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4602,6 +4769,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4612,6 +4786,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/workflows/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4676,6 +4856,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4686,6 +4873,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
     delete:
       operationId: deleteWorkflow
       x-ostrom-status: served
@@ -4701,6 +4894,13 @@ paths:
       responses:
         '204':
           description: Done
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4711,6 +4911,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/workflows/{id}/runs:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6493,6 +6699,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelPolicy'
+        '202':
+          description: 'Not applied: made with a CLI token, the write opened a governance confirmation that an owner or
+            an admin confirms on the console within 15 minutes (`getGovernanceConfirmation`)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -6503,6 +6716,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          description: 'confirmation_limit: the organization already has 20 governance confirmations waiting'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/routes:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -11929,6 +12148,141 @@ components:
       enum:
       - github-app
       - gh-token
+    GovernanceChangeKind:
+      type: string
+      description: 'The governance write a confirmation holds: the operation that opened it'
+      enum:
+      - rules.create
+      - rules.update
+      - rules.delete
+      - rules.bulk
+      - gates.policy
+      - models.policy
+      - workflows.create
+      - workflows.save
+      - workflows.delete
+      x-ostrom-kotlin: pending
+    GovernanceConfirmation:
+      type: object
+      description: 'A governance write made with a CLI token, held until an owner or an admin confirms it on the console.
+        `before` and `after` are what the change replaces and what it writes, as the read routes show them (null for
+        nothing: a creation has no `before`, a deletion no `after`)'
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: '#/components/schemas/GovernanceChangeKind'
+        status:
+          $ref: '#/components/schemas/GovernanceConfirmationStatus'
+        method:
+          type: string
+          description: The method of the write, such as `PUT`
+        path:
+          type: string
+          description: The path of the write, such as `/api/v1/gates/policy`
+        scope:
+          type: string
+          description: The governance scope the write uses (`policy:write`, `harness:write`, `gates:policy`)
+        summary:
+          type: string
+          description: One line saying what the change does
+        before:
+          description: What the change replaces, null for nothing
+        after:
+          description: What the change writes, null for nothing
+        requestedBy:
+          $ref: '#/components/schemas/GovernanceConfirmationPerson'
+        credential:
+          type: string
+          description: 'The CLI token that asked: `admin` (`ostrom login --admin`) or `device` (`ostrom login`)'
+          enum:
+          - admin
+          - device
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        answeredBy:
+          $ref: '#/components/schemas/GovernanceConfirmationPerson'
+        answeredAt:
+          type: string
+          format: date-time
+        result:
+          description: What the write returned once confirmed (absent when it returns nothing, as a deletion)
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - id
+      - kind
+      - status
+      - method
+      - path
+      - scope
+      - summary
+      - requestedBy
+      - credential
+      - createdAt
+      - expiresAt
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationAnswer:
+      type: string
+      enum:
+      - confirm
+      - refuse
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationAnswerRequest:
+      type: object
+      properties:
+        answer:
+          $ref: '#/components/schemas/GovernanceConfirmationAnswer'
+      required:
+      - answer
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationPending:
+      type: object
+      description: 'The 202 of a governance write made with a CLI token: nothing was written. An owner or an admin
+        confirms it at `confirmUrl` before `expiresAt` (15 minutes); the CLI waits on `getGovernanceConfirmation`'
+      properties:
+        confirmationId:
+          type: string
+        confirmUrl:
+          type: string
+          description: The console page that confirms it (`/confirm/<id>`)
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - confirmationId
+      - confirmUrl
+      - expiresAt
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationPerson:
+      type: object
+      description: A member who asked for or answered a confirmation
+      properties:
+        memberId:
+          type: string
+        login:
+          type: string
+          description: Their GitHub login, when known
+        name:
+          type: string
+      required:
+      - memberId
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationStatus:
+      type: string
+      description: 'pending until answered; confirmed (applied), refused, expired (15 minutes without an answer), or failed
+        (confirmed, but the write was refused: see `error`)'
+      enum:
+      - pending
+      - confirmed
+      - refused
+      - expired
+      - failed
+      x-ostrom-kotlin: pending
     Group:
       type: object
       description: A group of members sharing subscriptions
