@@ -549,8 +549,9 @@ paths:
       description: "Without a body, the ordinary sign-in of `ostrom login`. With `scopes`, `ostrom login --admin`: the
         governance write scopes no other token holds (S2-52, decision of 02/11/2026). The browser's page shows them
         (`DeviceAuthorization.scopes`), only an owner or admin of the organisation may approve them, and the token
-        that comes out expires in 8 hours at most and is never refreshed. Planned (AUTH-REPRISE): a server that does
-        not read `scopes` yet answers an ordinary token, whose `AuthToken.scopes` tell the CLI."
+        that comes out is bound to that organisation, expires in 8 hours at most and is never refreshed. Each
+        governance write it makes is recorded in the organisation's audit log before it happens. A server older than
+        this answers an ordinary token, whose `AuthToken.scopes` tell the CLI."
       security: []
       requestBody:
         required: false
