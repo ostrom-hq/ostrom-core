@@ -4938,7 +4938,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Automation'
+              $ref: '#/components/schemas/AutomationWrite'
       responses:
         '201':
           description: OK
@@ -5005,7 +5005,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Automation'
+              $ref: '#/components/schemas/AutomationWrite'
       responses:
         '200':
           description: OK
@@ -10722,6 +10722,41 @@ components:
       - name
       - path
       - type
+    AutomationWrite:
+      type: object
+      description: "The body of createAutomation and saveAutomation: what a person writes. The server sets the id, the
+        owner (the caller), the dates, the webhook URL and the webhook secret; a body that also carries them is read
+        without them."
+      properties:
+        name:
+          type: string
+          description: 1 to 120 characters, trimmed, without control characters
+        trigger:
+          $ref: '#/components/schemas/AutomationTrigger'
+        action:
+          $ref: '#/components/schemas/AutomationAction'
+        variables:
+          type: array
+          description: Webhook triggers only, 32 at most
+          items:
+            $ref: '#/components/schemas/AutomationVariable'
+        samplePayload:
+          description: A sample webhook body (a JSON object, 64 KiB at most) that the variables must fit; webhook
+            triggers only
+        overlap:
+          type: string
+          description: skip (the default) or allow
+        maxRunsPerDay:
+          type: integer
+          description: 1 to 1000, 24 by default
+        version:
+          type: integer
+          description: The version read; saveAutomation refuses a body without it, and a change made since
+      required:
+      - name
+      - trigger
+      - action
+      x-ostrom-kotlin: pending
     BillingInvoice:
       type: object
       description: An invoice or receipt. Amounts are in the currency's smallest unit (cents)
