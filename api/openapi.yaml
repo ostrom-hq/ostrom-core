@@ -3600,6 +3600,9 @@ paths:
       tags:
       - gates
       summary: Self-approval policy
+      description: '`never` for an organization that never chose: a yes always comes from another person (S2-15).
+        `sole-approver`, which lets the gate''s only approver approve their own action, marked self-approved in the
+        receipt, applies only once an owner or an admin sets it'
       responses:
         '200':
           description: OK
@@ -3610,6 +3613,7 @@ paths:
                 properties:
                   selfApproval:
                     type: string
+                    description: '`never` (the default) or `sole-approver`'
                 required:
                 - selfApproval
         '400':
