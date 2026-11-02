@@ -3271,6 +3271,10 @@ paths:
       tags:
       - gates
       summary: Ask the gate of a boundary action (hook PreToolUse, CI, MCP); 409 session_closed in a closed session
+      description: 409 session_closed in a closed session. 409 check_not_attested when the gate is enforced and its
+        rule needs a check attested (RuleGateCheck.attested) whose last run is not proven by an Ostrom runner
+        (isolated_runner) or by the CI on the commit the gate covers (ci); the message names each such check and why
+        (declared by the workstation, failed, or not run). No approver is asked until the check is proven.
       requestBody:
         required: true
         content:
@@ -14530,7 +14534,8 @@ components:
       properties:
         check:
           type: string
-          description: Id of the check node in the organization's workflows
+          description: Id of the check node in the organization's workflows; the CI's proof is its check run of the
+            same name on the commit the gate covers
         attested:
           type: boolean
           description: When true, only a run attested by an Ostrom runner or the CI (`isolated_runner`, `ci`)
