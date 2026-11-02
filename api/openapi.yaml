@@ -774,6 +774,15 @@ paths:
       tags:
       - auth
       summary: 'The caller: login, member, organization'
+      parameters:
+      - name: Ostrom-Org
+        in: header
+        required: false
+        description: The organization whose member and organization the answer adds, when the caller is a member of it.
+          An option, unlike on the routes that act in an organization; any other value is ignored, never a 409 nor a
+          404. Without it the answer has neither, even for a person with one organization
+        schema:
+          type: string
       responses:
         '204':
           description: Done
@@ -12546,6 +12555,7 @@ components:
       - member
       - approver
       - invited
+      - billing
     ModelPolicy:
       type: object
       description: Models allowed, and the default
@@ -12949,13 +12959,14 @@ components:
           type: string
         connectedVia:
           $ref: '#/components/schemas/GitHubConnection'
+          description: How GitHub is connected; absent when the answer does not say (an organization linked to no
+            GitHub organization, or a list that does not carry it)
         createdAt:
           type: string
       required:
       - id
       - name
       - avatarUrl
-      - connectedVia
     PackageEnvelope:
       type: object
       description: The envelope a session package is served in (`ostrom.package/1`). [payload] is the canonical text of a
