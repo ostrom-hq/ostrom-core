@@ -12279,8 +12279,8 @@ components:
           type: string
         launchId:
           type: string
-          description: The launch whose agent token made the call (`POST /launches`); absent for a person's own
-            credential
+          description: The launch whose agent token made the call (`POST /launches`), set by the server from the
+            token; absent for a person's own credential. The launch may differ from the one of `sessionId`
         durationMs:
           type: integer
         ok:
@@ -14592,7 +14592,8 @@ components:
         launchId:
           type: string
           description: The launch whose agent token made the call or sent the event, set by the server from the token
-            (`POST /launches`); absent for a person's own credential
+            (`POST /launches`), never from a request body; absent for a person's own credential. Read under the same
+            rules as the event
         inputTokens:
           type: integer
         outputTokens:
