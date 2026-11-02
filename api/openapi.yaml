@@ -11784,6 +11784,21 @@ components:
           type: string
         lastSeenAt:
           type: string
+        kind:
+          type: string
+          enum:
+          - cli
+          - admin
+          description: "`admin` for the elevated token of `ostrom login --admin`; absent means `cli`"
+        orgId:
+          type: string
+          description: The organization an elevated token is bound to
+        scopes:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: string
       required:
       - id
       - name
