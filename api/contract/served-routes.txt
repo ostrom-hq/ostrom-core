@@ -10,6 +10,7 @@ DELETE /api/v1/artifacts/{}/members/{}
 DELETE /api/v1/auth/sessions/{}
 DELETE /api/v1/automations/{}
 DELETE /api/v1/cloud/sessions/{}
+DELETE /api/v1/devices/{}
 DELETE /api/v1/mcp/servers/{}
 DELETE /api/v1/mcp/servers/{}/assignments/{}
 DELETE /api/v1/mcp/servers/{}/policies/{}
@@ -18,6 +19,7 @@ DELETE /api/v1/orgs/{}/invitations/{}
 DELETE /api/v1/orgs/{}/members/{}
 DELETE /api/v1/rules/{}
 DELETE /api/v1/secrets/{}
+DELETE /api/v1/service-keys/{}
 DELETE /api/v1/tokens/{}
 DELETE /api/v1/workflows/{}
 GET /a/{}/{}/{}
@@ -49,6 +51,7 @@ GET /api/v1/cloud/sessions
 GET /api/v1/cloud/sessions/{}
 GET /api/v1/cloud/sessions/{}/terminal
 GET /api/v1/decisions
+GET /api/v1/devices
 GET /api/v1/gates/approvers
 GET /api/v1/gates/catalog
 GET /api/v1/gates/catalog/signed
@@ -94,6 +97,7 @@ GET /api/v1/repos
 GET /api/v1/rules
 GET /api/v1/rules/{}
 GET /api/v1/secrets
+GET /api/v1/service-keys
 GET /api/v1/sessions
 GET /api/v1/sessions/{}
 GET /api/v1/spending
@@ -172,6 +176,7 @@ POST /api/v1/packages/{}/revoke
 POST /api/v1/rules
 POST /api/v1/rules/bulk
 POST /api/v1/secrets
+POST /api/v1/service-keys
 POST /api/v1/sessions
 POST /api/v1/sessions/{}/alive
 POST /api/v1/sessions/{}/end
