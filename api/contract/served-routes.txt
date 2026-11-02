@@ -32,6 +32,7 @@ GET /api/v1/artifacts/{}/versions
 GET /api/v1/artifacts/{}/versions/{}/file
 GET /api/v1/auth/device
 GET /api/v1/auth/me
+GET /api/v1/auth/me/account
 GET /api/v1/auth/me/audit
 GET /api/v1/auth/providers
 GET /api/v1/auth/sessions
@@ -98,6 +99,7 @@ GET /api/v1/sessions
 GET /api/v1/sessions/{}
 GET /api/v1/spending
 GET /api/v1/tokens
+GET /api/v1/tokens/scopes
 GET /api/v1/usage
 GET /api/v1/usage/events
 GET /api/v1/usage/live

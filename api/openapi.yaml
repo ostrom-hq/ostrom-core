@@ -769,6 +769,42 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/auth/me/account:
+    get:
+      operationId: getMyAccount
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The signed-in person's account: e-mails and ways in (scope `profile:read`)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/tokens/scopes:
+    get:
+      operationId: listTokenScopes
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The scopes a personal token may be given, `POST /api/v1/tokens` refuses any other (browser session only)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenScopes'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/me:
     get:
       operationId: getMe
@@ -1425,8 +1461,7 @@ paths:
     get:
       operationId: listMyOrganizations
       x-ostrom-status: served
-      description: "Scope `orgs:read`. Each item also carries `slug` and `role` (the caller's role there), which the
-        server sends beyond `Organization`; a client may ignore them."
+      description: "Scope `orgs:read`."
       tags:
       - organization
       summary: The organizations the caller is an active member of, to choose the one sent in `Ostrom-Org`. Needs no
@@ -1442,7 +1477,7 @@ paths:
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Organization'
+                      $ref: '#/components/schemas/MyOrganization'
                 required:
                 - items
         '400':
@@ -12944,6 +12979,98 @@ components:
           description: The slug of a team they join; none when absent
       required:
       - login
+    MyOrganization:
+      type: object
+      description: One of the caller's organizations, to choose the one `Ostrom-Org` names
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          description: The picture of the linked GitHub organization, empty when none
+        role:
+          $ref: '#/components/schemas/MemberRole'
+          description: The caller's role there
+      required:
+      - id
+      - slug
+      - name
+      - avatarUrl
+      - role
+      x-ostrom-kotlin: pending
+    Account:
+      type: object
+      description: The signed-in person's account
+      properties:
+        id:
+          type: string
+        login:
+          type: string
+          description: The handle, unique on the instance
+        displayName:
+          type: string
+        primaryEmail:
+          type: string
+          description: The main e-mail; absent when there is none
+        avatarUrl:
+          type: string
+          description: The picture; absent when there is none
+        createdAt:
+          type: string
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountEmail'
+        providers:
+          type: array
+          description: "How the person signs in: `github`, `google`, `email` or `oidc:<connection>`"
+          items:
+            type: string
+      required:
+      - id
+      - login
+      - displayName
+      - createdAt
+      - emails
+      - providers
+      x-ostrom-kotlin: pending
+    AccountEmail:
+      type: object
+      properties:
+        email:
+          type: string
+        verified:
+          type: boolean
+      required:
+      - email
+      - verified
+      x-ostrom-kotlin: pending
+    TokenScope:
+      type: object
+      properties:
+        scope:
+          type: string
+          description: "`resource:action`"
+        description:
+          type: string
+      required:
+      - scope
+      - description
+      x-ostrom-kotlin: pending
+    TokenScopes:
+      type: object
+      properties:
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenScope'
+      required:
+      - scopes
+      x-ostrom-kotlin: pending
     MemberRole:
       type: string
       enum:
