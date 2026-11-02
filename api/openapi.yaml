@@ -12277,6 +12277,10 @@ components:
           type: string
         sessionId:
           type: string
+        launchId:
+          type: string
+          description: The launch whose agent token made the call (`POST /launches`); absent for a person's own
+            credential
         durationMs:
           type: integer
         ok:
@@ -14585,6 +14589,10 @@ components:
           type: string
         sessionId:
           type: string
+        launchId:
+          type: string
+          description: The launch whose agent token made the call or sent the event, set by the server from the token
+            (`POST /launches`); absent for a person's own credential
         inputTokens:
           type: integer
         outputTokens:
