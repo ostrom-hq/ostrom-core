@@ -9170,8 +9170,9 @@ paths:
         policy, inference settings, MCP servers, assignments and policies), organization and membership changes,
         the import cutover and the deletion of the organization. Readable by an owner or an admin only (403
         otherwise), with a browser session or a token holding `audit:read`; another organization's log is never
-        read (404). `actor` is a person's login, or `<kind>:<id>` for a credential that is not a person's
-        (`service:…`, `agent:…`), or `server:ostrom` for the server itself; `subject` is `<type>:<id>`; `meta`
+        read (404). `actor` is a person's login (their id once they no longer exist), or `<kind>:<id>` for a
+        credential that is not a person's (`service:…`, `agent:…`), or `server:ostrom` for the server itself;
+        the `actor` filter takes a login only. `subject` is `<type>:<id>`; `meta`
         holds the event's facts as strings, with `credential` (`browser`, `api_token`…) for a change made through
         the API. `next` is absent on the last page.
       parameters:
@@ -10471,6 +10472,7 @@ components:
           type: string
         at:
           type: string
+          format: date-time
         event:
           type: string
         actor:
@@ -10479,7 +10481,9 @@ components:
           type: string
         meta:
           type: object
-          additionalProperties: {}
+          description: The event's facts, every value a string
+          additionalProperties:
+            type: string
       required:
       - id
       - at
