@@ -800,7 +800,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: checkAgentPolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: May this developer launch this agent with this model
