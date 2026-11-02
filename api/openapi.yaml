@@ -7788,10 +7788,16 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: runnerHeartbeat
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Sign of life; returns the work assigned
+      description: >-
+        Authenticated by the runner's own key (`Authorization: Bearer ostrom_runner_…`, from registerRunner's
+        answer), not a member's credential; no body. Marks the runner seen: listRunners shows it `online` for 90
+        seconds after its last heartbeat. An unknown runner, a malformed id, another runner's key or a runner
+        removed meanwhile all answer 401 alike. `sessions` lists the cloud sessions assigned to the runner, empty
+        until sessions are scheduled on registered runners.
       parameters:
       - name: id
         in: path

@@ -189,6 +189,7 @@ POST /api/v1/packages/{}/revoke
 POST /api/v1/rules
 POST /api/v1/rules/bulk
 POST /api/v1/runners
+POST /api/v1/runners/{}/heartbeat
 POST /api/v1/secrets
 POST /api/v1/service-keys
 POST /api/v1/sessions
