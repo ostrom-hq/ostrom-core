@@ -7384,7 +7384,7 @@ paths:
               type: object
               properties:
                 agent:
-                  $ref: '#/components/schemas/AgentKind'
+                  $ref: '#/components/schemas/CloudAgentKind'
                 model:
                   type: string
                 repo:
@@ -9952,18 +9952,6 @@ components:
       - actor
       - summary
       x-ostrom-kotlin: pending
-    AgentKind:
-      type: string
-      description: >-
-        The agent a cloud session starts (ostrom-server `AgentKind`): its runner image carries each; `shell` is a plain
-        shell, to prepare a workspace or debug an image. The server refuses any other name (400).
-      enum:
-      - claude
-      - codex
-      - opencode
-      - gemini
-      - shell
-      x-ostrom-kotlin: pending
     AgentEvent:
       type: string
       enum:
@@ -11178,6 +11166,18 @@ components:
       - failure
       - pending
       - skipped
+    CloudAgentKind:
+      type: string
+      description: >-
+        The agent a cloud session starts, for cloud sessions only (a launch names its agent otherwise): `shell` is a
+        plain shell, to prepare a workspace or debug an image. Any other name is refused with a 400.
+      enum:
+      - claude
+      - codex
+      - opencode
+      - gemini
+      - shell
+      x-ostrom-kotlin: pending
     CloudSession:
       type: object
       description: 'A cloud agent session: one pod (or local container) per execution, with a workspace kept across pauses'
