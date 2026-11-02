@@ -1190,7 +1190,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listServiceKeys
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Service keys (admins)
@@ -1222,7 +1222,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createServiceKey
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Create a service key; its secret is returned once
@@ -1239,6 +1239,9 @@ paths:
                   type: array
                   items:
                     type: string
+                expiresInDays:
+                  type: integer
+                  description: Lifetime in days, 1 to 366; absent for a key that does not expire
               required:
               - name
               - scopes
@@ -1264,7 +1267,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteServiceKey
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Delete a service key
@@ -1292,7 +1295,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listDevices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Workstations where the caller is signed in
@@ -1327,7 +1330,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteDevice
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Sign a workstation out
@@ -11904,10 +11907,24 @@ components:
           type: string
         lastSeenAt:
           type: string
+        kind:
+          type: string
+          enum:
+          - cli
+          - admin
+          description: "`admin` for the elevated token of `ostrom login --admin`; absent means `cli`"
+        orgId:
+          type: string
+          description: The organization an elevated token is bound to
+        scopes:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: string
       required:
       - id
       - name
-      - platform
       x-ostrom-kotlin: pending
     DeviceAnswer:
       type: object
@@ -14355,6 +14372,8 @@ components:
           items:
             type: string
         createdAt:
+          type: string
+        expiresAt:
           type: string
         lastUsedAt:
           type: string
