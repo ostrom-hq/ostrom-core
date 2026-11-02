@@ -2095,7 +2095,7 @@
         "type": {
           "ref": "GitHubConnection"
         },
-        "required": true,
+        "required": false,
         "nullable": false
       },
       "createdAt": {

@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
  * @property name Display name.
  * @property avatarUrl Logo.
  * @property description Description.
- * @property connectedVia How GitHub is connected.
+ * @property connectedVia How GitHub is connected; null for an organization linked to no GitHub organization.
  * @property createdAt ISO creation time.
  */
 @Serializable
@@ -19,7 +19,7 @@ public data class Organization(
     val name: String,
     val avatarUrl: String,
     val description: String? = null,
-    val connectedVia: GitHubConnection,
+    val connectedVia: GitHubConnection? = null,
     val createdAt: String? = null,
 )
 
