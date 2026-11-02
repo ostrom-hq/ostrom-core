@@ -3326,7 +3326,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGatePolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: Self-approval policy
@@ -3354,7 +3354,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setGatePolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: Set the self-approval policy (`sole-approver` or `never`), signed decision
@@ -3598,7 +3598,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listDecisions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: Signed decisions
@@ -4279,7 +4279,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRules
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - rules
       summary: Rules
@@ -4327,7 +4327,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createRule
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - rules
       summary: Write a rule (signed decision)
@@ -4359,7 +4359,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getRule
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - rules
       summary: A rule
@@ -4388,7 +4388,7 @@ paths:
           $ref: '#/components/responses/Error'
     patch:
       operationId: updateRule
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - rules
       summary: Decide or edit a rule (signed decision)
@@ -4447,7 +4447,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteRule
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - rules
       summary: Delete a rule (signed decision)
@@ -4475,7 +4475,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: bulkUpdateRules
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - rules
       summary: Decide several rules

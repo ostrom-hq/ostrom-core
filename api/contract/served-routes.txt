@@ -15,6 +15,7 @@ DELETE /api/v1/mcp/servers/{}/policies/{}
 DELETE /api/v1/orgs/{}
 DELETE /api/v1/orgs/{}/invitations/{}
 DELETE /api/v1/orgs/{}/members/{}
+DELETE /api/v1/rules/{}
 DELETE /api/v1/secrets/{}
 DELETE /api/v1/tokens/{}
 DELETE /api/v1/workflows/{}
@@ -43,9 +44,11 @@ GET /api/v1/cloud/runner/terminal
 GET /api/v1/cloud/sessions
 GET /api/v1/cloud/sessions/{}
 GET /api/v1/cloud/sessions/{}/terminal
+GET /api/v1/decisions
 GET /api/v1/gates/approvers
 GET /api/v1/gates/catalog
 GET /api/v1/gates/catalog/signed
+GET /api/v1/gates/policy
 GET /api/v1/gates/{}
 GET /api/v1/health
 GET /api/v1/inference/settings
@@ -74,6 +77,8 @@ GET /api/v1/receipts
 GET /api/v1/receipts/keys
 GET /api/v1/receipts/{}
 GET /api/v1/receipts/{}/verify
+GET /api/v1/rules
+GET /api/v1/rules/{}
 GET /api/v1/secrets
 GET /api/v1/sessions
 GET /api/v1/sessions/{}
@@ -93,6 +98,7 @@ PATCH /api/v1/accounts/{}
 PATCH /api/v1/artifacts/{}
 PATCH /api/v1/orgs/{}
 PATCH /api/v1/orgs/{}/members/{}
+PATCH /api/v1/rules/{}
 POST /api/v1/accounts
 POST /api/v1/approvals/{}/answer
 POST /api/v1/artifacts
@@ -145,6 +151,8 @@ POST /api/v1/orgs/{}/transfer
 POST /api/v1/packages/preview
 POST /api/v1/packages/{}/restore
 POST /api/v1/packages/{}/revoke
+POST /api/v1/rules
+POST /api/v1/rules/bulk
 POST /api/v1/secrets
 POST /api/v1/sessions
 POST /api/v1/sessions/{}/alive
@@ -163,6 +171,7 @@ POST /webhooks/stripe
 PUT /api/v1/artifacts/{}/members/{}
 PUT /api/v1/automations/{}
 PUT /api/v1/budgets
+PUT /api/v1/gates/policy
 PUT /api/v1/inference/settings
 PUT /api/v1/mcp/servers/{}
 PUT /api/v1/mcp/servers/{}/assignments/{}
