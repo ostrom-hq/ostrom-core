@@ -1,4 +1,4 @@
-# The routes ostrom-server main serves (ostrom-server@27c8704), read from its sources by scripts/served-routes.py.
+# The routes ostrom-server main serves (ostrom-server@d9301e4), read from its sources by scripts/served-routes.py.
 # api-types/scripts/check-served.mjs (run by `npm run contract` in CI) fails when an operation's x-ostrom-status
 # disagrees: served when a line below has its method and path (path parameters written {}), planned otherwise.
 # A "!" line, kept by hand when regenerating, is a route main serves in another shape than the contract's: its
@@ -18,6 +18,7 @@ DELETE /api/v1/orgs/{}/invitations/{}
 DELETE /api/v1/orgs/{}/members/{}
 DELETE /api/v1/secrets/{}
 DELETE /api/v1/tokens/{}
+DELETE /api/v1/workflows/{}
 GET /a/{}/{}/{}
 GET /api/v1/accounts
 GET /api/v1/approvals
@@ -43,6 +44,9 @@ GET /api/v1/cloud/runner/terminal
 GET /api/v1/cloud/sessions
 GET /api/v1/cloud/sessions/{}
 GET /api/v1/cloud/sessions/{}/terminal
+GET /api/v1/gates/approvers
+GET /api/v1/gates/catalog
+GET /api/v1/gates/catalog/signed
 GET /api/v1/gates/{}
 GET /api/v1/health
 GET /api/v1/inference/settings
@@ -61,12 +65,19 @@ GET /api/v1/orgs/{}/billing/invoices
 GET /api/v1/orgs/{}/invitations
 GET /api/v1/orgs/{}/members
 GET /api/v1/orgs/{}/members/{}
+GET /api/v1/packages
+GET /api/v1/packages/audit
+GET /api/v1/packages/current
+GET /api/v1/packages/{}
+GET /api/v1/packages/{}/status
 GET /api/v1/policy/models
 GET /api/v1/receipts
 GET /api/v1/receipts/keys
 GET /api/v1/receipts/{}
 GET /api/v1/receipts/{}/verify
 GET /api/v1/secrets
+GET /api/v1/sessions
+GET /api/v1/sessions/{}
 GET /api/v1/tokens
 GET /api/v1/usage
 GET /api/v1/usage/events
@@ -74,6 +85,8 @@ GET /api/v1/usage/live
 GET /api/v1/usage/summary
 GET /api/v1/waits
 GET /api/v1/waits/{}
+GET /api/v1/workflows
+GET /api/v1/workflows/{}
 GET /health
 GET /l/{}/{}
 GET /ready
@@ -130,7 +143,15 @@ POST /api/v1/orgs/{}/invitations/links
 POST /api/v1/orgs/{}/leave
 POST /api/v1/orgs/{}/members/invites
 POST /api/v1/orgs/{}/transfer
+POST /api/v1/packages/preview
+POST /api/v1/packages/{}/restore
+POST /api/v1/packages/{}/revoke
 POST /api/v1/secrets
+POST /api/v1/sessions
+POST /api/v1/sessions/{}/alive
+POST /api/v1/sessions/{}/end
+POST /api/v1/sessions/{}/reopen
+POST /api/v1/sessions/{}/seen
 POST /api/v1/tokens
 POST /api/v1/tokens/{}/rotate
 POST /api/v1/usage/events
@@ -138,6 +159,7 @@ POST /api/v1/waits
 POST /api/v1/waits/mcp
 POST /api/v1/waits/{}/answer
 POST /api/v1/waits/{}/cancel
+POST /api/v1/workflows
 POST /webhooks/stripe
 PUT /api/v1/artifacts/{}/members/{}
 PUT /api/v1/automations/{}
@@ -148,3 +170,4 @@ PUT /api/v1/mcp/servers/{}/assignments/{}
 PUT /api/v1/mcp/settings
 PUT /api/v1/policy/models
 PUT /api/v1/secrets/{}
+PUT /api/v1/workflows/{}
