@@ -6720,7 +6720,7 @@ paths:
       - name: cutover
         in: query
         required: false
-        description: "The final run, once TeamCode is stopped: owners only (403 otherwise), recorded in the audit log in the name of the person who runs it, before anything is written (503 on a server without an audit log or without shared accounts). It also revives the shared accounts waiting for a reconnection, testing TeamCode's tokens first (renewing rotates them, so a normal run never does)."
+        description: "The final run, once TeamCode is stopped: owners only (403 `cutover_owner_required` otherwise), recorded in the audit log in the name of the person who runs it, before anything is written (503 `cutover_audit_unavailable` on a server without an audit log, 503 `cutover_sharing_unavailable` on a server without shared accounts; the key is `error.type`). It also revives the shared accounts waiting for a reconnection, testing TeamCode's tokens first (renewing rotates them, so a normal run never does)."
         schema:
           type: boolean
       requestBody:
@@ -9778,24 +9778,37 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listAudit
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - audit
       summary: Audit log (admins)
+      description: >-
+        The organization's signed audit log, newest first, 50 lines a page: governance changes (budgets, model
+        policy, inference settings, MCP servers, assignments and policies), organization and membership changes,
+        the import cutover and the deletion of the organization. Readable by an owner or an admin only (403
+        otherwise), with a browser session or a token holding `audit:read`; another organization's log is never
+        read (404). `actor` is a person's login (their id once they no longer exist), or `<kind>:<id>` for a
+        credential that is not a person's (`service:…`, `agent:…`), or `server:ostrom` for the server itself;
+        the `actor` filter takes a login only. `subject` is `<type>:<id>`; `meta`
+        holds the event's facts as strings, with `credential` (`browser`, `api_token`…) for a change made through
+        the API. `next` is absent on the last page.
       parameters:
       - name: actor
         in: query
         required: false
+        description: Only this person's events, by login.
         schema:
           type: string
       - name: event
         in: query
         required: false
+        description: Only this event, by its exact name (`budget.changed`).
         schema:
           type: string
       - name: before
         in: query
         required: false
+        description: The `next` of the previous page (400 when it is not one).
         schema:
           type: string
       responses:
@@ -11109,6 +11122,7 @@ components:
           type: string
         at:
           type: string
+          format: date-time
         event:
           type: string
         actor:
@@ -11117,7 +11131,9 @@ components:
           type: string
         meta:
           type: object
-          additionalProperties: {}
+          description: The event's facts, every value a string
+          additionalProperties:
+            type: string
       required:
       - id
       - at
