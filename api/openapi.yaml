@@ -2659,7 +2659,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: Start a session or a segment (hook SessionStart); a resumed session opens a chained segment
@@ -2688,7 +2688,7 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: listSessions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: Sessions
@@ -2744,7 +2744,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: A session segment and its receipt
@@ -2776,7 +2776,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: sessionAlive
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: Sign of life of the launcher (every 20 s)
@@ -2817,7 +2817,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: endSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: 'End a session: the server signs the segment receipt'
@@ -2855,7 +2855,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reopenSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: Reopen a closed session as a new segment chained to its receipt (launcher woke up)
@@ -2951,7 +2951,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reportSeen
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: A skill or sub-agent of the package was opened
@@ -3214,7 +3214,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApproversGraph
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: 'Who approves what in a repository (scope `packages:read`, `workflows:read`, an agent session or a browser
@@ -3249,7 +3249,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGateCatalog
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: Gates of a repository and the actions they cover
@@ -3281,7 +3281,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSignedGatePolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: 'The gate policy of a repository signed by the instance (Ed25519, key on `/api/v1/instance/keys`), valid 10
@@ -3811,7 +3811,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCurrentPackage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: The pinned package of a repository (served as signed, bytes untouched)
@@ -3843,7 +3843,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listPackages
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: Package versions
@@ -3884,7 +3884,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: previewPackage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: Compile without signing
@@ -3919,7 +3919,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listPackageAudit
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: Audit of compilations, pins and revocations
@@ -3954,7 +3954,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getPackage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: A package by digest
@@ -3986,7 +3986,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getPackageStatus
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: Pinned or revoked
@@ -4018,7 +4018,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: revokePackage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: 'Revoke a version: launchers refuse it'
@@ -4061,7 +4061,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: restorePackage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: Restore a revoked version
@@ -4511,7 +4511,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listWorkflows
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Workflows
@@ -4554,7 +4554,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createWorkflow
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Create a workflow
@@ -4586,7 +4586,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getWorkflow
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: A workflow
@@ -4615,7 +4615,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveWorkflow
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Save a workflow; 409 workflow_conflict when `expectedVersion` is stale (signed decision)
@@ -4657,7 +4657,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteWorkflow
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Delete a workflow; 409 workflow_in_use
