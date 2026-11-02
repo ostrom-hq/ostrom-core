@@ -6782,6 +6782,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/responses:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6812,6 +6818,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/chat/completions:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6841,6 +6853,12 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/inference/v1/models:
     parameters:
@@ -10472,6 +10490,32 @@ components:
             $ref: '#/components/schemas/ApiError'
     Error:
       description: A refusal
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    InferenceRefused:
+      description: "Too many requests, in the provider's own error shape, which satisfies `ApiError` (`error.type`,
+        `error.message`). Refused by the budgets before any provider is called: `error.type` `rate_limit_error` on the
+        Messages endpoint, `insufficient_quota` on the OpenAI-compatible ones, which also carry `error.code`
+        `budget_exhausted` or `budget_insufficient`; `error.message` starts with one of two fixed phrases a client can
+        match on (`LedgerSpendGuard.EXHAUSTED` and `.INSUFFICIENT` in ostrom-server). `Monthly budget reached: ...`: a
+        monthly limit of the organization or of the member is spent; `Retry-After` gives the seconds until the month
+        ends (UTC), when the limit resets. `Budget left too low for this call: ...`: the limit is not spent, but what
+        is left after the calls in flight cannot cover what this call may cost (its output price times the largest of
+        its `max_tokens`, `max_output_tokens` and `max_completion_tokens`, 32 000 when it names none, at most 1 000 000;
+        plus its estimated input; nothing for a model without a price); the message says what is left and what the
+        call may cost, with no `Retry-After`: lower the call's output bound, or retry once the calls in flight finish.
+        Every shared account busy or at its limit: `rate_limit_error`, or `rate_limit_exceeded` with `error.code`
+        `no_capacity`, with `Retry-After` when the gateway knows when one frees up. A provider's own 429, once no other
+        account can take the call, is relayed as the provider sent it, with its `Retry-After` and rate-limit headers"
+      headers:
+        Retry-After:
+          description: When to try again. From the gateway, whole seconds, at least 1; with `Monthly budget reached`,
+            until the start of the next month (UTC); absent with `Budget left too low for this call`. Relayed from a
+            provider, as the provider wrote it (seconds or an HTTP date)
+          schema:
+            type: string
       content:
         application/json:
           schema:
