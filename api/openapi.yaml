@@ -12485,6 +12485,7 @@ components:
             type: string
         default:
           type: string
+          description: Absent while no default model is set (a new organization's policy has none)
         byMember:
           type: object
           additionalProperties:
@@ -12493,7 +12494,6 @@ components:
               type: string
       required:
       - allowed
-      - default
       x-ostrom-kotlin: pending
     MyBudget:
       type: object
