@@ -7402,10 +7402,13 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRunners
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Runners
+      description: 'The organization''s registered runners, by name, then the runners at work for the caller''s cloud
+        sessions (one per execution). Any member, or a credential with `cloud:read`. A runner is `online` when it gave a
+        sign of life within the last 90 seconds, `offline` otherwise. A registered runner''s `token` is never listed.'
       responses:
         '200':
           description: OK
@@ -7434,10 +7437,16 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: registerRunner
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Register a runner (service key)
+      description: 'An owner or an admin of the organization, from a signed-in console session (a personal, CLI or
+        service token gets 403), registers a machine. The answer carries the runner''s `token`, shown this once: only its
+        hash is kept. The name is unique in the organization and an organization registers at most 100 runners (409
+        otherwise). The name is 1 to 64 characters; at most 16 labels, each 1 to 64 letters, digits, `.`, `_`, `:` or `-`,
+        starting with a letter or a digit (400 otherwise). The name is unique whatever its case and refuses control and
+        invisible formatting characters. The answer is not cached (`Cache-Control: no-store`).'
       requestBody:
         required: true
         content:
@@ -7478,10 +7487,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteRunner
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Remove a runner
+      description: 'An owner or an admin, from a signed-in console session, removes a registered runner and its token.
+        A runner of another organization, or a malformed id, is not found (404).'
       parameters:
       - name: id
         in: path
@@ -14119,6 +14130,9 @@ components:
           type: string
         version:
           type: string
+        token:
+          type: string
+          description: The runner's key, `ostrom_runner_` and 64 hex characters, only in registerRunner's answer
       required:
       - id
       - name
