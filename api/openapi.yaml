@@ -865,6 +865,13 @@ paths:
       responses:
         '202':
           description: Sent if the address may sign in
+          headers:
+            Set-Cookie:
+              description: '`ostrom_email_link` (HttpOnly, `Path=/api/v1/auth`, the link''s 15 minutes): the nonce of the
+                browser that asked, which `verifySignInEmail` needs. A browser that already holds one keeps it, so each
+                link it asked for works in it. Set even when nothing is sent'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -882,7 +889,8 @@ paths:
       tags:
       - auth
       summary: 'Sign in with the token of an e-mailed link, read by the console from the link''s fragment
-        (`/auth/email#token=…`). The `Origin` header must be the console''s'
+        (`/auth/email#token=…`). The `Origin` header must be the console''s, and the request must carry the
+        `ostrom_email_link` cookie of the browser that asked for the link (`requestSignInEmail`)'
       security: []
       requestBody:
         required: true
@@ -900,7 +908,8 @@ paths:
           description: Signed in; the session is in the cookies, never in the body
           headers:
             Set-Cookie:
-              description: '`__Host-ostrom_session` (HttpOnly) and the readable `__Host-ostrom_csrf`'
+              description: '`__Host-ostrom_session` (HttpOnly) and the readable `__Host-ostrom_csrf`; `ostrom_email_link`
+                expired'
               schema:
                 type: string
           content:
@@ -912,7 +921,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: email_link_other_browser (a valid link presented without the nonce of the browser that asked
+            for it; it is not used and still signs in there), or forbidden (key `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/EmailLinkOtherBrowser'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -11868,6 +11884,17 @@ components:
       - files
       - additions
       - deletions
+    EmailLinkOtherBrowser:
+      type: object
+      description: '403 email_link_other_browser: the e-mailed link was asked for in another browser (its
+        `ostrom_email_link` nonce is missing or not that browser''s). The link is not used: open it in the browser
+        that asked for it, or ask for a new link from this one'
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - error
+      x-ostrom-kotlin: pending
     EndSessionRequest:
       type: object
       description: 'Ends a session (hook `SessionEnd` or the launcher): the server signs the segment''s receipt'
