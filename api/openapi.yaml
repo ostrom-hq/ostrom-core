@@ -756,9 +756,10 @@ paths:
   /api/v1/auth/me:
     get:
       operationId: getMe
-      x-ostrom-status: planned
-      description: "Main serves this path with another body, `Profile` (id, login, displayName, primaryEmail, avatarUrl,
-        createdAt, emails, providers, csrfToken). Planned until the server answers `Me`."
+      x-ostrom-status: served
+      description: "`Ostrom-Org` is an option here: `member` and `organization` are those of the organization it names when
+        the caller is a member of it, and absent otherwise (no header, not an id, not a membership): never 409 nor 404.
+        The account (e-mails, ways in) is read at `/api/v1/auth/me/account`."
       tags:
       - auth
       summary: 'The caller: login, member, organization'
