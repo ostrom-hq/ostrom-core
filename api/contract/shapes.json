@@ -1725,7 +1725,8 @@
       "admin",
       "member",
       "approver",
-      "invited"
+      "invited",
+      "billing"
     ]
   },
   "NodePosition": {
@@ -2095,7 +2096,7 @@
         "type": {
           "ref": "GitHubConnection"
         },
-        "required": true,
+        "required": false,
         "nullable": false
       },
       "createdAt": {
@@ -3073,6 +3074,15 @@
         "required": false,
         "nullable": false
       },
+      "gateAnswers": {
+        "type": {
+          "array": {
+            "ref": "SessionGateAnswer"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
       "receiptId": {
         "type": "string",
         "required": false,
@@ -3094,6 +3104,40 @@
         "nullable": false
       },
       "runId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "SessionGateAnswer": {
+    "properties": {
+      "gateId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "actionClass": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "outcome": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "by": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "receiptId": {
         "type": "string",
         "required": false,
         "nullable": false
