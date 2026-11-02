@@ -1066,7 +1066,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2186,7 +2193,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2368,7 +2382,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6101,7 +6122,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6132,7 +6160,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6199,7 +6234,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6232,7 +6274,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6287,7 +6336,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -15027,7 +15083,8 @@ components:
     StepUpRequired:
       type: object
       description: '403 step_up_required: a yes, and a sensitive write from the console or the app (a personal token,
-        a service key, a role, a member removed, a transfer, a secret, an MCP server, the model keys), need a sign-in less than 5
+        a service key, a sign-in link, an invitation, a role, a member removed, a transfer, a secret, an MCP server,
+        its assignments, policies and settings, the model keys), need a sign-in less than 5
         minutes old (a sign-in of unknown age is refused too); sign in again, then send it again. A no never needs it,
         and an API token is never asked: it has no sign-in to renew'
       properties:
