@@ -12489,6 +12489,7 @@ components:
       - member
       - approver
       - invited
+      - billing
     ModelPolicy:
       type: object
       description: Models allowed, and the default

@@ -85,6 +85,9 @@ public enum class MemberRole(
     APPROVER("approver"),
     INVITED("invited"),
 
+    /** Buys, switches and cancels the plan and reads the invoices; no other right. */
+    BILLING("billing"),
+
     /** A value this version does not know, sent by a newer server; never sent. */
     UNKNOWN(""),
     ;

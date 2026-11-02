@@ -1725,7 +1725,8 @@
       "admin",
       "member",
       "approver",
-      "invited"
+      "invited",
+      "billing"
     ]
   },
   "NodePosition": {
