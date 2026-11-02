@@ -769,7 +769,7 @@ paths:
         required: false
         description: The organization whose member and organization the answer adds, when the caller is a member of it.
           An option, unlike on the routes that act in an organization; any other value is ignored, never a 409 nor a
-          404
+          404. Without it the answer has neither, even for a person with one organization
         schema:
           type: string
       responses:
@@ -12893,7 +12893,8 @@ components:
           type: string
         connectedVia:
           $ref: '#/components/schemas/GitHubConnection'
-          description: How GitHub is connected; absent for an organization linked to no GitHub organization
+          description: How GitHub is connected; absent when the answer does not say (an organization linked to no
+            GitHub organization, or a list that does not carry it)
         createdAt:
           type: string
       required:

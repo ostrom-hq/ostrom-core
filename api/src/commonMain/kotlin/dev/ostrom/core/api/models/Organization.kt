@@ -10,7 +10,8 @@ import kotlinx.serialization.Serializable
  * @property name Display name.
  * @property avatarUrl Logo.
  * @property description Description.
- * @property connectedVia How GitHub is connected; null for an organization linked to no GitHub organization.
+ * @property connectedVia How GitHub is connected; absent when the answer does not say (an organization linked to no
+ *   GitHub organization, or a list that does not carry it).
  * @property createdAt ISO creation time.
  */
 @Serializable
