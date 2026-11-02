@@ -49,6 +49,7 @@ tags:
 - name: events
 - name: gates
 - name: github
+- name: governance
 - name: import
 - name: inference
 - name: mcp
@@ -3401,6 +3402,8 @@ paths:
                     type: string
                 required:
                 - selfApproval
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -3411,6 +3414,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/approvals:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -3613,6 +3618,121 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/confirmations/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getGovernanceConfirmation
+      x-ostrom-status: planned
+      tags:
+      - governance
+      summary: A governance confirmation, with the exact change it makes; `wait` long-polls up to that many seconds
+      description: |-
+        Read by its requester (with any of their credentials) and by the owners and admins of its organization; anyone
+        else, and another organization, gets 404. A pending confirmation past its 15 minutes reads as `expired`.
+
+        With `wait`, a pending confirmation is waited on for its answer: the response comes as soon as it is no longer
+        pending, or with it still pending when the wait ends; the caller then asks again until `expiresAt`. A
+        confirmation that is not pending answers at once. The server caps the wait at 30 seconds and reads a value
+        outside 0 to 30 as the nearest bound. A waiting request holds no database connection. A client sets its HTTP
+        timeout above the wait.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: wait
+        in: query
+        required: false
+        description: Seconds to wait on a pending confirmation for its answer; absent or 0 reads at once.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 30
+          default: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmation'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/confirmations/{id}/answer:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: answerGovernanceConfirmation
+      x-ostrom-status: planned
+      tags:
+      - governance
+      summary: Confirm or refuse a governance confirmation, as an owner or an admin signed in to the console
+      description: |-
+        Only a browser session answers (a token gets 403 `forbidden`), of an owner or an admin of the organization (403
+        `forbidden` otherwise), once (409 `confirmation_closed`), within its 15 minutes (410 `confirmation_expired`).
+
+        `confirm` needs a sign-in less than 5 minutes old (403 `step_up_required`: sign in again, then confirm), as a
+        yes does; `refuse` does not. A confirmation applies the change exactly as it was shown, as a signed decision of
+        the person who confirms (the requester is kept in the confirmation and the audit log). When what it changes is
+        no longer what it showed as `before`, nothing is written and the confirmation closes as `failed` with 409
+        `confirmation_stale`. When the write itself is refused (a version conflict, a rule deleted meanwhile), the
+        confirmation closes as `failed` with that error, and the answer is that error. Each step (created, confirmed,
+        refused, expired, failed) is an event of the organization's signed audit log.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GovernanceConfirmationAnswerRequest'
+      responses:
+        '200':
+          description: The answered confirmation; when confirmed, `result` holds what the write returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceConfirmation'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (sign in again, then confirm), or forbidden (a token, not an owner or admin)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          description: confirmation_closed, confirmation_stale, or the confirmed write's own error (key `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '410':
+          description: confirmation_expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/decisions:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4364,6 +4484,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Rule'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4374,6 +4496,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/rules/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4455,6 +4579,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Rule'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4465,6 +4591,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
     delete:
       operationId: deleteRule
       x-ostrom-status: served
@@ -4480,6 +4608,8 @@ paths:
       responses:
         '204':
           description: Deleted
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4490,6 +4620,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/rules/bulk:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4527,6 +4659,8 @@ paths:
                     type: integer
                 required:
                 - updated
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4537,6 +4671,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/workflows:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4602,6 +4738,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4612,6 +4750,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/workflows/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4676,6 +4816,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4686,6 +4828,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
     delete:
       operationId: deleteWorkflow
       x-ostrom-status: served
@@ -4701,6 +4845,8 @@ paths:
       responses:
         '204':
           description: Done
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4711,6 +4857,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/workflows/{id}/runs:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6493,6 +6641,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelPolicy'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -6503,6 +6653,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/routes:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -9827,6 +9979,24 @@ components:
       schema:
         type: string
   responses:
+    GovernanceConfirmationPending:
+      description: |-
+        Not applied: made with a person's API token (the CLI's, `ostrom login --admin` or not), the governance write
+        opened a confirmation, which an owner or an admin confirms on the console within 15 minutes
+        (`getGovernanceConfirmation`). A browser session's write and an `inference:admin` service key's are applied at
+        once, as before. Planned: ostrom-server answers it once its governance confirmations are served; until then
+        the write applies (`getGovernanceConfirmation` is `planned` meanwhile).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GovernanceConfirmationPending'
+    ConfirmationLimit:
+      description: 'confirmation_limit: the person already has 10 governance confirmations waiting (expired, refused and
+        answered ones do not count)'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
     Error:
       description: A refusal
       content:
@@ -11929,6 +12099,150 @@ components:
       enum:
       - github-app
       - gh-token
+    GovernanceChangeKind:
+      type: string
+      description: 'The governance write a confirmation holds: the operation that opened it'
+      enum:
+      - rules.create
+      - rules.update
+      - rules.delete
+      - rules.bulk
+      - gates.policy
+      - models.policy
+      - workflows.create
+      - workflows.save
+      - workflows.delete
+      x-ostrom-kotlin: pending
+    GovernanceConfirmation:
+      type: object
+      description: 'A governance write made with a CLI token, held until an owner or an admin confirms it on the
+        console. `before` and `after` are what the change replaces and what it writes, as the read routes show them
+        (JSON null for nothing: a creation has no `before`, a deletion no `after`)'
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: '#/components/schemas/GovernanceChangeKind'
+        status:
+          $ref: '#/components/schemas/GovernanceConfirmationStatus'
+        method:
+          type: string
+          description: The method of the write, such as `PUT`
+        path:
+          type: string
+          description: The path of the write, such as `/api/v1/gates/policy`
+        scope:
+          type: string
+          description: The governance scope the write uses (`policy:write`, `harness:write`, `gates:policy`)
+        summary:
+          type: string
+          description: One line saying what the change does
+        before:
+          description: What the change replaces, as the read routes show it; JSON null for nothing (a creation)
+        after:
+          description: What the change writes, as the read routes show it; JSON null for nothing (a deletion)
+        requestedBy:
+          $ref: '#/components/schemas/GovernanceConfirmationPerson'
+        credential:
+          type: string
+          description: 'The person''s token that asked: `admin` when it holds a governance scope (`ostrom login
+            --admin`), `device` otherwise (`ostrom login`, a personal token). An agent, a runner or a service key never
+            opens one'
+          enum:
+          - admin
+          - device
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        answeredBy:
+          description: Who confirmed or refused it; a confirmed change is their signed decision
+          allOf:
+          - $ref: '#/components/schemas/GovernanceConfirmationPerson'
+        answeredAt:
+          type: string
+          format: date-time
+        result:
+          description: What the write returned once confirmed (absent when it returns nothing, as a deletion)
+        error:
+          description: Why a confirmed change was not written (`failed`)
+          allOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - id
+      - kind
+      - status
+      - method
+      - path
+      - scope
+      - summary
+      - before
+      - after
+      - requestedBy
+      - credential
+      - createdAt
+      - expiresAt
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationAnswer:
+      type: string
+      enum:
+      - confirm
+      - refuse
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationAnswerRequest:
+      type: object
+      properties:
+        answer:
+          $ref: '#/components/schemas/GovernanceConfirmationAnswer'
+      required:
+      - answer
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationPending:
+      type: object
+      description: 'The 202 of a governance write made with a CLI token: nothing was written. An owner or an admin
+        confirms it at `confirmUrl` before `expiresAt` (15 minutes); the CLI waits on `getGovernanceConfirmation`. The
+        same change asked again by the same person while it waits answers the same confirmation'
+      properties:
+        confirmationId:
+          type: string
+        confirmUrl:
+          type: string
+          description: The absolute URL of the console page that confirms it (`<console>/confirm/<id>`)
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - confirmationId
+      - confirmUrl
+      - expiresAt
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationPerson:
+      type: object
+      description: A member who asked for or answered a confirmation
+      properties:
+        memberId:
+          type: string
+        login:
+          type: string
+          description: Their GitHub login, when known
+        name:
+          type: string
+      required:
+      - memberId
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationStatus:
+      type: string
+      description: 'pending until answered; confirmed (applied), refused, expired (15 minutes without an answer), or
+        failed (confirmed, but the write was refused: see `error`)'
+      enum:
+      - pending
+      - confirmed
+      - refused
+      - expired
+      - failed
+      x-ostrom-kotlin: pending
     Group:
       type: object
       description: A group of members sharing subscriptions
