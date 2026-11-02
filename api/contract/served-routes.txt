@@ -125,7 +125,9 @@ POST /api/v1/automations/{}/run
 POST /api/v1/automations/{}/trigger
 POST /api/v1/automations/{}/webhook/rotate-secret
 POST /api/v1/billing/stripe/webhook
+POST /api/v1/cloud/runner/checks
 POST /api/v1/cloud/runner/heartbeat
+POST /api/v1/cloud/runner/launch
 POST /api/v1/cloud/sessions
 POST /api/v1/cloud/sessions/{}/pause
 POST /api/v1/cloud/sessions/{}/resume
