@@ -9943,7 +9943,9 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startAnalysis
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "A browser session of an owner or an admin only (403 otherwise); 202 with the id of the run. 409 when a
+        run of the same kind is already going. It reads every repository and spends on the organization's model."
       tags:
       - analysis
       summary: Analyse the organization (rules and workflows)
@@ -9974,7 +9976,9 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: restartAnalysis
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "A browser session of an owner or an admin only (403 otherwise); 202 with a fresh run, whether or not the last one failed; its id. 409 when a
+        run of the same kind is already going. It reads every repository and spends on the organization's model."
       tags:
       - analysis
       summary: Restart a failed analysis
@@ -10005,7 +10009,8 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getAnalysisState
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "Scope `rules:read`. `phase` and `progress` are absent before the first analysis; `failure` is `{stage, reason, at, retryPath}` when the last one failed."
       tags:
       - analysis
       summary: Snapshot of the analysis
@@ -10031,7 +10036,9 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startReplay
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "A browser session of an owner or an admin only (403 otherwise); 202 with the id of the run. 409 when a
+        run of the same kind is already going. It spends on the organization's model."
       tags:
       - analysis
       summary: Replay the last 30 days of pull requests under the rules (simulation)
@@ -10059,7 +10066,8 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: getReplay
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "Scope `rules:read`: what the last replay found, one object per replayed pull request."
       tags:
       - analysis
       summary: Replay results

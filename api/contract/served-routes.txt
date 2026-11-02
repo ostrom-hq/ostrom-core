@@ -26,6 +26,8 @@ DELETE /api/v1/workflows/{}
 GET /a/{}/{}/{}
 GET /api/v1/accounts
 GET /api/v1/activity
+GET /api/v1/analysis/replay
+GET /api/v1/analysis/state
 GET /api/v1/approvals
 GET /api/v1/approvals/queue
 GET /api/v1/approvals/{}
@@ -128,6 +130,9 @@ PATCH /api/v1/orgs/{}
 PATCH /api/v1/orgs/{}/members/{}
 PATCH /api/v1/rules/{}
 POST /api/v1/accounts
+POST /api/v1/analysis/replay
+POST /api/v1/analysis/restart
+POST /api/v1/analysis/start
 POST /api/v1/approvals/{}/answer
 POST /api/v1/artifacts
 POST /api/v1/artifacts/mcp
