@@ -162,7 +162,11 @@ public enum class CheckAttestation(
     /** The developer's machine ran the check and reported the result; nothing proves it ran. */
     WORKSTATION_DECLARED("workstation_declared"),
 
-    /** An Ostrom runner ran the check in an isolated session. */
+    /**
+     * The runner of an Ostrom cloud session ran the check and reported it with its own token, which the agent cannot
+     * read. It proves that Ostrom ran the script and read its exit code, not that the agent's workspace it ran on was
+     * untouched.
+     */
     ISOLATED_RUNNER("isolated_runner"),
 
     /** The GitHub check run of the Ostrom App, read and verified by the server. */

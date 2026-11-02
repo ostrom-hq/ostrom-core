@@ -718,6 +718,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /api/v1/policy/agents:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -7924,6 +7926,113 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/launch:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: openRunnerLaunch
+      x-ostrom-status: served
+      tags:
+      - runners
+      summary: 'The runner of a cloud session opens its session''s launch with the execution''s runner token: the launch
+        is the session owner''s, under the organization''s policy and launch limit, and the agent in the pod gets its
+        agent token, never the runner token. A shell session opens none (400)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The cloud session the runner was started for
+                epoch:
+                  type: integer
+                  format: int64
+                  description: The execution it was started for; an older one is fenced (409)
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  launchId:
+                    type: string
+                  agentToken:
+                    type: string
+                  expiresAt:
+                    type: string
+                required:
+                - launchId
+                - agentToken
+                - expiresAt
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/cloud/runner/checks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: reportRunnerCheck
+      x-ostrom-status: served
+      tags:
+      - checks
+      summary: 'The runner of a cloud session reports a check it ran itself, with the execution''s runner token: the run
+        is recorded `isolated_runner` for a session of a launch that cloud session opened (404 otherwise), and the
+        receipt''s check node takes the attestation of its last run. It proves that Ostrom ran the script and read its
+        exit code, not that the agent''s workspace it ran on was untouched'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The cloud session the runner was started for
+                epoch:
+                  type: integer
+                  format: int64
+                  description: The execution it was started for; an older one is fenced (409)
+                check:
+                  $ref: '#/components/schemas/ReportCheckRequest'
+              required:
+              - sessionId
+              - epoch
+              - check
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckRun'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/messages:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -10074,6 +10183,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    RateLimited:
+      description: 'Too many requests lately (`rate_limited`): nothing was done. A launch is limited per person in an
+        organization and per organization, over a sliding hour'
+      headers:
+        Retry-After:
+          description: Seconds until a place frees up
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
   schemas:
     AccountAuditEvent:
       type: object
@@ -11342,9 +11463,11 @@ components:
     CheckAttestation:
       type: string
       description: 'Where a check run comes from. `workstation_declared`: the developer''s machine ran it and reported
-        the result, nothing proves it ran. `isolated_runner`: an Ostrom runner ran it in an isolated session. `ci`:
-        the GitHub check run of the Ostrom App, read and verified by the server. Shown on every check of a receipt;
-        a rule gate can refuse a declared run (RuleGateCheck).'
+        the result, nothing proves it ran. `isolated_runner`: the runner of an Ostrom cloud session ran it and reported
+        it with its own token, which the agent cannot read (reportRunnerCheck); it proves that Ostrom ran the script and
+        read its exit code, not that the agent''s workspace it ran on was untouched. `ci`: the GitHub check run of the
+        Ostrom App, read and verified by the server. Shown on every check of a receipt; a rule gate can refuse a
+        declared run (RuleGateCheck).'
       enum:
       - workstation_declared
       - isolated_runner
@@ -14031,6 +14154,8 @@ components:
           type: boolean
           description: When true, only a run attested by an Ostrom runner or the CI (`isolated_runner`, `ci`)
             satisfies the gate; a run declared by the workstation (`workstation_declared`) does not. False by default.
+            An `isolated_runner` run proves that Ostrom ran the script and read its exit code, not that the agent's
+            workspace it ran on was untouched.
       required:
       - check
     NewRule:
