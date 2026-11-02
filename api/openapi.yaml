@@ -205,8 +205,8 @@ paths:
     get:
       operationId: startGithubLogin
       x-ostrom-status: planned
-      description: "Main serves this path through `startOAuthLogin` (`provider=github`): `redirect` and `reauth`, not the
-        mobile PKCE parameters. Planned until the server takes them."
+      description: "Served through `startOAuthLogin` (`provider=github`), with the mobile PKCE parameters since
+        ostrom-server#75. This literal path stays `planned` for the served check, which lists the `{provider}` route."
       tags:
       - auth
       summary: 'Start the GitHub OAuth sign-in. Browser: `redirect`. Mobile app: `redirect_uri` (ostrom://auth/callback),
@@ -248,10 +248,13 @@ paths:
   /api/v1/auth/mobile/token:
     post:
       operationId: mobileToken
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Exchange the one-time code of the mobile sign-in (PKCE) for a token
+      description: "The code works once (a wrong verifier spends it), for 60 s, with the exact `redirectUri` of the start.
+        The token (`osm_…`, 30 days) answers a gate only within 5 minutes of `unlockMobileApp`. A person keeps 5 phones:
+        a sixth sign-in revokes the oldest app token."
       security: []
       requestBody:
         required: true
@@ -284,6 +287,10 @@ paths:
                     $ref: '#/components/schemas/AuthUser'
                   expiresAt:
                     type: string
+                  unlockKey:
+                    type: string
+                    description: "Kept by the app behind the phone's biometrics (keychain item that requires them),
+                      presented to `unlockMobileApp` before a yes; never sent anywhere else"
                 required:
                 - token
                 - user
@@ -291,12 +298,52 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mobile/unlock:
+    post:
+      operationId: unlockMobileApp
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Record the phone's biometric unlock: the app's token answers a gate for 5 minutes after it (S2-54)"
+      description: "The app's token only (403 for a browser session or another token, or a wrong key)."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                unlockKey:
+                  type: string
+              required:
+              - unlockKey
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authenticatedAt:
+                    type: string
+                    format: date-time
+                required:
+                - authenticatedAt
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/github/callback:
     get:
       operationId: githubLoginCallback
       x-ostrom-status: planned
-      description: "Main serves this path through `oauthLoginCallback` (`provider=github`), for the browser sign-in only.
-        Planned until the mobile sign-in is served."
+      description: "Served through `oauthLoginCallback` (`provider=github`), browser and mobile sign-ins, since
+        ostrom-server#75. This literal path stays `planned` for the served check, which lists the `{provider}` route."
       tags:
       - auth
       summary: GitHub OAuth callback
@@ -362,10 +409,38 @@ paths:
         description: "Sign in again before a yes: the provider asks again"
         schema:
           type: boolean
+      - name: redirect_uri
+        in: query
+        required: false
+        description: "Mobile app: its deep link, exactly `ostrom://auth/callback`. With `state`, `code_challenge` and
+          `code_challenge_method=S256`, the callback returns a one-time `code` (or an `error`) and the app's `state` to
+          it; any invalid mobile parameter answers 400"
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        description: "Mobile app: its state, returned with the code"
+        schema:
+          type: string
+      - name: code_challenge
+        in: query
+        required: false
+        description: "Mobile app: the S256 PKCE challenge (43 characters)"
+        schema:
+          type: string
+      - name: code_challenge_method
+        in: query
+        required: false
+        description: "Mobile app: `S256` only"
+        schema:
+          type: string
       security: []
       responses:
         '302':
           description: "Redirect"
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/{provider}/callback:
     get:
       operationId: oauthLoginCallback
@@ -667,7 +742,11 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: createLaunch
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "Scope `sessions:write` (the CLI's device token, a browser session). A person's only: an agent token
+        never launches. The person and the organization come from the credential. 403 when the organization's policy
+        refuses the agent or the model, or the credential may not launch; 404 when it is no member of an organization
+        the request can act in."
       tags:
       - auth
       summary: 'Start an agent launch: returns an agent token scoped to the sessions of this launch, expiring at its end.
@@ -715,6 +794,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /api/v1/policy/agents:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -765,6 +846,42 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/me/account:
+    get:
+      operationId: getMyAccount
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The signed-in person's account: e-mails and ways in (scope `profile:read`)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/tokens/scopes:
+    get:
+      operationId: listTokenScopes
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The scopes a personal token may be given, `POST /api/v1/tokens` refuses any other (browser session only)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenScopes'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
           $ref: '#/components/responses/Error'
   /api/v1/auth/me:
     get:
@@ -1025,7 +1142,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -1033,7 +1157,7 @@ paths:
   /api/v1/auth/sessions:
     get:
       operationId: listAuthSessions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Signed-in sessions of the caller
@@ -1066,7 +1190,7 @@ paths:
   /api/v1/auth/sessions/{id}:
     delete:
       operationId: revokeAuthSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Revoke a signed-in session
@@ -1131,7 +1255,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
   /api/v1/tokens/{id}:
     delete:
       operationId: revokeToken
@@ -1177,7 +1308,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
   /api/v1/service-keys:
@@ -1185,7 +1323,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listServiceKeys
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Service keys (admins)
@@ -1217,7 +1355,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createServiceKey
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Create a service key; its secret is returned once
@@ -1234,6 +1372,9 @@ paths:
                   type: array
                   items:
                     type: string
+                expiresInDays:
+                  type: integer
+                  description: Lifetime in days, 1 to 366; absent for a key that does not expire
               required:
               - name
               - scopes
@@ -1249,7 +1390,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -1259,7 +1407,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteServiceKey
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Delete a service key
@@ -1287,7 +1435,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listDevices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Workstations where the caller is signed in
@@ -1322,7 +1470,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteDevice
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Sign a workstation out
@@ -1421,8 +1569,8 @@ paths:
   /api/v1/me/organizations:
     get:
       operationId: listMyOrganizations
-      x-ostrom-status: planned
-      description: "Not served: main serves `listOrgs` (`GET /api/v1/orgs`)."
+      x-ostrom-status: served
+      description: "Scope `orgs:read`."
       tags:
       - organization
       summary: The organizations the caller is an active member of, to choose the one sent in `Ostrom-Org`. Needs no
@@ -1438,7 +1586,7 @@ paths:
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Organization'
+                      $ref: '#/components/schemas/MyOrganization'
                 required:
                 - items
         '400':
@@ -1454,7 +1602,7 @@ paths:
   /api/v1/me/notifications:
     get:
       operationId: getNotificationPreferences
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Notification preferences of the caller
@@ -1477,7 +1625,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setNotificationPreferences
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Set the notification preferences of the caller
@@ -1509,7 +1657,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listActivity
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - events
       summary: Activity feed, newest first
@@ -1555,7 +1703,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSpending
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Spending by agent, repository and person
@@ -1587,7 +1735,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGithubApp
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: The GitHub App of the organization and its installation
@@ -1620,17 +1768,28 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/github/app/manifest/start:
-    parameters:
-    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: startGithubAppManifest
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
-      summary: Create the GitHub App by the manifest flow
+      summary: "Create the GitHub App by the manifest flow. An administrator of the instance's browser session only (403
+        otherwise, 409 when an App exists); the answer is a page that posts the manifest to GitHub, which takes it by POST
+        only, with a CSP and `no-store`"
+      parameters:
+      - name: owner
+        in: query
+        required: false
+        description: The GitHub organization that will own the App; the caller's own account when absent
+        schema:
+          type: string
       responses:
-        '302':
-          description: Redirect
+        '200':
+          description: The HTML page that posts the manifest to GitHub
+          content:
+            text/html:
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -1644,10 +1803,12 @@ paths:
   /api/v1/github/app/manifest/callback:
     get:
       operationId: githubAppManifestCallback
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
-      summary: Manifest flow callback
+      summary: "Manifest flow callback: the state is bound to the browser session that started the flow. On success the
+        browser goes to the console's settings; a refusal is the usual error body (400 malformed or unknown code, 401 no
+        session, 403 expired or another session's state, 409 an App exists, 503 GitHub unavailable)"
       parameters:
       - name: code
         in: query
@@ -1665,17 +1826,33 @@ paths:
           description: Redirect
         '400':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/github/app/install/start:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: startGithubAppInstall
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
-      summary: Install the GitHub App on the organization
+      summary: "Install the GitHub App on the organization (a browser session of an owner or an admin: 403 for another
+        role or an organization the caller is not in; 503 when the App is not configured)"
+      parameters:
+      - name: org
+        in: query
+        required: false
+        description: The organization to install it on (its id or short name); the caller's organization when absent
+        schema:
+          type: string
       responses:
         '302':
           description: Redirect
@@ -1692,14 +1869,21 @@ paths:
   /api/v1/github/app/install/callback:
     get:
       operationId: githubAppInstallCallback
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
-      summary: Installation callback
+      summary: "Installation callback. The browser is always sent back to the console's `/github` page, with `installed=1`
+        or `error=<error.type>`: this route never answers with an error body"
       parameters:
       - name: installation_id
         in: query
         required: false
+        schema:
+          type: string
+      - name: code
+        in: query
+        required: false
+        description: The authorization of the person who installed
         schema:
           type: string
       - name: state
@@ -1711,14 +1895,10 @@ paths:
       responses:
         '302':
           description: Redirect
-        '400':
-          $ref: '#/components/responses/Error'
-        '404':
-          $ref: '#/components/responses/Error'
   /webhooks/github:
     post:
       operationId: githubWebhook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: GitHub webhook (X-Hub-Signature-256)
@@ -1732,6 +1912,8 @@ paths:
         '204':
           description: Done
         '400':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
@@ -1991,7 +2173,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2080,7 +2269,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2155,7 +2351,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2184,7 +2387,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2248,7 +2458,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2552,15 +2769,33 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /api/v1/teams:
-    parameters:
-    - $ref: '#/components/parameters/OstromOrg'
+  /api/v1/orgs/{org}/teams:
     get:
       operationId: listTeams
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - organization
-      summary: Teams
+      summary: "Teams of an organization the caller is a member of (scope `orgs:read`). People only: an agent, device or
+        service token gets 403"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      - name: after
+        in: query
+        required: false
+        description: The `next` of the previous page
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: The page size, 1 to 100 (100 by default)
+        schema:
+          type: integer
       responses:
         '200':
           description: OK
@@ -2592,10 +2827,24 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRepos
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - organization
+      description: "Scope `orgs:read`, or a browser session. An agent token gets 403."
       summary: Repositories
+      parameters:
+      - name: after
+        in: query
+        required: false
+        description: The `next` of the previous page
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: The page size, 1 to 100 (100 by default)
+        schema:
+          type: integer
       responses:
         '200':
           description: OK
@@ -2919,7 +3168,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: signWorkflowReceipt
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: 'Sign the workflow receipt of the session: what each compiled node did'
@@ -3487,7 +3736,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApprovalQueue
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: 'The yes queue of the caller: pending approvals and recent answers, as the console and the app show them'
@@ -3545,7 +3794,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApprovalView
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: An approval as the console and the app show it
@@ -3582,8 +3831,9 @@ paths:
       - approvals
       summary: Say yes or no, as the caller. 409 shown_digest_mismatch when the shown digest differs, 409 approval_closed
         when already answered (a signed answer never changes); 403 self_approval_refused when the asker answers while another
-        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old (sign in again, then
-        answer)
+        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
+        app not unlocked in the last 5 minutes (`unlockMobileApp`); the 200 is the `ApprovalView` of the answered approval,
+        with its signed `receipt`, a no's included
       parameters:
       - name: id
         in: path
@@ -3931,7 +4181,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getReceiptBundle
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - receipts
       summary: The receipt with every signed piece it cites, for `ostrom verify`
@@ -4245,7 +4495,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reportCheck
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - checks
       summary: Report a check run
@@ -4274,7 +4524,7 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: listChecks
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - checks
       summary: Check runs
@@ -4325,7 +4575,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: sendNotification
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Ask the server to send a compiled notification (hook PostToolUse)
@@ -4369,7 +4619,7 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: listNotifications
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Notifications
@@ -5789,7 +6039,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -5827,7 +6084,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -5852,7 +6116,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -5928,7 +6199,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -5959,7 +6237,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6026,7 +6311,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6059,7 +6351,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6114,7 +6413,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6303,7 +6609,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6341,7 +6654,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6366,7 +6686,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6592,7 +6919,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -7332,10 +7666,13 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRunners
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Runners
+      description: 'The organization''s registered runners, by name, then the runners at work for the caller''s cloud
+        sessions (one per execution). Any member, or a credential with `cloud:read`. A runner is `online` when it gave a
+        sign of life within the last 90 seconds, `offline` otherwise. A registered runner''s `token` is never listed.'
       responses:
         '200':
           description: OK
@@ -7364,10 +7701,16 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: registerRunner
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Register a runner (service key)
+      description: 'An owner or an admin of the organization, from a signed-in console session (a personal, CLI or
+        service token gets 403), registers a machine. The answer carries the runner''s `token`, shown this once: only its
+        hash is kept. The name is unique in the organization and an organization registers at most 100 runners (409
+        otherwise). The name is 1 to 64 characters; at most 16 labels, each 1 to 64 letters, digits, `.`, `_`, `:` or `-`,
+        starting with a letter or a digit (400 otherwise). The name is unique whatever its case and refuses control and
+        invisible formatting characters. The answer is not cached (`Cache-Control: no-store`).'
       requestBody:
         required: true
         content:
@@ -7408,10 +7751,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteRunner
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Remove a runner
+      description: 'An owner or an admin, from a signed-in console session, removes a registered runner and its token.
+        A runner of another organization, or a malformed id, is not found (404).'
       parameters:
       - name: id
         in: path
@@ -7844,6 +8189,113 @@ paths:
                 required:
                 - instruction
                 - state
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/launch:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: openRunnerLaunch
+      x-ostrom-status: served
+      tags:
+      - runners
+      summary: 'The runner of a cloud session opens its session''s launch with the execution''s runner token: the launch
+        is the session owner''s, under the organization''s policy and launch limit, and the agent in the pod gets its
+        agent token, never the runner token. A shell session opens none (400)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The cloud session the runner was started for
+                epoch:
+                  type: integer
+                  format: int64
+                  description: The execution it was started for; an older one is fenced (409)
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  launchId:
+                    type: string
+                  agentToken:
+                    type: string
+                  expiresAt:
+                    type: string
+                required:
+                - launchId
+                - agentToken
+                - expiresAt
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/cloud/runner/checks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: reportRunnerCheck
+      x-ostrom-status: served
+      tags:
+      - checks
+      summary: 'The runner of a cloud session reports a check it ran itself, with the execution''s runner token: the run
+        is recorded `isolated_runner` for a session of a launch that cloud session opened (404 otherwise), and the
+        receipt''s check node takes the attestation of its last run. It proves that Ostrom ran the script and read its
+        exit code, not that the agent''s workspace it ran on was untouched'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The cloud session the runner was started for
+                epoch:
+                  type: integer
+                  format: int64
+                  description: The execution it was started for; an older one is fenced (409)
+                check:
+                  $ref: '#/components/schemas/ReportCheckRequest'
+              required:
+              - sessionId
+              - epoch
+              - check
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckRun'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -10004,6 +10456,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    RateLimited:
+      description: 'Too many requests lately (`rate_limited`): nothing was done. A launch is limited per person in an
+        organization and per organization, over a sliding hour'
+      headers:
+        Retry-After:
+          description: Seconds until a place frees up
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
   schemas:
     AccountAuditEvent:
       type: object
@@ -10305,6 +10769,9 @@ components:
           type: boolean
         canApprove:
           type: boolean
+          description: "Whether the person may answer: their role, being an approver, not their own gate. It does not
+            wait for a fresh sign-in or the phone's unlock: a locked app reads `true`, and its yes is refused at the
+            answer with 403 `step_up_required` until `unlockMobileApp`"
         reason:
           type: string
         selfApproval:
@@ -11272,9 +11739,11 @@ components:
     CheckAttestation:
       type: string
       description: 'Where a check run comes from. `workstation_declared`: the developer''s machine ran it and reported
-        the result, nothing proves it ran. `isolated_runner`: an Ostrom runner ran it in an isolated session. `ci`:
-        the GitHub check run of the Ostrom App, read and verified by the server. Shown on every check of a receipt;
-        a rule gate can refuse a declared run (RuleGateCheck).'
+        the result, nothing proves it ran. `isolated_runner`: the runner of an Ostrom cloud session ran it and reported
+        it with its own token, which the agent cannot read (reportRunnerCheck); it proves that Ostrom ran the script and
+        read its exit code, not that the agent''s workspace it ran on was untouched. `ci`: the GitHub check run of the
+        Ostrom App, read and verified by the server. Shown on every check of a receipt; a rule gate can refuse a
+        declared run (RuleGateCheck).'
       enum:
       - workstation_declared
       - isolated_runner
@@ -11711,10 +12180,24 @@ components:
           type: string
         lastSeenAt:
           type: string
+        kind:
+          type: string
+          enum:
+          - cli
+          - admin
+          description: "`admin` for the elevated token of `ostrom login --admin`; absent means `cli`"
+        orgId:
+          type: string
+          description: The organization an elevated token is bound to
+        scopes:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: string
       required:
       - id
       - name
-      - platform
       x-ostrom-kotlin: pending
     DeviceAnswer:
       type: object
@@ -12874,6 +13357,98 @@ components:
           description: The slug of a team they join; none when absent
       required:
       - login
+    MyOrganization:
+      type: object
+      description: One of the caller's organizations, to choose the one `Ostrom-Org` names
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          description: The picture of the linked GitHub organization, empty when none
+        role:
+          $ref: '#/components/schemas/MemberRole'
+          description: The caller's role there
+      required:
+      - id
+      - slug
+      - name
+      - avatarUrl
+      - role
+      x-ostrom-kotlin: pending
+    Account:
+      type: object
+      description: The signed-in person's account
+      properties:
+        id:
+          type: string
+        login:
+          type: string
+          description: The handle, unique on the instance
+        displayName:
+          type: string
+        primaryEmail:
+          type: string
+          description: The main e-mail; absent when there is none
+        avatarUrl:
+          type: string
+          description: The picture; absent when there is none
+        createdAt:
+          type: string
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountEmail'
+        providers:
+          type: array
+          description: "How the person signs in: `github`, `google`, `email` or `oidc:<connection>`"
+          items:
+            type: string
+      required:
+      - id
+      - login
+      - displayName
+      - createdAt
+      - emails
+      - providers
+      x-ostrom-kotlin: pending
+    AccountEmail:
+      type: object
+      properties:
+        email:
+          type: string
+        verified:
+          type: boolean
+      required:
+      - email
+      - verified
+      x-ostrom-kotlin: pending
+    TokenScope:
+      type: object
+      properties:
+        scope:
+          type: string
+          description: "`resource:action`"
+        description:
+          type: string
+      required:
+      - scope
+      - description
+      x-ostrom-kotlin: pending
+    TokenScopes:
+      type: object
+      properties:
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenScope'
+      required:
+      - scopes
+      x-ostrom-kotlin: pending
     MemberRole:
       type: string
       enum:
@@ -13961,6 +14536,8 @@ components:
           type: boolean
           description: When true, only a run attested by an Ostrom runner or the CI (`isolated_runner`, `ci`)
             satisfies the gate; a run declared by the workstation (`workstation_declared`) does not. False by default.
+            An `isolated_runner` run proves that Ostrom ran the script and read its exit code, not that the agent's
+            workspace it ran on was untouched.
       required:
       - check
     NewRule:
@@ -14049,6 +14626,9 @@ components:
           type: string
         version:
           type: string
+        token:
+          type: string
+          description: The runner's key, `ostrom_runner_` and 64 hex characters, only in registerRunner's answer
       required:
       - id
       - name
@@ -14160,6 +14740,8 @@ components:
           items:
             type: string
         createdAt:
+          type: string
+        expiresAt:
           type: string
         lastUsedAt:
           type: string
@@ -14594,8 +15176,11 @@ components:
       - agent
     StepUpRequired:
       type: object
-      description: '403 step_up_required: a yes needs a sign-in less than 5 minutes old (a sign-in of unknown age is
-        refused too); sign in again, then answer. A no never needs it'
+      description: '403 step_up_required: a yes, and a sensitive write from the console or the app (a personal token,
+        a service key, a sign-in link, an invitation, a role, a member removed, a transfer, a secret, an MCP server,
+        its assignments, policies and settings, the model keys), need a sign-in less than 5
+        minutes old (a sign-in of unknown age is refused too); sign in again, then send it again. A no never needs it,
+        and an API token is never asked: it has no sign-in to renew'
       properties:
         error:
           $ref: '#/components/schemas/ErrorDetail'
@@ -14873,7 +15458,7 @@ components:
           type: string
         kind:
           type: string
-          description: '`personal` or `cli`'
+          description: '`personal`, `cli` or `mobile` (the phone app''s)'
         scopes:
           type: array
           items:
