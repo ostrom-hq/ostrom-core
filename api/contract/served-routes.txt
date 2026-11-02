@@ -18,6 +18,7 @@ DELETE /api/v1/orgs/{}
 DELETE /api/v1/orgs/{}/invitations/{}
 DELETE /api/v1/orgs/{}/members/{}
 DELETE /api/v1/rules/{}
+DELETE /api/v1/runners/{}
 DELETE /api/v1/secrets/{}
 DELETE /api/v1/service-keys/{}
 DELETE /api/v1/tokens/{}
@@ -97,6 +98,7 @@ GET /api/v1/receipts/{}/verify
 GET /api/v1/repos
 GET /api/v1/rules
 GET /api/v1/rules/{}
+GET /api/v1/runners
 GET /api/v1/secrets
 GET /api/v1/service-keys
 GET /api/v1/sessions
@@ -179,6 +181,7 @@ POST /api/v1/packages/{}/restore
 POST /api/v1/packages/{}/revoke
 POST /api/v1/rules
 POST /api/v1/rules/bulk
+POST /api/v1/runners
 POST /api/v1/secrets
 POST /api/v1/service-keys
 POST /api/v1/sessions
