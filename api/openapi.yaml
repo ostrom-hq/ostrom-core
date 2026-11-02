@@ -470,7 +470,18 @@ paths:
       tags:
       - auth
       summary: Start the device flow (CLI sign-in)
+      description: "Without a body, the ordinary sign-in of `ostrom login`. With `scopes`, `ostrom login --admin`: the
+        governance write scopes no other token holds (S2-52, decision of 02/11/2026). The browser's page shows them
+        (`DeviceAuthorization.scopes`), only an owner or admin of the organisation may approve them, and the token
+        that comes out expires in 8 hours at most and is never refreshed. Planned (AUTH-REPRISE): a server that does
+        not read `scopes` yet answers an ordinary token, whose `AuthToken.scopes` tell the CLI."
       security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceLoginStart'
       responses:
         '200':
           description: OK
@@ -10492,6 +10503,7 @@ components:
           type: string
         expiresAt:
           type: string
+          description: "When the token expires; for a token of `ostrom login --admin`, 8 hours after the yes at most"
         scopes:
           type: array
           items:
@@ -11488,6 +11500,18 @@ components:
       - userCode
       - approve
       x-ostrom-kotlin: pending
+    DeviceLoginStart:
+      type: object
+      description: "What `ostrom login` asks for: nothing for the ordinary sign-in, the governance write scopes for
+        `ostrom login --admin`"
+      properties:
+        scopes:
+          type: array
+          description: "Every one of them, or the request is malformed (400). Absent or empty: the ordinary sign-in"
+          items:
+            type: string
+            enum: ['policy:write', 'harness:write', 'gates:policy']
+      x-ostrom-kotlin: pending
     DeviceAuthorization:
       type: object
       description: "A pending `ostrom login`, as the console shows it"
@@ -11496,6 +11520,13 @@ components:
           type: string
         clientName:
           type: string
+        scopes:
+          type: array
+          description: "The governance write scopes an `ostrom login --admin` asks for, shown before the yes; only an
+            owner or admin may approve them (`answerDeviceLogin` answers 403 otherwise). Absent for the ordinary
+            sign-in"
+          items:
+            type: string
         expiresAt:
           type: string
           format: date-time
