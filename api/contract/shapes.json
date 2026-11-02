@@ -1725,7 +1725,8 @@
       "admin",
       "member",
       "approver",
-      "invited"
+      "invited",
+      "billing"
     ]
   },
   "NodePosition": {
@@ -2095,7 +2096,7 @@
         "type": {
           "ref": "GitHubConnection"
         },
-        "required": true,
+        "required": false,
         "nullable": false
       },
       "createdAt": {

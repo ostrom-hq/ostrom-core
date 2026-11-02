@@ -10,7 +10,8 @@ import kotlinx.serialization.Serializable
  * @property name Display name.
  * @property avatarUrl Logo.
  * @property description Description.
- * @property connectedVia How GitHub is connected.
+ * @property connectedVia How GitHub is connected; absent when the answer does not say (an organization linked to no
+ *   GitHub organization, or a list that does not carry it).
  * @property createdAt ISO creation time.
  */
 @Serializable
@@ -19,7 +20,7 @@ public data class Organization(
     val name: String,
     val avatarUrl: String,
     val description: String? = null,
-    val connectedVia: GitHubConnection,
+    val connectedVia: GitHubConnection? = null,
     val createdAt: String? = null,
 )
 
@@ -84,6 +85,9 @@ public enum class MemberRole(
     MEMBER("member"),
     APPROVER("approver"),
     INVITED("invited"),
+
+    /** Buys, switches and cancels the plan and reads the invoices; no other right. */
+    BILLING("billing"),
 
     /** A value this version does not know, sent by a newer server; never sent. */
     UNKNOWN(""),
