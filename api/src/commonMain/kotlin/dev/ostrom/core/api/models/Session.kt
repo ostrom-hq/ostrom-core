@@ -28,6 +28,8 @@ import kotlinx.serialization.Serializable
  * @property endedBy What closed it (`SessionEnd hook`, `launcher`, `launcher lost: …`, `superseded`).
  * @property lastSeenAt Last sign of life of the launcher (every 20 s).
  * @property gates Gate requests of the session.
+ * @property gateAnswers On a single read, the answers to those of [gates] someone answered, oldest gate first: a token
+ *   that reads sessions without reading gates (the device of `ostrom login`) sees them here.
  * @property receiptId Receipt of the segment, once signed.
  * @property tools Tool calls counted.
  * @property costUsd Inference cost.
@@ -57,11 +59,32 @@ public data class Session(
     val endedBy: String? = null,
     val lastSeenAt: String? = null,
     val gates: List<String> = emptyList(),
+    val gateAnswers: List<SessionGateAnswer> = emptyList(),
     val receiptId: String? = null,
     val tools: Int? = null,
     val costUsd: Double? = null,
     val exitCode: Int? = null,
     val runId: String? = null,
+)
+
+/**
+ * The answer to a gate a session asked or joined, as the session's thread shows it.
+ *
+ * @property gateId Gate.
+ * @property actionClass Action class of the gate.
+ * @property outcome `approved` (it stays so once the session reserved or used the yes) or `refused`.
+ * @property by Who answered: the approver whose yes or no decided the gate.
+ * @property at ISO time of the answer.
+ * @property receiptId Signed receipt of the gate, once signed.
+ */
+@Serializable
+public data class SessionGateAnswer(
+    val gateId: String,
+    val actionClass: String,
+    val outcome: String,
+    val by: String,
+    val at: String,
+    val receiptId: String? = null,
 )
 
 /**

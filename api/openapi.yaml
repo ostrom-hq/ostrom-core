@@ -14826,6 +14826,13 @@ components:
           type: array
           items:
             type: string
+        gateAnswers:
+          type: array
+          description: On a single read only, the answers to those of `gates` someone answered, oldest gate first. A token
+            that reads sessions without reading gates (the device of `ostrom login`) sees them here; nothing of another
+            session's gates.
+          items:
+            $ref: '#/components/schemas/SessionGateAnswer'
         receiptId:
           type: string
         tools:
@@ -14841,6 +14848,35 @@ components:
       - agent
       - dev
       - startedAt
+    SessionGateAnswer:
+      type: object
+      description: The answer to a gate a session asked or joined, as the session's thread shows it.
+      properties:
+        gateId:
+          type: string
+        actionClass:
+          type: string
+        outcome:
+          type: string
+          enum:
+          - approved
+          - refused
+          description: '`approved` stays once the session reserved or used the yes.'
+        by:
+          type: string
+          description: Who answered, the approver whose yes or no decided the gate.
+        at:
+          type: string
+          format: date-time
+        receiptId:
+          type: string
+          description: The gate's signed receipt, once signed.
+      required:
+      - gateId
+      - actionClass
+      - outcome
+      - by
+      - at
     SessionPackage:
       type: object
       description: 'A compiled session package: the harness a coding agent session runs under (hooks, scripts, skills, sub-agents,
