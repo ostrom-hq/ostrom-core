@@ -1032,7 +1032,7 @@ paths:
   /api/v1/auth/sessions:
     get:
       operationId: listAuthSessions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Signed-in sessions of the caller
@@ -1065,7 +1065,7 @@ paths:
   /api/v1/auth/sessions/{id}:
     delete:
       operationId: revokeAuthSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Revoke a signed-in session
