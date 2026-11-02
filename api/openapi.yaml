@@ -9800,7 +9800,8 @@ paths:
         a client needs to check it again. The canonical form (sorted keys, no spaces, `null` for an absent value, `v`
         1) holds `action` (`event`), `actorId`, `details` (`meta`), `id`, `occurredAt` (`at`), `orgId`,
         `previousHash`, `sequence`, `targetId` and `targetType` (`subject` split at its first colon); `hash` is its
-        SHA-256 and `signature` verifies with the key `keyId`. Erasing the newest lines of a chain is not seen.
+        SHA-256 and `signature` verifies with the key `keyId` (`GET /api/v1/instance/keys`, past keys included).
+        Erasing the newest lines of a chain is not seen.
       parameters:
       - name: actor
         in: query
@@ -11172,12 +11173,12 @@ components:
           - verified
           - altered
           - unlinked
-          - unverifiable
           description: >-
             What the server found when it read the line (`listAudit` only): `verified` (hash, signature and link to
-            the previous line hold), `altered` (the line no longer matches its hash or its signature), `unlinked`
+            the previous line hold), `altered` (the line no longer matches its hash, or its signature does not verify
+            with the instance key it names, past keys included, or it names a key the instance never had), `unlinked`
             (the previous line of the chain is missing or is not the one this line was signed after: a line was
-            erased or rewritten before it), `unverifiable` (signed by a key the server no longer holds).
+            erased or rewritten before it).
       required:
       - id
       - at
