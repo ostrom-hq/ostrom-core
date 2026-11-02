@@ -549,8 +549,9 @@ paths:
       description: "Without a body, the ordinary sign-in of `ostrom login`. With `scopes`, `ostrom login --admin`: the
         governance write scopes no other token holds (S2-52, decision of 02/11/2026). The browser's page shows them
         (`DeviceAuthorization.scopes`), only an owner or admin of the organisation may approve them, and the token
-        that comes out expires in 8 hours at most and is never refreshed. Planned (AUTH-REPRISE): a server that does
-        not read `scopes` yet answers an ordinary token, whose `AuthToken.scopes` tell the CLI."
+        that comes out is bound to that organisation, expires in 8 hours at most and is never refreshed. Each
+        governance write it makes is recorded in the organisation's audit log before it happens. A server older than
+        this answers an ordinary token, whose `AuthToken.scopes` tell the CLI."
       security: []
       requestBody:
         required: false
@@ -6790,6 +6791,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/responses:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6820,6 +6827,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/chat/completions:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6849,6 +6862,12 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/inference/v1/models:
     parameters:
@@ -7796,10 +7815,16 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: runnerHeartbeat
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Sign of life; returns the work assigned
+      description: >-
+        Authenticated by the runner's own key (`Authorization: Bearer ostrom_runner_…`, from registerRunner's
+        answer), not a member's credential; no body. Marks the runner seen: listRunners shows it `online` for 90
+        seconds after its last heartbeat. An unknown runner, a malformed id, another runner's key or a runner
+        removed meanwhile all answer 401 alike. `sessions` lists the cloud sessions assigned to the runner, empty
+        until sessions are scheduled on registered runners.
       parameters:
       - name: id
         in: path
@@ -9803,7 +9828,13 @@ paths:
         credential that is not a person's (`service:…`, `agent:…`), or `server:ostrom` for the server itself;
         the `actor` filter takes a login only. `subject` is `<type>:<id>`; `meta`
         holds the event's facts as strings, with `credential` (`browser`, `api_token`…) for a change made through
-        the API. `next` is absent on the last page.
+        the API. `next` is absent on the last page. Each line is checked as it is read, against the line before it in
+        the chain even when a filter leaves that one out: `integrity` says what was found, and the line carries what
+        a client needs to check it again. The canonical form (sorted keys, no spaces, `null` for an absent value, `v`
+        1) holds `action` (`event`), `actorId`, `details` (`meta`), `id`, `occurredAt` (`at`), `orgId`,
+        `previousHash`, `sequence`, `targetId` and `targetType` (`subject` split at its first colon); `hash` is its
+        SHA-256 and `signature` verifies with the key `keyId` (`GET /api/v1/instance/keys`, past keys included).
+        Erasing the newest lines of a chain is not seen.
       parameters:
       - name: actor
         in: query
@@ -10484,6 +10515,32 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    InferenceRefused:
+      description: "Too many requests, in the provider's own error shape, which satisfies `ApiError` (`error.type`,
+        `error.message`). Refused by the budgets before any provider is called: `error.type` `rate_limit_error` on the
+        Messages endpoint, `insufficient_quota` on the OpenAI-compatible ones, which also carry `error.code`
+        `budget_exhausted` or `budget_insufficient`; `error.message` starts with one of two fixed phrases a client can
+        match on (`LedgerSpendGuard.EXHAUSTED` and `.INSUFFICIENT` in ostrom-server). `Monthly budget reached: ...`: a
+        monthly limit of the organization or of the member is spent; `Retry-After` gives the seconds until the month
+        ends (UTC), when the limit resets. `Budget left too low for this call: ...`: the limit is not spent, but what
+        is left after the calls in flight cannot cover what this call may cost (its output price times the largest of
+        its `max_tokens`, `max_output_tokens` and `max_completion_tokens`, 32 000 when it names none, at most 1 000 000;
+        plus its estimated input; nothing for a model without a price); the message says what is left and what the
+        call may cost, with no `Retry-After`: lower the call's output bound, or retry once the calls in flight finish.
+        Every shared account busy or at its limit: `rate_limit_error`, or `rate_limit_exceeded` with `error.code`
+        `no_capacity`, with `Retry-After` when the gateway knows when one frees up. A provider's own 429, once no other
+        account can take the call, is relayed as the provider sent it, with its `Retry-After` and rate-limit headers"
+      headers:
+        Retry-After:
+          description: When to try again. From the gateway, whole seconds, at least 1; with `Monthly budget reached`,
+            until the start of the next month (UTC); absent with `Budget left too low for this call`. Relayed from a
+            provider, as the provider wrote it (seconds or an HTTP date)
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
     RateLimited:
       description: 'Too many requests lately (`rate_limited`): nothing was done. A launch is limited per person in an
         organization and per organization, over a sliding hour'
@@ -11146,6 +11203,41 @@ components:
           description: The event's facts, every value a string
           additionalProperties:
             type: string
+        sequence:
+          type: integer
+          format: int64
+          description: The position in the organization's chain, from 1 (`listAudit` only)
+        actorId:
+          type:
+          - string
+          - 'null'
+          description: The person's id as signed, null for a credential that is not a person's or the server (`listAudit` only)
+        previousHash:
+          type:
+          - string
+          - 'null'
+          description: The hash of the previous line of the chain, null for the first one (`listAudit` only)
+        hash:
+          type: string
+          description: SHA-256 (hex) of the canonical form (`listAudit` only)
+        signature:
+          type: string
+          description: The instance's Ed25519 signature of the canonical form, base64 (`listAudit` only)
+        keyId:
+          type: string
+          description: The instance key that signed it, `GET /api/v1/instance/keys` (`listAudit` only)
+        integrity:
+          type: string
+          enum:
+          - verified
+          - altered
+          - unlinked
+          description: >-
+            What the server found when it read the line (`listAudit` only): `verified` (hash, signature and link to
+            the previous line hold), `altered` (the line no longer matches its hash, or its signature does not verify
+            with the instance key it names, past keys included, or it names a key the instance never had), `unlinked`
+            (the previous line of the chain is missing or is not the one this line was signed after: a line was
+            erased or rewritten before it).
       required:
       - id
       - at
