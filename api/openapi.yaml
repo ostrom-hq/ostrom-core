@@ -9795,7 +9795,12 @@ paths:
         credential that is not a person's (`service:…`, `agent:…`), or `server:ostrom` for the server itself;
         the `actor` filter takes a login only. `subject` is `<type>:<id>`; `meta`
         holds the event's facts as strings, with `credential` (`browser`, `api_token`…) for a change made through
-        the API. `next` is absent on the last page.
+        the API. `next` is absent on the last page. Each line is checked as it is read, against the line before it in
+        the chain even when a filter leaves that one out: `integrity` says what was found, and the line carries what
+        a client needs to check it again. The canonical form (sorted keys, no spaces, `null` for an absent value, `v`
+        1) holds `action` (`event`), `actorId`, `details` (`meta`), `id`, `occurredAt` (`at`), `orgId`,
+        `previousHash`, `sequence`, `targetId` and `targetType` (`subject` split at its first colon); `hash` is its
+        SHA-256 and `signature` verifies with the key `keyId`. Erasing the newest lines of a chain is not seen.
       parameters:
       - name: actor
         in: query
@@ -11138,6 +11143,41 @@ components:
           description: The event's facts, every value a string
           additionalProperties:
             type: string
+        sequence:
+          type: integer
+          format: int64
+          description: The position in the organization's chain, from 1 (`listAudit` only)
+        actorId:
+          type:
+          - string
+          - 'null'
+          description: The person's id as signed, null for a credential that is not a person's or the server (`listAudit` only)
+        previousHash:
+          type:
+          - string
+          - 'null'
+          description: The hash of the previous line of the chain, null for the first one (`listAudit` only)
+        hash:
+          type: string
+          description: SHA-256 (hex) of the canonical form (`listAudit` only)
+        signature:
+          type: string
+          description: The instance's Ed25519 signature of the canonical form, base64 (`listAudit` only)
+        keyId:
+          type: string
+          description: The instance key that signed it, `GET /api/v1/instance/keys` (`listAudit` only)
+        integrity:
+          type: string
+          enum:
+          - verified
+          - altered
+          - unlinked
+          - unverifiable
+          description: >-
+            What the server found when it read the line (`listAudit` only): `verified` (hash, signature and link to
+            the previous line hold), `altered` (the line no longer matches its hash or its signature), `unlinked`
+            (the previous line of the chain is missing or is not the one this line was signed after: a line was
+            erased or rewritten before it), `unverifiable` (signed by a key the server no longer holds).
       required:
       - id
       - at
