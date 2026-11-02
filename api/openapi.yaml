@@ -666,7 +666,11 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: createLaunch
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "Scope `sessions:write` (the CLI's device token, a browser session). A person's only: an agent token
+        never launches. The person and the organization come from the credential. 403 when the organization's policy
+        refuses the agent or the model, or the credential may not launch; 404 when it is no member of an organization
+        the request can act in."
       tags:
       - auth
       summary: 'Start an agent launch: returns an agent token scoped to the sessions of this launch, expiring at its end.
@@ -714,6 +718,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /api/v1/policy/agents:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -764,6 +770,42 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/me/account:
+    get:
+      operationId: getMyAccount
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The signed-in person's account: e-mails and ways in (scope `profile:read`)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/tokens/scopes:
+    get:
+      operationId: listTokenScopes
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The scopes a personal token may be given, `POST /api/v1/tokens` refuses any other (browser session only)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenScopes'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
           $ref: '#/components/responses/Error'
   /api/v1/auth/me:
     get:
@@ -1198,7 +1240,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listServiceKeys
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Service keys (admins)
@@ -1230,7 +1272,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createServiceKey
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Create a service key; its secret is returned once
@@ -1247,6 +1289,9 @@ paths:
                   type: array
                   items:
                     type: string
+                expiresInDays:
+                  type: integer
+                  description: Lifetime in days, 1 to 366; absent for a key that does not expire
               required:
               - name
               - scopes
@@ -1279,7 +1324,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteServiceKey
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Delete a service key
@@ -1307,7 +1352,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listDevices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Workstations where the caller is signed in
@@ -1342,7 +1387,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteDevice
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Sign a workstation out
@@ -1441,8 +1486,8 @@ paths:
   /api/v1/me/organizations:
     get:
       operationId: listMyOrganizations
-      x-ostrom-status: planned
-      description: "Not served: main serves `listOrgs` (`GET /api/v1/orgs`)."
+      x-ostrom-status: served
+      description: "Scope `orgs:read`."
       tags:
       - organization
       summary: The organizations the caller is an active member of, to choose the one sent in `Ostrom-Org`. Needs no
@@ -1458,7 +1503,7 @@ paths:
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Organization'
+                      $ref: '#/components/schemas/MyOrganization'
                 required:
                 - items
         '400':
@@ -1529,7 +1574,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listActivity
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - events
       summary: Activity feed, newest first
@@ -1575,7 +1620,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSpending
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Spending by agent, repository and person
@@ -1607,7 +1652,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGithubApp
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: The GitHub App of the organization and its installation
@@ -1640,17 +1685,28 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/github/app/manifest/start:
-    parameters:
-    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: startGithubAppManifest
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
-      summary: Create the GitHub App by the manifest flow
+      summary: "Create the GitHub App by the manifest flow. An administrator of the instance's browser session only (403
+        otherwise, 409 when an App exists); the answer is a page that posts the manifest to GitHub, which takes it by POST
+        only, with a CSP and `no-store`"
+      parameters:
+      - name: owner
+        in: query
+        required: false
+        description: The GitHub organization that will own the App; the caller's own account when absent
+        schema:
+          type: string
       responses:
-        '302':
-          description: Redirect
+        '200':
+          description: The HTML page that posts the manifest to GitHub
+          content:
+            text/html:
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -1664,10 +1720,12 @@ paths:
   /api/v1/github/app/manifest/callback:
     get:
       operationId: githubAppManifestCallback
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
-      summary: Manifest flow callback
+      summary: "Manifest flow callback: the state is bound to the browser session that started the flow. On success the
+        browser goes to the console's settings; a refusal is the usual error body (400 malformed or unknown code, 401 no
+        session, 403 expired or another session's state, 409 an App exists, 503 GitHub unavailable)"
       parameters:
       - name: code
         in: query
@@ -1685,17 +1743,33 @@ paths:
           description: Redirect
         '400':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/github/app/install/start:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: startGithubAppInstall
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
-      summary: Install the GitHub App on the organization
+      summary: "Install the GitHub App on the organization (a browser session of an owner or an admin: 403 for another
+        role or an organization the caller is not in; 503 when the App is not configured)"
+      parameters:
+      - name: org
+        in: query
+        required: false
+        description: The organization to install it on (its id or short name); the caller's organization when absent
+        schema:
+          type: string
       responses:
         '302':
           description: Redirect
@@ -1712,14 +1786,21 @@ paths:
   /api/v1/github/app/install/callback:
     get:
       operationId: githubAppInstallCallback
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
-      summary: Installation callback
+      summary: "Installation callback. The browser is always sent back to the console's `/github` page, with `installed=1`
+        or `error=<error.type>`: this route never answers with an error body"
       parameters:
       - name: installation_id
         in: query
         required: false
+        schema:
+          type: string
+      - name: code
+        in: query
+        required: false
+        description: The authorization of the person who installed
         schema:
           type: string
       - name: state
@@ -1731,14 +1812,10 @@ paths:
       responses:
         '302':
           description: Redirect
-        '400':
-          $ref: '#/components/responses/Error'
-        '404':
-          $ref: '#/components/responses/Error'
   /webhooks/github:
     post:
       operationId: githubWebhook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: GitHub webhook (X-Hub-Signature-256)
@@ -1752,6 +1829,8 @@ paths:
         '204':
           description: Done
         '400':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
@@ -2593,15 +2672,33 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /api/v1/teams:
-    parameters:
-    - $ref: '#/components/parameters/OstromOrg'
+  /api/v1/orgs/{org}/teams:
     get:
       operationId: listTeams
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - organization
-      summary: Teams
+      summary: "Teams of an organization the caller is a member of (scope `orgs:read`). People only: an agent, device or
+        service token gets 403"
+      parameters:
+      - name: org
+        in: path
+        required: true
+        description: "The organization's id or short name"
+        schema:
+          type: string
+      - name: after
+        in: query
+        required: false
+        description: The `next` of the previous page
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: The page size, 1 to 100 (100 by default)
+        schema:
+          type: integer
       responses:
         '200':
           description: OK
@@ -2633,10 +2730,24 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRepos
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - organization
+      description: "Scope `orgs:read`, or a browser session. An agent token gets 403."
       summary: Repositories
+      parameters:
+      - name: after
+        in: query
+        required: false
+        description: The `next` of the previous page
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: The page size, 1 to 100 (100 by default)
+        schema:
+          type: integer
       responses:
         '200':
           description: OK
@@ -2960,7 +3071,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: signWorkflowReceipt
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: 'Sign the workflow receipt of the session: what each compiled node did'
@@ -3972,7 +4083,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getReceiptBundle
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - receipts
       summary: The receipt with every signed piece it cites, for `ostrom verify`
@@ -4286,7 +4397,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reportCheck
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - checks
       summary: Report a check run
@@ -4315,7 +4426,7 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: listChecks
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - checks
       summary: Check runs
@@ -4366,7 +4477,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: sendNotification
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Ask the server to send a compiled notification (hook PostToolUse)
@@ -4410,7 +4521,7 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: listNotifications
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Notifications
@@ -7944,6 +8055,113 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/launch:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: openRunnerLaunch
+      x-ostrom-status: served
+      tags:
+      - runners
+      summary: 'The runner of a cloud session opens its session''s launch with the execution''s runner token: the launch
+        is the session owner''s, under the organization''s policy and launch limit, and the agent in the pod gets its
+        agent token, never the runner token. A shell session opens none (400)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The cloud session the runner was started for
+                epoch:
+                  type: integer
+                  format: int64
+                  description: The execution it was started for; an older one is fenced (409)
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  launchId:
+                    type: string
+                  agentToken:
+                    type: string
+                  expiresAt:
+                    type: string
+                required:
+                - launchId
+                - agentToken
+                - expiresAt
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/cloud/runner/checks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: reportRunnerCheck
+      x-ostrom-status: served
+      tags:
+      - checks
+      summary: 'The runner of a cloud session reports a check it ran itself, with the execution''s runner token: the run
+        is recorded `isolated_runner` for a session of a launch that cloud session opened (404 otherwise), and the
+        receipt''s check node takes the attestation of its last run. It proves that Ostrom ran the script and read its
+        exit code, not that the agent''s workspace it ran on was untouched'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The cloud session the runner was started for
+                epoch:
+                  type: integer
+                  format: int64
+                  description: The execution it was started for; an older one is fenced (409)
+                check:
+                  $ref: '#/components/schemas/ReportCheckRequest'
+              required:
+              - sessionId
+              - epoch
+              - check
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckRun'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/messages:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -10094,6 +10312,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    RateLimited:
+      description: 'Too many requests lately (`rate_limited`): nothing was done. A launch is limited per person in an
+        organization and per organization, over a sliding hour'
+      headers:
+        Retry-After:
+          description: Seconds until a place frees up
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
   schemas:
     AccountAuditEvent:
       type: object
@@ -11362,9 +11592,11 @@ components:
     CheckAttestation:
       type: string
       description: 'Where a check run comes from. `workstation_declared`: the developer''s machine ran it and reported
-        the result, nothing proves it ran. `isolated_runner`: an Ostrom runner ran it in an isolated session. `ci`:
-        the GitHub check run of the Ostrom App, read and verified by the server. Shown on every check of a receipt;
-        a rule gate can refuse a declared run (RuleGateCheck).'
+        the result, nothing proves it ran. `isolated_runner`: the runner of an Ostrom cloud session ran it and reported
+        it with its own token, which the agent cannot read (reportRunnerCheck); it proves that Ostrom ran the script and
+        read its exit code, not that the agent''s workspace it ran on was untouched. `ci`: the GitHub check run of the
+        Ostrom App, read and verified by the server. Shown on every check of a receipt; a rule gate can refuse a
+        declared run (RuleGateCheck).'
       enum:
       - workstation_declared
       - isolated_runner
@@ -11801,10 +12033,24 @@ components:
           type: string
         lastSeenAt:
           type: string
+        kind:
+          type: string
+          enum:
+          - cli
+          - admin
+          description: "`admin` for the elevated token of `ostrom login --admin`; absent means `cli`"
+        orgId:
+          type: string
+          description: The organization an elevated token is bound to
+        scopes:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: string
       required:
       - id
       - name
-      - platform
       x-ostrom-kotlin: pending
     DeviceAnswer:
       type: object
@@ -12964,6 +13210,98 @@ components:
           description: The slug of a team they join; none when absent
       required:
       - login
+    MyOrganization:
+      type: object
+      description: One of the caller's organizations, to choose the one `Ostrom-Org` names
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          description: The picture of the linked GitHub organization, empty when none
+        role:
+          $ref: '#/components/schemas/MemberRole'
+          description: The caller's role there
+      required:
+      - id
+      - slug
+      - name
+      - avatarUrl
+      - role
+      x-ostrom-kotlin: pending
+    Account:
+      type: object
+      description: The signed-in person's account
+      properties:
+        id:
+          type: string
+        login:
+          type: string
+          description: The handle, unique on the instance
+        displayName:
+          type: string
+        primaryEmail:
+          type: string
+          description: The main e-mail; absent when there is none
+        avatarUrl:
+          type: string
+          description: The picture; absent when there is none
+        createdAt:
+          type: string
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountEmail'
+        providers:
+          type: array
+          description: "How the person signs in: `github`, `google`, `email` or `oidc:<connection>`"
+          items:
+            type: string
+      required:
+      - id
+      - login
+      - displayName
+      - createdAt
+      - emails
+      - providers
+      x-ostrom-kotlin: pending
+    AccountEmail:
+      type: object
+      properties:
+        email:
+          type: string
+        verified:
+          type: boolean
+      required:
+      - email
+      - verified
+      x-ostrom-kotlin: pending
+    TokenScope:
+      type: object
+      properties:
+        scope:
+          type: string
+          description: "`resource:action`"
+        description:
+          type: string
+      required:
+      - scope
+      - description
+      x-ostrom-kotlin: pending
+    TokenScopes:
+      type: object
+      properties:
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenScope'
+      required:
+      - scopes
+      x-ostrom-kotlin: pending
     MemberRole:
       type: string
       enum:
@@ -14051,6 +14389,8 @@ components:
           type: boolean
           description: When true, only a run attested by an Ostrom runner or the CI (`isolated_runner`, `ci`)
             satisfies the gate; a run declared by the workstation (`workstation_declared`) does not. False by default.
+            An `isolated_runner` run proves that Ostrom ran the script and read its exit code, not that the agent's
+            workspace it ran on was untouched.
       required:
       - check
     NewRule:
@@ -14250,6 +14590,8 @@ components:
           items:
             type: string
         createdAt:
+          type: string
+        expiresAt:
           type: string
         lastUsedAt:
           type: string
