@@ -22,6 +22,7 @@ DELETE /api/v1/tokens/{}
 DELETE /api/v1/workflows/{}
 GET /a/{}/{}/{}
 GET /api/v1/accounts
+GET /api/v1/activity
 GET /api/v1/approvals
 GET /api/v1/approvals/{}
 GET /api/v1/artifacts
@@ -42,6 +43,7 @@ GET /api/v1/automations/{}/runs
 GET /api/v1/budgets
 GET /api/v1/budgets/me
 GET /api/v1/capacity
+GET /api/v1/checks
 GET /api/v1/cloud/runner/terminal
 GET /api/v1/cloud/sessions
 GET /api/v1/cloud/sessions/{}
@@ -52,6 +54,11 @@ GET /api/v1/gates/catalog
 GET /api/v1/gates/catalog/signed
 GET /api/v1/gates/policy
 GET /api/v1/gates/{}
+GET /api/v1/github/app
+GET /api/v1/github/app/install/callback
+GET /api/v1/github/app/install/start
+GET /api/v1/github/app/manifest/callback
+GET /api/v1/github/app/manifest/start
 GET /api/v1/health
 GET /api/v1/inference/settings
 GET /api/v1/instance
@@ -62,6 +69,8 @@ GET /api/v1/mcp/servers/{}/assignments
 GET /api/v1/mcp/servers/{}/policies
 GET /api/v1/mcp/settings
 GET /api/v1/mcp/usage
+GET /api/v1/me/organizations
+GET /api/v1/notifications
 GET /api/v1/orgs
 GET /api/v1/orgs/{}
 GET /api/v1/orgs/{}/billing
@@ -69,6 +78,7 @@ GET /api/v1/orgs/{}/billing/invoices
 GET /api/v1/orgs/{}/invitations
 GET /api/v1/orgs/{}/members
 GET /api/v1/orgs/{}/members/{}
+GET /api/v1/orgs/{}/teams
 GET /api/v1/packages
 GET /api/v1/packages/audit
 GET /api/v1/packages/current
@@ -78,12 +88,15 @@ GET /api/v1/policy/models
 GET /api/v1/receipts
 GET /api/v1/receipts/keys
 GET /api/v1/receipts/{}
+GET /api/v1/receipts/{}/bundle
 GET /api/v1/receipts/{}/verify
+GET /api/v1/repos
 GET /api/v1/rules
 GET /api/v1/rules/{}
 GET /api/v1/secrets
 GET /api/v1/sessions
 GET /api/v1/sessions/{}
+GET /api/v1/spending
 GET /api/v1/tokens
 GET /api/v1/usage
 GET /api/v1/usage/events
@@ -125,6 +138,7 @@ POST /api/v1/automations/{}/run
 POST /api/v1/automations/{}/trigger
 POST /api/v1/automations/{}/webhook/rotate-secret
 POST /api/v1/billing/stripe/webhook
+POST /api/v1/checks
 POST /api/v1/cloud/runner/checks
 POST /api/v1/cloud/runner/heartbeat
 POST /api/v1/cloud/runner/launch
@@ -139,9 +153,11 @@ POST /api/v1/gates/{}/reserve
 POST /api/v1/import/teamcode
 POST /api/v1/invitations/accept
 POST /api/v1/invitations/preview
+POST /api/v1/launches
 POST /api/v1/mcp/servers
 POST /api/v1/mcp/servers/{}/policies
 POST /api/v1/mcp/{}
+POST /api/v1/notifications
 POST /api/v1/orgs
 POST /api/v1/orgs/{}/billing/cancel
 POST /api/v1/orgs/{}/billing/checkout
@@ -163,6 +179,7 @@ POST /api/v1/sessions/{}/alive
 POST /api/v1/sessions/{}/end
 POST /api/v1/sessions/{}/reopen
 POST /api/v1/sessions/{}/seen
+POST /api/v1/sessions/{}/workflow-receipt
 POST /api/v1/tokens
 POST /api/v1/tokens/{}/rotate
 POST /api/v1/usage/events
@@ -171,6 +188,7 @@ POST /api/v1/waits/mcp
 POST /api/v1/waits/{}/answer
 POST /api/v1/waits/{}/cancel
 POST /api/v1/workflows
+POST /webhooks/github
 POST /webhooks/stripe
 PUT /api/v1/artifacts/{}/members/{}
 PUT /api/v1/automations/{}
@@ -183,3 +201,4 @@ PUT /api/v1/mcp/settings
 PUT /api/v1/policy/models
 PUT /api/v1/secrets/{}
 PUT /api/v1/workflows/{}
+!GET /api/v1/policy/agents
