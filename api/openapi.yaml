@@ -205,8 +205,8 @@ paths:
     get:
       operationId: startGithubLogin
       x-ostrom-status: planned
-      description: "Main serves this path through `startOAuthLogin` (`provider=github`): `redirect` and `reauth`, not the
-        mobile PKCE parameters. Planned until the server takes them."
+      description: "Served through `startOAuthLogin` (`provider=github`), with the mobile PKCE parameters since
+        ostrom-server#75. This literal path stays `planned` for the served check, which lists the `{provider}` route."
       tags:
       - auth
       summary: 'Start the GitHub OAuth sign-in. Browser: `redirect`. Mobile app: `redirect_uri` (ostrom://auth/callback),
@@ -248,10 +248,13 @@ paths:
   /api/v1/auth/mobile/token:
     post:
       operationId: mobileToken
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Exchange the one-time code of the mobile sign-in (PKCE) for a token
+      description: "The code works once (a wrong verifier spends it), for 60 s, with the exact `redirectUri` of the start.
+        The token (`osm_…`, 30 days) answers a gate only within 5 minutes of `unlockMobileApp`. A person keeps 5 phones:
+        a sixth sign-in revokes the oldest app token."
       security: []
       requestBody:
         required: true
@@ -284,6 +287,10 @@ paths:
                     $ref: '#/components/schemas/AuthUser'
                   expiresAt:
                     type: string
+                  unlockKey:
+                    type: string
+                    description: "Kept by the app behind the phone's biometrics (keychain item that requires them),
+                      presented to `unlockMobileApp` before a yes; never sent anywhere else"
                 required:
                 - token
                 - user
@@ -291,12 +298,52 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mobile/unlock:
+    post:
+      operationId: unlockMobileApp
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Record the phone's biometric unlock: the app's token answers a gate for 5 minutes after it (S2-54)"
+      description: "The app's token only (403 for a browser session or another token, or a wrong key)."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                unlockKey:
+                  type: string
+              required:
+              - unlockKey
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authenticatedAt:
+                    type: string
+                    format: date-time
+                required:
+                - authenticatedAt
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/github/callback:
     get:
       operationId: githubLoginCallback
       x-ostrom-status: planned
-      description: "Main serves this path through `oauthLoginCallback` (`provider=github`), for the browser sign-in only.
-        Planned until the mobile sign-in is served."
+      description: "Served through `oauthLoginCallback` (`provider=github`), browser and mobile sign-ins, since
+        ostrom-server#75. This literal path stays `planned` for the served check, which lists the `{provider}` route."
       tags:
       - auth
       summary: GitHub OAuth callback
@@ -362,10 +409,38 @@ paths:
         description: "Sign in again before a yes: the provider asks again"
         schema:
           type: boolean
+      - name: redirect_uri
+        in: query
+        required: false
+        description: "Mobile app: its deep link, exactly `ostrom://auth/callback`. With `state`, `code_challenge` and
+          `code_challenge_method=S256`, the callback returns a one-time `code` (or an `error`) and the app's `state` to
+          it; any invalid mobile parameter answers 400"
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        description: "Mobile app: its state, returned with the code"
+        schema:
+          type: string
+      - name: code_challenge
+        in: query
+        required: false
+        description: "Mobile app: the S256 PKCE challenge (43 characters)"
+        schema:
+          type: string
+      - name: code_challenge_method
+        in: query
+        required: false
+        description: "Mobile app: `S256` only"
+        schema:
+          type: string
       security: []
       responses:
         '302':
           description: "Redirect"
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/{provider}/callback:
     get:
       operationId: oauthLoginCallback
@@ -1526,7 +1601,7 @@ paths:
   /api/v1/me/notifications:
     get:
       operationId: getNotificationPreferences
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Notification preferences of the caller
@@ -1549,7 +1624,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setNotificationPreferences
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Set the notification preferences of the caller
@@ -3660,7 +3735,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApprovalQueue
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: 'The yes queue of the caller: pending approvals and recent answers, as the console and the app show them'
@@ -3718,7 +3793,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApprovalView
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: An approval as the console and the app show it
@@ -3755,8 +3830,9 @@ paths:
       - approvals
       summary: Say yes or no, as the caller. 409 shown_digest_mismatch when the shown digest differs, 409 approval_closed
         when already answered (a signed answer never changes); 403 self_approval_refused when the asker answers while another
-        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old (sign in again, then
-        answer)
+        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
+        app not unlocked in the last 5 minutes (`unlockMobileApp`); the 200 is the `ApprovalView` of the answered approval,
+        with its signed `receipt`, a no's included
       parameters:
       - name: id
         in: path
@@ -10692,6 +10768,9 @@ components:
           type: boolean
         canApprove:
           type: boolean
+          description: "Whether the person may answer: their role, being an approver, not their own gate. It does not
+            wait for a fresh sign-in or the phone's unlock: a locked app reads `true`, and its yes is refused at the
+            answer with 403 `step_up_required` until `unlockMobileApp`"
         reason:
           type: string
         selfApproval:
@@ -15378,7 +15457,7 @@ components:
           type: string
         kind:
           type: string
-          description: '`personal` or `cli`'
+          description: '`personal`, `cli` or `mobile` (the phone app''s)'
         scopes:
           type: array
           items:

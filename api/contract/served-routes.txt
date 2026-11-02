@@ -27,7 +27,9 @@ GET /a/{}/{}/{}
 GET /api/v1/accounts
 GET /api/v1/activity
 GET /api/v1/approvals
+GET /api/v1/approvals/queue
 GET /api/v1/approvals/{}
+GET /api/v1/approvals/{}/view
 GET /api/v1/artifacts
 GET /api/v1/artifacts/{}
 GET /api/v1/artifacts/{}/members
@@ -74,6 +76,7 @@ GET /api/v1/mcp/servers/{}/assignments
 GET /api/v1/mcp/servers/{}/policies
 GET /api/v1/mcp/settings
 GET /api/v1/mcp/usage
+GET /api/v1/me/notifications
 GET /api/v1/me/organizations
 GET /api/v1/notifications
 GET /api/v1/orgs
@@ -138,6 +141,8 @@ POST /api/v1/auth/link
 POST /api/v1/auth/links
 POST /api/v1/auth/logout
 POST /api/v1/auth/logout/everywhere
+POST /api/v1/auth/mobile/token
+POST /api/v1/auth/mobile/unlock
 POST /api/v1/auth/{}/link
 POST /api/v1/automations
 POST /api/v1/automations/{}/disable
@@ -208,6 +213,7 @@ PUT /api/v1/inference/settings
 PUT /api/v1/mcp/servers/{}
 PUT /api/v1/mcp/servers/{}/assignments/{}
 PUT /api/v1/mcp/settings
+PUT /api/v1/me/notifications
 PUT /api/v1/policy/models
 PUT /api/v1/secrets/{}
 PUT /api/v1/workflows/{}
