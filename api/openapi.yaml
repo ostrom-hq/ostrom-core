@@ -634,7 +634,15 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (approving `ostrom login --admin` needs a sign-in less than 5 minutes old;
+            sign in again, then answer again; a denial and the ordinary `ostrom login` are not asked for it), or
+            forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
