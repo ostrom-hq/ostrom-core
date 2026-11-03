@@ -1985,6 +1985,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/github/app/install/callback:
     get:
       operationId: githubAppInstallCallback
@@ -8086,7 +8088,8 @@ paths:
         The answer is what it must hold: the executions to run, each handed over once with its plan (the volumes
         and containers to create, the last one holding the execution's runner token), and the workspaces to keep.
         Anything else of its own, it stops and deletes. A runner that sends no body is given nothing; an unknown
-        state or a malformed session id answers 400. `sessions` is kept for older runners and stays empty.
+        state, a malformed session id or a capacity outside 0 to 256 answers 400. `sessions` is kept for older
+        runners and stays empty.
       parameters:
       - name: id
         in: path
@@ -8122,6 +8125,15 @@ paths:
                   items:
                     type: string
                     format: uuid
+                capacity:
+                  type: integer
+                  format: int32
+                  minimum: 0
+                  maximum: 256
+                  description: >-
+                    The sessions the machine runs at once at most; the server never hands it more, and a session
+                    with no room anywhere stays queued. 0 drains the machine. Absent, as from an older runner: no
+                    limit.
       responses:
         '200':
           description: OK
@@ -8503,7 +8515,7 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '404':
-          $ref: '#/components/responses/Error'
+          description: An HTTP 404 answered to a request that does not open the socket (observed by ostrom-server's isolation matrix) has no body; a socket that opens refuses with a close, 4404 for an unknown or foreign session
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/runner/terminal:
@@ -8529,6 +8541,8 @@ paths:
       responses:
         '101':
           description: "Switching protocols"
+        '400':
+          description: An HTTP 400 answered to a request that does not open the socket (observed by ostrom-server's isolation matrix) has no body; a socket that opens refuses with a close (4401, 4409)
         '401':
           $ref: '#/components/responses/Error'
         '409':
