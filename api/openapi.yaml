@@ -15904,6 +15904,11 @@ components:
         subject:
           type: string
           description: "For `member`: the member's `id`"
+        label:
+          type: string
+          x-ostrom-status: planned
+          description: "For `member`: the member's login, as `SpendingLine.label` of `byPerson` names them; a member with
+            no spending in the period read has no line there. Planned: the server does not send it yet"
         period:
           type: string
           enum: [day, month]
