@@ -2175,7 +2175,8 @@ paths:
       x-ostrom-status: served
       tags:
       - organization
-      summary: "Rename an organization (scope `orgs:write`)"
+      summary: "Change an organization's name or time zone (scope `orgs:write`). The role is checked before the body: a
+        member who is not an owner or an admin gets 403 whatever they send"
       parameters:
       - name: org
         in: path
@@ -2209,7 +2210,9 @@ paths:
       x-ostrom-status: served
       tags:
       - organization
-      summary: "Delete an organization: its short name typed again in the body; a browser session only, never a token"
+      summary: "Delete an organization: its short name typed again in the body; a browser session only, never a token.
+        It is kept 30 days, then erased; its short name stays taken until then. Recorded once in the audit log, only
+        when the deletion happens"
       parameters:
       - name: org
         in: path
@@ -14111,7 +14114,9 @@ components:
           type: string
         slug:
           type: string
-          description: Derived from the name when absent
+          description: Derived from the name when absent. Short names are one space for everybody, as on GitHub; one
+            already taken answers 409 `conflict`, whether a live organization holds it or a deleted one in its 30 days
+            of grace (kept so that it can be restored, and freed when the organization is erased)
       required:
       - name
       x-ostrom-kotlin: pending
@@ -14207,12 +14212,17 @@ components:
       x-ostrom-kotlin: pending
     OrgRename:
       type: object
-      description: "A new name"
+      description: "An organization's settings to change; a field left out stays as it is"
       properties:
         name:
           type: string
-      required:
-      - name
+          description: The new name
+        timeZone:
+          type: string
+          description: The new IANA time zone, such as `Europe/Paris`; an unknown one is refused with 400
+        slug:
+          type: string
+          description: The short name, accepted only unchanged (it never changes); another one is refused with 400
       x-ostrom-kotlin: pending
     OrgTransfer:
       type: object
@@ -14239,12 +14249,16 @@ components:
         createdAt:
           type: string
           format: date-time
+        timeZone:
+          type: string
+          description: The organization's IANA time zone, `UTC` until an owner or admin sets one
       required:
       - id
       - slug
       - name
       - role
       - createdAt
+      - timeZone
       x-ostrom-kotlin: pending
     OrgViewList:
       type: object
