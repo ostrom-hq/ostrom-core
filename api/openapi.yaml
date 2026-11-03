@@ -6899,7 +6899,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceMessages
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Anthropic-compatible Messages endpoint, metered against budgets
@@ -6935,7 +6935,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceResponses
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: OpenAI-compatible Responses endpoint, metered against budgets
@@ -6971,7 +6971,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceChatCompletions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: OpenAI-compatible chat completions endpoint
@@ -7007,7 +7007,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: inferenceModels
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Models the caller may use
@@ -15884,7 +15884,6 @@ components:
           - type
           - message
       required:
-      - error
       - error
       x-ostrom-kotlin: pending
     StringListSuggestion:
