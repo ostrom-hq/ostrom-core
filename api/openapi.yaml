@@ -1466,6 +1466,11 @@ paths:
       tags:
       - auth
       summary: Workstations where the caller is signed in
+      description: "A browser session only. The caller's CLI tokens (`kind: cli`), then, when `Ostrom-Org` names an
+        organization, its live tokens of `ostrom login --admin` (`kind: admin`, with `orgId`, `scopes` and `expiresAt`):
+        the caller's own for a member, every member's for an owner or an admin. Such a token is bound to its organization
+        and only listed when the request names it; the console asks once per organization. A member of another
+        organization gets 404."
       responses:
         '200':
           description: OK
@@ -1501,6 +1506,10 @@ paths:
       tags:
       - auth
       summary: Sign a workstation out
+      description: "A browser session only. Revokes one of the caller's CLI tokens, or a token of `ostrom login --admin`
+        of the organization `Ostrom-Org` names: a member their own, an owner or an admin any member's (a leaked token, a
+        member who left). Audited in that organization, naming the actor and the token's owner. Another member's for a
+        member, a token of another organization, a personal token or a service key: 404."
       parameters:
       - name: id
         in: path
