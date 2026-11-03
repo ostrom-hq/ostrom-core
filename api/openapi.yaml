@@ -4689,7 +4689,8 @@ paths:
       x-ostrom-status: served
       tags:
       - rules
-      summary: Rules
+      summary: "Rules, by group then id, a page at a time: every filter applies before the page, so a repository's rules
+        are never cut by the others'"
       parameters:
       - name: repo
         in: query
@@ -4706,6 +4707,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: after
+        in: query
+        required: false
+        description: "The `next` of the previous page (opaque); 400 when no page gave it"
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: "The page size, 1 to 1000 (1000 by default); a value outside is brought into it"
+        schema:
+          type: integer
       responses:
         '200':
           description: OK
@@ -4720,6 +4733,7 @@ paths:
                       $ref: '#/components/schemas/Rule'
                   next:
                     type: string
+                    description: "The `after` of the next page; absent on the last one"
                 required:
                 - items
         '400':
