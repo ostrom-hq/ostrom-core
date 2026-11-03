@@ -7932,19 +7932,59 @@ paths:
       summary: Sign of life; returns the work assigned
       description: >-
         Authenticated by the runner's own key (`Authorization: Bearer ostrom_runner_…`, from registerRunner's
-        answer), not a member's credential; no body. Marks the runner seen: listRunners shows it `online` for 90
-        seconds after its last heartbeat. An unknown runner, a malformed id, another runner's key or a runner
-        removed meanwhile all answer 401 alike. `sessions` lists the cloud sessions assigned to the runner, empty
-        until sessions are scheduled on registered runners.
+        answer), not a member's credential. Marks the runner seen: listRunners shows it `online` for 90 seconds
+        after its last heartbeat. An unknown runner, a malformed id, another runner's key or a runner removed
+        meanwhile all answer 401 alike.
+
+        A runner that runs cloud sessions (`ostrom-runner machine` with a Docker Engine, on a server whose sessions
+        run on registered runners) sends a JSON body: the executions its machine has and the workspaces it holds.
+        The answer is what it must hold: the executions to run, each handed over once with its plan (the volumes
+        and containers to create, the last one holding the execution's runner token), and the workspaces to keep.
+        Anything else of its own, it stops and deletes. A runner that sends no body is given nothing; an unknown
+        state or a malformed session id answers 400. `sessions` is kept for older runners and stays empty.
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                executions:
+                  type: array
+                  description: The executions the machine has, and those it is creating.
+                  items:
+                    type: object
+                    properties:
+                      sessionId:
+                        type: string
+                        format: uuid
+                      epoch:
+                        type: integer
+                        format: int64
+                      state:
+                        type: string
+                        enum: [pending, running, ended]
+                    required: [sessionId, epoch, state]
+                workspaces:
+                  type: array
+                  description: The sessions whose workspace volumes the machine holds.
+                  items:
+                    type: string
+                    format: uuid
       responses:
         '200':
           description: OK
+          headers:
+            Cache-Control:
+              description: '`no-store`: a plan holds a runner token.'
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -7954,8 +7994,60 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/CloudSession'
+                  executions:
+                    type: array
+                    description: >-
+                      The executions to run. A plan comes once, when the execution is handed over to this runner;
+                      later answers name the execution without it.
+                    items:
+                      type: object
+                      properties:
+                        sessionId:
+                          type: string
+                          format: uuid
+                        epoch:
+                          type: integer
+                          format: int64
+                        plan:
+                          type: object
+                          description: >-
+                            The Docker Engine objects to create, in order: the session's volumes, then the
+                            execution's containers, each with its Engine API creation body.
+                          properties:
+                            volumes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  body:
+                                    type: object
+                                    additionalProperties: true
+                                required: [name, body]
+                            containers:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  body:
+                                    type: object
+                                    additionalProperties: true
+                                required: [name, body]
+                          required: [volumes, containers]
+                      required: [sessionId, epoch]
+                  workspaces:
+                    type: array
+                    description: The sessions whose workspace to keep.
+                    items:
+                      type: string
+                      format: uuid
                 required:
                 - sessions
+                - executions
+                - workspaces
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -9290,10 +9382,14 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listGroups
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Sharing groups
+      description: "Every member of the organization reads its groups (`accounts:read`): name, members by login (a member who
+        left is named by member id), the ids of the shared accounts lent to the group, and the members paused now.
+        At most 100 groups, by name; `next` is never set. A person outside the organization named by `Ostrom-Org`
+        gets 404."
       responses:
         '200':
           description: OK
@@ -9322,10 +9418,14 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Create a group
+      description: "An owner or an admin (`accounts:write`, browser session); a member gets 403. `name` is trimmed, 1 to 120
+        characters, unique in the organization whatever the case (409). `members` are logins of members of the
+        organization and `accounts` ids of its shared accounts, else 400. At most 1000 members per group and 100 groups
+        per organization (409)."
       requestBody:
         required: true
         content:
@@ -9367,10 +9467,11 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: A group
+      description: "Every member reads it. A group of another organization, a deleted one or an id that is no UUID is a 404."
       parameters:
       - name: id
         in: path
@@ -9396,10 +9497,13 @@ paths:
           $ref: '#/components/responses/Error'
     patch:
       operationId: updateGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Change a group
+      description: "An owner or an admin; a member gets 403. Each field given replaces the current one: `name` (409 when another
+        group has it), `accounts` (all the accounts lent, an empty list lends nothing). Members change through
+        `/members/{login}`. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9438,10 +9542,12 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Delete a group
+      description: "An owner or an admin; a member gets 403. Its members and the accounts lent to it go with it; the accounts
+        themselves stay. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9466,10 +9572,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: addGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Add a member to a group
+      description: "An owner or an admin; a member gets 403. `login` names a member of the organization (else 404). Adding a member
+        already in the group changes nothing, a pause included. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9496,10 +9604,12 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: removeGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Remove a member from a group
+      description: "An owner or an admin; a member gets 403. `login` is the member's login, or the member id the group shows for one
+        who left the organization. 404 when they are not in the group."
       parameters:
       - name: id
         in: path
@@ -9529,10 +9639,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: pauseGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Pause a member in a group
+      description: "An owner or an admin; a member gets 403. `until` is an ISO 8601 instant (else 400): the group lends nothing to
+        the member until then, and an instant already past ends the pause. 404 when they are not in the group."
       parameters:
       - name: id
         in: path
@@ -13014,6 +13126,19 @@ components:
           type: array
           items:
             type: string
+        paused:
+          type: array
+          description: The members paused now, by login, and the end of their pause
+          items:
+            type: object
+            properties:
+              login:
+                type: string
+              until:
+                type: string
+            required:
+            - login
+            - until
       required:
       - id
       - name
