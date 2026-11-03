@@ -8008,7 +8008,8 @@ paths:
         The answer is what it must hold: the executions to run, each handed over once with its plan (the volumes
         and containers to create, the last one holding the execution's runner token), and the workspaces to keep.
         Anything else of its own, it stops and deletes. A runner that sends no body is given nothing; an unknown
-        state or a malformed session id answers 400. `sessions` is kept for older runners and stays empty.
+        state, a malformed session id or a capacity outside 0 to 256 answers 400. `sessions` is kept for older
+        runners and stays empty.
       parameters:
       - name: id
         in: path
@@ -8044,6 +8045,15 @@ paths:
                   items:
                     type: string
                     format: uuid
+                capacity:
+                  type: integer
+                  format: int32
+                  minimum: 0
+                  maximum: 256
+                  description: >-
+                    The sessions the machine runs at once at most; the server never hands it more, and a session
+                    with no room anywhere stays queued. 0 drains the machine. Absent, as from an older runner: no
+                    limit.
       responses:
         '200':
           description: OK
