@@ -448,7 +448,8 @@ paths:
       tags:
       - auth
       summary: "Where the provider sends the browser back: sets the session cookies and redirects to the console (or to
-        `/login?error=`)"
+        `/login?error=`). For a sign-in the phone app started, an error redirects to the app's deep link; a code is
+        answered as a page whose link to the deep link the person taps"
       parameters:
       - name: provider
         in: path
@@ -473,6 +474,13 @@ paths:
           type: string
       security: []
       responses:
+        '200':
+          description: "A mobile sign-in's code: the page that names who signed in and links to the app's deep link
+            (`ostrom://auth/callback?code=&state=`), on the person's tap; no script, never framed or cached"
+          content:
+            text/html:
+              schema:
+                type: string
         '302':
           description: "Redirect"
   /api/v1/auth/{provider}/link:
@@ -570,6 +578,8 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/device/token:
     post:
       operationId: pollDeviceLogin
@@ -655,9 +665,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -761,6 +769,8 @@ paths:
                 - token
                 - expiresAt
         '400':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
@@ -1091,7 +1101,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
+                anyOf:
                 - $ref: '#/components/schemas/EmailLinkOtherBrowser'
                 - $ref: '#/components/schemas/ApiError'
         '404':
@@ -1214,9 +1224,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -1327,9 +1335,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
   /api/v1/tokens/{id}:
     delete:
       operationId: revokeToken
@@ -1380,9 +1386,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
   /api/v1/service-keys:
@@ -1465,9 +1469,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2135,6 +2137,8 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+        '402':
+          $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
         '409':
@@ -2273,9 +2277,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2363,15 +2365,15 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+        '402':
+          $ref: '#/components/responses/Error'
         '403':
           description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
             again, then send it again), or forbidden (the key is `error.type`)
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2451,9 +2453,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2487,9 +2487,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2558,9 +2556,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2965,6 +2961,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/settings:
     parameters:
@@ -3397,6 +3395,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
     get:
       operationId: listGates
       x-ostrom-status: planned
@@ -3496,6 +3496,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '429':
           $ref: '#/components/responses/Error'
   /api/v1/gates/{id}/consume:
     parameters:
@@ -3971,6 +3973,7 @@ paths:
                 oneOf:
                 - $ref: '#/components/schemas/SelfApprovalRefused'
                 - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/Forbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -4075,9 +4078,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -5688,6 +5689,9 @@ paths:
                 properties:
                   secret:
                     type: string
+                  previousSecretValidUntil:
+                    type: string
+                    description: Until when the previous secret still signs, when one was replaced
                 required:
                 - secret
         '400':
@@ -5929,6 +5933,13 @@ paths:
               required:
               - question
       responses:
+        '200':
+          description: 'A replay of the same `Idempotency-Key`, answered with `Idempotency-Replayed: true`: the
+            wait first created'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wait'
         '201':
           description: OK
           content:
@@ -6176,9 +6187,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6221,9 +6230,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6253,9 +6260,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6336,9 +6341,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6374,9 +6377,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6448,9 +6449,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6488,9 +6487,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6550,9 +6547,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6583,15 +6578,33 @@ paths:
           content:
             application/json:
               schema: {}
+        '202':
+          description: Accepted, without a body (a JSON-RPC notification or response sent to the server)
         '400':
-          $ref: '#/components/responses/Error'
+          description: A JSON-RPC error from the relay (a malformed message, an unknown tool or server), or a
+            refusal before the relay (`ApiError`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/JsonRpcError'
+                - $ref: '#/components/schemas/ApiError'
         '401':
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
         '404':
-          $ref: '#/components/responses/Error'
+          description: A JSON-RPC error from the relay (a malformed message, an unknown tool or server), or a
+            refusal before the relay (`ApiError`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/JsonRpcError'
+                - $ref: '#/components/schemas/ApiError'
         '409':
+          $ref: '#/components/responses/Error'
+        '413':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/calls:
     parameters:
@@ -6669,6 +6682,28 @@ paths:
                     type: object
                     additionalProperties:
                       type: integer
+                  rows:
+                    type: array
+                    description: Details by member and server
+                    items:
+                      type: object
+                      properties:
+                        dev:
+                          type: string
+                        server:
+                          type: string
+                        calls:
+                          type: integer
+                        lists:
+                          type: integer
+                        errors:
+                          type: integer
+                        denied:
+                          type: integer
+                        bytes:
+                          type: integer
+                        durationMs:
+                          type: integer
                 required:
                 - byServer
                 - byTool
@@ -6746,9 +6781,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6791,9 +6824,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6823,9 +6854,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6882,7 +6911,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceMessages
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Anthropic-compatible Messages endpoint, metered against budgets
@@ -6918,7 +6947,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceResponses
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: OpenAI-compatible Responses endpoint, metered against budgets
@@ -6954,7 +6983,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: inferenceChatCompletions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: OpenAI-compatible chat completions endpoint
@@ -6990,7 +7019,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: inferenceModels
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Models the caller may use
@@ -7074,9 +7103,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/StepUpRequired'
-                - $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -7284,7 +7311,12 @@ paths:
       x-ostrom-status: served
       tags:
       - budgets
-      summary: Set a budget (organization, member, workflow)
+      summary: Set a budget (the organization, every member, or one member)
+      description: "Replaces the subject's limits whole: a monthly one (`usdPerMonth`) and a daily one (`usdPerDay`),
+        both stopping the calls (`hardStop` true) or both only warning (false); neither amount removes the subject's
+        limits. The subject is the organization (`scope` `organization`), every member without limits of their own
+        (`member` without `subject`), or one member (`member`, `subject` = the member's `id` from
+        `/api/v1/orgs/{org}/members`). A workflow budget is not served: `scope` `workflow` is a 400"
       requestBody:
         required: true
         content:
@@ -8157,6 +8189,8 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+        '402':
+          $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
         '404':
@@ -8446,6 +8480,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '413':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/runner/launch:
     parameters:
@@ -8795,7 +8831,16 @@ paths:
                 type: string
                 format: binary
         '404':
-          $ref: '#/components/responses/Error'
+          description: 'Not found, or not readable with this ticket, in plain text without detail (`no-store`):
+            the content origin answers no JSON. The same path asked of the API origin is not served there, and gets
+            the API''s JSON `ApiError`'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /l/{slug}/{path}:
     get:
       operationId: getArtifactLinkContent
@@ -9189,6 +9234,12 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactTicket'
+        '201':
+          description: Created
           content:
             application/json:
               schema:
@@ -10425,6 +10476,8 @@ paths:
                 $ref: '#/components/schemas/BillingOverview'
         '401':
           $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
   /api/v1/orgs/{orgId}/billing/checkout:
@@ -10756,10 +10809,12 @@ components:
       description: "Too many requests, in the provider's own error shape, which satisfies `ApiError` (`error.type`,
         `error.message`). Refused by the budgets before any provider is called: `error.type` `rate_limit_error` on the
         Messages endpoint, `insufficient_quota` on the OpenAI-compatible ones, which also carry `error.code`
-        `budget_exhausted` or `budget_insufficient`; `error.message` starts with one of two fixed phrases a client can
-        match on (`LedgerSpendGuard.EXHAUSTED` and `.INSUFFICIENT` in ostrom-server). `Monthly budget reached: ...`: a
-        monthly limit of the organization or of the member is spent; `Retry-After` gives the seconds until the month
-        ends (UTC), when the limit resets. `Budget left too low for this call: ...`: the limit is not spent, but what
+        `budget_exhausted` or `budget_insufficient`; `error.message` starts with one of three fixed phrases a client can
+        match on (`LedgerSpendGuard.EXHAUSTED`, `.EXHAUSTED_TODAY` and `.INSUFFICIENT` in ostrom-server). `Monthly
+        budget reached: ...`: a monthly limit of the organization or of the member is spent; `Retry-After` gives the
+        seconds until the month ends (UTC), when the limit resets. `Daily budget reached: ...`: a daily limit is spent;
+        `Retry-After` gives the seconds until the day ends (00:00 UTC). Only a limit with `hardStop` refuses a call.
+        `Budget left too low for this call: ...`: the limit is not spent, but what
         is left after the calls in flight cannot cover what this call may cost (its output price times the largest of
         its `max_tokens`, `max_output_tokens` and `max_completion_tokens`, 32 000 when it names none, at most 1 000 000;
         plus its estimated input; nothing for a model without a price); the message says what is left and what the
@@ -10770,8 +10825,9 @@ components:
       headers:
         Retry-After:
           description: When to try again. From the gateway, whole seconds, at least 1; with `Monthly budget reached`,
-            until the start of the next month (UTC); absent with `Budget left too low for this call`. Relayed from a
-            provider, as the provider wrote it (seconds or an HTTP date)
+            until the start of the next month (UTC); with `Daily budget reached`, until 00:00 UTC; absent with
+            `Budget left too low for this call`. Relayed from a provider, as the provider wrote it (seconds or an HTTP
+            date)
           schema:
             type: string
       content:
@@ -12019,25 +12075,34 @@ components:
           type: boolean
         outcome:
           type: string
-          enum: [processed, duplicate, ignored]
+          enum: [processed, duplicate, ignored, ignored_unknown_org]
       required:
       - received
       - outcome
       x-ostrom-kotlin: pending
     Budget:
       type: object
-      description: A spending limit
+      description: "A subject's spending limits, per calendar month and per day (UTC). A day starts at 00:00 UTC, a
+        month on the 1st at 00:00 UTC; the spend is the model gateway's measured cost"
       properties:
         scope:
           type: string
+          description: '`organization` (also `org`) or `member`'
         subject:
           type: string
+          description: "For `member`: the member's `id` (`OrgMember.id`); absent, every member without limits of their
+            own"
         usdPerMonth:
           type: number
+          description: The monthly limit in US dollars; absent, none
         usdPerDay:
           type: number
+          description: The daily limit in US dollars; absent, none
         hardStop:
           type: boolean
+          description: "True: a reached limit refuses the model calls until its period ends (`InferenceRefused`,
+            `Monthly budget reached` or `Daily budget reached`). False: the calls go on; the overrun is written once
+            per period to the organization's audit log (`budget.exceeded`) and listed in `Spending.exceeded`"
       required:
       - scope
       - hardStop
@@ -12631,6 +12696,9 @@ components:
           type: integer
         expiresIn:
           type: integer
+        verificationUriComplete:
+          type: string
+          description: The verification page with the code filled in
       required:
       - deviceCode
       - userCode
@@ -12701,6 +12769,29 @@ components:
       required:
       - label
       - value
+    Forbidden:
+      type: object
+      description: '403 other than step_up_required: `forbidden` (a token without the scope, a member without the
+        role, a credential the route does not admit), or a finer key (`email_link_other_browser`,
+        `installation_not_yours`, `probe_not_yours`, `cutover_owner_required`, `self_approval_refused`: the server
+        names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`)'
+      properties:
+        error:
+          type: object
+          description: '`ErrorDetail`, its `type` any 403 key but `step_up_required`'
+          properties:
+            type:
+              type: string
+              enum: [forbidden, email_link_other_browser, installation_not_yours, probe_not_yours, cutover_owner_required,
+                self_approval_refused]
+            message:
+              type: string
+          required:
+          - type
+          - message
+      required:
+      - error
+      x-ostrom-kotlin: pending
     GateAction:
       type: object
       description: A boundary action a gate covers
@@ -13411,6 +13502,30 @@ components:
       required:
       - token
       x-ostrom-kotlin: pending
+    JsonRpcError:
+      type: object
+      description: A JSON-RPC 2.0 error, as the MCP relay answers it
+      properties:
+        jsonrpc:
+          type: string
+          enum: ['2.0']
+        id:
+          type: [string, integer, 'null']
+          description: The request's id; null when it could not be read
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+          required:
+          - code
+          - message
+      required:
+      - jsonrpc
+      - error
+      x-ostrom-kotlin: pending
     LinkStarted:
       type: object
       description: "The consent page of a started link"
@@ -13585,6 +13700,15 @@ components:
           type: integer
         ok:
           type: boolean
+        outcome:
+          type: string
+          description: '`OK`, `DENIED`, `UPSTREAM_ERROR`…'
+        responseBytes:
+          type: integer
+          description: The upstream answer's size
+        policyId:
+          type: string
+          description: The argument policy that refused the call
       required:
       - id
       - at
@@ -13719,6 +13843,9 @@ components:
           type: array
           items:
             type: string
+        csrfToken:
+          type: string
+          description: For a browser session, the token to send in `X-CSRF-Token` on state-changing requests
       required:
       - dev
       - capabilities
@@ -13840,6 +13967,13 @@ components:
       required:
       - email
       - verified
+      x-ostrom-kotlin: pending
+    StepUpOrForbidden:
+      description: 'A 403 of a write that may need a fresh sign-in: `step_up_required` (sign in again, then send
+        it again) or `forbidden`, told apart by `error.type`'
+      oneOf:
+      - $ref: '#/components/schemas/StepUpRequired'
+      - $ref: '#/components/schemas/Forbidden'
       x-ostrom-kotlin: pending
     TokenScope:
       type: object
@@ -14164,8 +14298,12 @@ components:
       x-ostrom-kotlin: pending
     OrgMember:
       type: object
-      description: "A member as `/api/v1/orgs/{org}/members` serves it (no member id there)"
+      description: "A member as `/api/v1/orgs/{org}/members` serves it"
       properties:
+        id:
+          type: string
+          format: uuid
+          description: "The member's id, stable across their tokens and sessions: the `subject` of their `Budget`"
         login:
           type: string
         name:
@@ -14184,6 +14322,7 @@ components:
           type: string
           format: date-time
       required:
+      - id
       - login
       - name
       - avatarUrl
@@ -14554,10 +14693,30 @@ components:
           type: string
         publicKeyPem:
           type: string
+        rotation:
+          $ref: '#/components/schemas/KeyRotation'
       required:
       - kid
       - alg
       - publicKeyPem
+      x-ostrom-kotlin: pending
+    KeyRotation:
+      type: object
+      description: 'How a receipt key was handed over by the key it replaces. Absent on a key handed over by nobody (the
+        first key, or a key changed without its previous one). A reader that pinned the previous key trusts this one
+        only if `signature` verifies; it follows a chain of rotations key by key'
+      properties:
+        kid:
+          type: string
+          description: The id of the key this key replaces
+        signature:
+          type: string
+          description: 'The replaced key''s Ed25519 signature, in base64, over the UTF-8 text
+            `ostrom-receipt-key-rotation/v1\n` followed by the lowercase hex of this key''s 32 raw bytes (the end of its
+            SPKI DER)'
+      required:
+      - kid
+      - signature
       x-ostrom-kotlin: pending
     PushDevice:
       type: object
@@ -15247,6 +15406,12 @@ components:
           type: integer
         runId:
           type: string
+        ended:
+          type: boolean
+          description: True once ended (the answer to a sign of life)
+        lost:
+          type: boolean
+          description: True when closed for lack of a sign of life; its launcher reopens a segment
       required:
       - id
       - agent
@@ -15357,6 +15522,9 @@ components:
           $ref: '#/components/schemas/Session'
         receipt:
           $ref: '#/components/schemas/Receipt'
+        reopened:
+          type: boolean
+          description: For `reopenSession`, false when the segment was already open
       required:
       - session
     Settings:
@@ -15411,6 +15579,54 @@ components:
           type: number
         paused:
           type: boolean
+        email:
+          type: string
+        providerAccountId:
+          type: string
+        mine:
+          type: boolean
+          description: True when the caller enrolled it
+        priority:
+          type: integer
+        limits:
+          type: object
+          properties:
+            maxConcurrent:
+              type: integer
+            utilizationCeiling:
+              type: number
+            monthlyBudgetMicros:
+              type: integer
+            dailyBudgetMicros:
+              type: integer
+            allowedMembers:
+              type: array
+              items:
+                type: string
+        cooldownUntil:
+          type: string
+          description: Until when the account rests after the provider limited it
+        windows:
+          type: array
+          description: The provider's quota windows, as last observed
+          items:
+            type: object
+            properties:
+              window:
+                type: string
+              utilization:
+                type: number
+              resetsAt:
+                type: string
+              observedAt:
+                type: string
+        inFlight:
+          type: integer
+          description: Requests in flight
+        spentMicros:
+          type: integer
+        createdAt:
+          type: string
       required:
       - id
       - provider
@@ -15572,6 +15788,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SpendingDay'
+        exceeded:
+          type: array
+          description: "The budgets the reader sees spent past their limit today or this month, whatever `period`: all
+            of the organization's for whoever sees its whole spending, the reader's own otherwise; empty when none"
+          items:
+            $ref: '#/components/schemas/ExceededBudget'
       required:
       - period
       - from
@@ -15581,6 +15803,36 @@ components:
       - byRepo
       - byPerson
       - daily
+      x-ostrom-kotlin: pending
+    ExceededBudget:
+      type: object
+      description: A budget spent past its limit in its current day or month
+      properties:
+        scope:
+          type: string
+          description: '`organization` or `member`'
+        subject:
+          type: string
+          description: "For `member`: the member's `id`"
+        period:
+          type: string
+          enum: [day, month]
+        usd:
+          type: number
+          description: The limit in US dollars
+        hardStop:
+          type: boolean
+          description: Whether it stops the calls; false, it only warns and the calls go on
+        since:
+          type: string
+          format: date-time
+          description: When the server saw it reached
+      required:
+      - scope
+      - period
+      - usd
+      - hardStop
+      - since
       x-ostrom-kotlin: pending
     SpendingDay:
       type: object
@@ -15648,7 +15900,17 @@ components:
         and an API token is never asked: it has no sign-in to renew'
       properties:
         error:
-          $ref: '#/components/schemas/ErrorDetail'
+          type: object
+          description: '`ErrorDetail`, its `type` `step_up_required`'
+          properties:
+            type:
+              type: string
+              enum: [step_up_required]
+            message:
+              type: string
+          required:
+          - type
+          - message
       required:
       - error
       x-ostrom-kotlin: pending
