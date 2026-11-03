@@ -817,6 +817,8 @@ paths:
                     type: string
                   expiresAt:
                     type: string
+                  hooksCheck:
+                    $ref: '#/components/schemas/HooksCheck'
                 required:
                 - launchId
                 - agentToken
@@ -8577,6 +8579,8 @@ paths:
                     type: string
                   expiresAt:
                     type: string
+                  hooksCheck:
+                    $ref: '#/components/schemas/HooksCheck'
                 required:
                 - launchId
                 - agentToken
@@ -11570,6 +11574,22 @@ components:
       - entry
       - createdAt
       - createdBy
+      x-ostrom-kotlin: pending
+    HooksCheck:
+      type: object
+      description: "What the CLI does when none of Ostrom's hooks runs in the agent's session"
+      properties:
+        afterSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          description: How long it waits for the first hook before it concludes none runs
+        stopAgent:
+          type: boolean
+          description: Whether it then stops the agent, true when the organization enforces at least one gate
+      required:
+      - afterSeconds
+      - stopAgent
       x-ostrom-kotlin: pending
     HooksMissingRequest:
       type: object
