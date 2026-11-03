@@ -18,6 +18,7 @@ DELETE /api/v1/mcp/servers/{}/policies/{}
 DELETE /api/v1/orgs/{}
 DELETE /api/v1/orgs/{}/invitations/{}
 DELETE /api/v1/orgs/{}/members/{}
+DELETE /api/v1/push-devices/{}
 DELETE /api/v1/rules/{}
 DELETE /api/v1/runners/{}
 DELETE /api/v1/secrets/{}
@@ -192,6 +193,7 @@ POST /api/v1/orgs/{}/transfer
 POST /api/v1/packages/preview
 POST /api/v1/packages/{}/restore
 POST /api/v1/packages/{}/revoke
+POST /api/v1/push-devices
 POST /api/v1/rules
 POST /api/v1/rules/bulk
 POST /api/v1/runners
