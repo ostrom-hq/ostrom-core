@@ -14969,6 +14969,22 @@ components:
       properties:
         id:
           type: string
+        orgId:
+          type: string
+          format: uuid
+          x-ostrom-status: planned
+          description: "The organization the receipt was signed for, inside the signed body: a receipt of one organization
+            never verifies as another's, even offline. Absent from a receipt signed before it was planned, which stays
+            verifiable but is never bound to an organization (`Verification.orgBound` false). Planned: the server does not
+            sign it yet"
+        launchId:
+          type: string
+          x-ostrom-status: planned
+          description: "The launch the receipt belongs to, when there is one, inside the signed body. Planned"
+        sessionId:
+          type: string
+          x-ostrom-status: planned
+          description: "The session segment the receipt belongs to, when there is one, inside the signed body. Planned"
         subject:
           $ref: '#/components/schemas/ReceiptSubject'
         initiator:
@@ -16638,6 +16654,12 @@ components:
           type: string
         reason:
           type: string
+        orgBound:
+          type: boolean
+          x-ostrom-status: planned
+          description: "True when the signed body names the organization that verifies it. False for a receipt signed
+            before `Receipt.orgId` (valid, but not bound to an organization: shown as such, never accepted as this
+            organization's). A receipt that names another organization is not ok (`reason` says so). Planned"
       required:
       - ok
       x-ostrom-kotlin: pending
