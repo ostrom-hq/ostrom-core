@@ -1985,6 +1985,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/github/app/install/callback:
     get:
       operationId: githubAppInstallCallback
@@ -2359,6 +2361,15 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: q
+        in: query
+        required: false
+        x-ostrom-status: planned
+        description: "Only the members whose login or name starts with it, whatever the case; it combines with `limit` and `after`. Planned: the server does not read it yet"
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
       responses:
         '200':
           description: "OK"
@@ -4024,7 +4035,9 @@ paths:
       - approvals
       summary: Say yes or no, as the caller. 409 shown_digest_mismatch when the shown digest differs, 409 approval_closed
         when already answered (a signed answer never changes); 403 self_approval_refused when the asker answers while another
-        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
+        approver exists; 403 github_link_required when the gate's policy is never-self-approve, the pull request's author
+        linked no Ostrom person and the answerer linked no GitHub account (the gate waits, Q-GATES-G1); 403
+        step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
         app not unlocked in the last 5 minutes (`unlockMobileApp`); the 200 is the `ApprovalView` of the answered approval,
         with its signed `receipt`, a no's included
       parameters:
@@ -4051,7 +4064,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          description: self_approval_refused, step_up_required, or not an approver (the key is `error.type`)
+          description: self_approval_refused, github_link_required, step_up_required, or not an approver (the key is
+            `error.type`)
           content:
             application/json:
               schema:
@@ -8100,7 +8114,8 @@ paths:
         The answer is what it must hold: the executions to run, each handed over once with its plan (the volumes
         and containers to create, the last one holding the execution's runner token), and the workspaces to keep.
         Anything else of its own, it stops and deletes. A runner that sends no body is given nothing; an unknown
-        state or a malformed session id answers 400. `sessions` is kept for older runners and stays empty.
+        state, a malformed session id or a capacity outside 0 to 256 answers 400. `sessions` is kept for older
+        runners and stays empty.
       parameters:
       - name: id
         in: path
@@ -8136,6 +8151,15 @@ paths:
                   items:
                     type: string
                     format: uuid
+                capacity:
+                  type: integer
+                  format: int32
+                  minimum: 0
+                  maximum: 256
+                  description: >-
+                    The sessions the machine runs at once at most; the server never hands it more, and a session
+                    with no room anywhere stays queued. 0 drains the machine. Absent, as from an older runner: no
+                    limit.
       responses:
         '200':
           description: OK
@@ -8517,7 +8541,7 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '404':
-          $ref: '#/components/responses/Error'
+          description: An HTTP 404 answered to a request that does not open the socket (observed by ostrom-server's isolation matrix) has no body; a socket that opens refuses with a close, 4404 for an unknown or foreign session
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/runner/terminal:
@@ -8543,6 +8567,8 @@ paths:
       responses:
         '101':
           description: "Switching protocols"
+        '400':
+          description: An HTTP 400 answered to a request that does not open the socket (observed by ostrom-server's isolation matrix) has no body; a socket that opens refuses with a close (4401, 4409)
         '401':
           $ref: '#/components/responses/Error'
         '409':
@@ -12970,7 +12996,9 @@ components:
       description: '403 other than step_up_required: `forbidden` (a token without the scope, a member without the
         role, a credential the route does not admit), or a finer key (`email_link_other_browser`,
         `installation_not_yours`, `probe_not_yours`, `cutover_owner_required`, `self_approval_refused`: the server
-        names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`)'
+        names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`;
+        `github_link_required`: a yes under a never-self-approve policy, on a pull request whose author linked no Ostrom
+        person, from an answerer who linked no GitHub account)'
       properties:
         error:
           type: object
@@ -12979,7 +13007,7 @@ components:
             type:
               type: string
               enum: [forbidden, email_link_other_browser, installation_not_yours, probe_not_yours, cutover_owner_required,
-                self_approval_refused]
+                self_approval_refused, github_link_required]
             message:
               type: string
           required:
