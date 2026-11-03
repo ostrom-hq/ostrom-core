@@ -11,6 +11,9 @@ DELETE /api/v1/auth/sessions/{}
 DELETE /api/v1/automations/{}
 DELETE /api/v1/cloud/sessions/{}
 DELETE /api/v1/devices/{}
+DELETE /api/v1/groups/{}
+DELETE /api/v1/groups/{}/members/{}
+DELETE /api/v1/launches/{}
 DELETE /api/v1/mcp/servers/{}
 DELETE /api/v1/mcp/servers/{}/assignments/{}
 DELETE /api/v1/mcp/servers/{}/policies/{}
@@ -71,6 +74,8 @@ GET /api/v1/github/app/install/callback
 GET /api/v1/github/app/install/start
 GET /api/v1/github/app/manifest/callback
 GET /api/v1/github/app/manifest/start
+GET /api/v1/groups
+GET /api/v1/groups/{}
 GET /api/v1/health
 GET /api/v1/inference/settings
 GET /api/v1/instance
@@ -128,6 +133,7 @@ GET /l/{}/{}
 GET /ready
 PATCH /api/v1/accounts/{}
 PATCH /api/v1/artifacts/{}
+PATCH /api/v1/groups/{}
 PATCH /api/v1/orgs/{}
 PATCH /api/v1/orgs/{}/members/{}
 PATCH /api/v1/rules/{}
@@ -173,6 +179,8 @@ POST /api/v1/gates
 POST /api/v1/gates/{}/consume
 POST /api/v1/gates/{}/release
 POST /api/v1/gates/{}/reserve
+POST /api/v1/groups
+POST /api/v1/groups/{}/members/{}/pause
 POST /api/v1/import/teamcode
 POST /api/v1/invitations/accept
 POST /api/v1/invitations/preview
@@ -221,6 +229,7 @@ PUT /api/v1/artifacts/{}/members/{}
 PUT /api/v1/automations/{}
 PUT /api/v1/budgets
 PUT /api/v1/gates/policy
+PUT /api/v1/groups/{}/members/{}
 PUT /api/v1/inference/settings
 PUT /api/v1/mcp/servers/{}
 PUT /api/v1/mcp/servers/{}/assignments/{}

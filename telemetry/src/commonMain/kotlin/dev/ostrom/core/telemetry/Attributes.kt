@@ -24,7 +24,7 @@ public data class Attribute(val key: String, val value: AttributeValue)
 
 /**
  * An ordered, immutable set of attributes. On a metric, attributes identify a series, so they must come from a bounded
- * set (an enum, a route template), never an identifier (ENG-003); [Attributes.key] is what the meter groups on.
+ * set (an enum, a route template), never an identifier; [Attributes.key] is what the meter groups on.
  */
 public class Attributes private constructor(public val entries: List<Attribute>) {
     /** A stable text identity of the set, used to group metric points; equal sets give equal keys. */

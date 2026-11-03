@@ -618,9 +618,23 @@ paths:
     post:
       operationId: answerDeviceLogin
       x-ostrom-status: served
+      description: "Approving an `ostrom login --admin` binds its token to an organization the person owns or
+        administers. The organization is read after the recent sign-in check: the one `Ostrom-Org` names, else the
+        person's only one. A person in several organizations names it, or gets 409 `org_required`. An `Ostrom-Org`
+        value that is not the id of one of their organizations, an organization they belong to without owning or
+        administering it, and a person in no organization are 403 `forbidden`, never 404. The ordinary `ostrom login`
+        and a denial read no organization."
       tags:
       - auth
       summary: "Approve or deny an `ostrom login` (browser session only)"
+      parameters:
+      - name: Ostrom-Org
+        in: header
+        required: false
+        description: The id of the organization an approved `ostrom login --admin` acts in. An option, read only for
+          that approval; without it, the person's only organization
+        schema:
+          type: string
       requestBody:
         required: true
         content:
@@ -647,7 +661,12 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
-          $ref: '#/components/responses/Error'
+          description: org_required (approving `ostrom login --admin` without `Ostrom-Org`, for a person in several
+            organizations)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/v1/auth/token/refresh:
     post:
       operationId: refreshToken
@@ -807,7 +826,7 @@ paths:
   /api/v1/launches/{launchId}:
     delete:
       operationId: endLaunch
-      x-ostrom-status: planned
+      x-ostrom-status: served
       description: "The launch's own agent token only (AUDIT-SECU-RUNNER-2 R2b): `ostrom <agent>` calls it when the agent
         ends, and the token is revoked at once instead of living until `expiresAt`. Any other credential, another
         launch's agent token included, gets 404, the same answer as an unknown launch. Once ended, the token is refused
@@ -7919,19 +7938,59 @@ paths:
       summary: Sign of life; returns the work assigned
       description: >-
         Authenticated by the runner's own key (`Authorization: Bearer ostrom_runner_…`, from registerRunner's
-        answer), not a member's credential; no body. Marks the runner seen: listRunners shows it `online` for 90
-        seconds after its last heartbeat. An unknown runner, a malformed id, another runner's key or a runner
-        removed meanwhile all answer 401 alike. `sessions` lists the cloud sessions assigned to the runner, empty
-        until sessions are scheduled on registered runners.
+        answer), not a member's credential. Marks the runner seen: listRunners shows it `online` for 90 seconds
+        after its last heartbeat. An unknown runner, a malformed id, another runner's key or a runner removed
+        meanwhile all answer 401 alike.
+
+        A runner that runs cloud sessions (`ostrom-runner machine` with a Docker Engine, on a server whose sessions
+        run on registered runners) sends a JSON body: the executions its machine has and the workspaces it holds.
+        The answer is what it must hold: the executions to run, each handed over once with its plan (the volumes
+        and containers to create, the last one holding the execution's runner token), and the workspaces to keep.
+        Anything else of its own, it stops and deletes. A runner that sends no body is given nothing; an unknown
+        state or a malformed session id answers 400. `sessions` is kept for older runners and stays empty.
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                executions:
+                  type: array
+                  description: The executions the machine has, and those it is creating.
+                  items:
+                    type: object
+                    properties:
+                      sessionId:
+                        type: string
+                        format: uuid
+                      epoch:
+                        type: integer
+                        format: int64
+                      state:
+                        type: string
+                        enum: [pending, running, ended]
+                    required: [sessionId, epoch, state]
+                workspaces:
+                  type: array
+                  description: The sessions whose workspace volumes the machine holds.
+                  items:
+                    type: string
+                    format: uuid
       responses:
         '200':
           description: OK
+          headers:
+            Cache-Control:
+              description: '`no-store`: a plan holds a runner token.'
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -7941,8 +8000,60 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/CloudSession'
+                  executions:
+                    type: array
+                    description: >-
+                      The executions to run. A plan comes once, when the execution is handed over to this runner;
+                      later answers name the execution without it.
+                    items:
+                      type: object
+                      properties:
+                        sessionId:
+                          type: string
+                          format: uuid
+                        epoch:
+                          type: integer
+                          format: int64
+                        plan:
+                          type: object
+                          description: >-
+                            The Docker Engine objects to create, in order: the session's volumes, then the
+                            execution's containers, each with its Engine API creation body.
+                          properties:
+                            volumes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  body:
+                                    type: object
+                                    additionalProperties: true
+                                required: [name, body]
+                            containers:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  body:
+                                    type: object
+                                    additionalProperties: true
+                                required: [name, body]
+                          required: [volumes, containers]
+                      required: [sessionId, epoch]
+                  workspaces:
+                    type: array
+                    description: The sessions whose workspace to keep.
+                    items:
+                      type: string
+                      format: uuid
                 required:
                 - sessions
+                - executions
+                - workspaces
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -9148,6 +9259,7 @@ paths:
                 credentialSecret:
                   type: string
                 sharedWith:
+                  description: 'Whom it is lent to: members by login, and groups as `group:<id>` (the id of a group of `/api/v1/groups`). Empty: the whole organization. Only groups named: their members who are not paused, no one else. A group of another organization, or a malformed id, is refused (400).'
                   type: array
                   items:
                     type: string
@@ -9197,6 +9309,7 @@ paths:
               type: object
               properties:
                 sharedWith:
+                  description: 'Whom it is lent to: members by login, and groups as `group:<id>` (the id of a group of `/api/v1/groups`). Empty: the whole organization. Only groups named: their members who are not paused, no one else. A group of another organization, or a malformed id, is refused (400).'
                   type: array
                   items:
                     type: string
@@ -9277,10 +9390,14 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listGroups
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Sharing groups
+      description: "Every member of the organization reads its groups (`accounts:read`): name, members by login (a member who
+        left is named by member id), the ids of the shared accounts lent to the group, and the members paused now.
+        At most 100 groups, by name; `next` is never set. A person outside the organization named by `Ostrom-Org`
+        gets 404."
       responses:
         '200':
           description: OK
@@ -9309,10 +9426,14 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Create a group
+      description: "An owner or an admin (`accounts:write`, browser session); a member gets 403. `name` is trimmed, 1 to 120
+        characters, unique in the organization whatever the case (409). `members` are logins of members of the
+        organization and `accounts` ids of its shared accounts, else 400. At most 1000 members per group and 100 groups
+        per organization (409)."
       requestBody:
         required: true
         content:
@@ -9354,10 +9475,11 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: A group
+      description: "Every member reads it. A group of another organization, a deleted one or an id that is no UUID is a 404."
       parameters:
       - name: id
         in: path
@@ -9383,10 +9505,13 @@ paths:
           $ref: '#/components/responses/Error'
     patch:
       operationId: updateGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Change a group
+      description: "An owner or an admin; a member gets 403. Each field given replaces the current one: `name` (409 when another
+        group has it), `accounts` (all the accounts lent, an empty list lends nothing). Members change through
+        `/members/{login}`. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9425,10 +9550,12 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Delete a group
+      description: "An owner or an admin; a member gets 403. Its members and the accounts lent to it go with it; the accounts
+        themselves stay. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9453,10 +9580,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: addGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Add a member to a group
+      description: "An owner or an admin; a member gets 403. `login` names a member of the organization (else 404). Adding a member
+        already in the group changes nothing, a pause included. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9483,10 +9612,12 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: removeGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Remove a member from a group
+      description: "An owner or an admin; a member gets 403. `login` is the member's login, or the member id the group shows for one
+        who left the organization. 404 when they are not in the group."
       parameters:
       - name: id
         in: path
@@ -9516,10 +9647,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: pauseGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Pause a member in a group
+      description: "An owner or an admin; a member gets 403. `until` is an ISO 8601 instant (else 400): the group lends nothing to
+        the member until then, and an instant already past ends the pause. 404 when they are not in the group."
       parameters:
       - name: id
         in: path
@@ -12481,10 +12614,21 @@ components:
         expiresAt:
           type: string
           format: date-time
+        requestedAt:
+          type: string
+          format: date-time
+          description: "When the CLI started the login, shown before the yes: with `requestedFrom`, an approval of
+            a code someone else sent shows"
+        requestedFrom:
+          type: string
+          description: "The network the login was started from, never the address: a /24 for IPv4
+            (`203.0.113.0/24`), a /48 for IPv6 (`2001:db8:abcd::/48`), shown before the yes. Absent when the server
+            could not tell"
       required:
       - userCode
       - clientName
       - expiresAt
+      - requestedAt
       x-ostrom-kotlin: pending
     DeviceCode:
       type: object
@@ -13013,6 +13157,19 @@ components:
           type: array
           items:
             type: string
+        paused:
+          type: array
+          description: The members paused now, by login, and the end of their pause
+          items:
+            type: object
+            properties:
+              login:
+                type: string
+              until:
+                type: string
+            required:
+            - login
+            - until
       required:
       - id
       - name
@@ -14402,10 +14559,30 @@ components:
           type: string
         publicKeyPem:
           type: string
+        rotation:
+          $ref: '#/components/schemas/KeyRotation'
       required:
       - kid
       - alg
       - publicKeyPem
+      x-ostrom-kotlin: pending
+    KeyRotation:
+      type: object
+      description: 'How a receipt key was handed over by the key it replaces. Absent on a key handed over by nobody (the
+        first key, or a key changed without its previous one). A reader that pinned the previous key trusts this one
+        only if `signature` verifies; it follows a chain of rotations key by key'
+      properties:
+        kid:
+          type: string
+          description: The id of the key this key replaces
+        signature:
+          type: string
+          description: 'The replaced key''s Ed25519 signature, in base64, over the UTF-8 text
+            `ostrom-receipt-key-rotation/v1\n` followed by the lowercase hex of this key''s 32 raw bytes (the end of its
+            SPKI DER)'
+      required:
+      - kid
+      - signature
       x-ostrom-kotlin: pending
     PushDevice:
       type: object
@@ -15249,6 +15426,7 @@ components:
         status:
           type: string
         sharedWith:
+          description: 'Whom it is lent to, sorted together: the logins of its members and `group:<id>` for each group it is lent to. Empty for the whole organization, and for a member who is neither an admin nor its owner.'
           type: array
           items:
             type: string
@@ -16228,6 +16406,13 @@ components:
           type: string
         version:
           type: integer
+        repos:
+          type: array
+          description: 'Repositories the workflow applies to, `owner/name` where `*` is any part of a name (1 to
+            100). Absent: every repository of the organization, as before. Present: these only, whether the workflow
+            is observed or enforced, in the session packages and the gates catalogue'
+          items:
+            type: string
         nodes:
           type: array
           items:
