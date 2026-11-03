@@ -59,6 +59,7 @@ GET /api/v1/cloud/runner/terminal
 GET /api/v1/cloud/sessions
 GET /api/v1/cloud/sessions/{}
 GET /api/v1/cloud/sessions/{}/terminal
+GET /api/v1/confirmations/{}
 GET /api/v1/decisions
 GET /api/v1/devices
 GET /api/v1/gates/approvers
@@ -168,6 +169,7 @@ POST /api/v1/cloud/sessions
 POST /api/v1/cloud/sessions/{}/pause
 POST /api/v1/cloud/sessions/{}/resume
 POST /api/v1/cloud/sessions/{}/terminal/ticket
+POST /api/v1/confirmations/{}/answer
 POST /api/v1/gates
 POST /api/v1/gates/{}/consume
 POST /api/v1/gates/{}/release
