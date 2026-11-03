@@ -2408,6 +2408,9 @@ paths:
       tags:
       - organization
       summary: "Invite people by e-mail; members and addresses already invited are left out of `invited`"
+      description: "Made with a person's API token (`orgs:write`, a personal token), the write is not applied: it
+        opens a governance confirmation (202) that an owner or an admin confirms on the console within 15 minutes, as
+        the rules' writes do. From the console it applies at once."
       parameters:
       - name: org
         in: path
@@ -2428,6 +2431,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrgInvited'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -2446,7 +2451,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/TooManyAttempts'
+          $ref: '#/components/responses/InvitationLimit'
   /api/v1/orgs/{org}/members/{login}:
     get:
       operationId: getOrgMember
@@ -2485,6 +2490,9 @@ paths:
       tags:
       - organization
       summary: "Change a member's role"
+      description: "Made with a person's API token (`orgs:write`, a personal token), the write is not applied: it
+        opens a governance confirmation (202) that an owner or an admin confirms on the console within 15 minutes, as
+        the rules' writes do. From the console it applies at once."
       parameters:
       - name: org
         in: path
@@ -2510,6 +2518,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrgMember'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -2525,12 +2535,17 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
     delete:
       operationId: removeOrgMember
       x-ostrom-status: served
       tags:
       - organization
       summary: "Remove a member"
+      description: "Made with a person's API token (`orgs:write`, a personal token), the write is not applied: it
+        opens a governance confirmation (202) that an owner or an admin confirms on the console within 15 minutes, as
+        the rules' writes do. From the console it applies at once."
       parameters:
       - name: org
         in: path
@@ -2546,6 +2561,8 @@ paths:
       responses:
         '204':
           description: "Removed"
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '401':
           $ref: '#/components/responses/Error'
         '403':
@@ -2559,6 +2576,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/orgs/{org}/invitations:
     get:
       operationId: listInvitations
@@ -2593,6 +2612,12 @@ paths:
       tags:
       - organization
       summary: "Create an invitation link: the answer is the only time its URL is shown"
+      description: "Made with a person's API token (`orgs:write`, a personal token), the write is not applied: it
+        opens a governance confirmation (202) that an owner or an admin confirms on the console within 15 minutes, as
+        the rules' writes do. From the console it applies at once. Confirmed, the URL is shown once, to the person who
+        asked, in the confirmation's `result` (`GET /confirmations/{id}`): their first read with a token returns
+        `{url, invitation}`; later reads, and any console session, get `{invitation, shown: true}`, without the URL. A
+        first answer lost on the way is not shown again: revoke the link and create another."
       parameters:
       - name: org
         in: path
@@ -2613,6 +2638,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvitationLink'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -2629,7 +2656,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/TooManyAttempts'
+          $ref: '#/components/responses/InvitationLimit'
   /api/v1/orgs/{org}/invitations/{id}:
     delete:
       operationId: revokeInvitation
@@ -10926,7 +10953,7 @@ components:
   responses:
     GovernanceConfirmationPending:
       description: |-
-        Not applied: made with a person's API token (the CLI's, `ostrom login --admin` or not), the governance write
+        Not applied: made with a person's API token (a personal token, the CLI's included), the governance write
         opened a confirmation, which an owner or an admin confirms on the console within 15 minutes
         (`getGovernanceConfirmation`). A browser session's write and an `inference:admin` service key's are applied at
         once, as before.
@@ -11021,10 +11048,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    InvitationLimit:
+      description: 'Not done: `rate_limited`, the organization sent too many invitations this hour; or, made with a
+        person''s API token, `confirmation_limit`, the person already has 10 governance confirmations waiting (the
+        key is `error.type`)'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
     TooManyAttempts:
       description: 'Too many attempts lately (`rate_limited`): nothing was done. A sign-in step, an organization''s
-        creations and invitations, a webhook trigger or a batch of usage events is limited per address, person,
-        organization or automation over a window; wait, then try again'
+        creations, a webhook trigger or a batch of usage events is limited per address, person, organization or
+        automation over a window; wait, then try again'
       content:
         application/json:
           schema:
@@ -13297,10 +13332,14 @@ components:
       - workflows.create
       - workflows.save
       - workflows.delete
+      - members.role
+      - members.remove
+      - members.invite
+      - members.link
       x-ostrom-kotlin: pending
     GovernanceConfirmation:
       type: object
-      description: 'A governance write made with a CLI token, held until an owner or an admin confirms it on the
+      description: 'A governance write made with a person''s API token, held until an owner or an admin confirms it on the
         console. `before` and `after` are what the change replaces and what it writes, as the read routes show them
         (JSON null for nothing: a creation has no `before`, a deletion no `after`)'
       properties:
@@ -13318,7 +13357,8 @@ components:
           description: The path of the write, such as `/api/v1/gates/policy`
         scope:
           type: string
-          description: The governance scope the write uses (`policy:write`, `harness:write`, `gates:policy`)
+          description: The governance scope the write uses (`policy:write`, `harness:write`, `gates:policy`,
+            `orgs:write`)
         summary:
           type: string
           description: One line saying what the change does
@@ -13350,7 +13390,11 @@ components:
           type: string
           format: date-time
         result:
-          description: What the write returned once confirmed (absent when it returns nothing, as a deletion)
+          description: "What the write returned once confirmed (absent when it returns nothing, as a deletion). A
+            secret in it is shown once, to the person who asked: for `members.link`, their first read with a token
+            returns `{url, invitation}`, then the result is `{invitation, shown: true}`. No console session reads the
+            `url`, the asker's included; a first answer lost on the way is not shown again (revoke the link and create
+            another)."
         error:
           description: Why a confirmed change was not written (`failed`)
           allOf:
@@ -13386,7 +13430,7 @@ components:
       x-ostrom-kotlin: pending
     GovernanceConfirmationPending:
       type: object
-      description: 'The 202 of a governance write made with a CLI token: nothing was written. An owner or an admin
+      description: 'The 202 of a governance write made with a person''s API token: nothing was written. An owner or an admin
         confirms it at `confirmUrl` before `expiresAt` (15 minutes); the CLI waits on `getGovernanceConfirmation`. The
         same change asked again by the same person while it waits answers the same confirmation'
       properties:
