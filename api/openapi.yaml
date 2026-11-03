@@ -13435,12 +13435,19 @@ components:
           $ref: '#/components/schemas/GovernanceConfirmationPerson'
         credential:
           type: string
-          description: 'The person''s token that asked: `admin` when it holds a governance scope (`ostrom login
-            --admin`), `device` otherwise (`ostrom login`, a personal token). An agent, a runner or a service key never
-            opens one'
+          description: 'The person''s token that asked: `api_token` for a personal token made in the console (Tokens),
+            whatever its scopes, named in `token`; otherwise `admin` when it holds a governance scope (`ostrom login
+            --admin`), `device` for the CLI''s token (`ostrom login`). An agent, a runner or a service key never opens
+            one. A client that does not know a value shows it as the server wrote it'
           enum:
           - admin
           - device
+          - api_token
+        token:
+          description: The personal token that asked, when `credential` is `api_token` (absent otherwise), as it was
+            named when it asked; its owner revokes it in Tokens (`revokeToken`)
+          allOf:
+          - $ref: '#/components/schemas/GovernanceConfirmationToken'
         createdAt:
           type: string
           format: date-time
@@ -13525,6 +13532,21 @@ components:
           type: string
       required:
       - memberId
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationToken:
+      type: object
+      description: A person's personal token, without its secret
+      properties:
+        id:
+          type: string
+          description: The token's id, as `listTokens` shows it
+        name:
+          type: string
+          maxLength: 100
+          description: The name its owner gave it (1 to 100 characters)
+      required:
+      - id
+      - name
       x-ostrom-kotlin: pending
     GovernanceConfirmationStatus:
       type: string
