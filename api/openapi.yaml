@@ -26,7 +26,13 @@ info:
     A route without `orgs/{orgId}` in its path acts in the caller''s organization. A person who is a member of several
     organizations names it with the `Ostrom-Org` header (the organization''s id); without it they get 409 with
     `error.type` `org_required`. With exactly one active membership the header may be left out. `getMe` and
-    `listMyOrganizations` never need it.'
+    `listMyOrganizations` never need it.
+
+    A resource of another organization, or of an organization the caller is not a member of, answers 404 exactly
+    like a resource that does not exist, never 403: no answer tells "exists elsewhere" from "does not exist". A 403
+    only refuses what the caller can already see in their own organization (a missing scope, a role, a token where a
+    browser session is needed). A costly read or a sign-in step may answer 429 `rate_limited`; a read throttled per
+    caller also sends `Retry-After`.'
 servers:
 - url: https://{host}
   variables:
@@ -299,7 +305,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/mobile/unlock:
     post:
       operationId: unlockMobileApp
@@ -337,7 +343,7 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/github/callback:
     get:
       operationId: githubLoginCallback
@@ -519,6 +525,8 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/device:
     get:
       operationId: getDeviceLogin
@@ -548,6 +556,8 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
     post:
       operationId: startDeviceLogin
       x-ostrom-status: served
@@ -579,7 +589,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/device/token:
     post:
       operationId: pollDeviceLogin
@@ -675,6 +685,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/token/refresh:
     post:
       operationId: refreshToken
@@ -774,6 +786,8 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/launches:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -1002,6 +1016,8 @@ paths:
         description: "1 to 200, 50 by default"
         schema:
           type: integer
+          minimum: 1
+          maximum: 200
       responses:
         '200':
           description: "OK"
@@ -1057,6 +1073,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/email/verify:
     post:
       operationId: verifySignInEmail
@@ -1153,6 +1171,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/logout:
     post:
       operationId: logout
@@ -1229,6 +1249,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/sessions:
     get:
       operationId: listAuthSessions
@@ -1791,6 +1813,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/spending:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -1823,6 +1847,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/github/app:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -2146,7 +2172,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/orgs/{org}:
     get:
       operationId: getOrg
@@ -2404,7 +2430,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/orgs/{org}/members/{login}:
     get:
       operationId: getOrgMember
@@ -2587,7 +2613,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/orgs/{org}/invitations/{id}:
     delete:
       operationId: revokeInvitation
@@ -2912,6 +2938,8 @@ paths:
         description: The page size, 1 to 100 (100 by default)
         schema:
           type: integer
+          minimum: 1
+          maximum: 100
       responses:
         '200':
           description: OK
@@ -2961,6 +2989,8 @@ paths:
         description: The page size, 1 to 100 (100 by default)
         schema:
           type: integer
+          minimum: 1
+          maximum: 100
       responses:
         '200':
           description: OK
@@ -3103,6 +3133,14 @@ paths:
         required: false
         schema:
           type: string
+      - name: limit
+        in: query
+        required: false
+        description: "The page size, 1 to 100 (50 by default); a value outside is brought into it"
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
       responses:
         '200':
           description: OK
@@ -3129,6 +3167,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/sessions/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -3161,6 +3201,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/sessions/{id}/alive:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -3487,7 +3529,8 @@ paths:
       description: |-
         With `wait`, a pending gate is waited on for its answer: the response comes as soon as the gate is no longer
         pending, or with it still pending when the wait ends; the caller then asks again. A gate that is not pending
-        answers at once, and so does another organization's gate or launch's (404, 403). The server caps the wait at
+        answers at once, and so does a gate of another organization (404, as if it did not exist) or of another launch
+        of the caller's organization (403). The server caps the wait at
         30 seconds and reads a value outside 0 to 30 as the nearest bound. A waiting request holds no database
         connection. A client sets its HTTP timeout above the wait.
       parameters:
@@ -3523,7 +3566,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/Throttled'
   /api/v1/gates/{id}/consume:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -3836,7 +3879,7 @@ paths:
         schema:
           type: integer
           minimum: 1
-          maximum: 200
+          maximum: 100
           default: 50
       responses:
         '200':
@@ -3864,6 +3907,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/approvals/queue:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4197,6 +4242,14 @@ paths:
         required: false
         schema:
           type: string
+      - name: limit
+        in: query
+        required: false
+        description: "The page size, 1 to 200 (50 by default); a value outside is brought into it"
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
       responses:
         '200':
           description: OK
@@ -4223,6 +4276,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/receipts/keys:
     get:
       operationId: listReceiptKeys
@@ -4281,6 +4336,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/receipts/{id}/verify:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4313,6 +4370,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/receipts/{id}/bundle:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -4847,6 +4906,8 @@ paths:
         description: "The page size, 1 to 1000 (1000 by default); a value outside is brought into it"
         schema:
           type: integer
+          minimum: 1
+          maximum: 1000
       responses:
         '200':
           description: OK
@@ -5878,7 +5939,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/waits:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -5909,6 +5970,21 @@ paths:
         required: false
         schema:
           type: string
+      - name: before
+        in: query
+        required: false
+        description: "The `next` of the previous page: the id of its last wait"
+        schema:
+          type: string
+          format: uuid
+      - name: limit
+        in: query
+        required: false
+        description: "The page size, 1 to 100 (50 by default); 400 outside"
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
       responses:
         '200':
           description: OK
@@ -7582,6 +7658,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/usage/live:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -10205,6 +10283,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Throttled'
   /api/v1/events:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -10906,6 +10986,27 @@ components:
           description: Seconds until a place frees up
           schema:
             type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Throttled:
+      description: 'Too many reads lately (`rate_limited`): nothing was read. A costly read is bounded per caller (a
+        person, a device, an agent or a service): calls per minute, reads and waits together, and calls at once, the
+        waits of `getGate` counted apart from the reads'
+      headers:
+        Retry-After:
+          description: Seconds to wait before reading again
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    TooManyAttempts:
+      description: 'Too many attempts lately (`rate_limited`): nothing was done. A sign-in step, an organization''s
+        creations and invitations, a webhook trigger or a batch of usage events is limited per address, person,
+        organization or automation over a window; wait, then try again'
       content:
         application/json:
           schema:
