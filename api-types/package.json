@@ -23,7 +23,7 @@
   },
   "scripts": {
     "build": "openapi-typescript ../api/openapi.yaml --output dist/index.d.ts --alphabetize --export-type",
-    "contract": "node scripts/contract-shapes.mjs ../api/openapi.yaml ../api/contract/shapes.json && node scripts/check-served.mjs ../api/openapi.yaml ../api/contract/served-routes.txt"
+    "contract": "node scripts/contract-shapes.mjs ../api/openapi.yaml ../api/contract/shapes.json && node scripts/check-served.mjs ../api/openapi.yaml ../api/contract/served-routes.txt && node scripts/check-limits.mjs ../api/openapi.yaml"
   },
   "devDependencies": {
     "openapi-typescript": "7.13.0",
