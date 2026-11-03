@@ -228,15 +228,26 @@ class Q {
         self.assertEqual(printed, "GET /api/v1/x\n")
 
 
+def executable(path):
+    """The line numbers of the code objects compiled from `path`, docstrings left out (they never run as a line)."""
+    code = compile(path.read_text(), str(path), "exec")
+    out, todo = set(), [code]
+    while todo:
+        c = todo.pop()
+        out |= {line for (_, _, line) in c.co_lines() if line}  # None: no line; 0: the RESUME of 3.11+
+        todo += [k for k in c.co_consts if isinstance(k, type(code))]
+    return out
+
+
 def main():
     tracer = trace.Trace(count=1, trace=0)
     result = tracer.runfunc(lambda: unittest.main(module=__name__, exit=False, argv=[sys.argv[0]]).result)
     if not result.wasSuccessful():
         return 1
-    # Newer Pythons also count events without a line (None): only line numbers are compared.
+    # Newer Pythons also count events without a line (None, or 0 for RESUME): only real lines are compared.
     ran = {line for (name, line) in tracer.results().counts
-           if line is not None and pathlib.Path(name).resolve() == SCRIPT}
-    lines = set(trace._find_executable_linenos(str(SCRIPT)))  # the module trace itself uses for --missing
+           if line and pathlib.Path(name).resolve() == SCRIPT}
+    lines = executable(SCRIPT)
     missing = sorted(lines - ran)
     if missing:
         print(f"served-routes.py: lines not run by the tests: {missing}", file=sys.stderr)
