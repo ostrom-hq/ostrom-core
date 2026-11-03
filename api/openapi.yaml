@@ -14446,6 +14446,64 @@ components:
       - resetsAt
       - exhausted
       x-ostrom-kotlin: pending
+    NodeCondition:
+      type: object
+      description: "What a `check` node decides in a server's run (planned: the server does not play check nodes yet).
+        It reads one value of a step the run visited before, never an expression: no language, no evaluation of code.
+        Only a `check` node has a condition; a `check` node without one is a session's check (its `run`), which a
+        server's run does not play: the run fails. The visit ends with the outcome `true` or `false` (no output), and
+        the run follows the edge whose `on` is that outcome; every edge out of a check node with a condition says
+        `on: \"true\"` or `on: \"false\"` (none defaults to `next`), and an outcome without its edge fails the run.
+        Values are compared as texts, exactly: a JSON string without its quotes, a number or a boolean as written in
+        the output (`1.0` is not `1`; the string `\"true\"` and the boolean `true` both read `true`), an object or
+        an array as its compact JSON text. No value: a step not visited, a visit without output, an output that is
+        not JSON or not of the segment's kind (an object for `.<key>`, an array for `[<index>]`), a missing key or
+        index, a JSON `null`. `exists` is false on no value; `equals`,
+        `notEquals` and `matches` do not evaluate on no value, nor on a text over 10 000 characters: the run fails,
+        with the reason, and never takes a branch by default. Checked when the workflow is saved: 400
+        `invalid_request` for a condition on a node that is not a `check`, a `step` that is not a node of the
+        workflow, a `path` out of its form, an unknown `op`, a `value` missing for `equals`, `notEquals` or `matches`
+        or present for `exists`, a `matches` pattern out of its syntax, or an edge out of the node whose `on` is not
+        `true` or `false`"
+      properties:
+        step:
+          type: string
+          maxLength: 200
+          description: The id of the node whose last visit the condition reads (`WorkflowNode.id`); it may be on a
+            branch the run did not take (no value then)
+        path:
+          type: string
+          maxLength: 200
+          description: "What it reads of that visit: `outcome`, `output`, or a value of the output read as JSON,
+            `output` followed by 1 to 10 segments, each `.<key>` (a member of an object: 1 to 64 characters among
+            letters, digits, `_` and `-`) or `[<index>]` (an element of an array, from 0, at most 4 digits), as in
+            `output.a.b[0].c`; 200 characters in all. A key with another character is not addressable. A `wait`
+            visit's output is its answer's values, a JSON object"
+        op:
+          $ref: '#/components/schemas/NodeConditionOp'
+        value:
+          type: string
+          maxLength: 200
+          description: "What `equals` and `notEquals` compare with, or the pattern of `matches`. Its syntax: literal
+            characters; `.`, any character but a newline; bracket classes `[…]`, where a first `^` negates, `-`
+            between two characters is a range and `]` closes (`\\]` inside); `*`, `+`, `?`; groups `( )`;
+            alternation `|` (an empty alternative or group matches the empty text); anchors `^` and `$`, of the whole
+            text, not of a line; `\\d`, `\\w`, `\\s`, and a backslash before any of `\\ . ^ $ | ? * + ( ) [ ] { }
+            - /` for the character itself. No backreference, no lookaround, no counted repetition (`{`). The server
+            matches it in linear time, without backtracking. Absent for `exists`"
+      required:
+      - step
+      - path
+      - op
+    NodeConditionOp:
+      type: string
+      description: "`equals` and `notEquals` compare the value with `value`; `exists` is true when the value is there;
+        `matches` is true when the pattern `value` matches a part of it (anchors to match it whole)"
+      enum:
+      - equals
+      - notEquals
+      - exists
+      - matches
     NodePosition:
       type: object
       description: Position of a node in the editor
@@ -17097,8 +17155,8 @@ components:
       - foundAt
     WorkflowEdge:
       type: object
-      description: An edge. For a run, [on] is the outcome that follows it (`next`, `delivered`, a wait action id); [to] null
-        ends
+      description: An edge. For a run, [on] is the outcome that follows it (`next`, `delivered`, a wait action id, `true`
+        or `false` out of a check node with a condition, which has no default); [to] null ends
       properties:
         from:
           type: string
@@ -17174,12 +17232,19 @@ components:
           $ref: '#/components/schemas/WaitSpec'
         workflowId:
           type: string
+          description: "The workflow a `workflow` node runs: a child run of another accepted workflow of the
+            organization, with `arguments` as its inputs. A run never calls a workflow already running above it, and
+            runs nest at most 5 deep: the visit fails then, and the run ends `failed`, with the reason in `failure`
+            (no HTTP error: the call is checked when the run reaches it, since the called workflow may change after
+            it is saved)"
         arguments:
           type: object
           additionalProperties:
             type: string
         maxVisits:
           type: integer
+        condition:
+          $ref: '#/components/schemas/NodeCondition'
       required:
       - id
       - kind
