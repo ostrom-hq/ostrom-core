@@ -2175,8 +2175,9 @@ paths:
       x-ostrom-status: served
       tags:
       - organization
-      summary: "Change an organization's name or time zone (scope `orgs:write`). The role is checked before the body: a
-        member who is not an owner or an admin gets 403 whatever they send"
+      summary: "Change an organization's name or time zone (scope `orgs:write`)"
+      description: "The role is checked before the body: a member who is not an owner or an admin gets 403 whatever they
+        send. A field left out stays as it is, so an empty body changes nothing"
       parameters:
       - name: org
         in: path
@@ -2210,9 +2211,9 @@ paths:
       x-ostrom-status: served
       tags:
       - organization
-      summary: "Delete an organization: its short name typed again in the body; a browser session only, never a token.
-        It is kept 30 days, then erased; its short name stays taken until then. Recorded once in the audit log, only
-        when the deletion happens"
+      summary: "Delete an organization: its short name typed again in the body; a browser session only, never a token"
+      description: "The organization is kept 30 days, then erased; its short name stays taken until it is erased. A
+        second deletion changes nothing"
       parameters:
       - name: org
         in: path
@@ -14114,9 +14115,10 @@ components:
           type: string
         slug:
           type: string
-          description: Derived from the name when absent. Short names are one space for everybody, as on GitHub; one
-            already taken answers 409 `conflict`, whether a live organization holds it or a deleted one in its 30 days
-            of grace (kept so that it can be restored, and freed when the organization is erased)
+          description: Derived from the name when absent; otherwise 2 to 39 lower case letters, digits and single
+            dashes (400 if not). Short names are one space for everybody, as on GitHub; one already taken answers 409
+            `conflict`, whether a live organization holds it or a deleted one during the 30 days it is kept (freed
+            when the organization is erased)
       required:
       - name
       x-ostrom-kotlin: pending
@@ -14216,13 +14218,14 @@ components:
       properties:
         name:
           type: string
-          description: The new name
+          description: The new name; a blank one is refused with 400
         timeZone:
           type: string
           description: The new IANA time zone, such as `Europe/Paris`; an unknown one is refused with 400
         slug:
           type: string
-          description: The short name, accepted only unchanged (it never changes); another one is refused with 400
+          description: The short name, accepted only exactly as it is (it never changes); any other value is refused
+            with 400
       x-ostrom-kotlin: pending
     OrgTransfer:
       type: object
