@@ -804,6 +804,30 @@ paths:
           $ref: '#/components/responses/Error'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /api/v1/launches/{launchId}:
+    delete:
+      operationId: endLaunch
+      x-ostrom-status: served
+      description: "The launch's own agent token only (AUDIT-SECU-RUNNER-2 R2b): `ostrom <agent>` calls it when the agent
+        ends, and the token is revoked at once instead of living until `expiresAt`. Any other credential, another
+        launch's agent token included, gets 404, the same answer as an unknown launch. Once ended, the token is refused
+        with 401 everywhere, this operation included."
+      tags:
+      - auth
+      summary: End a launch, revoking its agent token
+      parameters:
+      - name: launchId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
   /api/v1/policy/agents:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
