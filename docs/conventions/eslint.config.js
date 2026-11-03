@@ -21,7 +21,7 @@ export default tseslint.config(
                 tsconfigRootDir: import.meta.dirname,
             },
         },
-        // As controlresell-app: no eslint-disable comment can silence a rule. An exception goes here, with its reason.
+        // As in prod-app: no eslint-disable comment can silence a rule. An exception goes here, with its reason.
         linterOptions: {
             noInlineConfig: true,
             reportUnusedDisableDirectives: "error",

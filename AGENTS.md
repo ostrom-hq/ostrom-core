@@ -2,8 +2,8 @@
 
 This is the shared Kotlin Multiplatform library: API contract (DTOs, typed resources, error keys), typed client, canonical JSON, signed receipts, workflow model. Apache-2.0. Targets macosArm64, linuxX64, linuxArm64, mingwX64 (+ jvm for tests only).
 
-**The conventions are in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).** They follow Nathan Fallet's practices (teamcode, asonar, pkg, the ControlResell
-backend) and bind every contributor, human or agent. This file only summarizes the most important rules; when in
+**The conventions are in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).** They follow Nathan Fallet's practices (teamcode, asonar,
+pkg) and bind every contributor, human or agent. This file only summarizes the most important rules; when in
 doubt, the conventions file wins, and it can be updated: re-read it before each pull request.
 
 All repository content (code, comments, docs, commits, pull requests) is in English.

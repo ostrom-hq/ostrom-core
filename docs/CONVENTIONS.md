@@ -16,8 +16,8 @@ Read this file before every pull request: it grows. Each rule cites where it com
 | `bench` | `nathanfallet/kotlin-bench-native-vs-jvm` | His measurements of where Kotlin/Native is slow |
 | `flareon` | `nathanfallet/flareon` | `cryptography-kotlin` with OpenSSL on native, detekt |
 | `kaccelero` | `nathanfallet/kaccelero` | His older KMP framework (`I`-prefixed interfaces: superseded, see below) |
-| `cr-backend`, `cr-app` | ControlResell backend and app | The same practices applied in production; the `kotlin-bp` and `react-bp` review checklists |
-| `ENG-0xx`, `INF-0xx` | ControlResell engineering rules | Rules Nathan set after real incidents; only the generic ones are reused here |
+| `prod-backend`, `prod-app` | The maintainers' production backend and app (private) | The same practices applied in production; the `kotlin-bp` and `react-bp` review checklists |
+| `ENG-0xx`, `INF-0xx` | The maintainers' engineering rules (private) | Rules Nathan set after real incidents; only the generic ones are reused here |
 
 Templates ready to copy are in [`docs/conventions/`](conventions/). Repository text, code, comments, commits and
 pull requests are in **English** (`teamcode:AGENTS.md`).
@@ -137,7 +137,7 @@ val domainModule: Module = module {
   `get()`/`inject()` themselves: constructor injection only.
 - Routes receive their use cases through a `XxxRoutesDependencies` data class resolved once at startup
   (section 1.6). **No `koin-ktor` plugin** (`install(Koin)`): it opens a Koin scope per call that a cancelled call
-  (SSE, WebSocket, streamed run) never closes, which leaked calls in ControlResell (`INF-074`). `app` builds the Koin
+  (SSE, WebSocket, streamed run) never closes, which leaked calls in production (`INF-074`). `app` builds the Koin
   application itself and hands each route its dependencies:
 
 ```kotlin
@@ -526,7 +526,7 @@ literally in the test, not recomputed with the code under test (`ENG-047`).
 
 ## 8. Lint and style
 
-- **detekt** is Nathan's Kotlin linter (`flareon:detekt.yml`; the whole ControlResell fleet, `ENG-029`/`ENG-043`),
+- **detekt** is Nathan's Kotlin linter (`flareon:detekt.yml`; his other Kotlin projects, `ENG-029`/`ENG-043`),
   version **1.23.8**, `buildUponDefaultConfig = true`, overrides in
   [`config/detekt/detekt.yml`](conventions/config/detekt/detekt.yml), `maxIssues: 0`. Ostrom starts with no baseline:
   every finding fails the build.
@@ -744,7 +744,7 @@ never presented as implemented (`teamcode:AGENTS.md`).
 
 ## 13. TypeScript
 
-Lyes's requirement: "hyper well typed, hard architecture". The base is ControlResell's app (`cr-app`, `react-bp`),
+Lyes's requirement: "hyper well typed, hard architecture". The base is the maintainers' app (`prod-app`, `react-bp`),
 made stricter.
 
 ### 13.1 Compiler
@@ -761,7 +761,7 @@ used for type-aware linting yet. Re-evaluate when `typescript-eslint` supports 7
 
 [`eslint.config.js`](conventions/eslint.config.js): ESLint 10 flat config, `typescript-eslint` **`strictTypeChecked`**
 and `stylisticTypeChecked` with the project service, `react-hooks` recommended, and `linterOptions.noInlineConfig: true`
-(as `cr-app`: no `eslint-disable` comment can silence a rule). Forbidden: `any` (explicit or implicit), non-null `!`,
+(as `prod-app`: no `eslint-disable` comment can silence a rule). Forbidden: `any` (explicit or implicit), non-null `!`,
 `@ts-ignore`/`@ts-expect-error`/`@ts-nocheck`, floating promises, `as` assertions except `as const` (a justified
 exception goes in the config with its reason, not inline).
 
@@ -778,7 +778,7 @@ and the app import them; they never declare an API entity type or schema by hand
 derived from a generated type (`Pick`, a mapper to a screen model) is fine. A missing type is added to `ostrom-core`
 first.
 
-### 13.5 Architecture (`cr-app`, `react-bp`)
+### 13.5 Architecture (`prod-app`, `react-bp`)
 
 - Layers: `repositories/` (HTTP, `XxxRepository` interface + `XxxRepositoryImpl`, Zod parse of every response),
   `query/` (React Query hooks for server state), `stores/` (Zustand for client state only), `hooks/` (custom hooks
@@ -787,7 +787,7 @@ first.
 - Server state lives in React Query, never copied into Zustand.
 - Files: `PascalCase.tsx` for components, `camelCase.ts` for hooks and utilities; never kebab-case for components.
 - All text through i18n keys (`t("screens.gates.title")`), French and English.
-- Web and mobile share `packages/` code like `cr-app` (`packages/common`), and a feature ships on both unless written
+- Web and mobile share `packages/` code like `prod-app` (`packages/common`), and a feature ships on both unless written
   otherwise.
 
 ### 13.6 Tests
@@ -832,7 +832,7 @@ Each item is something his code avoids or his reviews refused.
 - **MockK, Logback, Exposed, JDBC or Netty in Kotlin/Native code**: JVM-only libraries.
 - **A shared status or changelog file every PR edits** (`teamcode:AGENTS.md`).
 - **Kill a process, stop a Gradle daemon, or delete a worktree he did not start** (`teamcode:AGENTS.md`).
-- **`any`, `as` casts, `!`, `@ts-ignore`, `eslint-disable`** in TypeScript (`react-bp`, `cr-app:eslint.config.mjs`).
+- **`any`, `as` casts, `!`, `@ts-ignore`, `eslint-disable`** in TypeScript (`react-bp`, `prod-app:eslint.config.mjs`).
 - **Present something planned as implemented**, in a README, a doc page or a CLI help text (`teamcode:AGENTS.md`).
 
 ---
