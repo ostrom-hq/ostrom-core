@@ -35,6 +35,8 @@ import kotlinx.serialization.Serializable
  * @property costUsd Inference cost.
  * @property exitCode Exit code of the launcher.
  * @property runId Workflow run the session belongs to, when a run started it.
+ * @property ended True once ended (the answer to a sign of life).
+ * @property lost True when closed for lack of a sign of life: its launcher reopens a segment.
  */
 @Serializable
 public data class Session(
@@ -65,6 +67,8 @@ public data class Session(
     val costUsd: Double? = null,
     val exitCode: Int? = null,
     val runId: String? = null,
+    val ended: Boolean? = null,
+    val lost: Boolean? = null,
 )
 
 /**
@@ -139,9 +143,11 @@ public data class EndSessionRequest(
  *
  * @property session The session.
  * @property receipt Its receipt, once signed.
+ * @property reopened For `reopenSession`: false when the segment was already open.
  */
 @Serializable
 public data class SessionResponse(
     val session: Session,
     val receipt: Receipt? = null,
+    val reopened: Boolean? = null,
 )
