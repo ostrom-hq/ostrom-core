@@ -2309,7 +2309,7 @@ paths:
       x-ostrom-status: served
       tags:
       - organization
-      summary: "The members (scope `orgs:read`)"
+      summary: "The members (scope `orgs:read`), oldest first, a page at a time"
       parameters:
       - name: org
         in: path
@@ -2317,6 +2317,22 @@ paths:
         description: "The organization's id or short name"
         schema:
           type: string
+      - name: limit
+        in: query
+        required: false
+        description: "The most members of the page. Without it, up to 1000: the whole team of every organization today"
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 1000
+      - name: after
+        in: query
+        required: false
+        description: "The `next` of the previous page: the members who joined after this one"
+        schema:
+          type: string
+          format: uuid
       responses:
         '200':
           description: "OK"
@@ -2324,6 +2340,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrgMemberList'
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
         '403':
@@ -14405,6 +14423,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrgMember'
+        next:
+          type: string
+          description: "The `after` of the next page; absent when no member follows"
       required:
       - items
       x-ostrom-kotlin: pending
