@@ -259,8 +259,9 @@ paths:
       - auth
       summary: Exchange the one-time code of the mobile sign-in (PKCE) for a token
       description: "The code works once (a wrong verifier spends it), for 60 s, with the exact `redirectUri` of the start.
-        The token (`osm_…`, 30 days) answers a gate only within 5 minutes of `unlockMobileApp`. A person keeps 5 phones:
-        a sixth sign-in revokes the oldest app token."
+        The token (`osm_…`, 30 days) answers a gate only within 5 minutes of `unlockMobileApp` (planned: a yes to a
+        high-risk action, with an unlock bound to that approval, see `unlockMobileApp.requestId`). A person keeps 5
+        phones: a sixth sign-in revokes the oldest app token."
       security: []
       requestBody:
         required: true
@@ -312,7 +313,8 @@ paths:
       x-ostrom-status: served
       tags:
       - auth
-      summary: "Record the phone's biometric unlock: the app's token answers a gate for 5 minutes after it (S2-54)"
+      summary: "Record the phone's biometric unlock: the app's token answers a gate for 5 minutes after it (S2-54);
+        planned: a yes to a high-risk action takes an unlock bound to its request (`requestId`)"
       description: "The app's token only (403 for a browser session or another token, or a wrong key)."
       requestBody:
         required: true
@@ -323,6 +325,21 @@ paths:
               properties:
                 unlockKey:
                   type: string
+                requestId:
+                  type: string
+                  x-ostrom-status: planned
+                  description: "The approval this unlock is for: the `id` of the `Approval`, as in the path of
+                    `answerApproval`. A yes from the app to a high-risk action is taken only with an unlock bound to
+                    its own approval, less than 60 seconds old, and only once; otherwise 403 `step_up_required` with
+                    `error.requestBound` true. High risk is every action whose `risk` is not `low`, an approval
+                    without an `action` included (no yes is low today: the server measures no risk). The first yes
+                    sent after the unlock uses it, whatever its outcome (a 409, another 403 or a 5xx included): a yes
+                    sent again unlocks again. A token holds one binding: a new unlock replaces the last one, so an
+                    app unlocks just before each yes. Every unlock, bound or not, also opens the 5-minute window,
+                    which a low-risk yes and every no are given with. The server does not check the id: one that
+                    names no approval the caller may answer serves no yes. The binding limits one unlock to one yes;
+                    it does not prove to the server a biometric per unlock (the `unlockKey` stays the app's). Planned:
+                    the server does not read it yet"
               required:
               - unlockKey
       responses:
@@ -4085,7 +4102,9 @@ paths:
         approver exists; 403 github_link_required when the gate's policy is never-self-approve, the pull request's author
         linked no Ostrom person and the answerer linked no GitHub account (the gate waits, Q-GATES-G1); 403
         step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
-        app not unlocked in the last 5 minutes (`unlockMobileApp`); the 200 is the `ApprovalView` of the answered approval,
+        app not unlocked in the last 5 minutes (`unlockMobileApp`), or (planned) from the phone app, to a high-risk
+        action, without an unlock bound to this request less than 60 seconds old and not used yet
+        (`unlockMobileApp.requestId`, `error.requestBound` true); the 200 is the `ApprovalView` of the answered approval,
         with its signed `receipt`, a no's included
       parameters:
       - name: id
@@ -11423,7 +11442,8 @@ components:
           type: boolean
           description: "Whether the person may answer: their role, being an approver, not their own gate. It does not
             wait for a fresh sign-in or the phone's unlock: a locked app reads `true`, and its yes is refused at the
-            answer with 403 `step_up_required` until `unlockMobileApp`"
+            answer with 403 `step_up_required` until `unlockMobileApp` (planned: for a high-risk yes, an unlock
+            bound to this approval, `unlockMobileApp.requestId`)"
         reason:
           type: string
         selfApproval:
@@ -16306,7 +16326,8 @@ components:
         a service key, a sign-in link, an invitation, a role, a member removed, a transfer, a secret, an MCP server,
         its assignments, policies and settings, the model keys), need a sign-in less than 5
         minutes old (a sign-in of unknown age is refused too); sign in again, then send it again. A no never needs it,
-        and an API token is never asked: it has no sign-in to renew'
+        and an API token is never asked: it has no sign-in to renew. Planned: a yes from the phone app to a high-risk
+        action also needs an unlock bound to its approval (`unlockMobileApp.requestId`, `error.requestBound`)'
       properties:
         error:
           type: object
@@ -16317,6 +16338,15 @@ components:
               enum: [step_up_required]
             message:
               type: string
+            requestBound:
+              type: boolean
+              x-ostrom-status: planned
+              description: "True when the refused yes came from the phone app, unlocked in the last 5 minutes, to
+                a high-risk action, without an unlock bound to this very approval (`unlockMobileApp.requestId`) less
+                than 60 seconds old and not used yet: its unlock is older, was used, or names another approval. The
+                app unlocks again for this approval, then sends the yes again. Absent when the app was not unlocked
+                in the last 5 minutes (that refusal comes first) and for every other refusal. Planned: the server
+                does not send it yet"
           required:
           - type
           - message
