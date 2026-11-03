@@ -15132,7 +15132,7 @@ components:
           x-ostrom-status: planned
           description: "The session segment the receipt belongs to, as the server names it, inside the signed body.
             Omitted (never null) when the receipt has none. For a session's own receipt it is the segment `subject.id`
-            names, and a verifier refuses a receipt where the two differ. Planned"
+            names, the same id. Planned"
         subject:
           $ref: '#/components/schemas/ReceiptSubject'
         initiator:
