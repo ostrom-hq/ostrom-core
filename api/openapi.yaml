@@ -1490,9 +1490,10 @@ paths:
       tags:
       - auth
       summary: Sign a workstation out
-      description: "A browser session only. Revokes one of the caller's CLI tokens, or one of their own tokens of
-        `ostrom login --admin` when `Ostrom-Org` names the organization it is bound to, audited there. Someone else's
-        token, a token of another organization, a personal token or a service key: 404."
+      description: "A browser session only. Revokes one of the caller's CLI tokens, or a token of `ostrom login --admin`
+        of the organization `Ostrom-Org` names: a member their own, an owner or an admin any member's (a leaked token, a
+        member who left). Audited in that organization, naming the actor and the token's owner. Another member's for a
+        member, a token of another organization, a personal token or a service key: 404."
       parameters:
       - name: id
         in: path
