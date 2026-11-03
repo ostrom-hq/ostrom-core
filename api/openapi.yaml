@@ -3943,9 +3943,9 @@ paths:
 
         With `wait`, a pending confirmation is waited on for its answer: the response comes as soon as it is no longer
         pending, or with it still pending when the wait ends; the caller then asks again until `expiresAt`. A
-        confirmation that is not pending answers at once. The server caps the wait at 30 seconds and reads a value
-        outside 0 to 30 as the nearest bound. A waiting request holds no database connection. A client sets its HTTP
-        timeout above the wait.
+        confirmation that is not pending answers at once. The wait is 0 to 30 seconds (a server given a value outside
+        that range waits for the nearest bound; a client sends one within it). A waiting request holds no database
+        connection. A client sets its HTTP timeout above the wait.
       parameters:
       - name: id
         in: path
@@ -3996,8 +3996,10 @@ paths:
         the person who confirms (the requester is kept in the confirmation and the audit log). When what it changes is
         no longer what it showed as `before`, nothing is written and the confirmation closes as `failed` with 409
         `confirmation_stale`. When the write itself is refused (a version conflict, a rule deleted meanwhile), the
-        confirmation closes as `failed` with that error, and the answer is that error. Each step (created, confirmed,
-        refused, expired, failed) is an event of the organization's signed audit log.
+        confirmation closes as `failed` with that error, and the answer is that error. When it fails for a reason the
+        server does not show, the answer is 500 `internal_error` and the confirmation closes as `failed` with
+        `internal_error`. Each step (created, confirmed, refused, expired, failed) is an event of the organization's
+        signed audit log.
       parameters:
       - name: id
         in: path
@@ -12926,8 +12928,9 @@ components:
       x-ostrom-kotlin: pending
     GovernanceConfirmationStatus:
       type: string
-      description: 'pending until answered; confirmed (applied), refused, expired (15 minutes without an answer), or
-        failed (confirmed, but the write was refused: see `error`)'
+      description: 'pending until answered; confirmed, refused, expired (15 minutes without an answer), or failed
+        (confirmed, but the write was refused: see `error`). The confirmation is closed before the write is made: a
+        server stopped between the two leaves it confirmed without the write, and the change is then asked again'
       enum:
       - pending
       - confirmed
