@@ -6941,21 +6941,21 @@ paths:
             application/json:
               schema: {}
         '400':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AnthropicInferenceError'
         '401':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AnthropicInferenceError'
         '403':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AnthropicInferenceError'
         '404':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AnthropicInferenceError'
         '409':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AnthropicInferenceError'
         '429':
           $ref: '#/components/responses/InferenceRefused'
         '502':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AnthropicInferenceError'
         '503':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AnthropicInferenceError'
   /api/v1/inference/v1/responses:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6977,21 +6977,21 @@ paths:
             application/json:
               schema: {}
         '400':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '401':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '403':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '404':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '409':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '429':
           $ref: '#/components/responses/InferenceRefused'
         '502':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '503':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
   /api/v1/inference/v1/chat/completions:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -7013,21 +7013,21 @@ paths:
             application/json:
               schema: {}
         '400':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '401':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '403':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '404':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '409':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '429':
           $ref: '#/components/responses/InferenceRefused'
         '502':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '503':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
   /api/v1/inference/v1/models:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -7045,6 +7045,10 @@ paths:
               schema:
                 type: object
                 properties:
+                  object:
+                    type: string
+                    enum:
+                    - list
                   data:
                     type: array
                     items:
@@ -7053,15 +7057,15 @@ paths:
                 required:
                 - data
         '400':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '401':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '403':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '404':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
         '409':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/OpenAiInferenceError'
   /api/v1/inference/settings:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -10819,6 +10823,24 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    AnthropicInferenceError:
+      description: "An error of the Messages endpoint: in Anthropic's shape from the gateway, `ApiError` from the server
+        around it"
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: '#/components/schemas/AnthropicError'
+            - $ref: '#/components/schemas/ApiError'
+    OpenAiInferenceError:
+      description: "An error of an OpenAI-compatible endpoint: in OpenAI's shape from the gateway, `ApiError` from the
+        server around it"
+      content:
+        application/json:
+          schema:
+            anyOf:
+            - $ref: '#/components/schemas/OpenAiError'
+            - $ref: '#/components/schemas/ApiError'
     InferenceRefused:
       description: "Too many requests, in the provider's own error shape, which satisfies `ApiError` (`error.type`,
         `error.message`). Refused by the budgets before any provider is called: `error.type` `rate_limit_error` on the
@@ -10847,7 +10869,9 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiError'
+            anyOf:
+            - $ref: '#/components/schemas/AnthropicError'
+            - $ref: '#/components/schemas/OpenAiError'
     RateLimited:
       description: 'Too many requests lately (`rate_limited`): nothing was done. A launch is limited per person in an
         organization and per organization, over a sliding hour'
@@ -11031,6 +11055,29 @@ components:
       required:
       - answer
       - shownDigest
+    AnthropicError:
+      type: object
+      description: "An error in Anthropic's shape, as the Messages endpoint of the gateway answers it"
+      properties:
+        type:
+          type: string
+          enum:
+          - error
+        error:
+          type: object
+          properties:
+            type:
+              type: string
+              description: Anthropic's error type (`authentication_error`, `permission_error`, `rate_limit_error`…)
+            message:
+              type: string
+          required:
+          - type
+          - message
+      required:
+      - type
+      - error
+      x-ostrom-kotlin: pending
     ApiError:
       type: object
       description: The error body of every refusal
@@ -13981,6 +14028,33 @@ components:
       required:
       - email
       - verified
+      x-ostrom-kotlin: pending
+    OpenAiError:
+      type: object
+      description: "An error in OpenAI's shape, as the OpenAI-compatible endpoints of the gateway answer it"
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            type:
+              type: string
+              description: OpenAI's error type (`invalid_request_error`, `insufficient_quota`…)
+            code:
+              type:
+              - string
+              - 'null'
+              description: The gateway's refusal, in lower case (`budget_exhausted`, `no_capacity`…)
+            param:
+              type:
+              - string
+              - 'null'
+          required:
+          - message
+          - type
+      required:
+      - error
       x-ostrom-kotlin: pending
     StepUpOrForbidden:
       description: 'A 403 of a write that may need a fresh sign-in: `step_up_required` (sign in again, then send
