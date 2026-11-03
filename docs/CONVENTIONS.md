@@ -17,7 +17,6 @@ Read this file before every pull request: it grows. Each rule cites where it com
 | `flareon` | `nathanfallet/flareon` | `cryptography-kotlin` with OpenSSL on native, detekt |
 | `kaccelero` | `nathanfallet/kaccelero` | His older KMP framework (`I`-prefixed interfaces: superseded, see below) |
 | `prod-backend`, `prod-app` | The maintainers' production backend and app (private) | The same practices applied in production; the `kotlin-bp` and `react-bp` review checklists |
-| `ENG-0xx`, `INF-0xx` | The maintainers' engineering rules (private) | Rules Nathan set after real incidents; only the generic ones are reused here |
 
 Templates ready to copy are in [`docs/conventions/`](conventions/). Repository text, code, comments, commits and
 pull requests are in **English** (`teamcode:AGENTS.md`).
@@ -97,7 +96,7 @@ One interface per file, its `Impl` in the next file, grouped by feature folder: 
 - **Business rules live in use cases and services, never in HTTP routes or CLI commands** (`teamcode:AGENTS.md`).
   A route parses, calls one use case, maps the result. A CLI command parses arguments, calls the client or a use case,
   prints.
-- A use case that can refuse returns the reason, not `null` that a route turns into a 500 (`ENG-007`): a sealed
+- A use case that can refuse returns the reason, not `null` that a route turns into a 500: a sealed
   result or a domain exception (section 3).
 
 ### 1.4 Repositories are interfaces in the domain
@@ -137,7 +136,7 @@ val domainModule: Module = module {
   `get()`/`inject()` themselves: constructor injection only.
 - Routes receive their use cases through a `XxxRoutesDependencies` data class resolved once at startup
   (section 1.6). **No `koin-ktor` plugin** (`install(Koin)`): it opens a Koin scope per call that a cancelled call
-  (SSE, WebSocket, streamed run) never closes, which leaked calls in production (`INF-074`). `app` builds the Koin
+  (SSE, WebSocket, streamed run) never closes, which leaked calls in production. `app` builds the Koin
   application itself and hands each route its dependencies:
 
 ```kotlin
@@ -193,7 +192,7 @@ fun Route.gatesRoutes(dependencies: GatesRoutesDependencies) = with(dependencies
   (`asonar:presentation/mappers/`).
 - **Every route declares who may call it, and a test proves it**: without a token → 401 (except the unauthenticated routes listed in `ostrom-server`'s `docs/security.md`,
   section 16.2, each tested as such); another organization's resource → 404,
-  exactly like an unknown id; a list returns only the caller's rows (`ENG-054`). Identity comes from the credential,
+  exactly like an unknown id; a list returns only the caller's rows. Identity comes from the credential,
   never from a caller-controlled header (`teamcode:docs/architecture.md`).
 
 ### 1.7 `expect`/`actual` at the platform boundary only
@@ -305,7 +304,7 @@ A test throws a **subclass** of the base and asserts its status and key (`ostrom
 domainErrorSubclassKeepsItsKindAndMessage`), and another throws an unexpected exception and asserts a 500 that does not
 echo its message.
 
-### 3.2 The status names the refusal (`ENG-007`)
+### 3.2 The status names the refusal
 
 | Refusal | Status |
 | --- | --- |
@@ -337,7 +336,7 @@ under `--debug`. Errors that the user can fix say how (`teamcode:cli/CliErrors.k
 
 ### 4.1 Never swallow `CancellationException` — blocking in review
 
-Rule `INF-019` and `kotlin-bp`. Any broad catch (`Exception`, `Throwable`, `_` of a broad type) reachable from a
+Rule `kotlin-bp`. Any broad catch (`Exception`, `Throwable`, `_` of a broad type) reachable from a
 coroutine rethrows `CancellationException` **first**:
 
 ```kotlin
@@ -392,12 +391,12 @@ Cleanup that must run when the caller is cancelled (kill a child process, close 
 - `kotlinx.serialization` everywhere; one shared `Json` instance per repository, configured once
   (`worker-tutorial:Serialization.kt`, `teamcode:api/Serialization.kt`), injected or referenced — never a
   `Json { }` built per call.
-- **`ostrom-core` owns the contract** (`ENG-001`): DTOs, resources, error keys, events. A consumer (server, CLI, web,
+- **`ostrom-core` owns the contract**: DTOs, resources, error keys, events. A consumer (server, CLI, web,
   app) never redeclares a `@Serializable` contract or a hand-built request body; it depends on the published package.
   TypeScript types are **generated** from it (section 13.4).
 - **Every subclass of a `@Serializable` sealed hierarchy has an explicit, stable `@SerialName`** — blocking in review
   (`kotlin-bp`). Without it the discriminator is the fully qualified class name: moving the class changes the JSON.
-- **Evolve without breaking the other side** (`ENG-009`): add a field only as optional (`val x: T? = null`); remove a
+- **Evolve without breaking the other side**: add a field only as optional (`val x: T? = null`); remove a
   field only once it is optional on both sides and every deployed client has that version; rename = add new + remove
   old with that protocol. A shared enum has an `UNKNOWN` fallback when clients may lag.
 - Byte-exact formats (canonical JSON, receipts, packages) are covered by **golden vectors** checked into the repository
@@ -416,7 +415,7 @@ Cleanup that must run when the caller is cancelled (kill a child process, close 
 - **Never log credentials, tokens, prompts, response bodies, or raw provider errors** (`teamcode:AGENTS.md`). Identifiers
   (organization, user, run) are not metric labels.
 - A guard that refuses or skips is **counted** (a counter with a bounded `reason` attribute) rather than logged at each
-  hit (`ENG-003`), once metrics exist; until then one `debug` line, never an `info` per request.
+  hit, once metrics exist; until then one `debug` line, never an `info` per request.
 
 ### 6.2 Configuration
 
@@ -441,7 +440,7 @@ data class ServerConfig(val port: Int, val databaseUrl: String, val publicUrl: S
 ```
 
 - Variables are prefixed `OSTROM_`. A missing required value fails at startup with a clear message, never later.
-- **No business behaviour behind a configuration switch** (`ENG-050`): a variable configures infrastructure (port,
+- **No business behaviour behind a configuration switch**: a variable configures infrastructure (port,
   URLs, pool size), it never turns a product feature on or off. The `ee/` features are enabled by the license key, by
   code, not by an environment flag.
 - Secrets come from the environment or a file path given in the environment; never from the repository, never logged,
@@ -458,7 +457,7 @@ data class ServerConfig(val port: Int, val databaseUrl: String, val publicUrl: S
 - **Coverage 100 % of lines and branches** of the added code, enforced by CI (Kover `koverVerify` for Kotlin; Vitest/Jest
   thresholds for TypeScript). An exclusion needs a one-line justification next to it, reviewed.
 - **TDD**: the red test first, for every behaviour ported from the prototype (`~/git/ostrom/mvp`) and for every bug fix:
-  red on `main` for the bug's reason, green with the fix (`ENG-006`).
+  red on `main` for the bug's reason, green with the fix.
 
 ### 7.2 Kotlin: where tests run
 
@@ -511,7 +510,7 @@ class AnswerGateUseCaseTest {
 
 Backticked names with spaces are not portable to Kotlin/Native: do not use them in `commonTest`. Assertion messages say
 what is expected (`assertEquals(expected, actual, "Nothing in flight or scheduled")`). Expected values are written
-literally in the test, not recomputed with the code under test (`ENG-047`).
+literally in the test, not recomputed with the code under test.
 
 ### 7.5 End-to-end and load
 
@@ -526,7 +525,7 @@ literally in the test, not recomputed with the code under test (`ENG-047`).
 
 ## 8. Lint and style
 
-- **detekt** is Nathan's Kotlin linter (`flareon:detekt.yml`; his other Kotlin projects, `ENG-029`/`ENG-043`),
+- **detekt** is Nathan's Kotlin linter (`flareon:detekt.yml`; his other Kotlin projects),
   version **1.23.8**, `buildUponDefaultConfig = true`, overrides in
   [`config/detekt/detekt.yml`](conventions/config/detekt/detekt.yml), `maxIssues: 0`. Ostrom starts with no baseline:
   every finding fails the build.
@@ -614,7 +613,7 @@ Every module also has `jvm()` for tests and coverage only (section 7.2).
   differ, and the contract test suite (section 7.3) runs on both. Row-Level Security exists only in the PostgreSQL
   flavour (section 16.1).
 - Every new query on a request path comes with its `EXPLAIN ANALYZE` on a table seeded at production scale, before and
-  after, in the pull request (`teamcode:AGENTS.md`, `ENG-004`).
+  after, in the pull request (`teamcode:AGENTS.md`).
 
 #### TLS and OpenSSL caveats (from `teamcode`)
 
@@ -702,7 +701,7 @@ queue short:
   `actions/cache`, keyed on the OS and the Kotlin version, or every job downloads the Kotlin/Native toolchain again.
 - The Kotlin `ci` job, on Linux: `check-conventions.py`, detekt, `jvmTest` + `koverVerify` (100 %), `linuxX64Test`,
   integration tests with a PostgreSQL service container, then the repository's end-to-end and load tests.
-- Test tasks always execute in CI: never `FROM-CACHE` or `UP-TO-DATE` (`ENG-032`; the template's init script does it).
+- Test tasks always execute in CI: never `FROM-CACHE` or `UP-TO-DATE` (the template's init script does it).
 - No secret in clear; publication uses `GITHUB_TOKEN` with `packages: write` on the publishing job only.
 - Package managers: Gradle for Kotlin; **npm** for `ostrom-app` (Expo's default) and **pnpm** for `ostrom-web`. The
   pnpm variant of `build-ts.yml` is written in it, commented out: `pnpm/action-setup` (pinned by SHA) **before**
@@ -774,7 +773,7 @@ Data entering the app (HTTP responses, `localStorage`, URL parameters, deep link
 
 API types and their Zod schemas are **generated** from the Kotlin contract by **Zodable** (`dev.zodable` 1.7.6, KSP),
 Nathan's tool (`pkg:api/build.gradle.kts`, `zodable { packageName = ... }`), and published as `@ostrom-hq/core`. The web
-and the app import them; they never declare an API entity type or schema by hand (`react-bp`, `ENG-001`). A view type
+and the app import them; they never declare an API entity type or schema by hand (`react-bp`). A view type
 derived from a generated type (`Pick`, a mapper to a screen model) is fine. A missing type is added to `ostrom-core`
 first.
 
@@ -815,18 +814,17 @@ for components; Playwright end-to-end against the real server; Maestro for the a
 Each item is something his code avoids or his reviews refused.
 
 - **Swallow a cancellation**: a broad `catch` without a `CancellationException` rethrow first, `runCatching` around
-  suspend code, a `suspendRunCatching` helper (`INF-019`, `kotlin-bp`: blocking).
+  suspend code, a `suspendRunCatching` helper (`kotlin-bp`: blocking).
 - **Business logic in a route or a CLI command** (`teamcode:AGENTS.md`).
 - **`IXxx` interfaces**, or a class named like its interface with the interface prefixed (`kotlin-bp`).
-- **Answer 500 for a refusal the code expected** (`ENG-007`), or echo an unexpected exception's message to the client.
+- **Answer 500 for a refusal the code expected**, or echo an unexpected exception's message to the client.
 - **Log a secret, a token, a prompt, a response body or a raw provider error** (`teamcode:AGENTS.md`).
-- **Redeclare a contract** on the consumer side, or hand-write a TypeScript type for an API entity (`ENG-001`,
-  `react-bp`).
-- **Sealed subclass without `@SerialName`**, removing or renaming a published field in one step (`ENG-009`).
+- **Redeclare a contract** on the consumer side, or hand-write a TypeScript type for an API entity (`react-bp`).
+- **Sealed subclass without `@SerialName`**, removing or renaming a published field in one step.
 - **N+1 queries, unbounded selects, `OFFSET` pagination, a transaction across a network call**, raw string-built SQL
   (`teamcode:AGENTS.md`).
 - **Edit a published migration** (`teamcode:AGENTS.md`).
-- **A feature switch in an environment variable** (`ENG-050`).
+- **A feature switch in an environment variable**.
 - **Run macOS/Windows CI on every commit**, or claim a native target works from JVM tests alone (`teamcode:AGENTS.md`).
 - **Unpinned GitHub Actions** (`teamcode:build.yml` pins every action by SHA).
 - **MockK, Logback, Exposed, JDBC or Netty in Kotlin/Native code**: JVM-only libraries.
@@ -879,7 +877,7 @@ CREATE POLICY gates_org ON gates
   flavour has no RLS. SQLite (tests, local single-user mode) relies on the same repository code filtering on `org_id`.
 - **One isolation test per table** in CI (the serving role, another organization set: no row read or written), plus
   **one end-to-end test per resource** proving another organization neither sees nor changes it (list, read, update,
-  delete: 404 and nothing changed), on PostgreSQL and on SQLite, on top of the route tests of section 1.6 (`ENG-054`).
+  delete: 404 and nothing changed), on PostgreSQL and on SQLite, on top of the route tests of section 1.6.
 
 ### 16.2 Credentials and scopes
 
@@ -953,5 +951,5 @@ ready; both are accepted by the OTLP gateway) in `infrastructure`, behind domain
   periodically; a failed export keeps the aggregate for the next one. **Spans** go into a bounded queue sent in batches
   by a background coroutine with a timeout; on overflow the oldest spans are dropped and counted in a metric, which
   survives in the aggregate until an export succeeds. Telemetry never slows a request or start-up.
-- **Metric** attributes are bounded values, never identifiers (`ENG-003`, section 6.1). Spans and logs may carry
+- **Metric** attributes are bounded values, never identifiers (section 6.1). Spans and logs may carry
   organization and run ids for correlation. No prompt, token or body in a span, a metric or a log.

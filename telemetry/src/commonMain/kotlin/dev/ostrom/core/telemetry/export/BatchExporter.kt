@@ -10,7 +10,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-/** Why telemetry was dropped; the bounded `reason` of the `ostrom.telemetry.dropped` counter (ENG-003). */
+/** Why telemetry was dropped; the bounded `reason` of the `ostrom.telemetry.dropped` counter. */
 public enum class DropReason(public val wire: String) {
     /** The queue was full: the backend is slower than the traffic. */
     QUEUE_FULL("queue_full"),

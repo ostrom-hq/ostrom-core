@@ -73,7 +73,7 @@ public interface Tracer {
 
 /**
  * Runs [block] in a child span of the current one, ends it on every path, and marks it as an error when [block]
- * throws. A cancellation is not an error of this span: it is recorded as such and rethrown untouched (INF-019).
+ * throws. A cancellation is not an error of this span: it is recorded as such and rethrown untouched.
  *
  * @param name A low-cardinality name.
  * @param kind The role of the span.
