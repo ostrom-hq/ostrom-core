@@ -3718,6 +3718,13 @@
         "required": false,
         "nullable": false
       },
+      "repos": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
       "nodes": {
         "type": {
           "array": {

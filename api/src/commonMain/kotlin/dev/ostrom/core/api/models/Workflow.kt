@@ -82,6 +82,8 @@ public enum class WorkflowStatus(
  * @property domain Domain it covers (`Backend`, `Mobile release`…).
  * @property description Free description.
  * @property version Version, raised at each save (optimistic locking).
+ * @property repos Repositories the workflow applies to, `owner/name` where `*` is any part of a name; null for every
+ *   repository of the organization. When present, the workflow applies to these only, observed or enforced.
  * @property nodes Nodes.
  * @property edges Edges between nodes.
  * @property start Id of the first node, when it is not the first `trigger`.
@@ -99,6 +101,7 @@ public data class Workflow(
     val domain: String,
     val description: String? = null,
     val version: Int? = null,
+    val repos: List<String>? = null,
     val nodes: List<WorkflowNode>,
     val edges: List<WorkflowEdge>,
     val start: String? = null,
