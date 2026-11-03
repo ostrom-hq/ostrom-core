@@ -3953,7 +3953,9 @@ paths:
       - approvals
       summary: Say yes or no, as the caller. 409 shown_digest_mismatch when the shown digest differs, 409 approval_closed
         when already answered (a signed answer never changes); 403 self_approval_refused when the asker answers while another
-        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
+        approver exists; 403 github_link_required when the gate's policy is never-self-approve, the pull request's author
+        linked no Ostrom person and the answerer linked no GitHub account (the gate waits, Q-GATES-G1); 403
+        step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
         app not unlocked in the last 5 minutes (`unlockMobileApp`); the 200 is the `ApprovalView` of the answered approval,
         with its signed `receipt`, a no's included
       parameters:
@@ -3980,7 +3982,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          description: self_approval_refused, step_up_required, or not an approver (the key is `error.type`)
+          description: self_approval_refused, github_link_required, step_up_required, or not an approver (the key is
+            `error.type`)
           content:
             application/json:
               schema:
@@ -12788,7 +12791,9 @@ components:
       description: '403 other than step_up_required: `forbidden` (a token without the scope, a member without the
         role, a credential the route does not admit), or a finer key (`email_link_other_browser`,
         `installation_not_yours`, `probe_not_yours`, `cutover_owner_required`, `self_approval_refused`: the server
-        names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`)'
+        names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`;
+        `github_link_required`: a yes under a never-self-approve policy, on a pull request whose author linked no Ostrom
+        person, from an answerer who linked no GitHub account)'
       properties:
         error:
           type: object
@@ -12797,7 +12802,7 @@ components:
             type:
               type: string
               enum: [forbidden, email_link_other_browser, installation_not_yours, probe_not_yours, cutover_owner_required,
-                self_approval_refused]
+                self_approval_refused, github_link_required]
             message:
               type: string
           required:
