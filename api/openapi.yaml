@@ -14515,6 +14515,11 @@ components:
       properties:
         name:
           type: string
+        hooksDeadlineSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          description: The new wait for the first hook, in seconds; outside 5 to 300 is refused with 400
       required:
       - name
       x-ostrom-kotlin: pending
@@ -14546,6 +14551,12 @@ components:
         timeZone:
           type: string
           description: The organization's IANA time zone, `UTC` by default
+        hooksDeadlineSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          description: How long the CLI waits for the first of Ostrom's hooks in an agent's session before it reports
+            `hooks.missing`, 15 until an owner or an admin sets it
       required:
       - id
       - slug
