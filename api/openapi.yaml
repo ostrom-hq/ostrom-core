@@ -14537,10 +14537,30 @@ components:
           type: string
         publicKeyPem:
           type: string
+        rotation:
+          $ref: '#/components/schemas/KeyRotation'
       required:
       - kid
       - alg
       - publicKeyPem
+      x-ostrom-kotlin: pending
+    KeyRotation:
+      type: object
+      description: 'How a receipt key was handed over by the key it replaces. Absent on a key handed over by nobody (the
+        first key, or a key changed without its previous one). A reader that pinned the previous key trusts this one
+        only if `signature` verifies; it follows a chain of rotations key by key'
+      properties:
+        kid:
+          type: string
+          description: The id of the key this key replaces
+        signature:
+          type: string
+          description: 'The replaced key''s Ed25519 signature, in base64, over the UTF-8 text
+            `ostrom-receipt-key-rotation/v1\n` followed by the lowercase hex of this key''s 32 raw bytes (the end of its
+            SPKI DER)'
+      required:
+      - kid
+      - signature
       x-ostrom-kotlin: pending
     PushDevice:
       type: object
