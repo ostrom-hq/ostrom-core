@@ -323,6 +323,15 @@ paths:
               properties:
                 unlockKey:
                   type: string
+                requestId:
+                  type: string
+                  x-ostrom-status: planned
+                  description: "The approval request this unlock is for (`Approval.id`): a yes from the app to a
+                    high-risk action is taken only with an unlock bound to its own request, less than 60 seconds old,
+                    and only once (the first yes sent with it uses it, whatever its outcome); otherwise 403
+                    `step_up_required` with `error.requestBound` true. An id that names no request of the caller binds
+                    the unlock to nothing a yes can use. Absent, the unlock opens the 5-minute window alone, which a
+                    low-risk yes (and every no) is given with. Planned: the server does not read it yet"
               required:
               - unlockKey
       responses:
@@ -4019,7 +4028,9 @@ paths:
         approver exists; 403 github_link_required when the gate's policy is never-self-approve, the pull request's author
         linked no Ostrom person and the answerer linked no GitHub account (the gate waits, Q-GATES-G1); 403
         step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
-        app not unlocked in the last 5 minutes (`unlockMobileApp`); the 200 is the `ApprovalView` of the answered approval,
+        app not unlocked in the last 5 minutes (`unlockMobileApp`), or (planned) from the phone app, to a high-risk
+        action, without an unlock bound to this request less than 60 seconds old and not used yet
+        (`unlockMobileApp.requestId`, `error.requestBound` true); the 200 is the `ApprovalView` of the answered approval,
         with its signed `receipt`, a no's included
       parameters:
       - name: id
@@ -16135,6 +16146,13 @@ components:
               enum: [step_up_required]
             message:
               type: string
+            requestBound:
+              type: boolean
+              x-ostrom-status: planned
+              description: "True when the refused yes came from the phone app to a high-risk action and needs an
+                unlock bound to this very request (`unlockMobileApp.requestId`), less than 60 seconds old and not
+                used yet: the app unlocks again for this request, then sends the yes again. Absent otherwise.
+                Planned: the server does not send it yet"
           required:
           - type
           - message
