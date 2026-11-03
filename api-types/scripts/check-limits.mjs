@@ -16,10 +16,12 @@ export const THROTTLED = [
   'getSpending', 'listActivity',
 ]
 
-// Limited per address or per person by the identity module's RateLimiter, which answers 429 `rate_limited`.
+// Limited per address, person, organization or automation (the identity module's RateLimiter, the organizations',
+// the automations' and the usage ledger's), which answer 429 `rate_limited`.
 export const LIMITED = [
   'mobileToken', 'unlockMobileApp', 'startDeviceLogin', 'getDeviceLogin', 'answerDeviceLogin', 'launcherLogin',
-  'requestSignInEmail', 'exchangeSignInLink', 'createSignInLink',
+  'requestSignInEmail', 'exchangeSignInLink', 'createSignInLink', 'linkSignInProvider', 'createOrg',
+  'inviteOrgMembers', 'createInvitationLink', 'triggerAutomation', 'recordUsageEvents',
 ]
 
 const resolve = (node) => {
@@ -42,30 +44,32 @@ const problems = []
 for (const [id, { operation, parameters }] of operations) {
   if (operation['x-ostrom-status'] !== 'served') continue
   for (const parameter of parameters) {
-    if (parameter.in === 'query' && parameter.name === 'limit' && resolve(parameter.schema)?.maximum === undefined) {
-      problems.push(`${id}: the limit parameter has no maximum`)
-    }
+    if (parameter.in !== 'query' || parameter.name !== 'limit') continue
+    const schema = resolve(parameter.schema) ?? {}
+    if (schema.maximum === undefined) problems.push(`${id}: the limit parameter has no maximum`)
+    if (schema.minimum === undefined) problems.push(`${id}: the limit parameter has no minimum`)
   }
 }
 
-const tooMany = (id) => {
+// Each limited route answers its 429 with the shared response that says which limit it is.
+const tooMany = (id, expected) => {
   const entry = operations.get(id)
-  if (!entry) {
-    problems.push(`${id}: no such operation`)
-    return null
+  if (!entry || entry.operation['x-ostrom-status'] !== 'served') {
+    problems.push(`${id}: no such served operation`)
+    return
   }
   const answer = entry.operation.responses['429']
   if (!answer) problems.push(`${id}: no 429`)
-  return answer ? resolve(answer) : null
+  else if (answer.$ref !== `#/components/responses/${expected}`) problems.push(`${id}: its 429 is not ${expected}`)
 }
-for (const id of LIMITED) tooMany(id)
-for (const id of THROTTLED) {
-  const answer = tooMany(id)
-  if (answer && !answer.headers?.['Retry-After']) problems.push(`${id}: its 429 has no Retry-After`)
+for (const id of LIMITED) tooMany(id, 'TooManyAttempts')
+for (const id of THROTTLED) tooMany(id, 'Throttled')
+if (!resolve(contract.components.responses.Throttled)?.headers?.['Retry-After']) {
+  problems.push('Throttled: no Retry-After')
 }
 
 if (problems.length > 0) {
   console.error(`The contract hides ${problems.length} limit(s) the server enforces:\n  ${problems.join('\n  ')}`)
   process.exit(1)
 }
-console.log(`Limits: every page size has a maximum, ${LIMITED.length + THROTTLED.length} limited routes declare 429.`)
+console.log(`Limits: every page size has its bounds, ${LIMITED.length + THROTTLED.length} limited routes declare their 429.`)

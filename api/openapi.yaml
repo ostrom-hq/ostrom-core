@@ -305,7 +305,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/mobile/unlock:
     post:
       operationId: unlockMobileApp
@@ -343,7 +343,7 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/github/callback:
     get:
       operationId: githubLoginCallback
@@ -525,6 +525,8 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/device:
     get:
       operationId: getDeviceLogin
@@ -587,7 +589,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/device/token:
     post:
       operationId: pollDeviceLogin
@@ -2168,7 +2170,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/orgs/{org}:
     get:
       operationId: getOrg
@@ -2417,7 +2419,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/orgs/{org}/members/{login}:
     get:
       operationId: getOrgMember
@@ -2600,7 +2602,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/orgs/{org}/invitations/{id}:
     delete:
       operationId: revokeInvitation
@@ -3516,7 +3518,8 @@ paths:
       description: |-
         With `wait`, a pending gate is waited on for its answer: the response comes as soon as the gate is no longer
         pending, or with it still pending when the wait ends; the caller then asks again. A gate that is not pending
-        answers at once, and so does another organization's gate or launch's (404, 403). The server caps the wait at
+        answers at once, and so does a gate of another organization (404, as if it did not exist) or of another launch
+        of the caller's organization (403). The server caps the wait at
         30 seconds and reads a value outside 0 to 30 as the nearest bound. A waiting request holds no database
         connection. A client sets its HTTP timeout above the wait.
       parameters:
@@ -3865,7 +3868,7 @@ paths:
         schema:
           type: integer
           minimum: 1
-          maximum: 200
+          maximum: 100
           default: 50
       responses:
         '200':
@@ -5922,7 +5925,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/waits:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -7641,6 +7644,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/usage/live:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -10961,7 +10966,8 @@ components:
             $ref: '#/components/schemas/ApiError'
     Throttled:
       description: 'Too many reads lately (`rate_limited`): nothing was read. A costly read is bounded per caller (a
-        person, a device, an agent or a service): calls per minute, and calls at once'
+        person, a device, an agent or a service): calls per minute, reads and waits together, and calls at once, the
+        waits of `getGate` counted apart from the reads'
       headers:
         Retry-After:
           description: Seconds to wait before reading again
@@ -10972,8 +10978,9 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
     TooManyAttempts:
-      description: 'Too many attempts lately (`rate_limited`): nothing was done. A sign-in step is limited per address
-        or per person over a fixed window of minutes; wait, then try again'
+      description: 'Too many attempts lately (`rate_limited`): nothing was done. A sign-in step, an organization''s
+        creations and invitations, a webhook trigger or a batch of usage events is limited per address, person,
+        organization or automation over a window; wait, then try again'
       content:
         application/json:
           schema:
