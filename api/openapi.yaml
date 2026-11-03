@@ -1093,7 +1093,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
+                anyOf:
                 - $ref: '#/components/schemas/EmailLinkOtherBrowser'
                 - $ref: '#/components/schemas/ApiError'
         '404':
@@ -8820,11 +8820,15 @@ paths:
                 format: binary
         '404':
           description: 'Not found, or not readable with this ticket, in plain text without detail (`no-store`):
-            the content origin answers no JSON'
+            the content origin answers no JSON. The same path asked of the API origin is not served there, and gets
+            the API''s JSON `ApiError`'
           content:
             text/plain:
               schema:
                 type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /l/{slug}/{path}:
     get:
       operationId: getArtifactLinkContent
