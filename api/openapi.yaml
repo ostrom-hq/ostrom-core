@@ -448,7 +448,8 @@ paths:
       tags:
       - auth
       summary: "Where the provider sends the browser back: sets the session cookies and redirects to the console (or to
-        `/login?error=`)"
+        `/login?error=`). For a sign-in the phone app started, an error redirects to the app's deep link; a code is
+        answered as a page whose link to the deep link the person taps"
       parameters:
       - name: provider
         in: path
@@ -473,6 +474,13 @@ paths:
           type: string
       security: []
       responses:
+        '200':
+          description: "A mobile sign-in's code: the page that names who signed in and links to the app's deep link
+            (`ostrom://auth/callback?code=&state=`), on the person's tap; no script, never framed or cached"
+          content:
+            text/html:
+              schema:
+                type: string
         '302':
           description: "Redirect"
   /api/v1/auth/{provider}/link:
