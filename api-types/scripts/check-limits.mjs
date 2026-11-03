@@ -81,6 +81,13 @@ for (const [id, limit] of Object.entries(HELD)) {
     problems.push(`${id}: a token's write is held, but no 202 GovernanceConfirmationPending`)
   }
 }
+// And the other way: a served write that answers 202 GovernanceConfirmationPending is in HELD, so its 429 is checked.
+for (const [id, { operation }] of operations) {
+  if (operation['x-ostrom-status'] !== 'served' || id in HELD) continue
+  if (operation.responses['202']?.$ref === '#/components/responses/GovernanceConfirmationPending') {
+    problems.push(`${id}: a token's write is held (202), but it is not in HELD`)
+  }
+}
 if (!resolve(contract.components.responses.Throttled)?.headers?.['Retry-After']) {
   problems.push('Throttled: no Retry-After')
 }

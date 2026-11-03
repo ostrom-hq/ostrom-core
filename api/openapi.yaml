@@ -2599,8 +2599,9 @@ paths:
       description: "Made with a person's API token (`orgs:write`, a personal token), the write is not applied: it
         opens a governance confirmation (202) that an owner or an admin confirms on the console within 15 minutes, as
         the rules' writes do. From the console it applies at once. Confirmed, the URL is shown once, to the person who
-        asked, in the confirmation's `result` (`GET /confirmations/{id}`): their first read with a token returns it;
-        later reads, and any console session, get the `invitation` with `shown: true`, without the URL."
+        asked, in the confirmation's `result` (`GET /confirmations/{id}`): their first read with a token returns
+        `{url, invitation}`; later reads, and any console session, get `{invitation, shown: true}`, without the URL. A
+        first answer lost on the way is not shown again: revoke the link and create another."
       parameters:
       - name: org
         in: path
@@ -10934,7 +10935,7 @@ components:
   responses:
     GovernanceConfirmationPending:
       description: |-
-        Not applied: made with a person's API token (the CLI's, `ostrom login --admin` or not), the governance write
+        Not applied: made with a person's API token (a personal token, the CLI's included), the governance write
         opened a confirmation, which an owner or an admin confirms on the console within 15 minutes
         (`getGovernanceConfirmation`). A browser session's write and an `inference:admin` service key's are applied at
         once, as before.
@@ -13318,7 +13319,7 @@ components:
       x-ostrom-kotlin: pending
     GovernanceConfirmation:
       type: object
-      description: 'A governance write made with a CLI token, held until an owner or an admin confirms it on the
+      description: 'A governance write made with a person''s API token, held until an owner or an admin confirms it on the
         console. `before` and `after` are what the change replaces and what it writes, as the read routes show them
         (JSON null for nothing: a creation has no `before`, a deletion no `after`)'
       properties:
@@ -13336,7 +13337,8 @@ components:
           description: The path of the write, such as `/api/v1/gates/policy`
         scope:
           type: string
-          description: The governance scope the write uses (`policy:write`, `harness:write`, `gates:policy`)
+          description: The governance scope the write uses (`policy:write`, `harness:write`, `gates:policy`,
+            `orgs:write`)
         summary:
           type: string
           description: One line saying what the change does
@@ -13370,8 +13372,9 @@ components:
         result:
           description: "What the write returned once confirmed (absent when it returns nothing, as a deletion). A
             secret in it is shown once, to the person who asked: for `members.link`, their first read with a token
-            returns the link's `url`, then the result keeps only the `invitation` with `shown: true`. No console
-            session reads the `url`, the asker's included."
+            returns `{url, invitation}`, then the result is `{invitation, shown: true}`. No console session reads the
+            `url`, the asker's included; a first answer lost on the way is not shown again (revoke the link and create
+            another)."
         error:
           description: Why a confirmed change was not written (`failed`)
           allOf:
@@ -13407,7 +13410,7 @@ components:
       x-ostrom-kotlin: pending
     GovernanceConfirmationPending:
       type: object
-      description: 'The 202 of a governance write made with a CLI token: nothing was written. An owner or an admin
+      description: 'The 202 of a governance write made with a person''s API token: nothing was written. An owner or an admin
         confirms it at `confirmUrl` before `expiresAt` (15 minutes); the CLI waits on `getGovernanceConfirmation`. The
         same change asked again by the same person while it waits answers the same confirmation'
       properties:
