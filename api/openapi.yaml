@@ -815,6 +815,13 @@ paths:
                   type: string
                 model:
                   type: string
+                workflowId:
+                  type: string
+                  x-ostrom-status: planned
+                  description: "The workflow this launch plays (`Workflow.id` of the organization; 404 otherwise):
+                    every model call of its sessions counts under it, for the budgets of scope `workflow` and
+                    `Spending.byWorkflow`. Absent, the calls count under no workflow. Planned: the server does not
+                    read it yet"
               required:
               - agent
       responses:
@@ -12275,11 +12282,13 @@ components:
       properties:
         scope:
           type: string
-          description: '`organization` (also `org`) or `member`'
+          description: "`organization` (also `org`), `member`, or `workflow` (planned: the server answers 400 to it
+            until it serves it)"
         subject:
           type: string
           description: "For `member`: the member's `id` (`OrgMember.id`); absent, every member without limits of their
-            own"
+            own. For `workflow` (planned): the workflow's `id` (`Workflow.id`), required; the spend is that of the
+            model calls of the launches that play it (`workflowId` of `createLaunch`)"
         usdPerMonth:
           type: number
           description: The monthly limit in US dollars; absent, none
@@ -15994,6 +16003,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SpendingLine'
+        byWorkflow:
+          type: array
+          x-ostrom-status: planned
+          description: "By workflow: the model calls of the launches that play one (`workflowId` of `createLaunch`),
+            `key` the workflow's `id`, `label` its name; the calls of no workflow are in no line. Planned: the server
+            does not send it yet"
+          items:
+            $ref: '#/components/schemas/SpendingLine'
         daily:
           type: array
           items:
@@ -16020,10 +16037,10 @@ components:
       properties:
         scope:
           type: string
-          description: '`organization` or `member`'
+          description: '`organization`, `member`, or `workflow` (planned)'
         subject:
           type: string
-          description: "For `member`: the member's `id`"
+          description: "For `member`: the member's `id`; for `workflow` (planned): the workflow's `id`"
         period:
           type: string
           enum: [day, month]
