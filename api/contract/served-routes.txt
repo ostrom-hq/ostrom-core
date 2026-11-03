@@ -11,6 +11,7 @@ DELETE /api/v1/auth/sessions/{}
 DELETE /api/v1/automations/{}
 DELETE /api/v1/cloud/sessions/{}
 DELETE /api/v1/devices/{}
+DELETE /api/v1/launches/{}
 DELETE /api/v1/mcp/servers/{}
 DELETE /api/v1/mcp/servers/{}/assignments/{}
 DELETE /api/v1/mcp/servers/{}/policies/{}
