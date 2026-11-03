@@ -119,7 +119,8 @@ public data class Workflow(
  * @property from Source node.
  * @property to Target node, null to end the run.
  * @property label Label shown in the editor.
- * @property on Outcome that takes this edge (default `next`).
+ * @property on Outcome that takes this edge (default `next`; `true` or `false`, without default, out of a check node
+ *   with a condition).
  */
 @Serializable
 public data class WorkflowEdge(
@@ -196,11 +197,12 @@ public data class WorkflowNode(
 )
 
 /**
- * What a `check` node decides: one value of a step the run visited before, compared, never an expression. The visit
- * ends `true` or `false`, and the run follows the edge of that outcome; a condition that does not evaluate fails the
- * run, never a branch chosen by default.
+ * What a `check` node decides in a server's run: one value of a step the run visited before, compared as a text,
+ * never an expression. The visit ends `true` or `false`, and the run follows the edge whose `on` is that outcome (no
+ * default); a condition that does not evaluate fails the run, never a branch chosen by default. The full rules are in
+ * the contract's `NodeCondition`.
  *
- * @property step The node whose last visit it reads.
+ * @property step The node whose last visit it reads (no value when the run did not visit it).
  * @property path `outcome`, `output`, or `output.<key>[.<key>…]` (the output read as a JSON object).
  * @property op The comparison.
  * @property value What [op] compares with, or the pattern of `matches` (linear-time syntax); absent for `exists`.
