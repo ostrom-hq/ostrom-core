@@ -233,7 +233,9 @@ def main():
     result = tracer.runfunc(lambda: unittest.main(module=__name__, exit=False, argv=[sys.argv[0]]).result)
     if not result.wasSuccessful():
         return 1
-    ran = {line for (name, line) in tracer.results().counts if pathlib.Path(name).resolve() == SCRIPT}
+    # Newer Pythons also count events without a line (None): only line numbers are compared.
+    ran = {line for (name, line) in tracer.results().counts
+           if line is not None and pathlib.Path(name).resolve() == SCRIPT}
     lines = set(trace._find_executable_linenos(str(SCRIPT)))  # the module trace itself uses for --missing
     missing = sorted(lines - ran)
     if missing:
