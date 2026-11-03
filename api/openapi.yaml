@@ -7261,7 +7261,12 @@ paths:
       x-ostrom-status: served
       tags:
       - budgets
-      summary: Set a budget (organization, member, workflow)
+      summary: Set a budget (the organization, every member, or one member)
+      description: "Replaces the subject's limits whole: a monthly one (`usdPerMonth`) and a daily one (`usdPerDay`),
+        both stopping the calls (`hardStop` true) or both only warning (false); neither amount removes the subject's
+        limits. The subject is the organization (`scope` `organization`), every member without limits of their own
+        (`member` without `subject`), or one member (`member`, `subject` = the member's `id` from
+        `/api/v1/orgs/{org}/members`). A workflow budget is not served: `scope` `workflow` is a 400"
       requestBody:
         required: true
         content:
@@ -10619,10 +10624,12 @@ components:
       description: "Too many requests, in the provider's own error shape, which satisfies `ApiError` (`error.type`,
         `error.message`). Refused by the budgets before any provider is called: `error.type` `rate_limit_error` on the
         Messages endpoint, `insufficient_quota` on the OpenAI-compatible ones, which also carry `error.code`
-        `budget_exhausted` or `budget_insufficient`; `error.message` starts with one of two fixed phrases a client can
-        match on (`LedgerSpendGuard.EXHAUSTED` and `.INSUFFICIENT` in ostrom-server). `Monthly budget reached: ...`: a
-        monthly limit of the organization or of the member is spent; `Retry-After` gives the seconds until the month
-        ends (UTC), when the limit resets. `Budget left too low for this call: ...`: the limit is not spent, but what
+        `budget_exhausted` or `budget_insufficient`; `error.message` starts with one of three fixed phrases a client can
+        match on (`LedgerSpendGuard.EXHAUSTED`, `.EXHAUSTED_TODAY` and `.INSUFFICIENT` in ostrom-server). `Monthly
+        budget reached: ...`: a monthly limit of the organization or of the member is spent; `Retry-After` gives the
+        seconds until the month ends (UTC), when the limit resets. `Daily budget reached: ...`: a daily limit is spent;
+        `Retry-After` gives the seconds until the day ends (00:00 UTC). Only a limit with `hardStop` refuses a call.
+        `Budget left too low for this call: ...`: the limit is not spent, but what
         is left after the calls in flight cannot cover what this call may cost (its output price times the largest of
         its `max_tokens`, `max_output_tokens` and `max_completion_tokens`, 32 000 when it names none, at most 1 000 000;
         plus its estimated input; nothing for a model without a price); the message says what is left and what the
@@ -10633,8 +10640,9 @@ components:
       headers:
         Retry-After:
           description: When to try again. From the gateway, whole seconds, at least 1; with `Monthly budget reached`,
-            until the start of the next month (UTC); absent with `Budget left too low for this call`. Relayed from a
-            provider, as the provider wrote it (seconds or an HTTP date)
+            until the start of the next month (UTC); with `Daily budget reached`, until 00:00 UTC; absent with
+            `Budget left too low for this call`. Relayed from a provider, as the provider wrote it (seconds or an HTTP
+            date)
           schema:
             type: string
       content:
@@ -11889,18 +11897,27 @@ components:
       x-ostrom-kotlin: pending
     Budget:
       type: object
-      description: A spending limit
+      description: "A subject's spending limits, per calendar month and per day (UTC). A day starts at 00:00 UTC, a
+        month on the 1st at 00:00 UTC; the spend is the model gateway's measured cost"
       properties:
         scope:
           type: string
+          description: '`organization` (also `org`) or `member`'
         subject:
           type: string
+          description: "For `member`: the member's `id` (`OrgMember.id`); absent, every member without limits of their
+            own"
         usdPerMonth:
           type: number
+          description: The monthly limit in US dollars; absent, none
         usdPerDay:
           type: number
+          description: The daily limit in US dollars; absent, none
         hardStop:
           type: boolean
+          description: "True: a reached limit refuses the model calls until its period ends (`InferenceRefused`,
+            `Monthly budget reached` or `Daily budget reached`). False: the calls go on; the overrun is written once
+            per period to the organization's audit log (`budget.exceeded`) and listed in `Spending.exceeded`"
       required:
       - scope
       - hardStop
@@ -14000,8 +14017,12 @@ components:
       x-ostrom-kotlin: pending
     OrgMember:
       type: object
-      description: "A member as `/api/v1/orgs/{org}/members` serves it (no member id there)"
+      description: "A member as `/api/v1/orgs/{org}/members` serves it"
       properties:
+        id:
+          type: string
+          format: uuid
+          description: "The member's id, stable across their tokens and sessions: the `subject` of their `Budget`"
         login:
           type: string
         name:
@@ -14020,6 +14041,7 @@ components:
           type: string
           format: date-time
       required:
+      - id
       - login
       - name
       - avatarUrl
@@ -15397,6 +15419,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SpendingDay'
+        exceeded:
+          type: array
+          description: "The budgets the reader sees spent past their limit today or this month, whatever `period`: all
+            of the organization's for whoever sees its whole spending, the reader's own otherwise; empty when none"
+          items:
+            $ref: '#/components/schemas/ExceededBudget'
       required:
       - period
       - from
@@ -15406,6 +15434,36 @@ components:
       - byRepo
       - byPerson
       - daily
+      x-ostrom-kotlin: pending
+    ExceededBudget:
+      type: object
+      description: A budget spent past its limit in its current day or month
+      properties:
+        scope:
+          type: string
+          description: '`organization` or `member`'
+        subject:
+          type: string
+          description: "For `member`: the member's `id`"
+        period:
+          type: string
+          enum: [day, month]
+        usd:
+          type: number
+          description: The limit in US dollars
+        hardStop:
+          type: boolean
+          description: Whether it stops the calls; false, it only warns and the calls go on
+        since:
+          type: string
+          format: date-time
+          description: When the server saw it reached
+      required:
+      - scope
+      - period
+      - usd
+      - hardStop
+      - since
       x-ostrom-kotlin: pending
     SpendingDay:
       type: object
