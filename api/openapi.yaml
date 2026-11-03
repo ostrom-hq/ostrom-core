@@ -2410,8 +2410,7 @@ paths:
       - name: q
         in: query
         required: false
-        x-ostrom-status: planned
-        description: "Only the members whose login or name starts with it, whatever the case; it combines with `limit` and `after`. Planned: the server does not read it yet"
+        description: "Only the members whose login or name starts with it, whatever the case; it combines with `limit` and `after`. Its `%` and `_` match only themselves. 1 to 100 characters, else 400"
         schema:
           type: string
           minLength: 1
