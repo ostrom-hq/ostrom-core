@@ -49,6 +49,8 @@ jobs:
           }
           KTS
       - run: python3 scripts/check-conventions.py
+      # served-routes.py says what the contract may call served: its tests run every line of it.
+      - run: python3 scripts/test_served_routes.py
       # detekt, the jvm() test run with Kover at 100 % of commonMain, the linuxX64 tests; linuxArm64 and mingwX64 tests
       # and the macosArm64 klibs are cross-compiled.
       - run: >-
