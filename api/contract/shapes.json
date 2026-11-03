@@ -3121,6 +3121,16 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "ended": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "lost": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -3283,6 +3293,11 @@
         "type": {
           "ref": "Receipt"
         },
+        "required": false,
+        "nullable": false
+      },
+      "reopened": {
+        "type": "boolean",
         "required": false,
         "nullable": false
       }
