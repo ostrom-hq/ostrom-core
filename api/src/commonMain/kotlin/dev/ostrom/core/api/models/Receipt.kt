@@ -12,6 +12,9 @@ import kotlinx.serialization.Serializable
  * object, not this model, or those fields are lost and the digest no longer matches.
  *
  * @property id Receipt id, `rcpt_<uuid>`.
+ * @property orgId The organization the receipt was signed for, a lowercase UUID; absent before it was signed (planned).
+ * @property launchId The launch the receipt belongs to, when it has one (planned).
+ * @property sessionId The session segment the receipt belongs to, when it has one (planned).
  * @property subject What the receipt is about, with the digest of its preimage.
  * @property initiator Login of the person (or `ci`) who started the action.
  * @property agent Coding agent that acted (`claude-code`, `codex`, `ci`…), when one did.
@@ -27,6 +30,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 public data class Receipt(
     val id: String,
+    val orgId: String? = null,
+    val launchId: String? = null,
+    val sessionId: String? = null,
     val subject: ReceiptSubject,
     val initiator: String,
     val agent: String? = null,
