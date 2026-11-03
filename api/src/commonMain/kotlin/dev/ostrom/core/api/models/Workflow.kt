@@ -169,6 +169,7 @@ public data class WorkflowInput(
  * @property workflowId Child workflow of a `workflow` node.
  * @property arguments Arguments of the child workflow.
  * @property maxVisits How many times a run may visit the node.
+ * @property condition What a `check` node decides: a value of a step visited before (planned: not played yet).
  */
 @Serializable
 public data class WorkflowNode(
@@ -191,7 +192,50 @@ public data class WorkflowNode(
     val workflowId: String? = null,
     val arguments: Map<String, String>? = null,
     val maxVisits: Int? = null,
+    val condition: NodeCondition? = null,
 )
+
+/**
+ * What a `check` node decides: one value of a step the run visited before, compared, never an expression. The visit
+ * ends `true` or `false`, and the run follows the edge of that outcome; a condition that does not evaluate fails the
+ * run, never a branch chosen by default.
+ *
+ * @property step The node whose last visit it reads.
+ * @property path `outcome`, `output`, or `output.<key>[.<key>…]` (the output read as a JSON object).
+ * @property op The comparison.
+ * @property value What [op] compares with, or the pattern of `matches` (linear-time syntax); absent for `exists`.
+ */
+@Serializable
+public data class NodeCondition(
+    val step: String,
+    val path: String,
+    val op: NodeConditionOp,
+    val value: String? = null,
+)
+
+/** The comparisons of a [NodeCondition]. */
+@Serializable(with = NodeConditionOp.Serializer::class)
+public enum class NodeConditionOp(
+    /** The JSON value. */
+    public val value: String,
+) {
+    EQUALS("equals"),
+    NOT_EQUALS("notEquals"),
+    EXISTS("exists"),
+    MATCHES("matches"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<NodeConditionOp>(
+        "dev.ostrom.core.api.models.NodeConditionOp",
+        NodeConditionOp.entries,
+        NodeConditionOp.UNKNOWN,
+        NodeConditionOp::value,
+    )
+}
 
 /**
  * When to disturb people for a node.

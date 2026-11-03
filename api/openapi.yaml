@@ -14399,6 +14399,51 @@ components:
       - resetsAt
       - exhausted
       x-ostrom-kotlin: pending
+    NodeCondition:
+      type: object
+      description: "What a `check` node decides (planned: the server does not play check nodes yet). It reads one value
+        of a step the run visited before, never an expression: no language, no evaluation of code. The visit ends with
+        the outcome `true` or `false`, and the run follows the edge whose `on` is that outcome; an outcome without its
+        edge fails the run, as a condition that does not evaluate does (step never visited, value missing for
+        `equals`, `notEquals` or `matches`, text too long): the server never chooses a branch by default. Checked when
+        the workflow is saved: 400 `invalid_request` for a `step` that is not a node of the workflow, a `path` out of
+        its form, a `value` missing for `equals`, `notEquals` or `matches` or present for `exists`, or a `matches`
+        pattern out of its syntax"
+      properties:
+        step:
+          type: string
+          maxLength: 200
+          description: The id of the node whose last visit the condition reads (`WorkflowNode.id`)
+        path:
+          type: string
+          maxLength: 200
+          description: "What it reads of that visit: `outcome`, `output`, or `output.<key>[.<key>…]`, a value of the
+            output read as a JSON object (a wait's answer, `NodeVisit.output`), at most 10 keys of 1 to 64 characters
+            among letters, digits, `_` and `-`. A JSON value compares as its text: a string without its quotes, a
+            number or a boolean as written"
+        op:
+          $ref: '#/components/schemas/NodeConditionOp'
+        value:
+          type: string
+          maxLength: 200
+          description: "What `equals` and `notEquals` compare with, or the pattern of `matches`: literal characters,
+            `.`, bracket classes, `*`, `+`, `?`, groups `( )`, alternation `|`, anchors `^` and `$`; no
+            backreference, no lookaround, no counted repetition. The server matches it in linear time, without
+            backtracking, against a text of at most 10 000 characters (a longer one does not evaluate). Absent for
+            `exists`"
+      required:
+      - step
+      - path
+      - op
+    NodeConditionOp:
+      type: string
+      description: "`equals` and `notEquals` compare the value with `value`; `exists` is true when the value is there;
+        `matches` is true when the pattern `value` matches a part of it (anchors to match it whole)"
+      enum:
+      - equals
+      - notEquals
+      - exists
+      - matches
     NodePosition:
       type: object
       description: Position of a node in the editor
@@ -17094,6 +17139,8 @@ components:
             type: string
         maxVisits:
           type: integer
+        condition:
+          $ref: '#/components/schemas/NodeCondition'
       required:
       - id
       - kind
