@@ -15885,7 +15885,6 @@ components:
           - message
       required:
       - error
-      - error
       x-ostrom-kotlin: pending
     StringListSuggestion:
       type: object
