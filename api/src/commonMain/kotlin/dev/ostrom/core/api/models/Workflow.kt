@@ -243,16 +243,20 @@ public data class NodePosition(val x: Double, val y: Double)
  * `custom-<slug>`.
  * @property label Label.
  * @property patterns Regular expressions on the command; empty = the class defaults.
- * @property repos Repositories where the gate covers it; empty = all.
+ * @property repos Repositories where the gate covers it; absent or empty = all.
  * @property tools Tools for a custom action (`Bash` by default, `Write`, `mcp`).
+ * @property keywords Catalogue only: the words of the class that a guessed gate matches.
+ * @property gate Catalogue only: the gate that covers the action in the repository, or null.
  */
 @Serializable
 public data class GateAction(
     @SerialName("class") val cls: String,
     val label: String,
     val patterns: List<String>,
-    val repos: List<String>,
+    val repos: List<String> = emptyList(),
     val tools: List<String>? = null,
+    val keywords: List<String> = emptyList(),
+    val gate: GateRef? = null,
 )
 
 /**
