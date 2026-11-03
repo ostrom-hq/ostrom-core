@@ -1534,10 +1534,18 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: registerPushDevice
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: 'Register a phone for push notifications (push data: {kind: "approval", approvalId})'
+      description: >-
+        Scope `notifications:write`: the phone app's token or a browser session, never a personal or CLI token. The
+        phone is registered in the organization `Ostrom-Org` names, or the caller's only one (409 `org_required`
+        when they belong to several and name none). One device per push token in an organization: the same token
+        registered again keeps its device (its `id` and `createdAt`) and belongs to the member who registered it
+        last. A member keeps their ten most recently registered phones. The push token is never answered back. A
+        token that is not an Expo push token (`ExponentPushToken[…]`), a provider other than `expo` or a platform
+        other than `ios` and `android` is a 400.
       requestBody:
         required: true
         content:
@@ -1579,10 +1587,14 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deletePushDevice
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Stop push notifications to a phone
+      description: >-
+        Scope `notifications:write`. Removes one of the caller's phones in the organization `Ostrom-Org` names, or
+        their only one: any other id (another member's phone, another organization's, an unknown or malformed id)
+        is a 404.
       parameters:
       - name: id
         in: path
