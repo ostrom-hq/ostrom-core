@@ -12567,17 +12567,27 @@ components:
             type: string
         repos:
           type: array
+          description: 'Repositories where the gate covers it. Absent or empty: every repository of the organization'
           items:
             type: string
         tools:
           type: array
           items:
             type: string
+        keywords:
+          type: array
+          description: 'Catalogue only: the words of the class that a guessed gate matches'
+          items:
+            type: string
+        gate:
+          description: 'Catalogue only: the gate that covers the action in this repository; `null` when none does'
+          oneOf:
+          - $ref: '#/components/schemas/GateRef'
+          - type: 'null'
       required:
       - class
       - label
       - patterns
-      - repos
     GateAskRequest:
       type: object
       description: Asks for a gate (hook `PreToolUse`, CI check, MCP). A request in a closed session is refused with 409
@@ -12622,6 +12632,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GateAction'
+        failMode:
+          type: string
+          description: What the hooks do when the server cannot be reached
+          enum:
+          - closed
+        waitSeconds:
+          type: integer
+          description: How long a hook waits for an answer before it gives up
       required:
       - gates
       - actions

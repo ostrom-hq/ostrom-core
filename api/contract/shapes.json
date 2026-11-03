@@ -1232,7 +1232,7 @@
         "type": {
           "array": "string"
         },
-        "required": true,
+        "required": false,
         "nullable": false
       },
       "tools": {
@@ -1241,6 +1241,20 @@
         },
         "required": false,
         "nullable": false
+      },
+      "keywords": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "gate": {
+        "type": {
+          "ref": "GateRef"
+        },
+        "required": false,
+        "nullable": true
       }
     }
   },
