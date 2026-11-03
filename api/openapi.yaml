@@ -838,6 +838,11 @@ paths:
                     type: string
                   expiresAt:
                     type: string
+                  hooksCheck:
+                    $ref: '#/components/schemas/HooksCheck'
+                    x-ostrom-status: planned
+                    description: "What the CLI does when none of Ostrom's hooks runs in the session. Planned: the
+                      server does not send it yet"
                 required:
                 - launchId
                 - agentToken
@@ -874,6 +879,40 @@ paths:
       responses:
         '204':
           description: Done
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/launches/{launchId}/hooks-missing:
+    post:
+      operationId: reportHooksMissing
+      x-ostrom-status: planned
+      description: "The launch's own agent token only, as for `endLaunch`: the CLI waited for the first of Ostrom's
+        hooks in the agent's session, saw none, and says so, with whether it stopped the agent. The organization's audit
+        log then holds the event `hooks.missing` (subject `launch:<launchId>`, `meta` holding `agent`, `repo`,
+        `waitedSeconds` and `stopped`), read by `listAudit` with `event=hooks.missing`. Any other credential, another
+        launch's agent token included, gets 404, the same answer as an unknown launch; `waitedSeconds` outside 0 to
+        3600 is 400."
+      tags:
+      - auth
+      summary: Report that none of Ostrom's hooks ran in the agent's session
+      parameters:
+      - name: launchId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HooksMissingRequest'
+      responses:
+        '204':
+          description: Recorded
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
         '404':
@@ -8681,6 +8720,11 @@ paths:
                     type: string
                   expiresAt:
                     type: string
+                  hooksCheck:
+                    $ref: '#/components/schemas/HooksCheck'
+                    x-ostrom-status: planned
+                    description: "What the CLI does when none of Ostrom's hooks runs in the session. Planned: the
+                      server does not send it yet"
                 required:
                 - launchId
                 - agentToken
@@ -11706,6 +11750,38 @@ components:
       - createdAt
       - createdBy
       x-ostrom-kotlin: pending
+    HooksCheck:
+      type: object
+      description: "What the CLI does when none of Ostrom's hooks runs in the agent's session"
+      properties:
+        afterSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          description: How long it waits for the first hook before it concludes none runs
+        stopAgent:
+          type: boolean
+          description: Whether it then stops the agent, true when the organization enforces at least one gate
+      required:
+      - afterSeconds
+      - stopAgent
+      x-ostrom-kotlin: pending
+    HooksMissingRequest:
+      type: object
+      description: "What the CLI saw: none of Ostrom's hooks ran in the agent's session"
+      properties:
+        waitedSeconds:
+          type: integer
+          minimum: 0
+          maximum: 3600
+          description: How long the CLI waited for the first hook
+        stopped:
+          type: boolean
+          description: Whether the CLI stopped the agent
+      required:
+      - waitedSeconds
+      - stopped
+      x-ostrom-kotlin: pending
     AuditEvent:
       type: object
       description: An audit line
@@ -14627,6 +14703,13 @@ components:
       properties:
         name:
           type: string
+        hooksDeadlineSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          x-ostrom-status: planned
+          description: "The new wait for the first hook, in seconds; outside 5 to 300 is refused with 400. Planned:
+            the server does not read it yet"
       required:
       - name
       x-ostrom-kotlin: pending
@@ -14658,6 +14741,13 @@ components:
         timeZone:
           type: string
           description: The organization's IANA time zone, `UTC` by default
+        hooksDeadlineSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          x-ostrom-status: planned
+          description: "How long the CLI waits for the first of Ostrom's hooks in an agent's session before it reports
+            `hooks.missing`, 15 until an owner or an admin sets it. Planned: the server does not send it yet"
       required:
       - id
       - slug
