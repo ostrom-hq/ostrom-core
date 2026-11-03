@@ -3469,8 +3469,9 @@ paths:
       tags:
       - gates
       summary: Record that the hook refused a gated action on the workstation without asking the server (audit A6)
-      description: "The hook refuses an enforced gate's action locally when it cannot be asked honestly: a push that
-        redirects git (`--git-dir`, another checkout, `GIT_DIR`) or a push Ostrom cannot read. The refusal stands
+      description: "The hook refuses an action locally when it cannot be asked honestly (`GateLocalDenial.reason`): a
+        push that redirects git (`--git-dir`, another checkout, `GIT_DIR`), a push Ostrom cannot read, and the other
+        refusals the hook makes alone. The refusal stands
         whatever this call answers: the hook sends it after refusing, never waits on it, and an unreachable server
         changes nothing. The server writes the audit line `gate.denied_locally` in the organization's chain (meta:
         session, class, reason, the command as normalized with its secrets removed, repo). Planned: the server does
@@ -13107,9 +13108,13 @@ components:
           description: The action class of the gate (`push-main`...)
         reason:
           type: string
-          enum: [redirected, unreadable]
-          description: "`redirected`: the push redirects git away from the repository the gate covers; `unreadable`: the
-            push cannot be read"
+          enum: [redirected, unreadable, unknown_landing, dynamic_command, git_setting, foreign_repository, policy_held]
+          description: "Why the hook refused without asking: `redirected`, the push redirects git away from the
+            repository the gate covers (`--git-dir`, another checkout); `unreadable`, the push cannot be read;
+            `unknown_landing`, the branches it lands on cannot be told; `dynamic_command`, a program named by a variable
+            or a substitution; `git_setting`, the command changes a setting that decides where a push goes;
+            `foreign_repository`, the command acts in another repository than the session's; `policy_held`, the
+            session's gate policy could not be verified, so every action is held"
         command:
           type: string
           maxLength: 4096
