@@ -13786,8 +13786,10 @@ components:
           type: string
           pattern: ^[a-z0-9][a-z0-9._-]{0,63}$
           description: 1 to 64 characters; `servers`, `settings`, `calls` and `usage` are reserved (they are paths of
-            this API), and so are `ostrom` and `ostrom-workflow`, whatever their case and surrounding spaces (Ostrom's
-            own MCP servers, which every agent already has); a reserved name is refused with a 400
+            this API), and so is a name agents would see as one of Ostrom's own MCP servers, which every agent already
+            has: `ostrom`, `ostrom-workflow` and `workflow` (the launcher labels a server `ostrom-<name>`, keeping a
+            name that starts with `ostrom`), whatever their case and surrounding spaces; a reserved name is refused
+            with a 400
         url:
           type: string
           description: The upstream URL of an HTTP server; absent for a stdio server. In answers, a stdio server reads
