@@ -9254,6 +9254,7 @@ paths:
                 credentialSecret:
                   type: string
                 sharedWith:
+                  description: 'Whom it is lent to: members by login, and groups as `group:<id>` (the id of a group of `/api/v1/groups`). Empty: the whole organization. Only groups named: their members who are not paused, no one else. A group of another organization, or a malformed id, is refused (400).'
                   type: array
                   items:
                     type: string
@@ -9303,6 +9304,7 @@ paths:
               type: object
               properties:
                 sharedWith:
+                  description: 'Whom it is lent to: members by login, and groups as `group:<id>` (the id of a group of `/api/v1/groups`). Empty: the whole organization. Only groups named: their members who are not paused, no one else. A group of another organization, or a malformed id, is refused (400).'
                   type: array
                   items:
                     type: string
@@ -15371,6 +15373,7 @@ components:
         status:
           type: string
         sharedWith:
+          description: 'Whom it is lent to, sorted together: the logins of its members and `group:<id>` for each group it is lent to. Empty for the whole organization, and for a member who is neither an admin nor its owner.'
           type: array
           items:
             type: string
