@@ -16295,6 +16295,13 @@ components:
           type: string
         version:
           type: integer
+        repos:
+          type: array
+          description: 'Repositories the workflow applies to, `owner/name` where `*` is any part of a name (1 to
+            100). Absent: every repository of the organization, as before. Present: these only, whether the workflow
+            is observed or enforced, in the session packages and the gates catalogue'
+          items:
+            type: string
         nodes:
           type: array
           items:
