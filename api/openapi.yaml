@@ -205,8 +205,8 @@ paths:
     get:
       operationId: startGithubLogin
       x-ostrom-status: planned
-      description: "Main serves this path through `startOAuthLogin` (`provider=github`): `redirect` and `reauth`, not the
-        mobile PKCE parameters. Planned until the server takes them."
+      description: "Served through `startOAuthLogin` (`provider=github`), with the mobile PKCE parameters since
+        ostrom-server#75. This literal path stays `planned` for the served check, which lists the `{provider}` route."
       tags:
       - auth
       summary: 'Start the GitHub OAuth sign-in. Browser: `redirect`. Mobile app: `redirect_uri` (ostrom://auth/callback),
@@ -248,10 +248,13 @@ paths:
   /api/v1/auth/mobile/token:
     post:
       operationId: mobileToken
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Exchange the one-time code of the mobile sign-in (PKCE) for a token
+      description: "The code works once (a wrong verifier spends it), for 60 s, with the exact `redirectUri` of the start.
+        The token (`osm_…`, 30 days) answers a gate only within 5 minutes of `unlockMobileApp`. A person keeps 5 phones:
+        a sixth sign-in revokes the oldest app token."
       security: []
       requestBody:
         required: true
@@ -284,6 +287,10 @@ paths:
                     $ref: '#/components/schemas/AuthUser'
                   expiresAt:
                     type: string
+                  unlockKey:
+                    type: string
+                    description: "Kept by the app behind the phone's biometrics (keychain item that requires them),
+                      presented to `unlockMobileApp` before a yes; never sent anywhere else"
                 required:
                 - token
                 - user
@@ -291,12 +298,52 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mobile/unlock:
+    post:
+      operationId: unlockMobileApp
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "Record the phone's biometric unlock: the app's token answers a gate for 5 minutes after it (S2-54)"
+      description: "The app's token only (403 for a browser session or another token, or a wrong key)."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                unlockKey:
+                  type: string
+              required:
+              - unlockKey
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authenticatedAt:
+                    type: string
+                    format: date-time
+                required:
+                - authenticatedAt
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/github/callback:
     get:
       operationId: githubLoginCallback
       x-ostrom-status: planned
-      description: "Main serves this path through `oauthLoginCallback` (`provider=github`), for the browser sign-in only.
-        Planned until the mobile sign-in is served."
+      description: "Served through `oauthLoginCallback` (`provider=github`), browser and mobile sign-ins, since
+        ostrom-server#75. This literal path stays `planned` for the served check, which lists the `{provider}` route."
       tags:
       - auth
       summary: GitHub OAuth callback
@@ -362,10 +409,38 @@ paths:
         description: "Sign in again before a yes: the provider asks again"
         schema:
           type: boolean
+      - name: redirect_uri
+        in: query
+        required: false
+        description: "Mobile app: its deep link, exactly `ostrom://auth/callback`. With `state`, `code_challenge` and
+          `code_challenge_method=S256`, the callback returns a one-time `code` (or an `error`) and the app's `state` to
+          it; any invalid mobile parameter answers 400"
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        description: "Mobile app: its state, returned with the code"
+        schema:
+          type: string
+      - name: code_challenge
+        in: query
+        required: false
+        description: "Mobile app: the S256 PKCE challenge (43 characters)"
+        schema:
+          type: string
+      - name: code_challenge_method
+        in: query
+        required: false
+        description: "Mobile app: `S256` only"
+        schema:
+          type: string
       security: []
       responses:
         '302':
           description: "Redirect"
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/auth/{provider}/callback:
     get:
       operationId: oauthLoginCallback
@@ -474,8 +549,9 @@ paths:
       description: "Without a body, the ordinary sign-in of `ostrom login`. With `scopes`, `ostrom login --admin`: the
         governance write scopes no other token holds (S2-52, decision of 02/11/2026). The browser's page shows them
         (`DeviceAuthorization.scopes`), only an owner or admin of the organisation may approve them, and the token
-        that comes out expires in 8 hours at most and is never refreshed. Planned (AUTH-REPRISE): a server that does
-        not read `scopes` yet answers an ordinary token, whose `AuthToken.scopes` tell the CLI."
+        that comes out is bound to that organisation, expires in 8 hours at most and is never refreshed. Each
+        governance write it makes is recorded in the organisation's audit log before it happens. A server older than
+        this answers an ordinary token, whose `AuthToken.scopes` tell the CLI."
       security: []
       requestBody:
         required: false
@@ -559,7 +635,15 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (approving `ostrom login --admin` needs a sign-in less than 5 minutes old;
+            sign in again, then answer again; a denial and the ordinary `ostrom login` are not asked for it), or
+            forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -718,12 +802,14 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /api/v1/policy/agents:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: checkAgentPolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: May this developer launch this agent with this model
@@ -768,6 +854,42 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/me/account:
+    get:
+      operationId: getMyAccount
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The signed-in person's account: e-mails and ways in (scope `profile:read`)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/tokens/scopes:
+    get:
+      operationId: listTokenScopes
+      x-ostrom-status: served
+      tags:
+      - auth
+      summary: "The scopes a personal token may be given, `POST /api/v1/tokens` refuses any other (browser session only)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenScopes'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
           $ref: '#/components/responses/Error'
   /api/v1/auth/me:
     get:
@@ -1044,7 +1166,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -1150,7 +1279,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
   /api/v1/tokens/{id}:
     delete:
       operationId: revokeToken
@@ -1196,7 +1332,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
   /api/v1/service-keys:
@@ -1204,7 +1347,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listServiceKeys
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Service keys (admins)
@@ -1236,7 +1379,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createServiceKey
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Create a service key; its secret is returned once
@@ -1251,8 +1394,14 @@ paths:
                   type: string
                 scopes:
                   type: array
+                  description: 'What a CI calls, nothing else: `sessions:write` (reportCheck, signWorkflowReceipt),
+                    `rules:read` (listRules, getRule), or both; any other scope, 400. A key is refused on every other
+                    operation, whatever it holds.'
                   items:
                     type: string
+                expiresInDays:
+                  type: integer
+                  description: Lifetime in days, 1 to 366; absent for a key that does not expire
               required:
               - name
               - scopes
@@ -1268,7 +1417,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -1278,7 +1434,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteServiceKey
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Delete a service key
@@ -1306,7 +1462,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listDevices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Workstations where the caller is signed in
@@ -1341,7 +1497,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteDevice
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Sign a workstation out
@@ -1441,8 +1597,7 @@ paths:
     get:
       operationId: listMyOrganizations
       x-ostrom-status: served
-      description: "Scope `orgs:read`. Each item also carries `slug` and `role` (the caller's role there), which the
-        server sends beyond `Organization`; a client may ignore them."
+      description: "Scope `orgs:read`."
       tags:
       - organization
       summary: The organizations the caller is an active member of, to choose the one sent in `Ostrom-Org`. Needs no
@@ -1458,7 +1613,7 @@ paths:
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Organization'
+                      $ref: '#/components/schemas/MyOrganization'
                 required:
                 - items
         '400':
@@ -1474,7 +1629,7 @@ paths:
   /api/v1/me/notifications:
     get:
       operationId: getNotificationPreferences
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Notification preferences of the caller
@@ -1497,7 +1652,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setNotificationPreferences
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Set the notification preferences of the caller
@@ -2045,7 +2200,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2134,7 +2296,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2209,7 +2378,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2238,7 +2414,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -2302,7 +2485,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -3009,6 +3199,9 @@ paths:
       tags:
       - sessions
       summary: 'Sign the workflow receipt of the session: what each compiled node did'
+      description: 'Callers: the session''s person, an agent token of the session''s launch, or a service key of the
+        organization with `sessions:write` (its CI), which acts in its own organization whatever `Ostrom-Org` names.
+        Each call of a key is recorded in the organization''s audit log, in the key''s name (`service_key.used`).'
       parameters:
       - name: id
         in: path
@@ -3109,6 +3302,10 @@ paths:
       tags:
       - gates
       summary: Ask the gate of a boundary action (hook PreToolUse, CI, MCP); 409 session_closed in a closed session
+      description: 409 session_closed in a closed session. 409 check_not_attested when the gate is enforced and its
+        rule needs a check attested (RuleGateCheck.attested) whose last run is not proven by an Ostrom runner
+        (isolated_runner) or by the CI on the commit the gate covers (ci); the message names each such check and why
+        (declared by the workstation, failed, or not run). No approver is asked until the check is proven.
       requestBody:
         required: true
         content:
@@ -3438,6 +3635,9 @@ paths:
       tags:
       - gates
       summary: Self-approval policy
+      description: '`never` for an organization that never chose: a yes always comes from another person (S2-15).
+        `sole-approver`, which lets the gate''s only approver approve their own action, marked self-approved in the
+        receipt, applies only once an owner or an admin sets it'
       responses:
         '200':
           description: OK
@@ -3448,6 +3648,7 @@ paths:
                 properties:
                   selfApproval:
                     type: string
+                    description: '`never` (the default) or `sole-approver`'
                 required:
                 - selfApproval
         '400':
@@ -3573,7 +3774,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApprovalQueue
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: 'The yes queue of the caller: pending approvals and recent answers, as the console and the app show them'
@@ -3631,7 +3832,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApprovalView
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - approvals
       summary: An approval as the console and the app show it
@@ -3668,8 +3869,9 @@ paths:
       - approvals
       summary: Say yes or no, as the caller. 409 shown_digest_mismatch when the shown digest differs, 409 approval_closed
         when already answered (a signed answer never changes); 403 self_approval_refused when the asker answers while another
-        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old (sign in again, then
-        answer)
+        approver exists; 403 step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
+        app not unlocked in the last 5 minutes (`unlockMobileApp`); the 200 is the `ApprovalView` of the answered approval,
+        with its signed `receipt`, a no's included
       parameters:
       - name: id
         in: path
@@ -4335,6 +4537,10 @@ paths:
       tags:
       - checks
       summary: Report a check run
+      description: 'Callers: the session''s person, an agent token of the session''s launch, or a service key of the
+        organization with `sessions:write` (its CI), which acts in its own organization whatever `Ostrom-Org` names,
+        and inside a session only (403 without `sessionId`). Each call of a key is recorded in the organization''s audit
+        log, in the key''s name (`service_key.used`). A key''s run is `workstation_declared`, like the hooks''.'
       requestBody:
         required: true
         content:
@@ -4510,6 +4716,9 @@ paths:
       tags:
       - rules
       summary: Rules
+      description: 'Callers: a member, a token with `rules:read`, or a service key of the organization with `rules:read`
+        (its CI), which reads its own organization''s rules whatever `Ostrom-Org` names. Each call of a key is recorded in
+        the organization''s audit log, in the key''s name (`service_key.used`).'
       parameters:
       - name: repo
         in: query
@@ -4594,6 +4803,9 @@ paths:
       tags:
       - rules
       summary: A rule
+      description: 'Callers: a member, a token with `rules:read`, or a service key of the organization with `rules:read`
+        (its CI), which reads its own organization''s rules whatever `Ostrom-Org` names. Each call of a key is recorded in
+        the organization''s audit log, in the key''s name (`service_key.used`).'
       parameters:
       - name: id
         in: path
@@ -5875,7 +6087,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -5913,7 +6132,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -5938,7 +6164,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6014,7 +6247,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6045,7 +6285,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6112,7 +6359,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6145,7 +6399,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6200,7 +6461,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6389,7 +6657,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6427,7 +6702,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6452,7 +6734,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -6476,7 +6765,7 @@ paths:
       - name: cutover
         in: query
         required: false
-        description: "The final run, once TeamCode is stopped: owners only (403 otherwise), recorded in the audit log in the name of the person who runs it, before anything is written (503 on a server without an audit log or without shared accounts). It also revives the shared accounts waiting for a reconnection, testing TeamCode's tokens first (renewing rotates them, so a normal run never does)."
+        description: "The final run, once TeamCode is stopped: owners only (403 `cutover_owner_required` otherwise), recorded in the audit log in the name of the person who runs it, before anything is written (503 `cutover_audit_unavailable` on a server without an audit log, 503 `cutover_sharing_unavailable` on a server without shared accounts; the key is `error.type`). It also revives the shared accounts waiting for a reconnection, testing TeamCode's tokens first (renewing rotates them, so a normal run never does)."
         schema:
           type: boolean
       requestBody:
@@ -6534,6 +6823,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/responses:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6564,6 +6859,12 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/v1/chat/completions:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -6593,6 +6894,12 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/InferenceRefused'
+        '502':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/inference/v1/models:
     parameters:
@@ -6678,7 +6985,14 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/StepUpRequired'
+                - $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -7418,10 +7732,13 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRunners
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Runners
+      description: 'The organization''s registered runners, by name, then the runners at work for the caller''s cloud
+        sessions (one per execution). Any member, or a credential with `cloud:read`. A runner is `online` when it gave a
+        sign of life within the last 90 seconds, `offline` otherwise. A registered runner''s `token` is never listed.'
       responses:
         '200':
           description: OK
@@ -7450,10 +7767,16 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: registerRunner
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Register a runner (service key)
+      description: 'An owner or an admin of the organization, from a signed-in console session (a personal, CLI or
+        service token gets 403), registers a machine. The answer carries the runner''s `token`, shown this once: only its
+        hash is kept. The name is unique in the organization and an organization registers at most 100 runners (409
+        otherwise). The name is 1 to 64 characters; at most 16 labels, each 1 to 64 letters, digits, `.`, `_`, `:` or `-`,
+        starting with a letter or a digit (400 otherwise). The name is unique whatever its case and refuses control and
+        invisible formatting characters. The answer is not cached (`Cache-Control: no-store`).'
       requestBody:
         required: true
         content:
@@ -7494,10 +7817,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: deleteRunner
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Remove a runner
+      description: 'An owner or an admin, from a signed-in console session, removes a registered runner and its token.
+        A runner of another organization, or a malformed id, is not found (404).'
       parameters:
       - name: id
         in: path
@@ -7522,10 +7847,16 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: runnerHeartbeat
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Sign of life; returns the work assigned
+      description: >-
+        Authenticated by the runner's own key (`Authorization: Bearer ostrom_runner_…`, from registerRunner's
+        answer), not a member's credential; no body. Marks the runner seen: listRunners shows it `online` for 90
+        seconds after its last heartbeat. An unknown runner, a malformed id, another runner's key or a runner
+        removed meanwhile all answer 401 alike. `sessions` lists the cloud sessions assigned to the runner, empty
+        until sessions are scheduled on registered runners.
       parameters:
       - name: id
         in: path
@@ -7930,6 +8261,113 @@ paths:
                 required:
                 - instruction
                 - state
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/launch:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: openRunnerLaunch
+      x-ostrom-status: served
+      tags:
+      - runners
+      summary: 'The runner of a cloud session opens its session''s launch with the execution''s runner token: the launch
+        is the session owner''s, under the organization''s policy and launch limit, and the agent in the pod gets its
+        agent token, never the runner token. A shell session opens none (400)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The cloud session the runner was started for
+                epoch:
+                  type: integer
+                  format: int64
+                  description: The execution it was started for; an older one is fenced (409)
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  launchId:
+                    type: string
+                  agentToken:
+                    type: string
+                  expiresAt:
+                    type: string
+                required:
+                - launchId
+                - agentToken
+                - expiresAt
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/cloud/runner/checks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: reportRunnerCheck
+      x-ostrom-status: served
+      tags:
+      - checks
+      summary: 'The runner of a cloud session reports a check it ran itself, with the execution''s runner token: the run
+        is recorded `isolated_runner` for a session of a launch that cloud session opened (404 otherwise), and the
+        receipt''s check node takes the attestation of its last run. It proves that Ostrom ran the script and read its
+        exit code, not that the agent''s workspace it ran on was untouched'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The cloud session the runner was started for
+                epoch:
+                  type: integer
+                  format: int64
+                  description: The execution it was started for; an older one is fenced (409)
+                check:
+                  $ref: '#/components/schemas/ReportCheckRequest'
+              required:
+              - sessionId
+              - epoch
+              - check
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckRun'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -9409,24 +9847,43 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listAudit
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - audit
       summary: Audit log (admins)
+      description: >-
+        The organization's signed audit log, newest first, 50 lines a page: governance changes (budgets, model
+        policy, inference settings, MCP servers, assignments and policies), organization and membership changes,
+        the import cutover and the deletion of the organization. Readable by an owner or an admin only (403
+        otherwise), with a browser session or a token holding `audit:read`; another organization's log is never
+        read (404). `actor` is a person's login (their id once they no longer exist), or `<kind>:<id>` for a
+        credential that is not a person's (`service:…`, `agent:…`), or `server:ostrom` for the server itself;
+        the `actor` filter takes a login only. `subject` is `<type>:<id>`; `meta`
+        holds the event's facts as strings, with `credential` (`browser`, `api_token`…) for a change made through
+        the API. `next` is absent on the last page. Each line is checked as it is read, against the line before it in
+        the chain even when a filter leaves that one out: `integrity` says what was found, and the line carries what
+        a client needs to check it again. The canonical form (sorted keys, no spaces, `null` for an absent value, `v`
+        1) holds `action` (`event`), `actorId`, `details` (`meta`), `id`, `occurredAt` (`at`), `orgId`,
+        `previousHash`, `sequence`, `targetId` and `targetType` (`subject` split at its first colon); `hash` is its
+        SHA-256 and `signature` verifies with the key `keyId` (`GET /api/v1/instance/keys`, past keys included).
+        Erasing the newest lines of a chain is not seen.
       parameters:
       - name: actor
         in: query
         required: false
+        description: Only this person's events, by login.
         schema:
           type: string
       - name: event
         in: query
         required: false
+        description: Only this event, by its exact name (`budget.changed`).
         schema:
           type: string
       - name: before
         in: query
         required: false
+        description: The `next` of the previous page (400 when it is not one).
         schema:
           type: string
       responses:
@@ -9526,7 +9983,9 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startAnalysis
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "A browser session of an owner or an admin only (403 otherwise); 202 with the id of the run. 409 when a
+        run of the same kind is already going. It reads every repository and spends on the organization's model."
       tags:
       - analysis
       summary: Analyse the organization (rules and workflows)
@@ -9557,7 +10016,9 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: restartAnalysis
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "A browser session of an owner or an admin only (403 otherwise); 202 with a fresh run, whether or not the last one failed; its id. 409 when a
+        run of the same kind is already going. It reads every repository and spends on the organization's model."
       tags:
       - analysis
       summary: Restart a failed analysis
@@ -9588,7 +10049,8 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getAnalysisState
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "Scope `rules:read`. `phase` and `progress` are absent before the first analysis; `failure` is `{stage, reason, at, retryPath}` when the last one failed."
       tags:
       - analysis
       summary: Snapshot of the analysis
@@ -9614,7 +10076,9 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startReplay
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "A browser session of an owner or an admin only (403 otherwise); 202 with the id of the run. 409 when a
+        run of the same kind is already going. It spends on the organization's model."
       tags:
       - analysis
       summary: Replay the last 30 days of pull requests under the rules (simulation)
@@ -9642,7 +10106,8 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: getReplay
-      x-ostrom-status: planned
+      x-ostrom-status: served
+      description: "Scope `rules:read`: what the last replay found, one object per replayed pull request."
       tags:
       - analysis
       summary: Replay results
@@ -10090,6 +10555,44 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    InferenceRefused:
+      description: "Too many requests, in the provider's own error shape, which satisfies `ApiError` (`error.type`,
+        `error.message`). Refused by the budgets before any provider is called: `error.type` `rate_limit_error` on the
+        Messages endpoint, `insufficient_quota` on the OpenAI-compatible ones, which also carry `error.code`
+        `budget_exhausted` or `budget_insufficient`; `error.message` starts with one of two fixed phrases a client can
+        match on (`LedgerSpendGuard.EXHAUSTED` and `.INSUFFICIENT` in ostrom-server). `Monthly budget reached: ...`: a
+        monthly limit of the organization or of the member is spent; `Retry-After` gives the seconds until the month
+        ends (UTC), when the limit resets. `Budget left too low for this call: ...`: the limit is not spent, but what
+        is left after the calls in flight cannot cover what this call may cost (its output price times the largest of
+        its `max_tokens`, `max_output_tokens` and `max_completion_tokens`, 32 000 when it names none, at most 1 000 000;
+        plus its estimated input; nothing for a model without a price); the message says what is left and what the
+        call may cost, with no `Retry-After`: lower the call's output bound, or retry once the calls in flight finish.
+        Every shared account busy or at its limit: `rate_limit_error`, or `rate_limit_exceeded` with `error.code`
+        `no_capacity`, with `Retry-After` when the gateway knows when one frees up. A provider's own 429, once no other
+        account can take the call, is relayed as the provider sent it, with its `Retry-After` and rate-limit headers"
+      headers:
+        Retry-After:
+          description: When to try again. From the gateway, whole seconds, at least 1; with `Monthly budget reached`,
+            until the start of the next month (UTC); absent with `Budget left too low for this call`. Relayed from a
+            provider, as the provider wrote it (seconds or an HTTP date)
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    RateLimited:
+      description: 'Too many requests lately (`rate_limited`): nothing was done. A launch is limited per person in an
+        organization and per organization, over a sliding hour'
+      headers:
+        Retry-After:
+          description: Seconds until a place frees up
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
   schemas:
     AccountAuditEvent:
       type: object
@@ -10391,6 +10894,9 @@ components:
           type: boolean
         canApprove:
           type: boolean
+          description: "Whether the person may answer: their role, being an approver, not their own gate. It does not
+            wait for a fresh sign-in or the phone's unlock: a locked app reads `true`, and its yes is refused at the
+            answer with 403 `step_up_required` until `unlockMobileApp`"
         reason:
           type: string
         selfApproval:
@@ -10725,6 +11231,7 @@ components:
           type: string
         at:
           type: string
+          format: date-time
         event:
           type: string
         actor:
@@ -10733,7 +11240,44 @@ components:
           type: string
         meta:
           type: object
-          additionalProperties: {}
+          description: The event's facts, every value a string
+          additionalProperties:
+            type: string
+        sequence:
+          type: integer
+          format: int64
+          description: The position in the organization's chain, from 1 (`listAudit` only)
+        actorId:
+          type:
+          - string
+          - 'null'
+          description: The person's id as signed, null for a credential that is not a person's or the server (`listAudit` only)
+        previousHash:
+          type:
+          - string
+          - 'null'
+          description: The hash of the previous line of the chain, null for the first one (`listAudit` only)
+        hash:
+          type: string
+          description: SHA-256 (hex) of the canonical form (`listAudit` only)
+        signature:
+          type: string
+          description: The instance's Ed25519 signature of the canonical form, base64 (`listAudit` only)
+        keyId:
+          type: string
+          description: The instance key that signed it, `GET /api/v1/instance/keys` (`listAudit` only)
+        integrity:
+          type: string
+          enum:
+          - verified
+          - altered
+          - unlinked
+          description: >-
+            What the server found when it read the line (`listAudit` only): `verified` (hash, signature and link to
+            the previous line hold), `altered` (the line no longer matches its hash, or its signature does not verify
+            with the instance key it names, past keys included, or it names a key the instance never had), `unlinked`
+            (the previous line of the chain is missing or is not the one this line was signed after: a line was
+            erased or rewritten before it).
       required:
       - id
       - at
@@ -11358,9 +11902,11 @@ components:
     CheckAttestation:
       type: string
       description: 'Where a check run comes from. `workstation_declared`: the developer''s machine ran it and reported
-        the result, nothing proves it ran. `isolated_runner`: an Ostrom runner ran it in an isolated session. `ci`:
-        the GitHub check run of the Ostrom App, read and verified by the server. Shown on every check of a receipt;
-        a rule gate can refuse a declared run (RuleGateCheck).'
+        the result, nothing proves it ran. `isolated_runner`: the runner of an Ostrom cloud session ran it and reported
+        it with its own token, which the agent cannot read (reportRunnerCheck); it proves that Ostrom ran the script and
+        read its exit code, not that the agent''s workspace it ran on was untouched. `ci`: the GitHub check run of the
+        Ostrom App, read and verified by the server. Shown on every check of a receipt; a rule gate can refuse a
+        declared run (RuleGateCheck).'
       enum:
       - workstation_declared
       - isolated_runner
@@ -11797,10 +12343,24 @@ components:
           type: string
         lastSeenAt:
           type: string
+        kind:
+          type: string
+          enum:
+          - cli
+          - admin
+          description: "`admin` for the elevated token of `ostrom login --admin`; absent means `cli`"
+        orgId:
+          type: string
+          description: The organization an elevated token is bound to
+        scopes:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: string
       required:
       - id
       - name
-      - platform
       x-ostrom-kotlin: pending
     DeviceAnswer:
       type: object
@@ -12971,6 +13531,98 @@ components:
           description: The slug of a team they join; none when absent
       required:
       - login
+    MyOrganization:
+      type: object
+      description: One of the caller's organizations, to choose the one `Ostrom-Org` names
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          description: The picture of the linked GitHub organization, empty when none
+        role:
+          $ref: '#/components/schemas/MemberRole'
+          description: The caller's role there
+      required:
+      - id
+      - slug
+      - name
+      - avatarUrl
+      - role
+      x-ostrom-kotlin: pending
+    Account:
+      type: object
+      description: The signed-in person's account
+      properties:
+        id:
+          type: string
+        login:
+          type: string
+          description: The handle, unique on the instance
+        displayName:
+          type: string
+        primaryEmail:
+          type: string
+          description: The main e-mail; absent when there is none
+        avatarUrl:
+          type: string
+          description: The picture; absent when there is none
+        createdAt:
+          type: string
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountEmail'
+        providers:
+          type: array
+          description: "How the person signs in: `github`, `google`, `email` or `oidc:<connection>`"
+          items:
+            type: string
+      required:
+      - id
+      - login
+      - displayName
+      - createdAt
+      - emails
+      - providers
+      x-ostrom-kotlin: pending
+    AccountEmail:
+      type: object
+      properties:
+        email:
+          type: string
+        verified:
+          type: boolean
+      required:
+      - email
+      - verified
+      x-ostrom-kotlin: pending
+    TokenScope:
+      type: object
+      properties:
+        scope:
+          type: string
+          description: "`resource:action`"
+        description:
+          type: string
+      required:
+      - scope
+      - description
+      x-ostrom-kotlin: pending
+    TokenScopes:
+      type: object
+      properties:
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenScope'
+      required:
+      - scopes
+      x-ostrom-kotlin: pending
     MemberRole:
       type: string
       enum:
@@ -14053,11 +14705,14 @@ components:
       properties:
         check:
           type: string
-          description: Id of the check node in the organization's workflows
+          description: Id of the check node in the organization's workflows; the CI's proof is its check run of the
+            same name on the commit the gate covers
         attested:
           type: boolean
           description: When true, only a run attested by an Ostrom runner or the CI (`isolated_runner`, `ci`)
             satisfies the gate; a run declared by the workstation (`workstation_declared`) does not. False by default.
+            An `isolated_runner` run proves that Ostrom ran the script and read its exit code, not that the agent's
+            workspace it ran on was untouched.
       required:
       - check
     NewRule:
@@ -14146,6 +14801,9 @@ components:
           type: string
         version:
           type: string
+        token:
+          type: string
+          description: The runner's key, `ostrom_runner_` and 64 hex characters, only in registerRunner's answer
       required:
       - id
       - name
@@ -14258,6 +14916,8 @@ components:
             type: string
         createdAt:
           type: string
+        expiresAt:
+          type: string
         lastUsedAt:
           type: string
         secret:
@@ -14317,6 +14977,13 @@ components:
           type: array
           items:
             type: string
+        gateAnswers:
+          type: array
+          description: On a single read only, the answers to those of `gates` someone answered, oldest gate first. A token
+            that reads sessions without reading gates (the device of `ostrom login`) sees them here; nothing of another
+            session's gates.
+          items:
+            $ref: '#/components/schemas/SessionGateAnswer'
         receiptId:
           type: string
         tools:
@@ -14332,6 +14999,35 @@ components:
       - agent
       - dev
       - startedAt
+    SessionGateAnswer:
+      type: object
+      description: The answer to a gate a session asked or joined, as the session's thread shows it.
+      properties:
+        gateId:
+          type: string
+        actionClass:
+          type: string
+        outcome:
+          type: string
+          enum:
+          - approved
+          - refused
+          description: '`approved` stays once the session reserved or used the yes.'
+        by:
+          type: string
+          description: Who answered, the approver whose yes or no decided the gate.
+        at:
+          type: string
+          format: date-time
+        receiptId:
+          type: string
+          description: The gate's signed receipt, once signed.
+      required:
+      - gateId
+      - actionClass
+      - outcome
+      - by
+      - at
     SessionPackage:
       type: object
       description: 'A compiled session package: the harness a coding agent session runs under (hooks, scripts, skills, sub-agents,
@@ -14691,8 +15387,11 @@ components:
       - agent
     StepUpRequired:
       type: object
-      description: '403 step_up_required: a yes needs a sign-in less than 5 minutes old (a sign-in of unknown age is
-        refused too); sign in again, then answer. A no never needs it'
+      description: '403 step_up_required: a yes, and a sensitive write from the console or the app (a personal token,
+        a service key, a sign-in link, an invitation, a role, a member removed, a transfer, a secret, an MCP server,
+        its assignments, policies and settings, the model keys), need a sign-in less than 5
+        minutes old (a sign-in of unknown age is refused too); sign in again, then send it again. A no never needs it,
+        and an API token is never asked: it has no sign-in to renew'
       properties:
         error:
           $ref: '#/components/schemas/ErrorDetail'
@@ -14970,7 +15669,7 @@ components:
           type: string
         kind:
           type: string
-          description: '`personal` or `cli`'
+          description: '`personal`, `cli` or `mobile` (the phone app''s)'
         scopes:
           type: array
           items:

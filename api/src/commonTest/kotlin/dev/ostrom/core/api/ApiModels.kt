@@ -70,6 +70,7 @@ import dev.ostrom.core.api.models.RuleSource
 import dev.ostrom.core.api.models.ScriptApproval
 import dev.ostrom.core.api.models.ScriptSuggestion
 import dev.ostrom.core.api.models.Session
+import dev.ostrom.core.api.models.SessionGateAnswer
 import dev.ostrom.core.api.models.SessionPackage
 import dev.ostrom.core.api.models.SessionResponse
 import dev.ostrom.core.api.models.StartSessionRequest
@@ -161,6 +162,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ScriptApproval.serializer(),
     ScriptSuggestion.serializer(),
     Session.serializer(),
+    SessionGateAnswer.serializer(),
     SessionPackage.serializer(),
     SessionResponse.serializer(),
     StartSessionRequest.serializer(),
