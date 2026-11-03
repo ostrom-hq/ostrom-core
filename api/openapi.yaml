@@ -9246,10 +9246,14 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listGroups
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Sharing groups
+      description: "Every member of the organization reads its groups (`accounts:read`): name, members by login (a member who
+        left is named by member id), the ids of the shared accounts lent to the group, and the members paused now.
+        At most 100 groups, by name; `next` is never set. A person outside the organization named by `Ostrom-Org`
+        gets 404."
       responses:
         '200':
           description: OK
@@ -9278,10 +9282,14 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Create a group
+      description: "An owner or an admin (`accounts:write`, browser session); a member gets 403. `name` is trimmed, 1 to 120
+        characters, unique in the organization whatever the case (409). `members` are logins of members of the
+        organization and `accounts` ids of its shared accounts, else 400. At most 1000 members per group and 100 groups
+        per organization (409)."
       requestBody:
         required: true
         content:
@@ -9323,10 +9331,11 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: A group
+      description: "Every member reads it. A group of another organization, a deleted one or an id that is no UUID is a 404."
       parameters:
       - name: id
         in: path
@@ -9352,10 +9361,13 @@ paths:
           $ref: '#/components/responses/Error'
     patch:
       operationId: updateGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Change a group
+      description: "An owner or an admin; a member gets 403. Each field given replaces the current one: `name` (409 when another
+        group has it), `accounts` (all the accounts lent, an empty list lends nothing). Members change through
+        `/members/{login}`. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9394,10 +9406,12 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteGroup
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Delete a group
+      description: "An owner or an admin; a member gets 403. Its members and the accounts lent to it go with it; the accounts
+        themselves stay. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9422,10 +9436,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: addGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Add a member to a group
+      description: "An owner or an admin; a member gets 403. `login` names a member of the organization (else 404). Adding a member
+        already in the group changes nothing, a pause included. A group of another organization is a 404."
       parameters:
       - name: id
         in: path
@@ -9452,10 +9468,12 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: removeGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Remove a member from a group
+      description: "An owner or an admin; a member gets 403. `login` is the member's login, or the member id the group shows for one
+        who left the organization. 404 when they are not in the group."
       parameters:
       - name: id
         in: path
@@ -9485,10 +9503,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: pauseGroupMember
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Pause a member in a group
+      description: "An owner or an admin; a member gets 403. `until` is an ISO 8601 instant (else 400): the group lends nothing to
+        the member until then, and an instant already past ends the pause. 404 when they are not in the group."
       parameters:
       - name: id
         in: path
@@ -12952,6 +12972,19 @@ components:
           type: array
           items:
             type: string
+        paused:
+          type: array
+          description: The members paused now, by login, and the end of their pause
+          items:
+            type: object
+            properties:
+              login:
+                type: string
+              until:
+                type: string
+            required:
+            - login
+            - until
       required:
       - id
       - name
