@@ -12757,7 +12757,8 @@ components:
       type: object
       description: '403 other than step_up_required: `forbidden` (a token without the scope, a member without the
         role, a credential the route does not admit), or a finer key (`email_link_other_browser`,
-        `installation_not_yours`, `probe_not_yours`, `cutover_owner_required`)'
+        `installation_not_yours`, `probe_not_yours`, `cutover_owner_required`, `self_approval_refused`: the server
+        names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`)'
       properties:
         error:
           type: object
@@ -12765,7 +12766,8 @@ components:
           properties:
             type:
               type: string
-              enum: [forbidden, email_link_other_browser, installation_not_yours, probe_not_yours, cutover_owner_required]
+              enum: [forbidden, email_link_other_browser, installation_not_yours, probe_not_yours, cutover_owner_required,
+                self_approval_refused]
             message:
               type: string
           required:
