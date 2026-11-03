@@ -12595,10 +12595,21 @@ components:
         expiresAt:
           type: string
           format: date-time
+        requestedAt:
+          type: string
+          format: date-time
+          description: "When the CLI started the login, shown before the yes: with `requestedFrom`, an approval of
+            a code someone else sent shows"
+        requestedFrom:
+          type: string
+          description: "The network the login was started from, never the address: a /24 for IPv4
+            (`203.0.113.0/24`), a /48 for IPv6 (`2001:db8:abcd::/48`), shown before the yes. Absent when the server
+            could not tell"
       required:
       - userCode
       - clientName
       - expiresAt
+      - requestedAt
       x-ostrom-kotlin: pending
     DeviceCode:
       type: object
