@@ -8096,6 +8096,16 @@ paths:
         required: true
         schema:
           type: string
+      - name: wait
+        in: query
+        required: false
+        x-ostrom-status: planned
+        description: "Seconds the heartbeat may wait for an execution to hand over, for a runner that has room; it answers as soon as one is taken or assigned to it, and at the end of the wait otherwise. Absent or 0 answers at once. A runner then heartbeats again at once. Planned: the server does not read it yet"
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 25
+          default: 0
       requestBody:
         required: false
         content:
