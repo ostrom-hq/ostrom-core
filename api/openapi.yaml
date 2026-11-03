@@ -3933,7 +3933,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGovernanceConfirmation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - governance
       summary: A governance confirmation, with the exact change it makes; `wait` long-polls up to that many seconds
@@ -3983,7 +3983,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: answerGovernanceConfirmation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - governance
       summary: Confirm or refuse a governance confirmation, as an owner or an admin signed in to the console
@@ -10571,8 +10571,7 @@ components:
         Not applied: made with a person's API token (the CLI's, `ostrom login --admin` or not), the governance write
         opened a confirmation, which an owner or an admin confirms on the console within 15 minutes
         (`getGovernanceConfirmation`). A browser session's write and an `inference:admin` service key's are applied at
-        once, as before. Planned: ostrom-server answers it once its governance confirmations are served; until then
-        the write applies (`getGovernanceConfirmation` is `planned` meanwhile).
+        once, as before.
       content:
         application/json:
           schema:
