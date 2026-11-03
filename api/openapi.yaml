@@ -5371,7 +5371,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startWorkflowRun
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Start a run
@@ -5411,7 +5411,7 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: listWorkflowRuns
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Runs of a workflow
@@ -5462,7 +5462,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRuns
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Runs
