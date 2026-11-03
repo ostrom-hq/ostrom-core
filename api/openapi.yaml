@@ -3460,6 +3460,40 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/gates/local-denials:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: reportLocalGateDenial
+      x-ostrom-status: planned
+      tags:
+      - gates
+      summary: Record that the hook refused a gated action on the workstation without asking the server (audit A6)
+      description: "The hook refuses an enforced gate's action locally when it cannot be asked honestly: a push that
+        redirects git (`--git-dir`, another checkout, `GIT_DIR`) or a push Ostrom cannot read. The refusal stands
+        whatever this call answers: the hook sends it after refusing, never waits on it, and an unreachable server
+        changes nothing. The server writes the audit line `gate.denied_locally` in the organization's chain (meta:
+        session, class, reason, the command as normalized with its secrets removed, repo). Planned: the server does
+        not serve it yet"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GateLocalDenial'
+      responses:
+        '202':
+          description: Recorded
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/gates:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -13061,6 +13095,33 @@ components:
       - class
       - label
       - patterns
+    GateLocalDenial:
+      type: object
+      description: A gated action the hook refused on the workstation, without asking the server
+      properties:
+        sessionId:
+          type: string
+          description: The session segment the agent ran in (404 unknown, 409 closed, as `askGate`)
+        class:
+          type: string
+          description: The action class of the gate (`push-main`...)
+        reason:
+          type: string
+          enum: [redirected, unreadable]
+          description: "`redirected`: the push redirects git away from the repository the gate covers; `unreadable`: the
+            push cannot be read"
+        command:
+          type: string
+          maxLength: 4096
+          description: The command as the hook normalized it, secrets removed (the server removes them again)
+        repo:
+          type: string
+          description: The repository of the session, `owner/name`
+      required:
+      - sessionId
+      - class
+      - reason
+      - command
     GateAskRequest:
       type: object
       description: Asks for a gate (hook `PreToolUse`, CI check, MCP). A request in a closed session is refused with 409
