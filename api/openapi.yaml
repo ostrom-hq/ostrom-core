@@ -15116,18 +15116,23 @@ components:
           type: string
           format: uuid
           x-ostrom-status: planned
-          description: "The organization the receipt was signed for, inside the signed body: a receipt of one organization
-            never verifies as another's, even offline. Absent from a receipt signed before it was planned, which stays
-            verifiable but is never bound to an organization (`Verification.orgBound` false). Planned: the server does not
-            sign it yet"
+          description: "The organization the receipt was signed for, inside the signed body, in the lowercase canonical
+            form of a UUID: a receipt that names one organization never verifies as another's, online or offline (the
+            offline verifier is given the organization it checks for: the CLI's configured organization or `--org`).
+            Absent (never null) from a receipt signed before it was planned: such a receipt stays verifiable by its
+            signature but is never bound to an organization (`Verification.orgBound`). Planned: the server does not sign
+            it yet"
         launchId:
           type: string
           x-ostrom-status: planned
-          description: "The launch the receipt belongs to, when there is one, inside the signed body. Planned"
+          description: "The launch the receipt belongs to, as the server names it, inside the signed body. Omitted (never
+            null) when the receipt has none. Planned"
         sessionId:
           type: string
           x-ostrom-status: planned
-          description: "The session segment the receipt belongs to, when there is one, inside the signed body. Planned"
+          description: "The session segment the receipt belongs to, as the server names it, inside the signed body.
+            Omitted (never null) when the receipt has none. For a session's own receipt it is the segment `subject.id`
+            names, and a verifier refuses a receipt where the two differ. Planned"
         subject:
           $ref: '#/components/schemas/ReceiptSubject'
         initiator:
@@ -16808,9 +16813,11 @@ components:
         orgBound:
           type: boolean
           x-ostrom-status: planned
-          description: "True when the signed body names the organization that verifies it. False for a receipt signed
-            before `Receipt.orgId` (valid, but not bound to an organization: shown as such, never accepted as this
-            organization's). A receipt that names another organization is not ok (`reason` says so). Planned"
+          description: "Whether the signed body names the organization that verifies it. `ok` says only that the
+            signature holds: a client that relies on the receipt being this organization's checks `orgBound` is true,
+            and reads an absent `orgBound` (a server that predates it) as not bound. False for a receipt signed before
+            `Receipt.orgId`: valid, shown as not bound to an organization, never accepted as this organization's. A
+            receipt that names another organization is not ok, with a `reason` that names no organization. Planned"
       required:
       - ok
       x-ostrom-kotlin: pending
