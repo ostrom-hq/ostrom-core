@@ -13435,17 +13435,19 @@ components:
           $ref: '#/components/schemas/GovernanceConfirmationPerson'
         credential:
           type: string
-          description: 'The person''s token that asked: `api_token` for a personal token made in the console (Tokens),
-            whatever its scopes, named in `token`; otherwise `admin` when it holds a governance scope (`ostrom login
-            --admin`), `device` for the CLI''s token (`ostrom login`). An agent, a runner or a service key never opens
-            one. A client that does not know a value shows it as the server wrote it'
+          description: 'The kind of the person''s token that asked, by its `Token.kind`: `api_token` for a `personal`
+            token, whatever its scopes, always with `token`; otherwise `admin` for the token of `ostrom login --admin`
+            (it holds a governance scope) and `device` for the CLI''s token (`ostrom login`, kind `cli`). The phone
+            app''s token, an agent, a runner or a service key never opens one. A client shows this kind first, from
+            this field, before any name'
           enum:
           - admin
           - device
           - api_token
         token:
-          description: The personal token that asked, when `credential` is `api_token` (absent otherwise), as it was
-            named when it asked; its owner revokes it in Tokens (`revokeToken`)
+          description: The personal token that asked, always present when `credential` is `api_token` and absent
+            otherwise. Its name is a copy taken when it asked, chosen by the token's owner; the token may have been
+            renamed, revoked or have expired since. Its owner revokes it in Tokens (`revokeToken`)
           allOf:
           - $ref: '#/components/schemas/GovernanceConfirmationToken'
         createdAt:
@@ -13539,11 +13541,14 @@ components:
       properties:
         id:
           type: string
-          description: The token's id, as `listTokens` shows it
+          description: The token's id, as `listTokens` shows it while the token lives
         name:
           type: string
+          minLength: 1
           maxLength: 100
-          description: The name its owner gave it (1 to 100 characters)
+          description: 'The name its owner gave it, without a control or an invisible formatting character. It is the
+            owner''s text, never an identity: a client shows it as plain text, quoted, after the kind `credential`
+            names, never alone (a token named `ostrom login` is still a personal token)'
       required:
       - id
       - name
