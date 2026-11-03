@@ -203,7 +203,8 @@ public data class WorkflowNode(
  * the contract's `NodeCondition`.
  *
  * @property step The node whose last visit it reads (no value when the run did not visit it).
- * @property path `outcome`, `output`, or `output.<key>[.<key>…]` (the output read as a JSON object).
+ * @property path `outcome`, `output`, or `output` followed by 1 to 10 `.<key>` or `[<index>]` segments, as in
+ *   `output.a.b[0].c` (the output read as JSON).
  * @property op The comparison.
  * @property value What [op] compares with, or the pattern of `matches` (linear-time syntax); absent for `exists`.
  */

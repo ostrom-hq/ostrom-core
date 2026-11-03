@@ -14410,7 +14410,8 @@ components:
         Values are compared as texts, exactly: a JSON string without its quotes, a number or a boolean as written in
         the output (`1.0` is not `1`; the string `\"true\"` and the boolean `true` both read `true`), an object or
         an array as its compact JSON text. No value: a step not visited, a visit without output, an output that is
-        not a JSON object for `output.<key>`, a missing key, a JSON `null`. `exists` is false on no value; `equals`,
+        not JSON or not of the segment's kind (an object for `.<key>`, an array for `[<index>]`), a missing key or
+        index, a JSON `null`. `exists` is false on no value; `equals`,
         `notEquals` and `matches` do not evaluate on no value, nor on a text over 10 000 characters: the run fails,
         with the reason, and never takes a branch by default. Checked when the workflow is saved: 400
         `invalid_request` for a condition on a node that is not a `check`, a `step` that is not a node of the
@@ -14426,10 +14427,11 @@ components:
         path:
           type: string
           maxLength: 200
-          description: "What it reads of that visit: `outcome`, `output`, or `output.<key>[.<key>…]`, a value of the
-            output read as a JSON object (a `wait` visit's output is its answer's values, a JSON object), at most 10
-            keys of 1 to 64 characters among letters, digits, `_` and `-`, and 200 characters in all; a key with
-            another character is not addressable"
+          description: "What it reads of that visit: `outcome`, `output`, or a value of the output read as JSON,
+            `output` followed by 1 to 10 segments, each `.<key>` (a member of an object: 1 to 64 characters among
+            letters, digits, `_` and `-`) or `[<index>]` (an element of an array, from 0, at most 4 digits), as in
+            `output.a.b[0].c`; 200 characters in all. A key with another character is not addressable. A `wait`
+            visit's output is its answer's values, a JSON object"
         op:
           $ref: '#/components/schemas/NodeConditionOp'
         value:
