@@ -819,6 +819,9 @@ paths:
                     type: string
                   hooksCheck:
                     $ref: '#/components/schemas/HooksCheck'
+                    x-ostrom-status: planned
+                    description: "What the CLI does when none of Ostrom's hooks runs in the session. Planned: the
+                      server does not send it yet"
                 required:
                 - launchId
                 - agentToken
@@ -8581,6 +8584,9 @@ paths:
                     type: string
                   hooksCheck:
                     $ref: '#/components/schemas/HooksCheck'
+                    x-ostrom-status: planned
+                    description: "What the CLI does when none of Ostrom's hooks runs in the session. Planned: the
+                      server does not send it yet"
                 required:
                 - launchId
                 - agentToken
@@ -14519,7 +14525,9 @@ components:
           type: integer
           minimum: 5
           maximum: 300
-          description: The new wait for the first hook, in seconds; outside 5 to 300 is refused with 400
+          x-ostrom-status: planned
+          description: "The new wait for the first hook, in seconds; outside 5 to 300 is refused with 400. Planned:
+            the server does not read it yet"
       required:
       - name
       x-ostrom-kotlin: pending
@@ -14555,8 +14563,9 @@ components:
           type: integer
           minimum: 5
           maximum: 300
-          description: How long the CLI waits for the first of Ostrom's hooks in an agent's session before it reports
-            `hooks.missing`, 15 until an owner or an admin sets it
+          x-ostrom-status: planned
+          description: "How long the CLI waits for the first of Ostrom's hooks in an agent's session before it reports
+            `hooks.missing`, 15 until an owner or an admin sets it. Planned: the server does not send it yet"
       required:
       - id
       - slug
