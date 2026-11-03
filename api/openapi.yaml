@@ -1378,6 +1378,9 @@ paths:
                   type: string
                 scopes:
                   type: array
+                  description: 'What a CI calls, nothing else: `sessions:write` (reportCheck, signWorkflowReceipt),
+                    `rules:read` (listRules, getRule), or both; any other scope, 400. A key is refused on every other
+                    operation, whatever it holds.'
                   items:
                     type: string
                 expiresInDays:
@@ -3180,6 +3183,9 @@ paths:
       tags:
       - sessions
       summary: 'Sign the workflow receipt of the session: what each compiled node did'
+      description: 'Callers: the session''s person, an agent token of the session''s launch, or a service key of the
+        organization with `sessions:write` (its CI), which acts in its own organization whatever `Ostrom-Org` names.
+        Each call of a key is recorded in the organization''s audit log, in the key''s name (`service_key.used`).'
       parameters:
       - name: id
         in: path
@@ -4515,6 +4521,10 @@ paths:
       tags:
       - checks
       summary: Report a check run
+      description: 'Callers: the session''s person, an agent token of the session''s launch, or a service key of the
+        organization with `sessions:write` (its CI), which acts in its own organization whatever `Ostrom-Org` names,
+        and inside a session only (403 without `sessionId`). Each call of a key is recorded in the organization''s audit
+        log, in the key''s name (`service_key.used`). A key''s run is `workstation_declared`, like the hooks''.'
       requestBody:
         required: true
         content:
@@ -4690,6 +4700,9 @@ paths:
       tags:
       - rules
       summary: Rules
+      description: 'Callers: a member, a token with `rules:read`, or a service key of the organization with `rules:read`
+        (its CI), which reads its own organization''s rules whatever `Ostrom-Org` names. Each call of a key is recorded in
+        the organization''s audit log, in the key''s name (`service_key.used`).'
       parameters:
       - name: repo
         in: query
@@ -4774,6 +4787,9 @@ paths:
       tags:
       - rules
       summary: A rule
+      description: 'Callers: a member, a token with `rules:read`, or a service key of the organization with `rules:read`
+        (its CI), which reads its own organization''s rules whatever `Ostrom-Org` names. Each call of a key is recorded in
+        the organization''s audit log, in the key''s name (`service_key.used`).'
       parameters:
       - name: id
         in: path
