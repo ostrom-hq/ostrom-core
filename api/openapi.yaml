@@ -8509,7 +8509,11 @@ paths:
         '101':
           description: Switching protocols
         '400':
-          $ref: '#/components/responses/Error'
+          description: A GET that does not ask for the WebSocket upgrade, whoever asks and whatever the session, before any credential is read (invalid_request)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           $ref: '#/components/responses/Error'
         '403':
@@ -8542,7 +8546,11 @@ paths:
         '101':
           description: "Switching protocols"
         '400':
-          description: An HTTP 400 answered to a request that does not open the socket (observed by ostrom-server's isolation matrix) has no body; a socket that opens refuses with a close (4401, 4409)
+          description: A GET that does not ask for the WebSocket upgrade, before any credential is read (invalid_request); a socket that opens refuses with a close (4401, 4409)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           $ref: '#/components/responses/Error'
         '409':
