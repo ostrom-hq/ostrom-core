@@ -21,8 +21,18 @@ export const THROTTLED = [
 export const LIMITED = [
   'mobileToken', 'unlockMobileApp', 'startDeviceLogin', 'getDeviceLogin', 'answerDeviceLogin', 'launcherLogin',
   'requestSignInEmail', 'exchangeSignInLink', 'createSignInLink', 'linkSignInProvider', 'createOrg',
-  'inviteOrgMembers', 'createInvitationLink', 'triggerAutomation', 'recordUsageEvents',
+  'triggerAutomation', 'recordUsageEvents',
 ]
+
+// The governance writes a person's API token never applies: each opens a confirmation (202), at most 10 waiting per
+// person (429 `confirmation_limit`). The invitations are also limited per organization (`InvitationLimit`).
+export const HELD = {
+  setGatePolicy: 'ConfirmationLimit', createRule: 'ConfirmationLimit', updateRule: 'ConfirmationLimit',
+  deleteRule: 'ConfirmationLimit', bulkUpdateRules: 'ConfirmationLimit', createWorkflow: 'ConfirmationLimit',
+  saveWorkflow: 'ConfirmationLimit', deleteWorkflow: 'ConfirmationLimit', setModelPolicy: 'ConfirmationLimit',
+  updateOrgMember: 'ConfirmationLimit', removeOrgMember: 'ConfirmationLimit', inviteOrgMembers: 'InvitationLimit',
+  createInvitationLink: 'InvitationLimit',
+}
 
 const resolve = (node) => {
   let current = node
@@ -64,6 +74,13 @@ const tooMany = (id, expected) => {
 }
 for (const id of LIMITED) tooMany(id, 'TooManyAttempts')
 for (const id of THROTTLED) tooMany(id, 'Throttled')
+for (const [id, limit] of Object.entries(HELD)) {
+  tooMany(id, limit)
+  const held = operations.get(id)?.operation.responses['202']
+  if (held?.$ref !== '#/components/responses/GovernanceConfirmationPending') {
+    problems.push(`${id}: a token's write is held, but no 202 GovernanceConfirmationPending`)
+  }
+}
 if (!resolve(contract.components.responses.Throttled)?.headers?.['Retry-After']) {
   problems.push('Throttled: no Retry-After')
 }
@@ -72,4 +89,5 @@ if (problems.length > 0) {
   console.error(`The contract hides ${problems.length} limit(s) the server enforces:\n  ${problems.join('\n  ')}`)
   process.exit(1)
 }
-console.log(`Limits: every page size has its bounds, ${LIMITED.length + THROTTLED.length} limited routes declare their 429.`)
+const limited = LIMITED.length + THROTTLED.length + Object.keys(HELD).length
+console.log(`Limits: every page size has its bounds, ${limited} limited routes declare their 429.`)
