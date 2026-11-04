@@ -5565,7 +5565,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getRun
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: A run with its visits
@@ -5597,7 +5597,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cancelRun
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Cancel a run
