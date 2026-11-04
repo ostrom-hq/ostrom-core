@@ -7492,6 +7492,9 @@ paths:
       tags:
       - budgets
       summary: Budgets
+      description: "Read by a browser session, or by a token with `budgets:read` made on the console. Never by the
+        token of `ostrom login`, nor by that of `ostrom login --admin`: the limits of every member stay off the
+        CLI's tokens (SECURITY-AUDIT S2-03)"
       responses:
         '200':
           description: OK
@@ -7540,7 +7543,14 @@ paths:
         both stopping the calls (`hardStop` true) or both only warning (false); neither amount removes the subject's
         limits. The subject is the organization (`scope` `organization`), every member without limits of their own
         (`member` without `subject`), or one member (`member`, `subject` = the member's `id` from
-        `/api/v1/orgs/{org}/members`). A workflow budget is not served: `scope` `workflow` is a 400"
+        `/api/v1/orgs/{org}/members`). A workflow budget is not served: `scope` `workflow` is a 400.
+        Written by a browser session. Planned (Q-CLI-BUDGETS): also by the token of `ostrom login --admin` that
+        holds `budgets:write`, as a governance write: never applied directly, held until an owner or an admin
+        confirms it on the console (202, `kind` `budgets.set`, `credential` `admin`), like `setModelPolicy`; the
+        same body asked again by the same person while it waits answers the same confirmation. Its `before` is the
+        subject's own `Budget` as `listBudgets` shows it, JSON null when it has none (a member who only follows the
+        limits of every member); its `after` is the `Budget` written, JSON null when the write removes the limits.
+        No other credential writes a budget, a service key included (403)"
       requestBody:
         required: true
         content:
@@ -7554,6 +7564,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Budget'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -7564,6 +7576,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/budgets/me:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -7573,6 +7587,10 @@ paths:
       tags:
       - budgets
       summary: The caller's own budget this month, for any member and for an agent session
+      description: "Read by a browser session, a token with `budgets:read`, or an agent session's token. Planned
+        (Q-CLI-BUDGETS): also by the token of `ostrom login`, with or without `--admin` (`ostrom budgets me`), which
+        reads only the budget of the person it belongs to, never another member's nor the organization's list
+        (`listBudgets`)"
       responses:
         '200':
           description: OK
@@ -13032,10 +13050,13 @@ components:
       properties:
         scopes:
           type: array
-          description: "Every one of them, or the request is malformed (400). Absent or empty: the ordinary sign-in"
+          description: "Exactly `policy:write`, `harness:write` and `gates:policy`, or those three and
+            `budgets:write` (planned, Q-CLI-BUDGETS); any other set is malformed (400). Absent or empty: the ordinary
+            sign-in. The three alone stay accepted from an older CLI, whose token then writes no budget; a server
+            that does not take `budgets:write` yet answers 400 to the four, and the CLI asks again with the three"
           items:
             type: string
-            enum: ['policy:write', 'harness:write', 'gates:policy']
+            enum: ['policy:write', 'harness:write', 'gates:policy', 'budgets:write']
       x-ostrom-kotlin: pending
     DeviceAuthorization:
       type: object
@@ -13482,6 +13503,7 @@ components:
       - members.remove
       - members.invite
       - members.link
+      - budgets.set
       x-ostrom-kotlin: pending
     GovernanceConfirmation:
       type: object
@@ -13504,7 +13526,7 @@ components:
         scope:
           type: string
           description: The governance scope the write uses (`policy:write`, `harness:write`, `gates:policy`,
-            `orgs:write`)
+            `orgs:write`; `budgets:write`, planned)
         summary:
           type: string
           description: One line saying what the change does
