@@ -119,7 +119,8 @@ public data class Workflow(
  * @property from Source node.
  * @property to Target node, null to end the run.
  * @property label Label shown in the editor.
- * @property on Outcome that takes this edge (default `next`).
+ * @property on Outcome that takes this edge (default `next`; `true` or `false`, without default, out of a check node
+ *   with a condition).
  */
 @Serializable
 public data class WorkflowEdge(
@@ -169,6 +170,7 @@ public data class WorkflowInput(
  * @property workflowId Child workflow of a `workflow` node.
  * @property arguments Arguments of the child workflow.
  * @property maxVisits How many times a run may visit the node.
+ * @property condition What a `check` node decides: a value of a step visited before (planned: not played yet).
  */
 @Serializable
 public data class WorkflowNode(
@@ -191,7 +193,52 @@ public data class WorkflowNode(
     val workflowId: String? = null,
     val arguments: Map<String, String>? = null,
     val maxVisits: Int? = null,
+    val condition: NodeCondition? = null,
 )
+
+/**
+ * What a `check` node decides in a server's run: one value of a step the run visited before, compared as a text,
+ * never an expression. The visit ends `true` or `false`, and the run follows the edge whose `on` is that outcome (no
+ * default); a condition that does not evaluate fails the run, never a branch chosen by default. The full rules are in
+ * the contract's `NodeCondition`.
+ *
+ * @property step The node whose last visit it reads (no value when the run did not visit it).
+ * @property path `outcome`, `output`, or `output` followed by 1 to 10 `.<key>` or `[<index>]` segments, as in
+ *   `output.a.b[0].c` (the output read as JSON).
+ * @property op The comparison.
+ * @property value What [op] compares with, or the pattern of `matches` (linear-time syntax); absent for `exists`.
+ */
+@Serializable
+public data class NodeCondition(
+    val step: String,
+    val path: String,
+    val op: NodeConditionOp,
+    val value: String? = null,
+)
+
+/** The comparisons of a [NodeCondition]. */
+@Serializable(with = NodeConditionOp.Serializer::class)
+public enum class NodeConditionOp(
+    /** The JSON value. */
+    public val value: String,
+) {
+    EQUALS("equals"),
+    NOT_EQUALS("notEquals"),
+    EXISTS("exists"),
+    MATCHES("matches"),
+
+    /** A value this version does not know, sent by a newer server; never sent. */
+    UNKNOWN(""),
+    ;
+
+    /** Reads a value this version does not know as [UNKNOWN]. */
+    public object Serializer : UnknownFallbackEnumSerializer<NodeConditionOp>(
+        "dev.ostrom.core.api.models.NodeConditionOp",
+        NodeConditionOp.entries,
+        NodeConditionOp.UNKNOWN,
+        NodeConditionOp::value,
+    )
+}
 
 /**
  * When to disturb people for a node.
