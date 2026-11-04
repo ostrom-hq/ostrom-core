@@ -1743,6 +1743,40 @@
       "billing"
     ]
   },
+  "NodeCondition": {
+    "properties": {
+      "step": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "path": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "op": {
+        "type": {
+          "ref": "NodeConditionOp"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "value": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "NodeConditionOp": {
+    "enum": [
+      "equals",
+      "notEquals",
+      "exists",
+      "matches"
+    ]
+  },
   "NodePosition": {
     "properties": {
       "x": {
@@ -2372,6 +2406,21 @@
       "id": {
         "type": "string",
         "required": true,
+        "nullable": false
+      },
+      "orgId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "launchId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
         "nullable": false
       },
       "subject": {
@@ -3988,6 +4037,13 @@
       },
       "maxVisits": {
         "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "condition": {
+        "type": {
+          "ref": "NodeCondition"
+        },
         "required": false,
         "nullable": false
       }
