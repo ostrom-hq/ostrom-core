@@ -11446,6 +11446,15 @@ components:
             bound to this approval, `unlockMobileApp.requestId`)"
         reason:
           type: string
+        reasonType:
+          type: string
+          enum: [github_link_required, self_approval_refused]
+          x-ostrom-status: planned
+          description: "The key of `reason` when the server names one, the `error.type` the answer would get:
+            `github_link_required` when the caller must link their GitHub account before a yes (a never-self-approve
+            policy, and a pull request whose author linked no Ostrom person; a no stays open), `self_approval_refused`
+            when their linked GitHub account is the pull request's author. Absent for any other reason. Planned: the
+            server does not send it yet"
         selfApproval:
           type: boolean
       required:
