@@ -2270,7 +2270,9 @@ paths:
       x-ostrom-status: served
       tags:
       - organization
-      summary: "Rename an organization (scope `orgs:write`)"
+      summary: "Change an organization's name or time zone (scope `orgs:write`)"
+      description: "The role is checked before the body: a member who is not an owner or an admin gets 403 whatever they
+        send. A field left out stays as it is, so an empty body changes nothing"
       parameters:
       - name: org
         in: path
@@ -2305,6 +2307,8 @@ paths:
       tags:
       - organization
       summary: "Delete an organization: its short name typed again in the body; a browser session only, never a token"
+      description: "The organization is kept 30 days, then erased; its short name stays taken until it is erased. A
+        second deletion changes nothing"
       parameters:
       - name: org
         in: path
@@ -2427,8 +2431,7 @@ paths:
       - name: q
         in: query
         required: false
-        x-ostrom-status: planned
-        description: "Only the members whose login or name starts with it, whatever the case; it combines with `limit` and `after`. Planned: the server does not read it yet"
+        description: "Only the members whose login or name starts with it, whatever the case; it combines with `limit` and `after`. Its `%` and `_` match only themselves. 1 to 100 characters, else 400"
         schema:
           type: string
           minLength: 1
@@ -5464,7 +5467,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startWorkflowRun
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Start a run
@@ -5504,7 +5507,7 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       operationId: listWorkflowRuns
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Runs of a workflow
@@ -5555,7 +5558,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listRuns
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Runs
@@ -5601,7 +5604,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getRun
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: A run with its visits
@@ -5633,7 +5636,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cancelRun
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: Cancel a run
@@ -7153,10 +7156,18 @@ paths:
             schema: {}
       responses:
         '200':
-          description: OK
+          description: 'OK, the provider''s answer as it sent it: JSON when the request does not stream; with
+            `"stream": true`, server-sent events whose every `data:` is an `AnthropicStreamEvent`. Planned: the strict
+            contract test of ostrom-server does not read the events yet'
           content:
             application/json:
               schema: {}
+            text/event-stream:
+              x-ostrom-status: planned
+              schema:
+                type: string
+              x-ostrom-event-data:
+                $ref: '#/components/schemas/AnthropicStreamEvent'
         '400':
           $ref: '#/components/responses/AnthropicInferenceError'
         '401':
@@ -7189,10 +7200,18 @@ paths:
             schema: {}
       responses:
         '200':
-          description: OK
+          description: 'OK, the provider''s answer as it sent it: JSON when the request does not stream; with
+            `"stream": true`, server-sent events whose every `data:` is an `OpenAiResponsesStreamEvent`. Planned: the
+            strict contract test of ostrom-server does not read the events yet'
           content:
             application/json:
               schema: {}
+            text/event-stream:
+              x-ostrom-status: planned
+              schema:
+                type: string
+              x-ostrom-event-data:
+                $ref: '#/components/schemas/OpenAiResponsesStreamEvent'
         '400':
           $ref: '#/components/responses/OpenAiInferenceError'
         '401':
@@ -7225,10 +7244,19 @@ paths:
             schema: {}
       responses:
         '200':
-          description: OK
+          description: 'OK, the provider''s answer as it sent it: JSON when the request does not stream; with
+            `"stream": true`, server-sent events whose every `data:` is an `OpenAiChatCompletionChunk`, the last one
+            `[DONE]`. Planned: the strict contract test of ostrom-server does not read the events yet'
           content:
             application/json:
               schema: {}
+            text/event-stream:
+              x-ostrom-status: planned
+              schema:
+                type: string
+              x-ostrom-event-data:
+                $ref: '#/components/schemas/OpenAiChatCompletionChunk'
+              x-ostrom-event-done: '[DONE]'
         '400':
           $ref: '#/components/responses/OpenAiInferenceError'
         '401':
@@ -7503,6 +7531,9 @@ paths:
       tags:
       - budgets
       summary: Budgets
+      description: "Read by a browser session, or by a token with `budgets:read` made on the console. Never by the
+        token of `ostrom login`, nor by that of `ostrom login --admin`: the limits of every member stay off the
+        CLI's tokens (SECURITY-AUDIT S2-03)"
       responses:
         '200':
           description: OK
@@ -7551,7 +7582,14 @@ paths:
         both stopping the calls (`hardStop` true) or both only warning (false); neither amount removes the subject's
         limits. The subject is the organization (`scope` `organization`), every member without limits of their own
         (`member` without `subject`), or one member (`member`, `subject` = the member's `id` from
-        `/api/v1/orgs/{org}/members`). A workflow budget is not served: `scope` `workflow` is a 400"
+        `/api/v1/orgs/{org}/members`). A workflow budget is not served: `scope` `workflow` is a 400.
+        Written by a browser session. Planned (Q-CLI-BUDGETS): also by the token of `ostrom login --admin` that
+        holds `budgets:write`, as a governance write: never applied directly, held until an owner or an admin
+        confirms it on the console (202, `kind` `budgets.set`, `credential` `admin`), like `setModelPolicy`; the
+        same body asked again by the same person while it waits answers the same confirmation. Its `before` is the
+        subject's own `Budget` as `listBudgets` shows it, JSON null when it has none (a member who only follows the
+        limits of every member); its `after` is the `Budget` written, JSON null when the write removes the limits.
+        No other credential writes a budget, a service key included (403)"
       requestBody:
         required: true
         content:
@@ -7565,6 +7603,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Budget'
+        '202':
+          $ref: '#/components/responses/GovernanceConfirmationPending'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -7575,6 +7615,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/ConfirmationLimit'
   /api/v1/budgets/me:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -7584,6 +7626,10 @@ paths:
       tags:
       - budgets
       summary: The caller's own budget this month, for any member and for an agent session
+      description: "Read by a browser session, a token with `budgets:read`, or an agent session's token. Planned
+        (Q-CLI-BUDGETS): also by the token of `ostrom login`, with or without `--admin` (`ostrom budgets me`), which
+        reads only the budget of the person it belongs to, never another member's nor the organization's list
+        (`listBudgets`)"
       responses:
         '200':
           description: OK
@@ -8223,6 +8269,15 @@ paths:
         required: true
         schema:
           type: string
+      - name: wait
+        in: query
+        required: false
+        description: "Seconds the heartbeat may wait for an execution to hand over, for a runner that has room; it answers as soon as one is taken or assigned to it, and at the end of the wait otherwise. Absent or 0 answers at once, and so does a heartbeat when its server instance already holds too many waiting ones. A value outside 0 to 25 is read as the nearest bound. A runner then heartbeats again at once"
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 25
+          default: 0
       requestBody:
         required: false
         content:
@@ -8636,7 +8691,11 @@ paths:
         '101':
           description: Switching protocols
         '400':
-          $ref: '#/components/responses/Error'
+          description: "A GET that does not ask for the WebSocket upgrade, whoever asks and whatever the session, before any credential is read (invalid_request). Planned: ostrom-server answers it with ostrom-server#317; its main answers such a GET a 400 without a body"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           $ref: '#/components/responses/Error'
         '403':
@@ -8669,7 +8728,11 @@ paths:
         '101':
           description: "Switching protocols"
         '400':
-          description: An HTTP 400 answered to a request that does not open the socket (observed by ostrom-server's isolation matrix) has no body; a socket that opens refuses with a close (4401, 4409)
+          description: "A GET that does not ask for the WebSocket upgrade, before any credential is read (invalid_request); a socket that opens refuses with a close (4401, 4409). Planned: ostrom-server answers it with ostrom-server#317; its main answers such a GET a 404"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           $ref: '#/components/responses/Error'
         '409':
@@ -10909,7 +10972,8 @@ paths:
       tags:
       - billing
       summary: Invoices and receipts, newest first
-      description: 'Owners, admins and billing admins. Empty for an organization that never bought.'
+      description: 'Owners, admins and billing admins. Empty for an organization that never bought. A `limit` under
+        1 is refused (400), one above 100 is brought down to 100.'
       parameters:
       - name: orgId
         in: path
@@ -10932,6 +10996,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BillingInvoiceList'
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
         '403':
@@ -11345,6 +11411,25 @@ components:
       - type
       - error
       x-ostrom-kotlin: pending
+    AnthropicStreamEvent:
+      type: object
+      description: "One `data:` of a Messages stream, as Anthropic sends it and the gateway relays it"
+      properties:
+        type:
+          type: string
+          enum:
+          - message_start
+          - content_block_start
+          - content_block_delta
+          - content_block_stop
+          - message_delta
+          - message_stop
+          - ping
+          - error
+      required:
+      - type
+      additionalProperties: {}
+      x-ostrom-kotlin: pending
     ApiError:
       type: object
       description: The error body of every refusal
@@ -11481,6 +11566,15 @@ components:
             bound to this approval, `unlockMobileApp.requestId`)"
         reason:
           type: string
+        reasonType:
+          type: string
+          enum: [github_link_required, self_approval_refused]
+          x-ostrom-status: planned
+          description: "The key of `reason` when the server names one, the `error.type` the answer would get:
+            `github_link_required` when the caller must link their GitHub account before a yes (a never-self-approve
+            policy, and a pull request whose author linked no Ostrom person; a no stays open), `self_approval_refused`
+            when their linked GitHub account is the pull request's author. Absent for any other reason. Planned: the
+            server does not send it yet"
         selfApproval:
           type: boolean
       required:
@@ -13006,10 +13100,13 @@ components:
       properties:
         scopes:
           type: array
-          description: "Every one of them, or the request is malformed (400). Absent or empty: the ordinary sign-in"
+          description: "Exactly `policy:write`, `harness:write` and `gates:policy`, or those three and
+            `budgets:write` (planned, Q-CLI-BUDGETS); any other set is malformed (400). Absent or empty: the ordinary
+            sign-in. The three alone stay accepted from an older CLI, whose token then writes no budget; a server
+            that does not take `budgets:write` yet answers 400 to the four, and the CLI asks again with the three"
           items:
             type: string
-            enum: ['policy:write', 'harness:write', 'gates:policy']
+            enum: ['policy:write', 'harness:write', 'gates:policy', 'budgets:write']
       x-ostrom-kotlin: pending
     DeviceAuthorization:
       type: object
@@ -13488,6 +13585,7 @@ components:
       - members.remove
       - members.invite
       - members.link
+      - budgets.set
       x-ostrom-kotlin: pending
     GovernanceConfirmation:
       type: object
@@ -13510,7 +13608,7 @@ components:
         scope:
           type: string
           description: The governance scope the write uses (`policy:write`, `harness:write`, `gates:policy`,
-            `orgs:write`)
+            `orgs:write`; `budgets:write`, planned)
         summary:
           type: string
           description: One line saying what the change does
@@ -14158,7 +14256,10 @@ components:
           type: string
           pattern: ^[a-z0-9][a-z0-9._-]{0,63}$
           description: 1 to 64 characters; `servers`, `settings`, `calls` and `usage` are reserved (they are paths of
-            this API)
+            this API), and so is a name agents would see as one of Ostrom's own MCP servers, which every agent already
+            has (`ostrom`, `ostrom-workflow` and `workflow`, since the launcher labels a server `ostrom-<name>` and keeps
+            a name that starts with `ostrom`), whatever their case and surrounding spaces; a reserved name is refused
+            with a 400
         url:
           type: string
           description: The upstream URL of an HTTP server; absent for a stdio server. In answers, a stdio server reads
@@ -14401,6 +14502,24 @@ components:
       - email
       - verified
       x-ostrom-kotlin: pending
+    OpenAiChatCompletionChunk:
+      type: object
+      description: "One `data:` of a chat completions stream, as the OpenAI-compatible provider sends it and the gateway
+        relays it; the stream ends with `data: [DONE]`"
+      properties:
+        object:
+          type: string
+          enum:
+          - chat.completion.chunk
+        choices:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - choices
+      additionalProperties: {}
+      x-ostrom-kotlin: pending
     OpenAiError:
       type: object
       description: "An error in OpenAI's shape, as the OpenAI-compatible endpoints of the gateway answer it"
@@ -14427,6 +14546,17 @@ components:
           - type
       required:
       - error
+      x-ostrom-kotlin: pending
+    OpenAiResponsesStreamEvent:
+      type: object
+      description: "One `data:` of a Responses stream (`response.created`, `response.output_text.delta`,
+        `response.completed`, `error`…), as OpenAI sends it and the gateway relays it"
+      properties:
+        type:
+          type: string
+      required:
+      - type
+      additionalProperties: {}
       x-ostrom-kotlin: pending
     StepUpOrForbidden:
       description: 'A 403 of a write that may need a fresh sign-in: `step_up_required` (sign in again, then send
@@ -14508,6 +14638,15 @@ components:
           enum:
           - org
           - member
+        period:
+          type: string
+          enum:
+          - day
+          - month
+          x-ostrom-status: planned
+          description: "The period `limitMicros`, `spentMicros`, `remainingMicros` and `resetsAt` count: `day` when the
+            caller's own limit that stops is daily and the nearest to be spent, `month` otherwise. Absent, read `month`.
+            Planned: the server does not send it yet"
       required:
       - spentMicros
       - resetsAt
@@ -14767,7 +14906,10 @@ components:
           type: string
         slug:
           type: string
-          description: Derived from the name when absent
+          description: Derived from the name when absent; otherwise 2 to 39 lower case letters, digits and single
+            dashes, and not a reserved one (400 if not). Short names are one space for everybody, as on GitHub; one
+            already taken answers 409 `conflict`, whether a live organization holds it or a deleted one during the 30
+            days it is kept (freed when the organization is erased)
       required:
       - name
       x-ostrom-kotlin: pending
@@ -14871,10 +15013,18 @@ components:
       x-ostrom-kotlin: pending
     OrgRename:
       type: object
-      description: "A new name"
+      description: "An organization's settings to change; a field left out stays as it is"
       properties:
         name:
           type: string
+          description: The new name; a blank one is refused with 400
+        timeZone:
+          type: string
+          description: The new IANA time zone, such as `Europe/Paris`; an unknown one is refused with 400
+        slug:
+          type: string
+          description: The short name, accepted only exactly as it is (it never changes); any other value is refused
+            with 400
         hooksDeadlineSeconds:
           type: integer
           minimum: 5
@@ -14882,8 +15032,6 @@ components:
           x-ostrom-status: planned
           description: "The new wait for the first hook, in seconds; outside 5 to 300 is refused with 400. Planned:
             the server does not read it yet"
-      required:
-      - name
       x-ostrom-kotlin: pending
     OrgTransfer:
       type: object
@@ -14912,7 +15060,7 @@ components:
           format: date-time
         timeZone:
           type: string
-          description: The organization's IANA time zone, `UTC` by default
+          description: The organization's IANA time zone, `UTC` until an owner or admin sets one
         hooksDeadlineSeconds:
           type: integer
           minimum: 5
@@ -14926,6 +15074,7 @@ components:
       - name
       - role
       - createdAt
+      - timeZone
       x-ostrom-kotlin: pending
     OrgViewList:
       type: object
@@ -16368,6 +16517,11 @@ components:
         subject:
           type: string
           description: "For `member`: the member's `id`; for `workflow` (planned): the workflow's `id`"
+        label:
+          type: string
+          x-ostrom-status: planned
+          description: "For `member`: the member's login, as `SpendingLine.label` of `byPerson` names them; a member with
+            no spending in the period read has no line there. Planned: the server does not send it yet"
         period:
           type: string
           enum: [day, month]
