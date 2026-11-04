@@ -31,7 +31,7 @@ export const HELD = {
   deleteRule: 'ConfirmationLimit', bulkUpdateRules: 'ConfirmationLimit', createWorkflow: 'ConfirmationLimit',
   saveWorkflow: 'ConfirmationLimit', deleteWorkflow: 'ConfirmationLimit', setModelPolicy: 'ConfirmationLimit',
   updateOrgMember: 'ConfirmationLimit', removeOrgMember: 'ConfirmationLimit', inviteOrgMembers: 'InvitationLimit',
-  createInvitationLink: 'InvitationLimit',
+  createInvitationLink: 'InvitationLimit', setBudget: 'ConfirmationLimit',
 }
 
 const resolve = (node) => {
