@@ -13223,6 +13223,7 @@ components:
       - class
       - reason
       - command
+      x-ostrom-kotlin: pending
     GateAskRequest:
       type: object
       description: Asks for a gate (hook `PreToolUse`, CI check, MCP). A request in a closed session is refused with 409
