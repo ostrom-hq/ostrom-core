@@ -14453,6 +14453,15 @@ components:
           enum:
           - org
           - member
+        period:
+          type: string
+          enum:
+          - day
+          - month
+          x-ostrom-status: planned
+          description: "The period `limitMicros`, `spentMicros`, `remainingMicros` and `resetsAt` count: `day` when the
+            caller's own limit that stops is daily and the nearest to be spent, `month` otherwise. Absent, read `month`.
+            Planned: the server does not send it yet"
       required:
       - spentMicros
       - resetsAt
