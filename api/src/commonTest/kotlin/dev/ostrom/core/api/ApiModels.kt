@@ -39,6 +39,7 @@ import dev.ostrom.core.api.models.GateRequest
 import dev.ostrom.core.api.models.GateResponse
 import dev.ostrom.core.api.models.Member
 import dev.ostrom.core.api.models.MemberInvite
+import dev.ostrom.core.api.models.NodeCondition
 import dev.ostrom.core.api.models.NodePosition
 import dev.ostrom.core.api.models.NodeRun
 import dev.ostrom.core.api.models.NodeRunOn
@@ -131,6 +132,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GateResponse.serializer(),
     Member.serializer(),
     MemberInvite.serializer(),
+    NodeCondition.serializer(),
     NodePosition.serializer(),
     NodeRun.serializer(),
     NodeRunOn.serializer(),

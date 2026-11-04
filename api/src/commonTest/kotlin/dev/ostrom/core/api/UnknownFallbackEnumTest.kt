@@ -16,6 +16,7 @@ import dev.ostrom.core.api.models.GateMode
 import dev.ostrom.core.api.models.GateStatus
 import dev.ostrom.core.api.models.GitHubConnection
 import dev.ostrom.core.api.models.MemberRole
+import dev.ostrom.core.api.models.NodeConditionOp
 import dev.ostrom.core.api.models.NotificationStatus
 import dev.ostrom.core.api.models.PackageFileMode
 import dev.ostrom.core.api.models.PackageMode
@@ -80,6 +81,7 @@ class UnknownFallbackEnumTest {
         check(GateStatus.entries, GateStatus.Serializer, GateStatus.UNKNOWN, GateStatus::value)
         check(GitHubConnection.entries, GitHubConnection.Serializer, GitHubConnection.UNKNOWN, GitHubConnection::value)
         check(MemberRole.entries, MemberRole.Serializer, MemberRole.UNKNOWN, MemberRole::value)
+        check(NodeConditionOp.entries, NodeConditionOp.Serializer, NodeConditionOp.UNKNOWN, NodeConditionOp::value)
         check(
             NotificationStatus.entries, NotificationStatus.Serializer, NotificationStatus.UNKNOWN,
             NotificationStatus::value,
