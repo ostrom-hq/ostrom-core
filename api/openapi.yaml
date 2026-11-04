@@ -10874,7 +10874,8 @@ paths:
       tags:
       - billing
       summary: Invoices and receipts, newest first
-      description: 'Owners, admins and billing admins. Empty for an organization that never bought.'
+      description: 'Owners, admins and billing admins. Empty for an organization that never bought. A `limit` under
+        1 is refused (400), one above 100 is brought down to 100.'
       parameters:
       - name: orgId
         in: path
@@ -10897,6 +10898,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BillingInvoiceList'
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
         '403':
