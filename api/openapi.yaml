@@ -259,8 +259,9 @@ paths:
       - auth
       summary: Exchange the one-time code of the mobile sign-in (PKCE) for a token
       description: "The code works once (a wrong verifier spends it), for 60 s, with the exact `redirectUri` of the start.
-        The token (`osm_…`, 30 days) answers a gate only within 5 minutes of `unlockMobileApp`. A person keeps 5 phones:
-        a sixth sign-in revokes the oldest app token."
+        The token (`osm_…`, 30 days) answers a gate only within 5 minutes of `unlockMobileApp` (planned: a yes to a
+        high-risk action, with an unlock bound to that approval, see `unlockMobileApp.requestId`). A person keeps 5
+        phones: a sixth sign-in revokes the oldest app token."
       security: []
       requestBody:
         required: true
@@ -312,7 +313,8 @@ paths:
       x-ostrom-status: served
       tags:
       - auth
-      summary: "Record the phone's biometric unlock: the app's token answers a gate for 5 minutes after it (S2-54)"
+      summary: "Record the phone's biometric unlock: the app's token answers a gate for 5 minutes after it (S2-54);
+        planned: a yes to a high-risk action takes an unlock bound to its request (`requestId`)"
       description: "The app's token only (403 for a browser session or another token, or a wrong key)."
       requestBody:
         required: true
@@ -323,6 +325,21 @@ paths:
               properties:
                 unlockKey:
                   type: string
+                requestId:
+                  type: string
+                  x-ostrom-status: planned
+                  description: "The approval this unlock is for: the `id` of the `Approval`, as in the path of
+                    `answerApproval`. A yes from the app to a high-risk action is taken only with an unlock bound to
+                    its own approval, less than 60 seconds old, and only once; otherwise 403 `step_up_required` with
+                    `error.requestBound` true. High risk is every action whose `risk` is not `low`, an approval
+                    without an `action` included (no yes is low today: the server measures no risk). The first yes
+                    sent after the unlock uses it, whatever its outcome (a 409, another 403 or a 5xx included): a yes
+                    sent again unlocks again. A token holds one binding: a new unlock replaces the last one, so an
+                    app unlocks just before each yes. Every unlock, bound or not, also opens the 5-minute window,
+                    which a low-risk yes and every no are given with. The server does not check the id: one that
+                    names no approval the caller may answer serves no yes. The binding limits one unlock to one yes;
+                    it does not prove to the server a biometric per unlock (the `unlockKey` stays the app's). Planned:
+                    the server does not read it yet"
               required:
               - unlockKey
       responses:
@@ -838,6 +855,11 @@ paths:
                     type: string
                   expiresAt:
                     type: string
+                  hooksCheck:
+                    $ref: '#/components/schemas/HooksCheck'
+                    x-ostrom-status: planned
+                    description: "What the CLI does when none of Ostrom's hooks runs in the session. Planned: the
+                      server does not send it yet"
                 required:
                 - launchId
                 - agentToken
@@ -874,6 +896,40 @@ paths:
       responses:
         '204':
           description: Done
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/launches/{launchId}/hooks-missing:
+    post:
+      operationId: reportHooksMissing
+      x-ostrom-status: planned
+      description: "The launch's own agent token only, as for `endLaunch`: the CLI waited for the first of Ostrom's
+        hooks in the agent's session, saw none, and says so, with whether it stopped the agent. The organization's audit
+        log then holds the event `hooks.missing` (subject `launch:<launchId>`, `meta` holding `agent`, `repo`,
+        `waitedSeconds` and `stopped`), read by `listAudit` with `event=hooks.missing`. Any other credential, another
+        launch's agent token included, gets 404, the same answer as an unknown launch; `waitedSeconds` outside 0 to
+        3600 is 400."
+      tags:
+      - auth
+      summary: Report that none of Ostrom's hooks ran in the agent's session
+      parameters:
+      - name: launchId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HooksMissingRequest'
+      responses:
+        '204':
+          description: Recorded
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
         '404':
@@ -4081,7 +4137,9 @@ paths:
         approver exists; 403 github_link_required when the gate's policy is never-self-approve, the pull request's author
         linked no Ostrom person and the answerer linked no GitHub account (the gate waits, Q-GATES-G1); 403
         step_up_required when a yes comes from a sign-in more than 5 minutes old, or from the phone
-        app not unlocked in the last 5 minutes (`unlockMobileApp`); the 200 is the `ApprovalView` of the answered approval,
+        app not unlocked in the last 5 minutes (`unlockMobileApp`), or (planned) from the phone app, to a high-risk
+        action, without an unlock bound to this request less than 60 seconds old and not used yet
+        (`unlockMobileApp.requestId`, `error.requestBound` true); the 200 is the `ApprovalView` of the answered approval,
         with its signed `receipt`, a no's included
       parameters:
       - name: id
@@ -8716,6 +8774,11 @@ paths:
                     type: string
                   expiresAt:
                     type: string
+                  hooksCheck:
+                    $ref: '#/components/schemas/HooksCheck'
+                    x-ostrom-status: planned
+                    description: "What the CLI does when none of Ostrom's hooks runs in the session. Planned: the
+                      server does not send it yet"
                 required:
                 - launchId
                 - agentToken
@@ -11414,7 +11477,8 @@ components:
           type: boolean
           description: "Whether the person may answer: their role, being an approver, not their own gate. It does not
             wait for a fresh sign-in or the phone's unlock: a locked app reads `true`, and its yes is refused at the
-            answer with 403 `step_up_required` until `unlockMobileApp`"
+            answer with 403 `step_up_required` until `unlockMobileApp` (planned: for a high-risk yes, an unlock
+            bound to this approval, `unlockMobileApp.requestId`)"
         reason:
           type: string
         selfApproval:
@@ -11740,6 +11804,38 @@ components:
       - entry
       - createdAt
       - createdBy
+      x-ostrom-kotlin: pending
+    HooksCheck:
+      type: object
+      description: "What the CLI does when none of Ostrom's hooks runs in the agent's session"
+      properties:
+        afterSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          description: How long it waits for the first hook before it concludes none runs
+        stopAgent:
+          type: boolean
+          description: Whether it then stops the agent, true when the organization enforces at least one gate
+      required:
+      - afterSeconds
+      - stopAgent
+      x-ostrom-kotlin: pending
+    HooksMissingRequest:
+      type: object
+      description: "What the CLI saw: none of Ostrom's hooks ran in the agent's session"
+      properties:
+        waitedSeconds:
+          type: integer
+          minimum: 0
+          maximum: 3600
+          description: How long the CLI waited for the first hook
+        stopped:
+          type: boolean
+          description: Whether the CLI stopped the agent
+      required:
+      - waitedSeconds
+      - stopped
       x-ostrom-kotlin: pending
     AuditEvent:
       type: object
@@ -13425,12 +13521,21 @@ components:
           $ref: '#/components/schemas/GovernanceConfirmationPerson'
         credential:
           type: string
-          description: 'The person''s token that asked: `admin` when it holds a governance scope (`ostrom login
-            --admin`), `device` otherwise (`ostrom login`, a personal token). An agent, a runner or a service key never
-            opens one'
+          description: 'The kind of the person''s token that asked, by its `Token.kind`: `api_token` for a `personal`
+            token, whatever its scopes, always with `token`; otherwise `admin` for the token of `ostrom login --admin`
+            (it holds a governance scope) and `device` for the CLI''s token (`ostrom login`, kind `cli`). The phone
+            app''s token, an agent, a runner or a service key never opens one. A client shows this kind first, from
+            this field, before any name'
           enum:
           - admin
           - device
+          - api_token
+        token:
+          description: The personal token that asked, always present when `credential` is `api_token` and absent
+            otherwise. Its name is a copy taken when it asked, chosen by the token's owner; the token may have been
+            renamed, revoked or have expired since. Its owner revokes it in Tokens (`revokeToken`)
+          allOf:
+          - $ref: '#/components/schemas/GovernanceConfirmationToken'
         createdAt:
           type: string
           format: date-time
@@ -13515,6 +13620,24 @@ components:
           type: string
       required:
       - memberId
+      x-ostrom-kotlin: pending
+    GovernanceConfirmationToken:
+      type: object
+      description: A person's personal token, without its secret
+      properties:
+        id:
+          type: string
+          description: The token's id, as `listTokens` shows it while the token lives
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 'The name its owner gave it, without a control or an invisible formatting character. It is the
+            owner''s text, never an identity: a client shows it as plain text, quoted, after the kind `credential`
+            names, never alone (a token named `ostrom login` is still a personal token)'
+      required:
+      - id
+      - name
       x-ostrom-kotlin: pending
     GovernanceConfirmationStatus:
       type: string
@@ -14389,6 +14512,64 @@ components:
       - resetsAt
       - exhausted
       x-ostrom-kotlin: pending
+    NodeCondition:
+      type: object
+      description: "What a `check` node decides in a server's run (planned: the server does not play check nodes yet).
+        It reads one value of a step the run visited before, never an expression: no language, no evaluation of code.
+        Only a `check` node has a condition; a `check` node without one is a session's check (its `run`), which a
+        server's run does not play: the run fails. The visit ends with the outcome `true` or `false` (no output), and
+        the run follows the edge whose `on` is that outcome; every edge out of a check node with a condition says
+        `on: \"true\"` or `on: \"false\"` (none defaults to `next`), and an outcome without its edge fails the run.
+        Values are compared as texts, exactly: a JSON string without its quotes, a number or a boolean as written in
+        the output (`1.0` is not `1`; the string `\"true\"` and the boolean `true` both read `true`), an object or
+        an array as its compact JSON text. No value: a step not visited, a visit without output, an output that is
+        not JSON or not of the segment's kind (an object for `.<key>`, an array for `[<index>]`), a missing key or
+        index, a JSON `null`. `exists` is false on no value; `equals`,
+        `notEquals` and `matches` do not evaluate on no value, nor on a text over 10 000 characters: the run fails,
+        with the reason, and never takes a branch by default. Checked when the workflow is saved: 400
+        `invalid_request` for a condition on a node that is not a `check`, a `step` that is not a node of the
+        workflow, a `path` out of its form, an unknown `op`, a `value` missing for `equals`, `notEquals` or `matches`
+        or present for `exists`, a `matches` pattern out of its syntax, or an edge out of the node whose `on` is not
+        `true` or `false`"
+      properties:
+        step:
+          type: string
+          maxLength: 200
+          description: The id of the node whose last visit the condition reads (`WorkflowNode.id`); it may be on a
+            branch the run did not take (no value then)
+        path:
+          type: string
+          maxLength: 200
+          description: "What it reads of that visit: `outcome`, `output`, or a value of the output read as JSON,
+            `output` followed by 1 to 10 segments, each `.<key>` (a member of an object: 1 to 64 characters among
+            letters, digits, `_` and `-`) or `[<index>]` (an element of an array, from 0, at most 4 digits), as in
+            `output.a.b[0].c`; 200 characters in all. A key with another character is not addressable. A `wait`
+            visit's output is its answer's values, a JSON object"
+        op:
+          $ref: '#/components/schemas/NodeConditionOp'
+        value:
+          type: string
+          maxLength: 200
+          description: "What `equals` and `notEquals` compare with, or the pattern of `matches`. Its syntax: literal
+            characters; `.`, any character but a newline; bracket classes `[…]`, where a first `^` negates, `-`
+            between two characters is a range and `]` closes (`\\]` inside); `*`, `+`, `?`; groups `( )`;
+            alternation `|` (an empty alternative or group matches the empty text); anchors `^` and `$`, of the whole
+            text, not of a line; `\\d`, `\\w`, `\\s`, and a backslash before any of `\\ . ^ $ | ? * + ( ) [ ] { }
+            - /` for the character itself. No backreference, no lookaround, no counted repetition (`{`). The server
+            matches it in linear time, without backtracking. Absent for `exists`"
+      required:
+      - step
+      - path
+      - op
+    NodeConditionOp:
+      type: string
+      description: "`equals` and `notEquals` compare the value with `value`; `exists` is true when the value is there;
+        `matches` is true when the pattern `value` matches a part of it (anchors to match it whole)"
+      enum:
+      - equals
+      - notEquals
+      - exists
+      - matches
     NodePosition:
       type: object
       description: Position of a node in the editor
@@ -14693,6 +14874,13 @@ components:
       properties:
         name:
           type: string
+        hooksDeadlineSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          x-ostrom-status: planned
+          description: "The new wait for the first hook, in seconds; outside 5 to 300 is refused with 400. Planned:
+            the server does not read it yet"
       required:
       - name
       x-ostrom-kotlin: pending
@@ -14724,6 +14912,13 @@ components:
         timeZone:
           type: string
           description: The organization's IANA time zone, `UTC` by default
+        hooksDeadlineSeconds:
+          type: integer
+          minimum: 5
+          maximum: 300
+          x-ostrom-status: planned
+          description: "How long the CLI waits for the first of Ostrom's hooks in an agent's session before it reports
+            `hooks.missing`, 15 until an owner or an admin sets it. Planned: the server does not send it yet"
       required:
       - id
       - slug
@@ -15088,6 +15283,27 @@ components:
       properties:
         id:
           type: string
+        orgId:
+          type: string
+          format: uuid
+          x-ostrom-status: planned
+          description: "The organization the receipt was signed for, inside the signed body, in the lowercase canonical
+            form of a UUID: a receipt that names one organization never verifies as another's, online or offline (the
+            offline verifier is given the organization it checks for: the CLI's configured organization or `--org`).
+            Absent (never null) from a receipt signed before it was planned: such a receipt stays verifiable by its
+            signature but is never bound to an organization (`Verification.orgBound`). Planned: the server does not sign
+            it yet"
+        launchId:
+          type: string
+          x-ostrom-status: planned
+          description: "The launch the receipt belongs to, as the server names it, inside the signed body. Omitted (never
+            null) when the receipt has none. Planned"
+        sessionId:
+          type: string
+          x-ostrom-status: planned
+          description: "The session segment the receipt belongs to, as the server names it, inside the signed body.
+            Omitted (never null) when the receipt has none. For a session's own receipt it is the segment `subject.id`
+            names, the same id. Planned"
         subject:
           $ref: '#/components/schemas/ReceiptSubject'
         initiator:
@@ -16234,7 +16450,8 @@ components:
         a service key, a sign-in link, an invitation, a role, a member removed, a transfer, a secret, an MCP server,
         its assignments, policies and settings, the model keys), need a sign-in less than 5
         minutes old (a sign-in of unknown age is refused too); sign in again, then send it again. A no never needs it,
-        and an API token is never asked: it has no sign-in to renew'
+        and an API token is never asked: it has no sign-in to renew. Planned: a yes from the phone app to a high-risk
+        action also needs an unlock bound to its approval (`unlockMobileApp.requestId`, `error.requestBound`)'
       properties:
         error:
           type: object
@@ -16245,6 +16462,15 @@ components:
               enum: [step_up_required]
             message:
               type: string
+            requestBound:
+              type: boolean
+              x-ostrom-status: planned
+              description: "True when the refused yes came from the phone app, unlocked in the last 5 minutes, to
+                a high-risk action, without an unlock bound to this very approval (`unlockMobileApp.requestId`) less
+                than 60 seconds old and not used yet: its unlock is older, was used, or names another approval. The
+                app unlocks again for this approval, then sends the yes again. Absent when the app was not unlocked
+                in the last 5 minutes (that refusal comes first) and for every other refusal. Planned: the server
+                does not send it yet"
           required:
           - type
           - message
@@ -16765,6 +16991,14 @@ components:
           type: string
         reason:
           type: string
+        orgBound:
+          type: boolean
+          x-ostrom-status: planned
+          description: "Whether the signed body names the organization that verifies it. `ok` says only that the
+            signature holds: a client that relies on the receipt being this organization's checks `orgBound` is true,
+            and reads an absent `orgBound` (a server that predates it) as not bound. False for a receipt signed before
+            `Receipt.orgId`: valid, shown as not bound to an organization, never accepted as this organization's. A
+            receipt that names another organization is not ok, with a `reason` that names no organization. Planned"
       required:
       - ok
       x-ostrom-kotlin: pending
@@ -16987,8 +17221,8 @@ components:
       - foundAt
     WorkflowEdge:
       type: object
-      description: An edge. For a run, [on] is the outcome that follows it (`next`, `delivered`, a wait action id); [to] null
-        ends
+      description: An edge. For a run, [on] is the outcome that follows it (`next`, `delivered`, a wait action id, `true`
+        or `false` out of a check node with a condition, which has no default); [to] null ends
       properties:
         from:
           type: string
@@ -17064,12 +17298,19 @@ components:
           $ref: '#/components/schemas/WaitSpec'
         workflowId:
           type: string
+          description: "The workflow a `workflow` node runs: a child run of another accepted workflow of the
+            organization, with `arguments` as its inputs. A run never calls a workflow already running above it, and
+            runs nest at most 5 deep: the visit fails then, and the run ends `failed`, with the reason in `failure`
+            (no HTTP error: the call is checked when the run reaches it, since the called workflow may change after
+            it is saved)"
         arguments:
           type: object
           additionalProperties:
             type: string
         maxVisits:
           type: integer
+        condition:
+          $ref: '#/components/schemas/NodeCondition'
       required:
       - id
       - kind
