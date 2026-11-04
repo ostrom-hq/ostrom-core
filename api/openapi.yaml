@@ -7118,10 +7118,18 @@ paths:
             schema: {}
       responses:
         '200':
-          description: OK
+          description: 'OK, the provider''s answer as it sent it: JSON when the request does not stream; with
+            `"stream": true`, server-sent events whose every `data:` is an `AnthropicStreamEvent`. Planned: the strict
+            contract test of ostrom-server does not read the events yet'
           content:
             application/json:
               schema: {}
+            text/event-stream:
+              x-ostrom-status: planned
+              schema:
+                type: string
+              x-ostrom-event-data:
+                $ref: '#/components/schemas/AnthropicStreamEvent'
         '400':
           $ref: '#/components/responses/AnthropicInferenceError'
         '401':
@@ -7154,10 +7162,18 @@ paths:
             schema: {}
       responses:
         '200':
-          description: OK
+          description: 'OK, the provider''s answer as it sent it: JSON when the request does not stream; with
+            `"stream": true`, server-sent events whose every `data:` is an `OpenAiResponsesStreamEvent`. Planned: the
+            strict contract test of ostrom-server does not read the events yet'
           content:
             application/json:
               schema: {}
+            text/event-stream:
+              x-ostrom-status: planned
+              schema:
+                type: string
+              x-ostrom-event-data:
+                $ref: '#/components/schemas/OpenAiResponsesStreamEvent'
         '400':
           $ref: '#/components/responses/OpenAiInferenceError'
         '401':
@@ -7190,10 +7206,19 @@ paths:
             schema: {}
       responses:
         '200':
-          description: OK
+          description: 'OK, the provider''s answer as it sent it: JSON when the request does not stream; with
+            `"stream": true`, server-sent events whose every `data:` is an `OpenAiChatCompletionChunk`, the last one
+            `[DONE]`. Planned: the strict contract test of ostrom-server does not read the events yet'
           content:
             application/json:
               schema: {}
+            text/event-stream:
+              x-ostrom-status: planned
+              schema:
+                type: string
+              x-ostrom-event-data:
+                $ref: '#/components/schemas/OpenAiChatCompletionChunk'
+              x-ostrom-event-done: '[DONE]'
         '400':
           $ref: '#/components/responses/OpenAiInferenceError'
         '401':
@@ -11310,6 +11335,25 @@ components:
       - type
       - error
       x-ostrom-kotlin: pending
+    AnthropicStreamEvent:
+      type: object
+      description: "One `data:` of a Messages stream, as Anthropic sends it and the gateway relays it"
+      properties:
+        type:
+          type: string
+          enum:
+          - message_start
+          - content_block_start
+          - content_block_delta
+          - content_block_stop
+          - message_delta
+          - message_stop
+          - ping
+          - error
+      required:
+      - type
+      additionalProperties: {}
+      x-ostrom-kotlin: pending
     ApiError:
       type: object
       description: The error body of every refusal
@@ -14346,6 +14390,24 @@ components:
       - email
       - verified
       x-ostrom-kotlin: pending
+    OpenAiChatCompletionChunk:
+      type: object
+      description: "One `data:` of a chat completions stream, as the OpenAI-compatible provider sends it and the gateway
+        relays it; the stream ends with `data: [DONE]`"
+      properties:
+        object:
+          type: string
+          enum:
+          - chat.completion.chunk
+        choices:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - choices
+      additionalProperties: {}
+      x-ostrom-kotlin: pending
     OpenAiError:
       type: object
       description: "An error in OpenAI's shape, as the OpenAI-compatible endpoints of the gateway answer it"
@@ -14372,6 +14434,17 @@ components:
           - type
       required:
       - error
+      x-ostrom-kotlin: pending
+    OpenAiResponsesStreamEvent:
+      type: object
+      description: "One `data:` of a Responses stream (`response.created`, `response.output_text.delta`,
+        `response.completed`, `error`…), as OpenAI sends it and the gateway relays it"
+      properties:
+        type:
+          type: string
+      required:
+      - type
+      additionalProperties: {}
       x-ostrom-kotlin: pending
     StepUpOrForbidden:
       description: 'A 403 of a write that may need a fresh sign-in: `step_up_required` (sign in again, then send
