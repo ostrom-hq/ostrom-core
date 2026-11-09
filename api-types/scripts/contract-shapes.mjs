@@ -1,5 +1,5 @@
 // Writes the JSON shape of every schema of openapi.yaml that has a Kotlin model (all but `x-ostrom-kotlin: pending`).
-// The Kotlin test ContractTest compares this file with the serial descriptors of dev.ostrom.core.api.models;
+// The Kotlin test ContractTest compares this file with the serial descriptors of run.ostrom.core.api.models;
 // CI regenerates it and fails when the committed copy differs. It also refuses an operation without
 // `x-ostrom-status: served | planned`, the marker the public API reference filters on.
 import { readFileSync, writeFileSync } from 'node:fs'

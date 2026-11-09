@@ -20,7 +20,7 @@ env:
   KOTLIN_VERSION: '2.4.21'
 permissions:
   contents: read
-  packages: read # dev.ostrom artifacts of ostrom-core on GitHub Packages
+  packages: read # run.ostrom artifacts of ostrom-core on GitHub Packages
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}

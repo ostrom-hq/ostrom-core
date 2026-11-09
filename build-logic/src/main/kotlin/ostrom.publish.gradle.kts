@@ -3,7 +3,7 @@ import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.SourcesJar
 
-// Publishes the module to GitHub Packages as dev.ostrom:ostrom-<module>.
+// Publishes the module to GitHub Packages as run.ostrom:ostrom-<module>.
 // It lives in build-logic, next to ostrom.kmp, so the publish plugin and the Kotlin plugin share one classloader.
 plugins {
     id("com.vanniktech.maven.publish")

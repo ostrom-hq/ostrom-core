@@ -35,7 +35,7 @@ kover {
     reports {
         filters {
             excludes {
-                annotatedBy("dev.ostrom.core.telemetry.ExcludeFromCoverage")
+                annotatedBy("run.ostrom.core.telemetry.ExcludeFromCoverage")
             }
         }
     }

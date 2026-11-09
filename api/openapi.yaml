@@ -7,7 +7,7 @@ info:
     name: Apache-2.0
     identifier: Apache-2.0
   description: 'The contract of the Ostrom server, owned by ostrom-core. Schemas without `x-ostrom-kotlin: pending` have a
-    Kotlin model in `dev.ostrom.core.api.models` with the same JSON shape (checked by `api-types/scripts/check-contract.mjs`).
+    Kotlin model in `run.ostrom.core.api.models` with the same JSON shape (checked by `api-types/scripts/check-contract.mjs`).
     TypeScript types are generated from this file (`@ostrom-hq/api-types`).
 
     Every operation carries `x-ostrom-status`: `served` when the server on `main` of ostrom-server answers it, `planned`

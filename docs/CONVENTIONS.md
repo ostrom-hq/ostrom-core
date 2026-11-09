@@ -36,8 +36,9 @@ Contents: [1 Architecture](#1-architecture) Â· [2 Kotlin code](#2-kotlin-code) Â
 ### 1.1 Modules and the dependency graph
 
 Every Kotlin repository is a Gradle multi-module build with the module roles of `asonar` and `teamcode`. Root
-package and Gradle group: `dev.ostrom`; a module's package is `dev.ostrom.<repo>.<module>`
-(`dev.ostrom.server.domain`, `dev.ostrom.cli`), as `me.nathanfallet.teamcode.<module>` in `teamcode`.
+package and Gradle group: `run.ostrom`, the reverse DNS of `ostrom.run`, the domain Ostrom owns (never a domain it
+does not own, such as `ostrom.dev`); a module's package is `run.ostrom.<repo>.<module>`
+(`run.ostrom.server.domain`, `run.ostrom.cli`), as `me.nathanfallet.teamcode.<module>` in `teamcode`.
 
 | Module | Repository | Responsibility | Depends on |
 | --- | --- | --- | --- |
@@ -409,7 +410,7 @@ Cleanup that must run when the caller is cancelled (kill a child process, close 
 
 ### 6.1 Logs
 
-- Server: Ktor's logger (`call.application.log`, `KtorSimpleLogger("dev.ostrom.server.X")`), which works on
+- Server: Ktor's logger (`call.application.log`, `KtorSimpleLogger("run.ostrom.server.X")`), which works on
   Kotlin/Native (`teamcode` uses `io.ktor.util.logging`). No SLF4J/Logback: they are JVM-only.
 - CLI: human output on stdout, diagnostics on stderr, never both mixed in a machine-readable output (`--json`).
 - **Never log credentials, tokens, prompts, response bodies, or raw provider errors** (`teamcode:AGENTS.md`). Identifiers
@@ -717,7 +718,7 @@ queue short:
 - Tags are the bare version (`0.3.0`, `1.0.0-alpha.1`), no `v` prefix (`teamcode` triggers on `tags: ['[0-9]*']`).
 - A release = a tag on `main` + a GitHub release with generated notes; CI builds, runs the full matrix and publishes the
   artifacts of that exact commit, never a rebuild elsewhere (`teamcode:build.yml`, `publish_release`).
-- **`ostrom-core` publication**: Maven artifacts `dev.ostrom:ostrom-<module>` to GitHub Packages of `ostrom-hq` with
+- **`ostrom-core` publication**: Maven artifacts `run.ostrom:ostrom-<module>` to GitHub Packages of `ostrom-hq` with
   `com.vanniktech.maven.publish` (Nathan's plugin everywhere, `JavadocJar.Empty()`, `SourcesJar.Sources()`), and the
   generated TypeScript package (Zodable, section 13.4) to GitHub Packages npm as `@ostrom-hq/core`. While the
   repositories are developed together, consumers may use a Gradle `includeBuild("../ostrom-core")` locally; CI always
