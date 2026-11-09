@@ -599,6 +599,27 @@
       }
     }
   },
+  "Capabilities": {
+    "properties": {
+      "apiVersion": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "serverVersion": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "features": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "CheckAttestation": {
     "enum": [
       "workstation_declared",
