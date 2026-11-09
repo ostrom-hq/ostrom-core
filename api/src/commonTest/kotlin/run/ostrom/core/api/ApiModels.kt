@@ -14,6 +14,7 @@ import run.ostrom.core.api.models.Automation
 import run.ostrom.core.api.models.AutomationAction
 import run.ostrom.core.api.models.AutomationTrigger
 import run.ostrom.core.api.models.AutomationVariable
+import run.ostrom.core.api.models.Capabilities
 import run.ostrom.core.api.models.CheckRun
 import run.ostrom.core.api.models.CompiledHook
 import run.ostrom.core.api.models.CompiledNode
@@ -107,6 +108,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     AutomationAction.serializer(),
     AutomationTrigger.serializer(),
     AutomationVariable.serializer(),
+    Capabilities.serializer(),
     CheckRun.serializer(),
     CompiledHook.serializer(),
     CompiledNode.serializer(),

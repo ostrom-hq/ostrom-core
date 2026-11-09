@@ -184,28 +184,21 @@ paths:
       x-ostrom-status: planned
       tags:
       - meta
-      summary: Capabilities of this server (feature keys and versions)
-      security: []
+      summary: The API version this server speaks, its version and the features it serves
+      description: "Read by every client after signing in, with any credential (CLI, app, console session, device,
+        runner or service key). A client refuses a server whose `apiVersion` it does not speak, and hides or refuses a
+        feature whose key is absent from `features`: a key is listed only when the server serves that feature and it is
+        configured on this instance (billing only with Stripe, push notifications only with a push sender…), never for
+        a `planned` operation. Kept behind authentication, like TeamCode's: an anonymous call is refused with 401
+        `unauthorized`, which tells a client it reached an Ostrom server and should sign in next."
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  version:
-                    type: string
-                  capabilities:
-                    type: array
-                    items:
-                      type: string
-                required:
-                - version
-                - capabilities
-        '400':
-          $ref: '#/components/responses/Error'
-        '404':
+                $ref: '#/components/schemas/Capabilities'
+        '401':
           $ref: '#/components/responses/Error'
   /api/v1/auth/github/start:
     get:
@@ -12590,6 +12583,31 @@ components:
       - reason
       - createdBy
       x-ostrom-kotlin: pending
+    Capabilities:
+      type: object
+      description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
+        compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
+        `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
+        `governance.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `secrets.v1`,
+        `sessions.v1`, `sharing.v1`, `slack.v1`, `usage.v1`, `waits.v1`, `workflows.v1`, `license.v1`. A client
+        ignores a key it does not know."
+      properties:
+        apiVersion:
+          type: integer
+          description: The version of the `/api/v1` contract the server speaks (1)
+        serverVersion:
+          type: string
+          description: The server's release version (`1.4.0`, or `0.0.0-edge.<time>.<sha>` for a build of `main`)
+        features:
+          type: array
+          items:
+            type: string
+          description: The features served and configured on this instance, by key
+      required:
+      - apiVersion
+      - serverVersion
+      - features
     Capacity:
       type: object
       description: Remaining capacity of the shared subscriptions
