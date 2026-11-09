@@ -4,6 +4,6 @@
 val ostromCoreVersion = providers.gradleProperty("ostromCoreVersion").orElse("0.1.0-SNAPSHOT").get()
 
 allprojects {
-    group = "dev.ostrom"
+    group = "run.ostrom"
     version = ostromCoreVersion
 }

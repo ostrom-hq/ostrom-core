@@ -12,10 +12,10 @@ val generateContractPath = tasks.register("generateContractPath") {
     inputs.property("contract", contractFile)
     outputs.dir(generatedTestDirectory)
     doLast {
-        val output = generatedTestDirectory.get().file("dev/ostrom/core/api/ContractPath.kt").asFile
+        val output = generatedTestDirectory.get().file("run/ostrom/core/api/ContractPath.kt").asFile
         output.parentFile.mkdirs()
         output.writeText(
-            "package dev.ostrom.core.api\n\n" +
+            "package run.ostrom.core.api\n\n" +
                 "/** Absolute path of api/contract/shapes.json, written at build time. */\n" +
                 "internal const val CONTRACT_SHAPES_FILE: String = \"${contractFile.replace("\\", "/")}\"\n"
         )
