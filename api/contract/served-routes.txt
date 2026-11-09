@@ -55,6 +55,7 @@ GET /api/v1/automations/{}
 GET /api/v1/automations/{}/runs
 GET /api/v1/budgets
 GET /api/v1/budgets/me
+GET /api/v1/capabilities
 GET /api/v1/capacity
 GET /api/v1/checks
 GET /api/v1/cloud/runner/terminal
