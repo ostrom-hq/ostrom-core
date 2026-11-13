@@ -11360,6 +11360,337 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/artifacts/storage:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getArtifactStorage
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: The organization's artifact bucket, as its owners and administrators see it
+      description: 'A person only (a browser session, the unlocked app or the CLI''s sign-in), an owner or an
+        administrator of the organization; no key reaches it, whatever its scopes (TeamCode `docs/artifacts.md`,
+        "Storage and settings"). The secret access key is never returned. Artifact files live only in this bucket:
+        PostgreSQL keeps their metadata (artifacts, versions, members, manifests), never their bytes'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactStorage'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveArtifactStorage
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: Save the artifact bucket
+      description: 'A person, an owner or an administrator. `version` is the one replaced (0 for the first save;
+        409 `artifact_storage_conflict` otherwise). Endpoint `https://host[:port]` without path, credentials, query or
+        fragment; link-local, unspecified and cloud metadata hosts are refused in every numeric spelling (400
+        `artifact_storage_host_not_allowed`), private and loopback addresses are allowed (MinIO); every request to the
+        bucket goes through the SSRF-checked outbound client, which resolves the host again. Region `[a-z0-9-]`; bucket
+        3 to 63 lowercase letters, digits, dots and dashes; prefix up to 8 `[a-z0-9._-]` segments, no `.` or `..`.
+        An omitted secret keeps the stored one; changing the endpoint or the bucket needs a new one (400
+        `artifact_storage_secret_required`). The secret is sealed with the instance key and never shown again. Once
+        artifacts may have files in the bucket, the endpoint, bucket and prefix are fixed (409
+        `artifact_storage_in_use`); keys can still be rotated. Any save makes artifacts inactive until a connection
+        test of the new version passes'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveArtifactStorageRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactStorage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteArtifactStorage
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: Remove the artifact bucket and its secret
+      description: 'A person, an owner or an administrator. Turns artifacts off; refused while artifacts may have files
+        in it (409 `artifact_storage_in_use`)'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/artifacts/storage/test:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: testArtifactStorage
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: Test the connection to the artifact bucket
+      description: 'A person, an owner or an administrator. Writes `<prefix>/<org>/.ostrom-probe-<uuid>`, reads it back
+        and compares its SHA-256, lists the prefix, deletes it and checks it is gone. Each step reports its HTTP status
+        and the S3 error code (`AccessDenied`, `NoSuchBucket`, `SignatureDoesNotMatch`...) or a short local code
+        (`unreachable`, `timeout`, `dns`, `host_not_allowed`, `digest_mismatch`, `not_listed`, `not_deleted`), never a
+        response body. Bounded to 80 seconds, one at a time per organization (409 `artifact_storage_test_running`).
+        The result is recorded only for the version tested: a save meanwhile gives `ok: false` with a last step
+        `record` / `storage_changed`'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactStorageTest'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/artifacts/settings:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getArtifactSettings
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: The organization's artifact settings, and whether artifacts are active
+      description: 'A person, an owner or an administrator. Artifacts are active only while a bucket is stored, its
+        current version passed the connection test, and `enabled` is on; otherwise `inactiveReason` is
+        `artifact_storage_missing`, `artifact_storage_unverified` or `artifacts_disabled`. While inactive, every
+        publication, read and sharing route answers 409 with that reason as its error key (deletion still works) and
+        the content origin answers 404'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactSettings'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveArtifactSettings
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: Save every artifact setting
+      description: 'A person, an owner or an administrator. Every field, with the `version` it replaces (409
+        `artifact_settings_conflict` otherwise). `enabled` needs a bucket (409 `artifact_storage_missing`) whose current
+        version passed a test (409 `artifact_storage_unverified`). Ranges (400 `invalid_artifact_settings`):
+        quotas in bytes 1 MiB to 100 TiB, artifacts per member 1 to 100000, publications per hour 1 to 10000, retention
+        1 to 3650 days or null (kept), versions per artifact 1 to 1000. A retention change applies to artifacts
+        published afterwards'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveArtifactSettingsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/artifacts/usage:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getArtifactUsage
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: What the organization stores against its artifact quota, per member, largest first
+      description: 'A person, an owner or an administrator. Each file is counted once per artifact, as the quotas count
+        it; drafts and deleted artifacts are not counted. The 200 largest owners (TeamCode shows the same figures on
+        Settings → Artifacts)'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactUsage'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/artifacts/policy:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getArtifactPolicy
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: Whether the caller may publish artifacts now
+      description: 'Any member credential with `artifacts:read` (or `artifacts:write`). Answers even while artifacts are
+        inactive: `reason` is then `artifact_storage_missing`, `artifact_storage_unverified` or `artifacts_disabled`;
+        `artifact_publish_forbidden` when only administrators publish and the caller is not one; `credential_scope`
+        for a credential without `artifacts:write`. `ostrom run` (and the cloud runner) connect the artifacts MCP server
+        only when `canPublish` is true'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactPolicy'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/artifacts/uploads:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: createArtifactUpload
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: Announce the distinct files of the next version
+      description: '`artifacts:write`. Without `artifactId` a draft artifact is created for the caller (deleted after 24
+        hours if never committed); with it, the caller must be its owner (an invited editor later). `missing` lists the
+        SHA-256 values the artifact''s folder in the bucket does not hold yet: send each in chunks of at most
+        `chunkBytes` (1 MiB) before `expiresAt` (one hour), then commit with `publishArtifactVersion`. A member holds at
+        most 16 open uploads and 20 unpublished drafts (429 `artifact_uploads_busy`); `quotaArtifactsPerMember` counts
+        published artifacts (409 `artifact_quota_exceeded`). While the artifact has blobs waiting to be collected, 409
+        `artifact_busy` (retry after 60 seconds). 409 with the inactive reason while artifacts are inactive'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArtifactUploadRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactUpload'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/artifacts/uploads/{upload}/blobs/{sha256}/{n}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: putArtifactUploadChunk
+      x-ostrom-status: planned
+      tags:
+      - artifacts
+      summary: Send one chunk of an announced file
+      description: '`artifacts:write`, the credential that opened the upload. `application/octet-stream`, at most 1 MiB.
+        Chunks may come in any order and in parallel; they wait in PostgreSQL, the only bus between replicas. The last
+        one assembles the file, checks its size and SHA-256 (422 `artifact_blob_mismatch`: send it again), scans it for
+        secrets (422 `artifact_secret_detected`, never the value; the upload ends) and stores it in the bucket. A file
+        is at most 16 MiB of text or 15 MiB of binary (413 `artifact_file_too_large`; the upload ends)'
+      parameters:
+      - name: upload
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: sha256
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: n
+        in: path
+        required: true
+        description: The chunk's index, from 0
+        schema:
+          type: integer
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactUploadChunk'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
   /a/{id}/{ticket}/{path}:
     get:
       operationId: getArtifactContent
@@ -11579,6 +11910,12 @@ paths:
       tags:
       - artifacts
       summary: Publish a new version
+      description: 'With `uploadId` (planned), the commit of an upload: every file is either sent by that upload or
+        already in the artifact''s folder (409 `artifact_blob_missing`), `baseVersion` must be the live version (409
+        `artifact_conflict`), only the owner (and invited editors) publish (403), `quotaPublishesPerHour` (429
+        `artifact_rate_limited` with `Retry-After`), the byte quotas (409 `artifact_quota_exceeded`), versions beyond
+        `maxVersionsPerArtifact` are pruned. Files are stored in the organization''s bucket, never in PostgreSQL; 409
+        with the inactive reason while artifacts are inactive'
       parameters:
       - name: id
         in: path
@@ -11596,9 +11933,35 @@ paths:
                   type: array
                   items:
                     $ref: '#/components/schemas/ArtifactFile'
+                uploadId:
+                  type: string
+                  description: The upload whose files this commit uses (each file then by `sha256` and `size`)
+                entry:
+                  type: string
+                  description: The page among `files` (`.html`, `.htm` or `.md`)
+                baseVersion:
+                  type: integer
+                  minimum: 0
+                  description: 'The version the publisher started from (0 for a draft): any other live version is
+                    409 `artifact_conflict`'
+                title:
+                  type: string
+                description:
+                  type: string
+                icon:
+                  type: string
+                access:
+                  $ref: '#/components/schemas/ArtifactAccess'
               required:
               - files
       responses:
+        '200':
+          description: 'The same commit again within 10 minutes (same credential, base version and manifest digest):
+            the version it made, `replayed` true'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactVersion'
         '201':
           description: OK
           content:
@@ -15358,7 +15721,8 @@ components:
       x-ostrom-kotlin: pending
     ArtifactFile:
       type: object
-      description: A file sent for publication
+      description: 'A file of the version to publish: its `content` inline, or, for a commit of an upload, its `sha256`
+        and `size`, sent by that upload (`createArtifactUpload`) or already held by the artifact'
       properties:
         path:
           type: string
@@ -15371,9 +15735,15 @@ components:
           enum:
           - utf8
           - base64
+        sha256:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        size:
+          type: integer
+          format: int64
+          minimum: 0
       required:
       - path
-      - content
       x-ostrom-kotlin: pending
     ArtifactFileContent:
       type: object
@@ -15403,6 +15773,342 @@ components:
       - size
       - sha256
       - contentBase64
+      x-ostrom-kotlin: pending
+    ArtifactStorage:
+      type: object
+      description: 'The organization''s artifact bucket. `secretConfigured` only says a secret is stored, never returned.
+        `verifiedAt` is the last passed test of this `version`, absent after any change. `inUse`: artifacts may have
+        files in it, so the endpoint, bucket and prefix are fixed'
+      properties:
+        configured:
+          type: boolean
+        endpoint:
+          type: string
+        region:
+          type: string
+        bucket:
+          type: string
+        prefix:
+          type: string
+        pathStyle:
+          type: boolean
+        accessKeyId:
+          type: string
+        secretConfigured:
+          type: boolean
+        serverSideEncryption:
+          type: string
+          enum:
+          - none
+          - AES256
+        verifiedAt:
+          type: string
+        version:
+          type: integer
+        updatedAt:
+          type: string
+        inUse:
+          type: boolean
+      required:
+      - configured
+      - pathStyle
+      - secretConfigured
+      - serverSideEncryption
+      - version
+      - inUse
+      x-ostrom-kotlin: pending
+    SaveArtifactStorageRequest:
+      type: object
+      description: '`version` is the one replaced (0 for the first save); an omitted `secretAccessKey` keeps the stored
+        one'
+      properties:
+        version:
+          type: integer
+        endpoint:
+          type: string
+          maxLength: 512
+        region:
+          type: string
+          maxLength: 64
+        bucket:
+          type: string
+          maxLength: 63
+        prefix:
+          type: string
+          maxLength: 200
+        pathStyle:
+          type: boolean
+        accessKeyId:
+          type: string
+          maxLength: 256
+        secretAccessKey:
+          type: string
+          maxLength: 512
+        serverSideEncryption:
+          type: string
+          enum:
+          - none
+          - AES256
+      required:
+      - version
+      - endpoint
+      - region
+      - bucket
+      - accessKeyId
+      x-ostrom-kotlin: pending
+    ArtifactStorageTest:
+      type: object
+      description: The outcome of a connection test, step by step
+      properties:
+        ok:
+          type: boolean
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtifactStorageTestStep'
+      required:
+      - ok
+      - steps
+      x-ostrom-kotlin: pending
+    ArtifactStorageTestStep:
+      type: object
+      description: '`put`, `get`, `list`, `delete`, `gone` or `record`; `code` is the S3 error code or a short local
+        code, never a response body'
+      properties:
+        step:
+          type: string
+        ok:
+          type: boolean
+        status:
+          type: integer
+        code:
+          type: string
+      required:
+      - step
+      - ok
+      x-ostrom-kotlin: pending
+    ArtifactSettings:
+      type: object
+      description: 'Switches, quotas and retention (TeamCode''s defaults: off, `everyone`, `owners_of_artifacts`, 2 GiB
+        per member, 50 GiB per organization, 500 artifacts per member, 60 publications per member and hour, kept
+        forever, 50 versions). `active` is whether artifacts work now; `inactiveReason` says why not'
+      properties:
+        enabled:
+          type: boolean
+        whoCanPublish:
+          type: string
+          enum:
+          - everyone
+          - admins
+        publicSharing:
+          type: string
+          enum:
+          - owners_of_artifacts
+          - admins
+          - 'off'
+        quotaMemberBytes:
+          type: integer
+          format: int64
+        quotaOrgBytes:
+          type: integer
+          format: int64
+        quotaArtifactsPerMember:
+          type: integer
+        quotaPublishesPerHour:
+          type: integer
+        personalRetentionDays:
+          type: integer
+        sharedRetentionDays:
+          type: integer
+        maxVersionsPerArtifact:
+          type: integer
+        version:
+          type: integer
+        updatedAt:
+          type: string
+        active:
+          type: boolean
+        inactiveReason:
+          type: string
+          enum:
+          - artifact_storage_missing
+          - artifact_storage_unverified
+          - artifacts_disabled
+      required:
+      - enabled
+      - whoCanPublish
+      - publicSharing
+      - quotaMemberBytes
+      - quotaOrgBytes
+      - quotaArtifactsPerMember
+      - quotaPublishesPerHour
+      - maxVersionsPerArtifact
+      - version
+      - active
+      x-ostrom-kotlin: pending
+    SaveArtifactSettingsRequest:
+      type: object
+      description: Every setting, with the `version` replaced (0 before the first save); a null retention keeps
+        artifacts
+      properties:
+        version:
+          type: integer
+        enabled:
+          type: boolean
+        whoCanPublish:
+          type: string
+          enum:
+          - everyone
+          - admins
+        publicSharing:
+          type: string
+          enum:
+          - owners_of_artifacts
+          - admins
+          - 'off'
+        quotaMemberBytes:
+          type: integer
+          format: int64
+        quotaOrgBytes:
+          type: integer
+          format: int64
+        quotaArtifactsPerMember:
+          type: integer
+        quotaPublishesPerHour:
+          type: integer
+        personalRetentionDays:
+          type: [integer, 'null']
+        sharedRetentionDays:
+          type: [integer, 'null']
+        maxVersionsPerArtifact:
+          type: integer
+      required:
+      - version
+      - enabled
+      - whoCanPublish
+      - publicSharing
+      - quotaMemberBytes
+      - quotaOrgBytes
+      - quotaArtifactsPerMember
+      - quotaPublishesPerHour
+      - maxVersionsPerArtifact
+      x-ostrom-kotlin: pending
+    ArtifactUsage:
+      type: object
+      description: The bytes the organization stores, and per member the published artifacts they own and their bytes
+      properties:
+        orgBytes:
+          type: integer
+          format: int64
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtifactMemberUsage'
+      required:
+      - orgBytes
+      - members
+      x-ostrom-kotlin: pending
+    ArtifactMemberUsage:
+      type: object
+      description: One member's artifacts and bytes
+      properties:
+        memberId:
+          type: string
+        name:
+          type: string
+        artifacts:
+          type: integer
+        bytes:
+          type: integer
+          format: int64
+      required:
+      - memberId
+      - artifacts
+      - bytes
+      x-ostrom-kotlin: pending
+    ArtifactPolicy:
+      type: object
+      description: Whether the caller may publish now and, when not, why
+      properties:
+        canPublish:
+          type: boolean
+        reason:
+          type: string
+          enum:
+          - artifact_storage_missing
+          - artifact_storage_unverified
+          - artifacts_disabled
+          - artifact_publish_forbidden
+          - credential_scope
+      required:
+      - canPublish
+      x-ostrom-kotlin: pending
+    ArtifactFileRef:
+      type: object
+      description: A file of the version to publish, by its content (lower-case hex SHA-256) and size
+      properties:
+        sha256:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        size:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - sha256
+      - size
+      x-ostrom-kotlin: pending
+    CreateArtifactUploadRequest:
+      type: object
+      description: The distinct files of the whole version; without `artifactId`, a draft artifact is created
+      properties:
+        artifactId:
+          type: string
+        files:
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/ArtifactFileRef'
+      required:
+      - files
+      x-ostrom-kotlin: pending
+    ArtifactUpload:
+      type: object
+      description: '`missing` are the SHA-256 values to send, in chunks of at most `chunkBytes`, before `expiresAt`'
+      properties:
+        uploadId:
+          type: string
+        artifactId:
+          type: string
+        missing:
+          type: array
+          items:
+            type: string
+        chunkBytes:
+          type: integer
+        expiresAt:
+          type: string
+      required:
+      - uploadId
+      - artifactId
+      - missing
+      - chunkBytes
+      - expiresAt
+      x-ostrom-kotlin: pending
+    ArtifactUploadChunk:
+      type: object
+      description: One chunk received; `complete` once every chunk of the file arrived and it was checked and stored
+      properties:
+        complete:
+          type: boolean
+        received:
+          type: integer
+        total:
+          type: integer
+      required:
+      - complete
+      - received
+      - total
       x-ostrom-kotlin: pending
     ArtifactTicketRequest:
       type: object
@@ -15474,6 +16180,15 @@ components:
           type: string
         createdBy:
           type: string
+        digest:
+          type: string
+          description: The SHA-256 of its canonical manifest
+        baseVersion:
+          type: integer
+          description: The version its publisher started from
+        replayed:
+          type: boolean
+          description: The same commit again within 10 minutes, answered with the version it made
       required:
       - number
       - files

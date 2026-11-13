@@ -63,6 +63,9 @@ public data class ArtifactVersionPage(
  * @property entry The page a reader opens first.
  * @property createdAt ISO publication time.
  * @property createdBy Who published it.
+ * @property digest The SHA-256 of its canonical manifest, when known.
+ * @property baseVersion The version its publisher started from, when known.
+ * @property replayed True when a commit was the same as one made within 10 minutes, answered with that version.
  */
 @Serializable
 public data class ArtifactVersion(
@@ -71,6 +74,9 @@ public data class ArtifactVersion(
     val entry: String,
     val createdAt: String,
     val createdBy: String,
+    val digest: String? = null,
+    val baseVersion: Int? = null,
+    val replayed: Boolean? = null,
 )
 
 /**
