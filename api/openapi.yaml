@@ -183,7 +183,7 @@ paths:
   /api/v1/admin/instance-admins:
     get:
       operationId: listInstanceAdmins
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - admin
       summary: The administrators of the instance
@@ -207,7 +207,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: addInstanceAdmin
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - admin
       summary: Make a person an administrator of the instance
@@ -245,7 +245,7 @@ paths:
         format: uuid
     delete:
       operationId: removeInstanceAdmin
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - admin
       summary: Remove an administrator of the instance
@@ -266,7 +266,7 @@ paths:
   /api/v1/admin/settings:
     get:
       operationId: listInstanceSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - admin
       summary: Every section of the instance's settings
@@ -296,7 +296,7 @@ paths:
         pattern: '^[a-z][a-z0-9-]{0,39}$'
     get:
       operationId: getInstanceSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - admin
       summary: One section of the instance's settings
@@ -319,7 +319,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveInstanceSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - admin
       summary: Save one section of the instance's settings

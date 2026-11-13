@@ -5,6 +5,7 @@
 # operation stays planned until the server serves the contract's shape. Regenerate in the pull request that changes
 # what main serves.
 DELETE /api/v1/accounts/{}
+DELETE /api/v1/admin/instance-admins/{}
 DELETE /api/v1/artifacts/storage
 DELETE /api/v1/artifacts/{}
 DELETE /api/v1/artifacts/{}/members/{}
@@ -33,6 +34,9 @@ DELETE /api/v1/workflows/{}
 GET /a/{}/{}/{}
 GET /api/v1/accounts
 GET /api/v1/activity
+GET /api/v1/admin/instance-admins
+GET /api/v1/admin/settings
+GET /api/v1/admin/settings/{}
 GET /api/v1/analysis/replay
 GET /api/v1/analysis/state
 GET /api/v1/approvals
@@ -162,6 +166,7 @@ PATCH /api/v1/rules/{}
 POST /api/v1/accounts
 POST /api/v1/accounts/{}/access-only
 POST /api/v1/accounts/{}/handover
+POST /api/v1/admin/instance-admins
 POST /api/v1/analysis/replay
 POST /api/v1/analysis/restart
 POST /api/v1/analysis/start
@@ -278,6 +283,7 @@ POST /api/v1/workflows/session/deliver
 POST /api/v1/workflows/{}/runs
 POST /webhooks/github
 POST /webhooks/stripe
+PUT /api/v1/admin/settings/{}
 PUT /api/v1/artifacts/settings
 PUT /api/v1/artifacts/storage
 PUT /api/v1/artifacts/{}/members/{}
