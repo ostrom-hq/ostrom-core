@@ -7754,7 +7754,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: resetTodo
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - todos
       summary: "Clear a closed todo"
