@@ -8179,6 +8179,18 @@ paths:
         description: "The final run, once TeamCode is stopped: owners only (403 `cutover_owner_required` otherwise), recorded in the audit log in the name of the person who runs it, before anything is written (503 `cutover_audit_unavailable` on a server without an audit log, 503 `cutover_sharing_unavailable` on a server without shared accounts; the key is `error.type`). It also revives the shared accounts waiting for a reconnection, testing TeamCode's tokens first (renewing rotates them, so a normal run never does)."
         schema:
           type: boolean
+      - name: accessOnly
+        in: query
+        required: false
+        description: "TeamCode's `--access-only` trial (`sharing.handover.v1`): the accounts the import creates, and
+          those still waiting for their handover, serve with TeamCode's access tokens and are never renewed by Ostrom
+          (`refreshOwnership` `access_only`), so TeamCode keeps renewing its own copy; run the import again when they
+          expire. Accounts Ostrom already renews are left alone. Not with `cutover` (400). Without it, a normal run
+          leaves the accounts it creates waiting for a handover (`pending_handover`), refreshes the tokens of the
+          accounts still waiting with TeamCode's current ones, and the cutover run hands every waiting account over
+          to Ostrom with TeamCode's tokens."
+        schema:
+          type: boolean
       requestBody:
         required: true
         content:
@@ -10900,6 +10912,72 @@ paths:
       responses:
         '204':
           description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/accounts/{id}/handover:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: handOverSharedAccount
+      x-ostrom-status: planned
+      tags:
+      - sharing
+      summary: Give Ostrom refresh ownership of an imported account (admins)
+      description: "TeamCode's refresh-ownership handover. An imported account waits (`refreshOwnership` `pending_handover`) because the source it came from may still renew its tokens, and a rotating refresh token sent by two refreshers disconnects the account. Once every other refresher has stopped, an owner or admin hands it over: `refreshOwnership` becomes `ostrom`, and the account serves and is renewed by Ostrom. Also takes over an `access_only` account. An account already owned is answered as it is. A member who is not an admin gets 403 `account_handover_forbidden` on an account they shared, 404 on any other; an account of another organization is 404. 409 `account_refreshing` while a refresh of the account is in flight. Never changes `status` or `paused`. Served under `sharing.handover.v1`."
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The account after the change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedAccount'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/accounts/{id}/access-only:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: makeSharedAccountAccessOnly
+      x-ostrom-status: planned
+      tags:
+      - sharing
+      summary: Serve an imported account with its access token only, never renewing it (admins)
+      description: "TeamCode's access-only trial mode: the account serves with the access token it holds and is never renewed (`refreshOwnership` `access_only`), so the source that renews it keeps working. Once the access token is within 5 minutes of its expiry the account serves nothing until it is imported again with fresh tokens (or handed over). Same callers and answers as the handover; 409 `account_refreshing` while a refresh is in flight. Served under `sharing.handover.v1`."
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The account after the change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedAccount'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -13864,7 +13942,7 @@ components:
         `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.github.v1`, `secrets.v1`,
-        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
+        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`,
         `license.v1`. A client
         ignores a key it does not know."
@@ -15144,6 +15222,11 @@ components:
         reason:
           type: string
           description: Why it was skipped, or why a `revive_at_cutover` line waits for the cutover run
+        refreshOwnership:
+          type: string
+          enum: [pending_handover, access_only]
+          description: "For a shared account the run left waiting for its handover, or serving access-only
+            (`sharing.handover.v1`); absent when Ostrom renews it"
       required:
       - kind
       - name
@@ -15168,6 +15251,12 @@ components:
         reviveAtCutover:
           type: integer
           description: Shared accounts left waiting for a reconnection until the cutover run (`revive_at_cutover` lines)
+        pendingHandover:
+          type: integer
+          description: "Shared accounts left waiting for a refresh-ownership handover (`sharing.handover.v1`)"
+        accessOnly:
+          type: integer
+          description: "Shared accounts serving access-only (`sharing.handover.v1`)"
       required:
       - items
       - created
@@ -17588,6 +17677,17 @@ components:
           type: string
         status:
           type: string
+          description: "`ready`, `disabled`, `reconnect_required`, `wrong_account`, and, with `sharing.handover.v1`,
+            `pending_handover` (imported, waiting for a refresh-ownership handover: serves nothing) and `access_only`
+            (serves with its access token, never renewed) for an account that would otherwise be `ready`. Clients
+            treat an unknown value as not serving."
+        refreshOwnership:
+          type: string
+          enum: [ostrom, pending_handover, access_only]
+          description: "Who renews the account's tokens (`sharing.handover.v1`): `ostrom`, `pending_handover` (an
+            import whose source may still renew them; waits for `POST /api/v1/accounts/{id}/handover`) or
+            `access_only` (nobody here: served with its access token until it expires). Independent of `paused`.
+            Shown to admins and the account's owner only."
         sharedWith:
           description: 'Whom it is lent to, sorted together: the logins of its members and `group:<id>` for each group it is lent to. Empty for the whole organization, and for a member who is neither an admin nor its owner.'
           type: array
