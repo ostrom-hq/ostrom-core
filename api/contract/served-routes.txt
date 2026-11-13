@@ -238,6 +238,7 @@ POST /api/v1/rules/bulk
 POST /api/v1/runners
 POST /api/v1/runners/{}/heartbeat
 POST /api/v1/runs/{}/cancel
+POST /api/v1/runs/{}/deliver
 POST /api/v1/secrets
 POST /api/v1/service-keys
 POST /api/v1/sessions

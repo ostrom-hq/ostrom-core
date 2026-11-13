@@ -6119,7 +6119,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: deliverRun
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: "Hand in what the run's current agent node asks for (`workflows.deliver.v1`): the run's starter, a person
