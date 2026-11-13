@@ -19,7 +19,7 @@ public class PushDevicesClient internal constructor(private val transport: Trans
         RegisterPushDeviceRequest(pushToken, provider, platform, locale),
     )
 
-    /** Stops notifying a phone (`DELETE /api/v1/push-devices/{id}`), before a sign-out say. */
+    /** Stops notifying a phone (`DELETE /api/v1/push-devices/{id}`), before a sign-out for example. */
     public suspend fun delete(id: String) {
         transport.noContent(HttpMethod.Delete, "/api/v1/push-devices/${segment(id)}")
     }

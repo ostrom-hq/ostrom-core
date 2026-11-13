@@ -31,9 +31,10 @@ public class EventsClient internal constructor(private val transport: Transport)
      * server accepted the stream, before any frame.
      *
      * Returns [StreamEnd.DENIED] when the server stopped accepting the credential; the feed never ends otherwise.
-     * Throws [OstromException] with status `0` when the stream closes (reconnect from the last sequence handled), with
-     * type [OstromClient.MALFORMED_EVENT] on an unreadable event (stop: reconnecting would replay it), with the
-     * server's status and type on a refusal; a network failure propagates as the engine's exception.
+     * Throws [OstromException] with status `0` when the stream closes (reconnect from the last sequence handled, which
+     * the event's data carries), with type [OstromClient.MALFORMED_EVENT] on an unreadable event (stop: reconnecting
+     * would replay it), with the server's status and type on a refusal; a network failure propagates as the engine's
+     * exception.
      */
     public suspend fun follow(
         after: Long?,
@@ -42,9 +43,9 @@ public class EventsClient internal constructor(private val transport: Transport)
         onOpen: suspend () -> Unit = {},
         onEvent: suspend (StreamEvent) -> Unit,
     ): StreamEnd {
-        require(after == null || after >= 0) { "Use a positive cursor." }
+        require(after == null || after >= 0) { "The cursor cannot be negative." }
         require(types.size <= MAX_TYPES && types.all { EVENT_TYPE.matches(it) && it != GAP && it != "denied" }) {
-            "Invalid event type."
+            "Use at most $MAX_TYPES event types, without gap or denied (always sent)."
         }
         val query = if (types.isEmpty()) emptyList() else listOf("types" to types.sorted().joinToString(","))
         return transport.follow(StreamRoute("/api/v1/events", query), after, onOpen) { type, data ->
