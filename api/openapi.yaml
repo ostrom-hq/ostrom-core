@@ -16244,7 +16244,7 @@ components:
           description: cron, webhook or test
         status:
           type: string
-          description: queued, started, failed, invalid_payload, skipped_overlap or skipped_budget
+          description: queued (also while it waits for its owner's running cap, up to 30 minutes), started, failed, invalid_payload, skipped_overlap, skipped_budget or cancelled
         version:
           type: integer
           description: The automation's version that ran
@@ -16252,7 +16252,7 @@ components:
           type: [string, 'null']
         reason:
           type: [string, 'null']
-          description: A stable code when it failed (cloud_session_limit, cloud_hours_exhausted, owner_unavailable…)
+          description: A stable code when it failed or was cancelled (cloud_session_limit, cloud_hours_exhausted, owner_unavailable, capacity_timeout, cancelled…)
         problems:
           type: array
           items:
