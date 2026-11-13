@@ -3,16 +3,32 @@ package run.ostrom.core.api
 
 import run.ostrom.core.api.models.Account
 import run.ostrom.core.api.models.AccountEmail
+import run.ostrom.core.api.models.ActivityActor
+import run.ostrom.core.api.models.ActivityItem
+import run.ostrom.core.api.models.ActivityPage
 import run.ostrom.core.api.models.AddTodoItemRequest
 import run.ostrom.core.api.models.AnswerApprovalRequest
+import run.ostrom.core.api.models.AnswerWaitRequest
 import run.ostrom.core.api.models.ApiError
 import run.ostrom.core.api.models.Approval
 import run.ostrom.core.api.models.ApprovalAction
+import run.ostrom.core.api.models.ApprovalCallerView
 import run.ostrom.core.api.models.ApprovalCheck
 import run.ostrom.core.api.models.ApprovalCommit
+import run.ostrom.core.api.models.ApprovalQueue
+import run.ostrom.core.api.models.ApprovalView
+import run.ostrom.core.api.models.ApprovalViewer
+import run.ostrom.core.api.models.ApprovalWhat
+import run.ostrom.core.api.models.ApprovalWho
 import run.ostrom.core.api.models.ApproverGate
 import run.ostrom.core.api.models.ApproverLine
 import run.ostrom.core.api.models.ApproversGraph
+import run.ostrom.core.api.models.Artifact
+import run.ostrom.core.api.models.ArtifactPage
+import run.ostrom.core.api.models.ArtifactTicket
+import run.ostrom.core.api.models.ArtifactTicketRequest
+import run.ostrom.core.api.models.ArtifactVersion
+import run.ostrom.core.api.models.ArtifactVersionPage
 import run.ostrom.core.api.models.AuthToken
 import run.ostrom.core.api.models.AuthUser
 import run.ostrom.core.api.models.Automation
@@ -40,6 +56,7 @@ import run.ostrom.core.api.models.DropTodoItemRequest
 import run.ostrom.core.api.models.EndSessionRequest
 import run.ostrom.core.api.models.ErrorDetail
 import run.ostrom.core.api.models.Evidence
+import run.ostrom.core.api.models.ExceededBudget
 import run.ostrom.core.api.models.GateAction
 import run.ostrom.core.api.models.GateAskRequest
 import run.ostrom.core.api.models.GateCi
@@ -49,6 +66,7 @@ import run.ostrom.core.api.models.GatePushRef
 import run.ostrom.core.api.models.GateRef
 import run.ostrom.core.api.models.GateRequest
 import run.ostrom.core.api.models.GateResponse
+import run.ostrom.core.api.models.KeyRotation
 import run.ostrom.core.api.models.LinkTodoItemRequest
 import run.ostrom.core.api.models.Me
 import run.ostrom.core.api.models.Member
@@ -68,6 +86,7 @@ import run.ostrom.core.api.models.NodeVisit
 import run.ostrom.core.api.models.NodeWhen
 import run.ostrom.core.api.models.NoteTodoItemRequest
 import run.ostrom.core.api.models.Notification
+import run.ostrom.core.api.models.NotificationPreferences
 import run.ostrom.core.api.models.Organization
 import run.ostrom.core.api.models.PackageEnvelope
 import run.ostrom.core.api.models.PackageFile
@@ -77,13 +96,19 @@ import run.ostrom.core.api.models.PackageMcpServer
 import run.ostrom.core.api.models.PackageMcpTool
 import run.ostrom.core.api.models.PackageWorkflow
 import run.ostrom.core.api.models.Produced
+import run.ostrom.core.api.models.PublicKey
+import run.ostrom.core.api.models.PushDevice
+import run.ostrom.core.api.models.QuietHours
 import run.ostrom.core.api.models.Receipt
 import run.ostrom.core.api.models.ReceiptDecision
 import run.ostrom.core.api.models.ReceiptDraft
+import run.ostrom.core.api.models.ReceiptKeyList
 import run.ostrom.core.api.models.ReceiptNode
 import run.ostrom.core.api.models.ReceiptPackage
+import run.ostrom.core.api.models.ReceiptPage
 import run.ostrom.core.api.models.ReceiptRule
 import run.ostrom.core.api.models.ReceiptSubject
+import run.ostrom.core.api.models.RegisterPushDeviceRequest
 import run.ostrom.core.api.models.ReportCheckRequest
 import run.ostrom.core.api.models.Rule
 import run.ostrom.core.api.models.RuleGate
@@ -97,6 +122,9 @@ import run.ostrom.core.api.models.SessionPackage
 import run.ostrom.core.api.models.SessionResponse
 import run.ostrom.core.api.models.SessionTodo
 import run.ostrom.core.api.models.SignInMethods
+import run.ostrom.core.api.models.Spending
+import run.ostrom.core.api.models.SpendingDay
+import run.ostrom.core.api.models.SpendingLine
 import run.ostrom.core.api.models.StartSessionRequest
 import run.ostrom.core.api.models.StartTodoItemRequest
 import run.ostrom.core.api.models.StartTodoItemResponse
@@ -122,12 +150,14 @@ import run.ostrom.core.api.models.TodoStopHookRequest
 import run.ostrom.core.api.models.TodoStopHooks
 import run.ostrom.core.api.models.TodoStopItemReport
 import run.ostrom.core.api.models.TodoStopRequest
+import run.ostrom.core.api.models.Verification
 import run.ostrom.core.api.models.Wait
 import run.ostrom.core.api.models.WaitAction
 import run.ostrom.core.api.models.WaitAnswer
 import run.ostrom.core.api.models.WaitEventReceived
 import run.ostrom.core.api.models.WaitEventRequest
 import run.ostrom.core.api.models.WaitField
+import run.ostrom.core.api.models.WaitPage
 import run.ostrom.core.api.models.WaitRef
 import run.ostrom.core.api.models.WaitSpec
 import run.ostrom.core.api.models.WaitWake
@@ -143,16 +173,32 @@ import kotlinx.serialization.KSerializer
 internal val apiModels: List<KSerializer<*>> = listOf(
     Account.serializer(),
     AccountEmail.serializer(),
+    ActivityActor.serializer(),
+    ActivityItem.serializer(),
+    ActivityPage.serializer(),
     AddTodoItemRequest.serializer(),
     AnswerApprovalRequest.serializer(),
+    AnswerWaitRequest.serializer(),
     ApiError.serializer(),
     Approval.serializer(),
     ApprovalAction.serializer(),
+    ApprovalCallerView.serializer(),
     ApprovalCheck.serializer(),
     ApprovalCommit.serializer(),
+    ApprovalQueue.serializer(),
+    ApprovalView.serializer(),
+    ApprovalViewer.serializer(),
+    ApprovalWhat.serializer(),
+    ApprovalWho.serializer(),
     ApproverGate.serializer(),
     ApproverLine.serializer(),
     ApproversGraph.serializer(),
+    Artifact.serializer(),
+    ArtifactPage.serializer(),
+    ArtifactTicket.serializer(),
+    ArtifactTicketRequest.serializer(),
+    ArtifactVersion.serializer(),
+    ArtifactVersionPage.serializer(),
     AuthToken.serializer(),
     AuthUser.serializer(),
     Automation.serializer(),
@@ -180,6 +226,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     EndSessionRequest.serializer(),
     ErrorDetail.serializer(),
     Evidence.serializer(),
+    ExceededBudget.serializer(),
     GateAction.serializer(),
     GateAskRequest.serializer(),
     GateCi.serializer(),
@@ -189,6 +236,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GateRef.serializer(),
     GateRequest.serializer(),
     GateResponse.serializer(),
+    KeyRotation.serializer(),
     LinkTodoItemRequest.serializer(),
     Me.serializer(),
     Member.serializer(),
@@ -208,6 +256,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     NodeWhen.serializer(),
     NoteTodoItemRequest.serializer(),
     Notification.serializer(),
+    NotificationPreferences.serializer(),
     Organization.serializer(),
     PackageEnvelope.serializer(),
     PackageFile.serializer(),
@@ -217,13 +266,19 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     PackageMcpTool.serializer(),
     PackageWorkflow.serializer(),
     Produced.serializer(),
+    PublicKey.serializer(),
+    PushDevice.serializer(),
+    QuietHours.serializer(),
     Receipt.serializer(),
     ReceiptDecision.serializer(),
     ReceiptDraft.serializer(),
+    ReceiptKeyList.serializer(),
     ReceiptNode.serializer(),
     ReceiptPackage.serializer(),
+    ReceiptPage.serializer(),
     ReceiptRule.serializer(),
     ReceiptSubject.serializer(),
+    RegisterPushDeviceRequest.serializer(),
     ReportCheckRequest.serializer(),
     Rule.serializer(),
     RuleGate.serializer(),
@@ -237,6 +292,9 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     SessionResponse.serializer(),
     SessionTodo.serializer(),
     SignInMethods.serializer(),
+    Spending.serializer(),
+    SpendingDay.serializer(),
+    SpendingLine.serializer(),
     StartSessionRequest.serializer(),
     StartTodoItemRequest.serializer(),
     StartTodoItemResponse.serializer(),
@@ -262,12 +320,14 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     TodoStopHooks.serializer(),
     TodoStopItemReport.serializer(),
     TodoStopRequest.serializer(),
+    Verification.serializer(),
     Wait.serializer(),
     WaitAction.serializer(),
     WaitAnswer.serializer(),
     WaitEventReceived.serializer(),
     WaitEventRequest.serializer(),
     WaitField.serializer(),
+    WaitPage.serializer(),
     WaitRef.serializer(),
     WaitSpec.serializer(),
     WaitWake.serializer(),
