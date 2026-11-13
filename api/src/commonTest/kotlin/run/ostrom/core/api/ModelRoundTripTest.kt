@@ -3,6 +3,7 @@ package run.ostrom.core.api
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
@@ -77,6 +78,7 @@ class ModelRoundTripTest {
                     mapOf()
                 },
             )
+            PolymorphicKind.SEALED -> unionSample(descriptor, optional, depth)
             SerialKind.ENUM -> JsonPrimitive(descriptor.getElementName(0))
             PrimitiveKind.BOOLEAN -> JsonPrimitive(true)
             PrimitiveKind.INT, PrimitiveKind.LONG, PrimitiveKind.SHORT, PrimitiveKind.BYTE -> JsonPrimitive(1)
@@ -84,6 +86,15 @@ class ModelRoundTripTest {
             // strings, and the free JSON values (JsonElement) the models carry
             else -> JsonPrimitive("text")
         }
+    }
+
+    /** A union: its first variant, with its discriminator. */
+    private fun unionSample(descriptor: SerialDescriptor, optional: Boolean, depth: Int): JsonElement {
+        // a free JSON value (JsonElement, whose descriptor is also a sealed one): any value will do
+        if (descriptor.serialName.startsWith("kotlinx.serialization.json.Json")) return JsonPrimitive("text")
+        val values = descriptor.getElementDescriptor(1)
+        val variant = sample(values.getElementDescriptor(0), optional, depth) as JsonObject
+        return JsonObject(mapOf("type" to JsonPrimitive(values.getElementName(0))) + variant)
     }
 
     private companion object {

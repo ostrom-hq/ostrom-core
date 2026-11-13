@@ -50,10 +50,34 @@ function shape(schema) {
   return [type, nullable]
 }
 
+// A union told apart by a property (`oneOf` + `discriminator`, a Kotlin sealed hierarchy): its shape is the property
+// and the schema of each value; each variant's shape leaves the property out, as kotlinx.serialization writes it.
+const discriminatorOf = {}
+function union(name, schema) {
+  const { propertyName, mapping } = schema.discriminator
+  if (!mapping) throw new Error(`${name}: a discriminator needs its mapping`)
+  const variants = {}
+  for (const [value, ref] of Object.entries(mapping)) {
+    const variant = ref.slice(PREFIX.length)
+    if (schemas[variant]?.properties?.[propertyName]?.const !== value) {
+      throw new Error(`${name}: ${variant} must have ${propertyName} const ${value}`)
+    }
+    discriminatorOf[variant] = propertyName
+    variants[value] = variant
+  }
+  return { oneOf: { property: propertyName, mapping: variants } }
+}
+
 const out = {}
 for (const name of Object.keys(schemas).sort()) {
   const schema = schemas[name]
-  if (schema['x-ostrom-kotlin'] === 'pending') continue
+  if (!schema.discriminator) continue
+  const shape = union(name, schema)
+  if (schema['x-ostrom-kotlin'] !== 'pending') out[name] = shape
+}
+for (const name of Object.keys(schemas).sort()) {
+  const schema = schemas[name]
+  if (schema['x-ostrom-kotlin'] === 'pending' || schema.discriminator) continue
   if (schema.enum) {
     out[name] = { enum: schema.enum }
     continue
@@ -61,10 +85,12 @@ for (const name of Object.keys(schemas).sort()) {
   const required = new Set(schema.required ?? [])
   const properties = {}
   for (const [property, value] of Object.entries(schema.properties ?? {})) {
+    if (property === discriminatorOf[name]) continue
     const [type, nullable] = shape(value)
     properties[property] = { type, required: required.has(property), nullable }
   }
   out[name] = { properties }
 }
-writeFileSync(output, `${JSON.stringify(out, null, 2)}\n`)
-console.log(`${Object.keys(out).length} schemas with a Kotlin model written to ${output}`)
+const sorted = Object.fromEntries(Object.keys(out).sort().map((name) => [name, out[name]]))
+writeFileSync(output, `${JSON.stringify(sorted, null, 2)}\n`)
+console.log(`${Object.keys(sorted).length} schemas with a Kotlin model written to ${output}`)

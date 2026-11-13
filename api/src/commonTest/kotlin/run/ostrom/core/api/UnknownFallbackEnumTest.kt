@@ -26,6 +26,13 @@ import run.ostrom.core.api.models.RuleStatus
 import run.ostrom.core.api.models.RuleStrength
 import run.ostrom.core.api.models.RunLocation
 import run.ostrom.core.api.models.RunStatus
+import run.ostrom.core.api.models.TodoHookEventKind
+import run.ostrom.core.api.models.TodoItemOrigin
+import run.ostrom.core.api.models.TodoItemStatus
+import run.ostrom.core.api.models.TodoLinkKind
+import run.ostrom.core.api.models.TodoStatus
+import run.ostrom.core.api.models.TodoStopAction
+import run.ostrom.core.api.models.TodoStopPhase
 import run.ostrom.core.api.models.Wait
 import run.ostrom.core.api.models.WaitStatus
 import run.ostrom.core.api.models.WorkflowNodeKind
@@ -97,6 +104,16 @@ class UnknownFallbackEnumTest {
         check(RuleStrength.entries, RuleStrength.Serializer, RuleStrength.UNKNOWN, RuleStrength::value)
         check(RunLocation.entries, RunLocation.Serializer, RunLocation.UNKNOWN, RunLocation::value)
         check(RunStatus.entries, RunStatus.Serializer, RunStatus.UNKNOWN, RunStatus::value)
+        check(
+            TodoHookEventKind.entries, TodoHookEventKind.Serializer, TodoHookEventKind.UNKNOWN,
+            TodoHookEventKind::value,
+        )
+        check(TodoItemOrigin.entries, TodoItemOrigin.Serializer, TodoItemOrigin.UNKNOWN, TodoItemOrigin::value)
+        check(TodoItemStatus.entries, TodoItemStatus.Serializer, TodoItemStatus.UNKNOWN, TodoItemStatus::value)
+        check(TodoLinkKind.entries, TodoLinkKind.Serializer, TodoLinkKind.UNKNOWN, TodoLinkKind::value)
+        check(TodoStatus.entries, TodoStatus.Serializer, TodoStatus.UNKNOWN, TodoStatus::value)
+        check(TodoStopAction.entries, TodoStopAction.Serializer, TodoStopAction.UNKNOWN, TodoStopAction::value)
+        check(TodoStopPhase.entries, TodoStopPhase.Serializer, TodoStopPhase.UNKNOWN, TodoStopPhase::value)
         check(WaitStatus.entries, WaitStatus.Serializer, WaitStatus.UNKNOWN, WaitStatus::value)
         check(WorkflowNodeKind.entries, WorkflowNodeKind.Serializer, WorkflowNodeKind.UNKNOWN, WorkflowNodeKind::value)
         check(WorkflowStatus.entries, WorkflowStatus.Serializer, WorkflowStatus.UNKNOWN, WorkflowStatus::value)

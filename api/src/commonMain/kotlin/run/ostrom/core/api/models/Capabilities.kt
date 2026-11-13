@@ -127,6 +127,12 @@ public object ServerFeatures {
     /** The Slack integration: only with Slack configured. */
     public const val SLACK: String = "slack.v1"
 
+    /**
+     * A session's todo: the plan reference and its items with typed end conditions, the Stop hook's routes and the
+     * per-member Stop hook switch.
+     */
+    public const val TODOS: String = "todos.v1"
+
     /** Usage metering and its events. */
     public const val USAGE: String = "usage.v1"
 
@@ -155,7 +161,7 @@ public object ServerFeatures {
     public val ALL: List<String> = listOf(
         ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, IMPORT_TEAMCODE,
         INFERENCE, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
-        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, USAGE, WAITS, WAITS_WAKE,
+        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE,
         WAITS_TIMED, WORKFLOWS, LICENSE,
     )
 }
