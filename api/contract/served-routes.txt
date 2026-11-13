@@ -180,7 +180,9 @@ POST /api/v1/automations
 POST /api/v1/automations/{}/disable
 POST /api/v1/automations/{}/enable
 POST /api/v1/automations/{}/run
+POST /api/v1/automations/{}/runs/{}/cancel
 POST /api/v1/automations/{}/trigger
+POST /api/v1/automations/{}/v/{}/trigger
 POST /api/v1/automations/{}/webhook/rotate-secret
 POST /api/v1/billing/stripe/webhook
 POST /api/v1/checks
