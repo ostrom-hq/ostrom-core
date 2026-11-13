@@ -151,6 +151,7 @@ GET /api/v1/usage/summary
 GET /api/v1/waits
 GET /api/v1/waits/{}
 GET /api/v1/workflows
+GET /api/v1/workflows/settings
 GET /api/v1/workflows/session/pending
 GET /api/v1/workflows/{}
 GET /api/v1/workflows/{}/runs
@@ -301,4 +302,5 @@ PUT /api/v1/me/notifications
 PUT /api/v1/policy/models
 PUT /api/v1/secrets/{}
 PUT /api/v1/todos/stop-hook/members/{}
+PUT /api/v1/workflows/settings
 PUT /api/v1/workflows/{}

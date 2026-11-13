@@ -6281,7 +6281,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getWorkflowSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: "Who may decide workflows (`workflows.settings.v1`), and whether the caller may; every member reads it"
@@ -6298,7 +6298,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveWorkflowSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: "Change who may decide workflows: an owner or an admin, in the console (browser session); audited
