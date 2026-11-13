@@ -1,4 +1,4 @@
-# The routes ostrom-server main serves (ostrom-server@f031ec90), read from its sources by scripts/served-routes.py.
+# The routes ostrom-server main serves (ostrom-server@ba4a950d), read from its sources by scripts/served-routes.py.
 # api-types/scripts/check-served.mjs (run by `npm run contract` in CI) fails when an operation's x-ostrom-status
 # disagrees: served when a line below has its method and path (path parameters written {}), planned otherwise.
 # A "!" line, kept by hand when regenerating, is a route main serves in another shape than the contract's: its
@@ -131,6 +131,9 @@ GET /api/v1/service-keys
 GET /api/v1/sessions
 GET /api/v1/sessions/{}
 GET /api/v1/spending
+GET /api/v1/todos/session
+GET /api/v1/todos/session/context
+GET /api/v1/todos/stop-hook
 GET /api/v1/tokens
 GET /api/v1/tokens/scopes
 GET /api/v1/usage
@@ -241,6 +244,15 @@ POST /api/v1/sessions/{}/end
 POST /api/v1/sessions/{}/reopen
 POST /api/v1/sessions/{}/seen
 POST /api/v1/sessions/{}/workflow-receipt
+POST /api/v1/todos/session
+POST /api/v1/todos/session/hook-error
+POST /api/v1/todos/session/items
+POST /api/v1/todos/session/items/{}/drop
+POST /api/v1/todos/session/items/{}/link
+POST /api/v1/todos/session/items/{}/notes
+POST /api/v1/todos/session/items/{}/proof
+POST /api/v1/todos/session/items/{}/start
+POST /api/v1/todos/session/stop
 POST /api/v1/tokens
 POST /api/v1/tokens/{}/rotate
 POST /api/v1/usage/events
@@ -267,4 +279,5 @@ PUT /api/v1/mcp/settings
 PUT /api/v1/me/notifications
 PUT /api/v1/policy/models
 PUT /api/v1/secrets/{}
+PUT /api/v1/todos/stop-hook/members/{}
 PUT /api/v1/workflows/{}
