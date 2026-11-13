@@ -7665,7 +7665,7 @@ paths:
       - name: mine
         in: query
         required: false
-        description: Only the servers the caller reaches, with their tools and agent names (what `ostrom claude` connects).
+        description: Only the servers the caller reaches, with their tools and agent names (what `ostrom run claude` connects).
           A member, an agent session or an `mcp:use` token always gets this list, whatever `mine` says; the whole list,
           with upstream URLs and secret names, is for an admin with `mcp:read` or a browser session
         schema:
@@ -8407,7 +8407,7 @@ paths:
       - secrets
       summary: "The caller's own environment variables (`environment.v1`), with their values: every environment variant
         assigned to them, team or personal, that resolves now. A variable that cannot be served (a value that does not
-        decrypt) is withheld and listed in `unavailable`, by name only; the others are still returned. `ostrom claude`
+        decrypt) is withheld and listed in `unavailable`, by name only; the others are still returned. `ostrom run claude`
         reads it before starting the agent and again every 60 seconds while it runs. A person only: a browser session or
         a token with `environment:read` (the CLI's); a service key, an agent or a device token, 403. A member who is
         disabled gets none. `Cache-Control: no-store`; never journaled with its values"

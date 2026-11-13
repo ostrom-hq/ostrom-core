@@ -57,7 +57,7 @@ public object ServerFeatures {
     /**
      * Environment variants: named values for environment variables, team (`/api/v1/environment/variants`, assigned
      * by administrators) or personal (`/api/v1/me/environment/variants`), and the caller's own values
-     * (`GET /api/v1/environment`) that `ostrom claude` gives its agent.
+     * (`GET /api/v1/environment`) that `ostrom run claude` gives its agent.
      */
     public const val ENVIRONMENT: String = "environment.v1"
 
