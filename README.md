@@ -79,7 +79,7 @@ Ostrom is before its first public release.
 | Protocol models, signed receipts, session packages | Available, byte-compatible with the prototype's golden vectors |
 | OpenAPI contract of the server routes | Available; ahead of the server, which does not serve every route yet |
 | Artifacts (`run.ostrom:ostrom-*`, `@ostrom-hq/api-types`) | GitHub Packages of the organization, `0.1.<run number>` on every merge |
-| Public artifacts (Maven Central, npm) and tagged releases | At the launch |
+| Maven Central (`run.ostrom:ostrom-*`) | Major releases only, published by hand ([docs/publishing.md](docs/publishing.md)) |
 
 ## Use it from another repository
 
