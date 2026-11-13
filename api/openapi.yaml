@@ -16952,15 +16952,24 @@ components:
           description: cron, webhook or test
         status:
           type: string
-          description: queued (also while it waits for its owner's running cap, up to 30 minutes), started, failed, invalid_payload, skipped_overlap, skipped_budget or cancelled
+          description: "queued (also while it waits for its owner's running cap, up to 30 minutes), started, failed,
+            invalid_payload, skipped_overlap, skipped_budget, cancelled or succeeded. A workflow action's run is
+            `started` once its workflow run exists and ends as that run ends: `succeeded`, `failed`
+            (`workflow_failed`) or `cancelled` (`workflow_cancelled`)"
         version:
           type: integer
           description: The automation's version that ran
         sessionId:
           type: [string, 'null']
+        workflowRunId:
+          type: [string, 'null']
+          description: "The workflow run a workflow action started (`WorkflowRun.id`), under the idempotency key
+            `automation-run:<run id>`: a retried start finds it, never a second one. Absent for a session action"
         reason:
           type: [string, 'null']
-          description: A stable code when it failed or was cancelled (cloud_session_limit, cloud_hours_exhausted, owner_unavailable, capacity_timeout, cancelled…)
+          description: "A stable code when it failed or was cancelled (cloud_session_limit, cloud_hours_exhausted,
+            owner_unavailable, capacity_timeout, cancelled…); for a workflow action also run_limit (the owner has 20
+            unfinished workflow runs), workflow_missing, invalid_inputs, workflow_failed and workflow_cancelled"
         problems:
           type: array
           items:
@@ -17001,6 +17010,11 @@ components:
       properties:
         renderedPrompt:
           type: string
+        renderedInputs:
+          type: object
+          description: "A workflow action's inputs as the run would send them; one that renders empty is left out"
+          additionalProperties:
+            type: string
         variables:
           type: array
           items:
