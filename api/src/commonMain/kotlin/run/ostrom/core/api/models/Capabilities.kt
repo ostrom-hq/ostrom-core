@@ -61,6 +61,12 @@ public object ServerFeatures {
      */
     public const val ENVIRONMENT: String = "environment.v1"
 
+    /**
+     * The organization's live event feed (`GET /api/v1/events`): server-sent events with a gap-free sequence, resumed
+     * from `Last-Event-ID`, kept 7 days.
+     */
+    public const val EVENTS: String = "events.v1"
+
     /** Gates, approvals and checks. */
     public const val GATES: String = "gates.v1"
 
@@ -204,6 +210,12 @@ public object ServerFeatures {
      */
     public const val WAITS_TIMED: String = "waits.timed.v1"
 
+    /**
+     * Outgoing webhooks (`/api/v1/webhooks`): the feed's events POSTed to the organization's services, signed
+     * `Ostrom-Signature: v1=` (HMAC-SHA256), retried with backoff, with a delivery log, a test and a secret rotation.
+     */
+    public const val WEBHOOKS: String = "webhooks.v1"
+
     /** Workflows and their runs. */
     public const val WORKFLOWS: String = "workflows.v1"
 
@@ -221,10 +233,10 @@ public object ServerFeatures {
 
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
-        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, ENVIRONMENT, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS,
-        IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES,
-        RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
+        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, ENVIRONMENT, EVENTS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE,
+        HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH,
+        PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS,
-        USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
+        USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS, WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )
 }
