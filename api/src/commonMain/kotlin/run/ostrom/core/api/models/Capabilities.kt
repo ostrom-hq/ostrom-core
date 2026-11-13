@@ -124,6 +124,12 @@ public object ServerFeatures {
     /** Sharing with other members and organizations. */
     public const val SHARING: String = "sharing.v1"
 
+    /**
+     * Refresh ownership of shared accounts, as TeamCode: an imported account waits for a handover
+     * (`POST /api/v1/accounts/{id}/handover`) or serves access-only, and the TeamCode import's `accessOnly` trial.
+     */
+    public const val SHARING_HANDOVER: String = "sharing.handover.v1"
+
     /** The Slack integration: only with Slack configured. */
     public const val SLACK: String = "slack.v1"
 
@@ -161,7 +167,7 @@ public object ServerFeatures {
     public val ALL: List<String> = listOf(
         ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, IMPORT_TEAMCODE,
         INFERENCE, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
-        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE,
-        WAITS_TIMED, WORKFLOWS, LICENSE,
+        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SLACK, TODOS, USAGE,
+        WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, LICENSE,
     )
 }
