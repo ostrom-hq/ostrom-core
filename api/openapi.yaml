@@ -8477,7 +8477,8 @@ paths:
       tags:
       - secrets
       summary: "Every member's effective environment assignments and exclusions, metadata only (scope `secrets:read`, an
-        owner or an admin). `member` keeps one member"
+        owner or an admin), by member then variable: at most 5,000 of each, so a large organization asks one member at a
+        time (`member`)"
       parameters:
       - name: member
         in: query
