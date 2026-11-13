@@ -6240,7 +6240,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: workflowsMcp
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: "The `ostrom-workflow` MCP server (JSON-RPC over HTTP, `workflows.deliver.v1`): one tool, `deliver
