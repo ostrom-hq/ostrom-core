@@ -42,6 +42,7 @@ security:
 - bearer: []
 - sessionCookie: []
 tags:
+- name: admin
 - name: analysis
 - name: approvals
 - name: artifacts
@@ -179,6 +180,178 @@ paths:
                       $ref: '#/components/schemas/InstanceSigningKey'
                 required:
                 - keys
+  /api/v1/admin/instance-admins:
+    get:
+      operationId: listInstanceAdmins
+      x-ostrom-status: planned
+      tags:
+      - admin
+      summary: The administrators of the instance
+      description: 'A person only (a browser session, the unlocked app or the CLI''s sign-in) who administers the
+        instance; no key reaches it, whatever its scopes (TeamCode''s dashboard settings are an interactive
+        administrator''s). The instance''s administrators configure what serves every organization: cloud-session
+        clusters, the GitHub App, sign-in providers, mail, push, provider keys, analytics and billing (TeamCode
+        `docs/artifacts.md` "Storage and settings", `docs/cloud-sessions.md` "Resources"). The person who used the
+        instance''s setup link (`ostrom-server bootstrap`) is the first one; the former `OSTROM_INSTANCE_ADMINS` is
+        imported once. 403 `instance_admin_required` for anyone else'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceAdminList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: addInstanceAdmin
+      x-ostrom-status: planned
+      tags:
+      - admin
+      summary: Make a person an administrator of the instance
+      description: 'A person who administers the instance. `email` is a verified address of an account of the instance
+        (404 `account_not_found` otherwise, the same answer for an unknown and an unverified address). Adding an
+        administrator twice changes nothing. Written to the instance''s audit log'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddInstanceAdminRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceAdminList'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/instance-admins/{userId}:
+    parameters:
+    - name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    delete:
+      operationId: removeInstanceAdmin
+      x-ostrom-status: planned
+      tags:
+      - admin
+      summary: Remove an administrator of the instance
+      description: 'A person who administers the instance. The last administrator is never removed (409
+        `last_instance_admin`); a person who is not one gets 404 `instance_admin_not_found`. Written to the
+        instance''s audit log'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings:
+    get:
+      operationId: listInstanceSettings
+      x-ostrom-status: planned
+      tags:
+      - admin
+      summary: Every section of the instance's settings
+      description: 'A person who administers the instance. The sections the server knows, each as `getInstanceSettings`
+        answers it: the settings that serve every organization, stored in PostgreSQL. Nothing here is set in the
+        environment or the Helm chart: only what the server needs to start is (database, secrets key, public URLs,
+        listen address, trusted proxies, per-replica ceilings, the MCP host). Secrets are never returned'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceSettingsList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/{section}:
+    parameters:
+    - name: section
+      in: path
+      required: true
+      description: The section, a key such as `mail`, `push` or `google`
+      schema:
+        type: string
+        pattern: '^[a-z][a-z0-9-]{0,39}$'
+    get:
+      operationId: getInstanceSettings
+      x-ostrom-status: planned
+      tags:
+      - admin
+      summary: One section of the instance's settings
+      description: 'A person who administers the instance. Plain fields come back as stored; a secret field only as
+        `configured` (TeamCode''s write-only secrets: sealed with the server''s secrets key, AES-256-GCM, bound to
+        their section and field, never returned or shown again). A section the server does not know is 404
+        `settings_section_not_found`'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceSettings'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveInstanceSettings
+      x-ostrom-status: planned
+      tags:
+      - admin
+      summary: Save one section of the instance's settings
+      description: 'A person who administers the instance. `version` is the one replaced (0 before the first save; 409
+        `settings_conflict` otherwise). `values` holds every plain field of the section, an absent or empty one unset;
+        a field the section does not have, or a value its rule refuses, is 400 `invalid_settings` naming the field,
+        never echoing a secret. `secrets` is write-only: a field absent or empty keeps the stored secret, a value
+        replaces it, `null` removes it. Every save is written to the instance''s audit log with the fields changed,
+        never their values; every replica uses the new settings within 30 seconds'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveInstanceSettingsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/capabilities:
     get:
       operationId: capabilities
@@ -19104,6 +19277,159 @@ components:
       - provider
       - priority
       x-ostrom-kotlin: pending
+    InstanceAdmin:
+      type: object
+      description: An administrator of the instance
+      properties:
+        userId:
+          type: string
+          format: uuid
+        login:
+          type: string
+        email:
+          type: string
+          description: Their verified primary e-mail, when they have one
+        source:
+          type: string
+          enum: [setup, dashboard, environment]
+          description: '`setup`: the person who used the setup link; `dashboard`: added by an administrator;
+            `environment`: imported once from the former `OSTROM_INSTANCE_ADMINS`'
+        addedAt:
+          type: string
+          format: date-time
+        addedBy:
+          type: string
+          format: uuid
+          description: The administrator who added them, for `dashboard`
+      required:
+      - userId
+      - source
+      - addedAt
+      x-ostrom-kotlin: pending
+    InstanceAdminList:
+      type: object
+      description: The administrators of the instance, oldest first
+      properties:
+        admins:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstanceAdmin'
+      required:
+      - admins
+      x-ostrom-kotlin: pending
+    AddInstanceAdminRequest:
+      type: object
+      description: The person to make an administrator of the instance
+      properties:
+        email:
+          type: string
+          minLength: 3
+          maxLength: 320
+          description: A verified address of their account
+      required:
+      - email
+      x-ostrom-kotlin: pending
+    InstanceSecretState:
+      type: object
+      description: A write-only secret of a settings section, as it is shown back
+      properties:
+        configured:
+          type: boolean
+      required:
+      - configured
+      x-ostrom-kotlin: pending
+    InstanceSettings:
+      type: object
+      description: One section of the instance's settings
+      properties:
+        section:
+          type: string
+        version:
+          type: integer
+          description: 0 before the first save
+        values:
+          type: object
+          additionalProperties:
+            type: string
+          description: The plain fields set, by name
+        secrets:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/InstanceSecretState'
+          description: Every secret field of the section, by name, with whether it is set; never its value
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstanceSettingField'
+          description: The section's fields, in display order
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+          format: uuid
+          description: The administrator who saved last; absent when the settings were imported from the environment
+        importedFromEnvironment:
+          type: boolean
+          description: True while the stored settings are those imported once from the former environment variables
+      required:
+      - section
+      - version
+      - values
+      - secrets
+      - fields
+      - importedFromEnvironment
+      x-ostrom-kotlin: pending
+    InstanceSettingField:
+      type: object
+      description: A field of a settings section
+      properties:
+        name:
+          type: string
+        secret:
+          type: boolean
+        required:
+          type: boolean
+          description: The section does nothing until it is set
+      required:
+      - name
+      - secret
+      - required
+      x-ostrom-kotlin: pending
+    InstanceSettingsList:
+      type: object
+      description: Every section of the instance's settings, by name order
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstanceSettings'
+      required:
+      - sections
+      x-ostrom-kotlin: pending
+    SaveInstanceSettingsRequest:
+      type: object
+      description: A section's new settings
+      properties:
+        version:
+          type: integer
+          minimum: 0
+          description: The version replaced, 0 before the first save
+        values:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 4096
+        secrets:
+          type: object
+          additionalProperties:
+            type: string
+            nullable: true
+            maxLength: 16384
+          description: A value replaces the secret, `null` removes it, an absent or empty one keeps it
+      required:
+      - version
+      x-ostrom-kotlin: pending
     Instance:
       type: object
       description: The instance as clients see it
@@ -19615,6 +19941,9 @@ components:
           type: array
           items:
             type: string
+        instanceAdmin:
+          type: boolean
+          description: True when the caller is a person who administers the instance (Admin in the console)
         csrfToken:
           type: string
           description: For a browser session, the token to send in `X-CSRF-Token` on state-changing requests

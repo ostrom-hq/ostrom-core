@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
  * @property organization The organization the call acts in.
  * @property capabilities What the caller may do there.
  * @property csrfToken For a browser session, the token to send in `X-CSRF-Token` on state-changing requests.
+ * @property instanceAdmin True when the caller is a person who administers the instance; absent from older servers.
  */
 @Serializable
 public data class Me(
@@ -19,6 +20,7 @@ public data class Me(
     val organization: Organization? = null,
     val capabilities: List<String>,
     val csrfToken: String? = null,
+    val instanceAdmin: Boolean? = null,
 )
 
 /**
