@@ -398,6 +398,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignInMethods'
+  /api/v1/auth/signup-grant:
+    post:
+      operationId: grantSignUp
+      x-ostrom-status: planned
+      tags:
+      - auth
+      summary: "Before signing in on an invite-only instance, the console presents the token of the instance's setup link
+        (`/setup#token=osb_…`, printed by `ostrom-server bootstrap`) or of an invitation (`/invite#token=…`): the
+        server checks it and sets the `ostrom_signup` cookie (HttpOnly, `Path=/api/v1/auth`, 1 hour), which lets the
+        sign-in that follows in this browser create the person's account. The setup link is used once, by that
+        account, which may then create the instance's organizations. The `Origin` header must be the console's"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpGrantRequest'
+      responses:
+        '204':
+          description: "The token is valid: the cookie is set"
+          headers:
+            Set-Cookie:
+              description: '`ostrom_signup` (HttpOnly, SameSite=Lax, `Path=/api/v1/auth`)'
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          description: "not_found: the token is unknown, used or expired (ask for a new setup link or invitation)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/auth/{provider}/start:
     get:
       operationId: startOAuthLogin
@@ -406,7 +442,7 @@ paths:
       - auth
       summary: "Send the browser to the provider's consent page (sets the state cookie). On a refusal, a redirect to the
         console's `/login?error=` (`unavailable`, `rate_limited`, `expired`, `refused`, `link_required`,
-        `identity_taken`)"
+        `identity_taken`, `signup_closed`)"
       parameters:
       - name: provider
         in: path
@@ -465,7 +501,7 @@ paths:
       tags:
       - auth
       summary: "Where the provider sends the browser back: sets the session cookies and redirects to the console (or to
-        `/login?error=`). For a sign-in the phone app started, an error redirects to the app's deep link; a code is
+        `/login?error=`, `signup_closed` when the instance creates no account for this person: see `SignInMethods.signUp`). For a sign-in the phone app started, an error redirects to the app's deep link; a code is
         answered as a page whose link to the deep link the person taps"
       parameters:
       - name: provider
@@ -1172,7 +1208,8 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           description: email_link_other_browser (a valid link presented without the nonce of the browser that asked
-            for it; it is not used and still signs in there), or forbidden (key `error.type`)
+            for it; it is not used and still signs in there), signup_closed (no account for this address and the
+            instance is invite-only, `SignInMethods.signUp`), or forbidden (key `error.type`)
           content:
             application/json:
               schema:
@@ -2216,7 +2253,9 @@ paths:
       x-ostrom-status: served
       tags:
       - organization
-      summary: "Create an organization; the caller owns it (scope `orgs:write`)"
+      summary: "Create an organization; the caller owns it (scope `orgs:write`). On an invite-only instance
+        (`SignInMethods.signUp` `invite`), only an owner or an admin of an organization, or the person who used the
+        instance's setup link, creates one: anyone else gets 403 `org_creation_closed`"
       requestBody:
         required: true
         content:
@@ -13297,7 +13336,9 @@ components:
       type: object
       description: '403 other than step_up_required: `forbidden` (a token without the scope, a member without the
         role, a credential the route does not admit), or a finer key (`email_link_other_browser`,
-        `installation_not_yours`, `probe_not_yours`, `cutover_owner_required`, `self_approval_refused`: the server
+        `installation_not_yours`, `probe_not_yours`, `cutover_owner_required`, `signup_closed`: no account for this person
+        on an invite-only instance, `org_creation_closed`: creating an organization there is for its owners and admins,
+        `self_approval_refused`: the server
         names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`;
         `github_link_required`: a yes under a never-self-approve policy, on a pull request whose author linked no Ostrom
         person, from an answerer who linked no GitHub account)'
@@ -13309,7 +13350,7 @@ components:
             type:
               type: string
               enum: [forbidden, email_link_other_browser, installation_not_yours, probe_not_yours, cutover_owner_required,
-                self_approval_refused, github_link_required]
+                self_approval_refused, github_link_required, signup_closed, org_creation_closed]
             message:
               type: string
           required:
@@ -16395,6 +16436,15 @@ components:
       - sharedWith
       - paused
       x-ostrom-kotlin: pending
+    SignUpGrantRequest:
+      type: object
+      description: "The token of the instance's setup link or of an invitation (at most 256 characters)"
+      properties:
+        token:
+          type: string
+      required:
+      - token
+      x-ostrom-kotlin: pending
     SignInMethods:
       type: object
       description: "The sign-in methods this instance offers"
@@ -16403,6 +16453,15 @@ components:
           type: array
           items:
             type: string
+        signUp:
+          type: string
+          enum: [open, invite]
+          description: "Who may get a new account (`OSTROM_SIGNUP`). `open`: anyone who signs in. `invite` (the default
+            of a self-hosted instance): a sign-in creates an account only with a pending invitation for the address it
+            proves, an invitation link (`grantSignUp`), the instance's one-time setup link (`ostrom-server bootstrap`)
+            or the organization's SSO; anyone else is refused with `signup_closed`, and only owners and admins of an
+            organization, or the person who used the setup link, create organizations (`org_creation_closed`). Absent
+            from a server older than this field: treat as `open`"
       required:
       - methods
       x-ostrom-kotlin: pending

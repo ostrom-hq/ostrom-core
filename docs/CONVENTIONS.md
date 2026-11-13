@@ -889,10 +889,15 @@ CREATE POLICY gates_org ON gates
 - Creating an organization, an account, a member or a long-lived token requires a **user session** from one of those
   sign-ins (or the device flow approved by such a session, or the setup link for the very first organization); an
   agent or device token never creates or replaces an account, a member or a token.
-- **Bootstrap** never goes through an open "create operator" route nor "the first sign-in wins". On the host,
-  `ostrom-server bootstrap` prints a one-time setup link (single use, short expiry); redeeming it creates the first
-  owner, their organization and their session, with no identity provider needed. Its redemption route is in the
-  unauthenticated list. The local single-user launcher runs the same bootstrap itself.
+- **Bootstrap** never goes through an open "create operator" route nor "the first sign-in wins". A self-hosted
+  instance is closed to sign-up by default (`OSTROM_SIGNUP=invite`; the operator sets `open` for a public instance such
+  as ostrom.run). On the host, `ostrom-server bootstrap` prints a one-time setup link (single use, one hour, printed on
+  the command's output, never in a log, and only while the instance has no account); the person who opens it signs in
+  with GitHub, Google or an e-mailed link, which creates their account, and they create the first organization. Its
+  redemption route (`grantSignUp`) is in the unauthenticated list. Afterwards an account is created only for a pending
+  invitation, an invitation link or the organization's SSO, and only owners and admins of an organization (or the
+  setup link's person) create organizations (TeamCode: first-run administrator, no public registration). The local
+  single-user launcher runs the same bootstrap itself.
 - Console write routes (workflows, policies, gate actions, rules, members) require a user session and the right role.
 - **Every route checks the token's type and scope**, not only that a token is valid. An agent token is refused outside
   its scope: never on gates (answering a yes), secrets, the local relay's privileged calls or billing. The CLI's own
