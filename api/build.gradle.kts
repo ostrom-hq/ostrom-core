@@ -1,5 +1,6 @@
 plugins {
     id("ostrom.kmp")
+    id("ostrom.mobile")
     id("ostrom.publish")
 }
 

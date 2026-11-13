@@ -6,6 +6,15 @@ rootProject.name = "ostrom-core"
 pluginManagement {
     includeBuild("build-logic")
     repositories {
+        // The Android Gradle plugin, on the classpath of build-logic's plugins (ostrom.mobile).
+        google {
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google.android")
+                includeGroupAndSubgroups("com.google.testing.platform")
+            }
+        }
         mavenCentral()
         gradlePluginPortal()
     }
@@ -14,8 +23,18 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        // Google's repository serves only the Android Gradle plugin, AndroidX and Google's Android groups (never
+        // com.google.* libraries such as Guava or protobuf, which keep resolving from Maven Central), as in teamcode.
+        google {
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google.android")
+                includeGroupAndSubgroups("com.google.testing.platform")
+            }
+        }
         mavenCentral()
     }
 }
 
-include(":api", ":receipts", ":telemetry", ":actions")
+include(":api", ":client", ":receipts", ":telemetry", ":actions")

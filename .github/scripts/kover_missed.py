@@ -19,7 +19,7 @@ def missed(path):
                     yield f"{package.get('name')}/{source.get('name')}:{line.get('nr')}", missed_instructions, missed_branches
 
 
-def main(pattern="**/build/reports/kover/report.xml"):
+def main(pattern="**/build/reports/kover/report*.xml"):
     found = False
     for path in glob.glob(pattern, recursive=True):
         for where, instructions, branches in missed(path):

@@ -3,3 +3,6 @@ Copyright 2026 The Ostrom Authors
 
 This product includes software developed by The Ostrom Authors (https://ostrom.run).
 Third party components keep their own license, stated in their files or in their distribution.
+
+The client module includes code ported from TeamCode (https://github.com/nathanfallet/teamcode), Copyright Nathan
+Fallet, licensed under the Apache License, Version 2.0; each ported file names its origin in its header.

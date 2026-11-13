@@ -13,6 +13,11 @@ kover = "0.9.11"
 detekt = "1.23.8"
 maven-publish = "0.37.0"
 ktor = "3.6.1"
+okio = "3.18.2"
+# The mobile targets of api and client (build-logic ostrom.mobile), as teamcode: the Android Gradle plugin and its SDK levels.
+agp = "9.4.1"
+android-compileSdk = "36"
+android-minSdk = "26"
 # Test-only (jvmTest): the official OTLP classes decode what the telemetry encoder writes.
 opentelemetry-proto = "1.11.1-alpha"
 
@@ -29,6 +34,7 @@ kotlin-serialization-plugin = { module = "org.jetbrains.kotlin:kotlin-serializat
 kover-gradle-plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }
 detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 maven-publish-gradle-plugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "maven-publish" }
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -43,4 +49,7 @@ junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", vers
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 opentelemetry-proto = { module = "io.opentelemetry.proto:opentelemetry-proto", version.ref = "opentelemetry-proto" }

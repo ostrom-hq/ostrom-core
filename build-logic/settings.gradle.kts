@@ -5,6 +5,16 @@ rootProject.name = "build-logic"
 
 dependencyResolutionManagement {
     repositories {
+        // Google's repository serves only the Android Gradle plugin, AndroidX and Google's Android groups (never
+        // com.google.* libraries such as Guava or protobuf, which keep resolving from Maven Central), as in teamcode.
+        google {
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google.android")
+                includeGroupAndSubgroups("com.google.testing.platform")
+            }
+        }
         mavenCentral()
         gradlePluginPortal()
     }
