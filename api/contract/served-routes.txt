@@ -1,4 +1,4 @@
-# The routes ostrom-server main serves (ostrom-server@0c410c27), read from its sources by scripts/served-routes.py.
+# The routes ostrom-server main serves (ostrom-server@27ba6f5d), read from its sources by scripts/served-routes.py.
 # api-types/scripts/check-served.mjs (run by `npm run contract` in CI) fails when an operation's x-ostrom-status
 # disagrees: served when a line below has its method and path (path parameters written {}), planned otherwise.
 # A "!" line, kept by hand when regenerating, is a route main serves in another shape than the contract's: its
@@ -25,6 +25,8 @@ DELETE /api/v1/mcp/servers/{}
 DELETE /api/v1/mcp/servers/{}/assignments/{}
 DELETE /api/v1/mcp/servers/{}/policies/{}
 DELETE /api/v1/me/environment/variants/{}
+DELETE /api/v1/me/skills/{}
+DELETE /api/v1/me/skills/{}/pin
 DELETE /api/v1/orgs/{}
 DELETE /api/v1/orgs/{}/invitations/{}
 DELETE /api/v1/orgs/{}/members/{}
@@ -33,6 +35,10 @@ DELETE /api/v1/rules/{}
 DELETE /api/v1/runners/{}
 DELETE /api/v1/secrets/{}
 DELETE /api/v1/service-keys/{}
+DELETE /api/v1/skills/{}
+DELETE /api/v1/skills/{}/assignments/{}
+DELETE /api/v1/skills/{}/pin
+DELETE /api/v1/skills/{}/versions/{}
 DELETE /api/v1/tokens/{}
 DELETE /api/v1/workflows/{}
 GET /a/{}/{}/{}
@@ -119,6 +125,10 @@ GET /api/v1/mcp/usage
 GET /api/v1/me/environment/variants
 GET /api/v1/me/notifications
 GET /api/v1/me/organizations
+GET /api/v1/me/skills
+GET /api/v1/me/skills/{}/versions
+GET /api/v1/members/{}/skill-delivery
+GET /api/v1/members/{}/skill-installations
 GET /api/v1/notifications
 GET /api/v1/orgs
 GET /api/v1/orgs/{}
@@ -150,6 +160,12 @@ GET /api/v1/secrets
 GET /api/v1/service-keys
 GET /api/v1/sessions
 GET /api/v1/sessions/{}
+GET /api/v1/skill-delivery
+GET /api/v1/skill-delivery/installations
+GET /api/v1/skill-delivery/{}/{}
+GET /api/v1/skills
+GET /api/v1/skills/{}/assignments
+GET /api/v1/skills/{}/versions
 GET /api/v1/spending
 GET /api/v1/todos/session
 GET /api/v1/todos/session/context
@@ -252,6 +268,8 @@ POST /api/v1/mcp/servers
 POST /api/v1/mcp/servers/{}/policies
 POST /api/v1/mcp/{}
 POST /api/v1/me/environment/variants
+POST /api/v1/me/skills/{}/restore
+POST /api/v1/me/skills/{}/versions
 POST /api/v1/notifications
 POST /api/v1/orgs
 POST /api/v1/orgs/{}/billing/cancel
@@ -281,6 +299,9 @@ POST /api/v1/sessions/{}/end
 POST /api/v1/sessions/{}/reopen
 POST /api/v1/sessions/{}/seen
 POST /api/v1/sessions/{}/workflow-receipt
+POST /api/v1/skills/{}/promote
+POST /api/v1/skills/{}/restore
+POST /api/v1/skills/{}/versions
 POST /api/v1/todos/session
 POST /api/v1/todos/session/hook-error
 POST /api/v1/todos/session/items
@@ -326,8 +347,13 @@ PUT /api/v1/mcp/servers/{}
 PUT /api/v1/mcp/servers/{}/assignments/{}
 PUT /api/v1/mcp/settings
 PUT /api/v1/me/notifications
+PUT /api/v1/me/skills/{}/pin
 PUT /api/v1/policy/models
 PUT /api/v1/secrets/{}
+PUT /api/v1/skill-delivery/installations
+PUT /api/v1/skills/{}/assignments/{}
+PUT /api/v1/skills/{}/audience
+PUT /api/v1/skills/{}/pin
 PUT /api/v1/todos/stop-hook/members/{}
 PUT /api/v1/workflows/settings
 PUT /api/v1/workflows/{}
