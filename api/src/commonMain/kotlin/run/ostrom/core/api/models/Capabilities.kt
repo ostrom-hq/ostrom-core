@@ -139,6 +139,12 @@ public object ServerFeatures {
      */
     public const val WAITS_WAKE: String = "waits.wake.v1"
 
+    /**
+     * Waits that resolve by themselves (`resolver` `time` or `event`, the agent's `wait_for`), and the event address
+     * of an `event` wait (`POST /api/v1/waits/{id}/event`).
+     */
+    public const val WAITS_TIMED: String = "waits.timed.v1"
+
     /** Workflows and their runs. */
     public const val WORKFLOWS: String = "workflows.v1"
 
@@ -150,6 +156,6 @@ public object ServerFeatures {
         ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, IMPORT_TEAMCODE,
         INFERENCE, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
         RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, USAGE, WAITS, WAITS_WAKE,
-        WORKFLOWS, LICENSE,
+        WAITS_TIMED, WORKFLOWS, LICENSE,
     )
 }

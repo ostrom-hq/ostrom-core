@@ -3607,6 +3607,36 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "resolver": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "dueAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "timeoutAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "eventSource": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "resumeMessage": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "eventUrl": {
+        "type": "string",
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -3658,6 +3688,41 @@
       "answeredAt": {
         "type": "string",
         "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "WaitEventReceived": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "WaitStatus"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "WaitEventRequest": {
+    "properties": {
+      "result": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "note": {
+        "type": "string",
+        "required": false,
         "nullable": false
       }
     }

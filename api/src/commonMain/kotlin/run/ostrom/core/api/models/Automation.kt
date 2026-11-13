@@ -268,6 +268,13 @@ public enum class WaitStatus(
  * @property answer The answer, once resolved.
  * @property createdAt ISO creation.
  * @property resolvedAt ISO resolution.
+ * @property resolver `human` (null means `human`), `time` or `event`: who resolves it.
+ * @property dueAt `time`: ISO instant it resolves.
+ * @property timeoutAt `event`: ISO instant it resolves as timed out if nothing arrived.
+ * @property eventSource `event`: where the event comes from (`webhook`).
+ * @property resumeMessage `time` or `event`: the line added to the message that wakes the session.
+ * @property eventUrl `event`, in the answer that creates it only: the address a CI calls. It holds the wait's secret:
+ *   never log it.
  */
 @Serializable
 public data class Wait(
@@ -282,7 +289,33 @@ public data class Wait(
     val answer: WaitAnswer? = null,
     val createdAt: String,
     val resolvedAt: String? = null,
+    val resolver: String? = null,
+    val dueAt: String? = null,
+    val timeoutAt: String? = null,
+    val eventSource: String? = null,
+    val resumeMessage: String? = null,
+    val eventUrl: String? = null,
 )
+
+/**
+ * What an outside caller posts to an `event` wait (`POST /api/v1/waits/{id}/event`): data for the agent, never
+ * instructions.
+ *
+ * @property result 1 to 64 characters, `success` or `failure` by convention.
+ * @property url An https link (a CI run, a deployment).
+ * @property note At most 2 000 characters.
+ */
+@Serializable
+public data class WaitEventRequest(val result: String? = null, val url: String? = null, val note: String? = null)
+
+/**
+ * The wait an event resolved.
+ *
+ * @property id Wait id.
+ * @property status Its status (`resolved`).
+ */
+@Serializable
+public data class WaitEventReceived(val id: String, val status: WaitStatus)
 
 /**
  * The answer to a wait.
