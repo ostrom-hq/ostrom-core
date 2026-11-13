@@ -102,6 +102,13 @@ public object ServerFeatures {
     /** Agent sessions. */
     public const val SESSIONS: String = "sessions.v1"
 
+    /**
+     * The wide catalogue of service-key scopes: a key may hold `inference:use`, `mcp:use`, `usage:read`, `cloud:read`,
+     * `cloud:write`, `cloud:admin`, `artifacts:read`, `artifacts:write` and `team:read` besides the CI's
+     * `sessions:write` and `rules:read`, and acts as its creator within them.
+     */
+    public const val SERVICE_KEY_SCOPES: String = "servicekeys.scopes.v1"
+
     /** Sharing with other members and organizations. */
     public const val SHARING: String = "sharing.v1"
 
@@ -124,6 +131,6 @@ public object ServerFeatures {
     public val ALL: List<String> = listOf(
         ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GOVERNANCE, IMPORT_TEAMCODE, INFERENCE, MCP,
         NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, SECRETS,
-        SESSIONS, SHARING, SLACK, USAGE, WAITS, WORKFLOWS, LICENSE,
+        SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, USAGE, WAITS, WORKFLOWS, LICENSE,
     )
 }
