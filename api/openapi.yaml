@@ -9102,7 +9102,7 @@ paths:
       tags:
       - inference
       summary: Anthropic-compatible Messages endpoint, metered against budgets
-      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as `InferenceSettings.memberConcurrency` allows them. Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
+      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as their `maxConcurrent` in `InferenceSettings.memberConcurrency` allows them (0, the default, never makes a call wait). Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
       parameters:
       - $ref: '#/components/parameters/OstromWorkload'
       - $ref: '#/components/parameters/OstromClientRequestId'
@@ -9150,7 +9150,7 @@ paths:
       tags:
       - inference
       summary: OpenAI-compatible Responses endpoint, metered against budgets
-      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as `InferenceSettings.memberConcurrency` allows them. Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
+      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as their `maxConcurrent` in `InferenceSettings.memberConcurrency` allows them (0, the default, never makes a call wait). Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
       parameters:
       - $ref: '#/components/parameters/OstromWorkload'
       - $ref: '#/components/parameters/OstromClientRequestId'
@@ -9198,7 +9198,7 @@ paths:
       tags:
       - inference
       summary: OpenAI-compatible chat completions endpoint
-      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as `InferenceSettings.memberConcurrency` allows them. Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
+      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as their `maxConcurrent` in `InferenceSettings.memberConcurrency` allows them (0, the default, never makes a call wait). Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
       parameters:
       - $ref: '#/components/parameters/OstromWorkload'
       - $ref: '#/components/parameters/OstromClientRequestId'
@@ -19539,12 +19539,14 @@ components:
           description: Whether members' shared subscription accounts serve before the org's keys
         memberConcurrency:
           type: object
-          description: "The most inference calls a member runs at once, by member id (`inference.queue.v1`); a member
-            absent has no limit. Past it, the member's next calls wait in the admission queue (at most 8 of them) until
-            one ends. At most 1,000 members"
+          description: "Each member's `maxConcurrent`, by member id (`inference.queue.v1`, TeamCode's member policy):
+            the most inference calls the member runs at once, 0 for unlimited, the default (a member absent is 0).
+            Past a limit, the member's next calls wait in the admission queue (at most 8 of them) until one ends; with
+            0 a call never waits on a concurrency slot, only while every account is busy or out of quota. At most
+            1,000 members"
           additionalProperties:
             type: integer
-            minimum: 1
+            minimum: 0
             maximum: 32
       x-ostrom-kotlin: pending
     InferenceQueue:
@@ -22220,6 +22222,9 @@ components:
           properties:
             maxConcurrent:
               type: integer
+              minimum: 0
+              default: 0
+              description: Requests in flight at once on the account, 0 for unlimited (the default)
             utilizationCeiling:
               type: number
             monthlyBudgetMicros:
