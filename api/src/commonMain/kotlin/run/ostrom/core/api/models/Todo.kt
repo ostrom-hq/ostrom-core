@@ -209,8 +209,8 @@ public data class TodoItemInput(
 /**
  * Creates the session's todo, once per session.
  *
- * @property sessionId The session, named by its owner; an agent token is confined to its own session and names none
- *   (what it names is ignored).
+ * @property sessionId The session, named by its owner or by its agent token, which is confined to its own session and
+ *   names one of its segments.
  * @property reference One paragraph pointing to the full plan (an artifact link, or the person's request as is), at
  *   most 4 000 characters; shown to the agent at every stop.
  * @property refs At most 10 links shown with the reference (`artifact`, `session` or `url`).
@@ -682,6 +682,16 @@ public data class TodoStopDecision(
     val reason: String? = null,
     val why: String? = null,
     val escalated: Boolean = false,
+)
+
+/**
+ * Clears the session's closed todo (`resetTodo`): the answer is a [SessionTodo] whose `todo` is null.
+ *
+ * @property sessionId The session, named by its owner or by its agent token.
+ */
+@Serializable
+public data class ResetTodoRequest(
+    val sessionId: String? = null,
 )
 
 /**

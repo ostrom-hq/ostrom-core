@@ -112,6 +112,7 @@ import run.ostrom.core.api.models.ReceiptRule
 import run.ostrom.core.api.models.ReceiptSubject
 import run.ostrom.core.api.models.RegisterPushDeviceRequest
 import run.ostrom.core.api.models.ReportCheckRequest
+import run.ostrom.core.api.models.ResetTodoRequest
 import run.ostrom.core.api.models.Rule
 import run.ostrom.core.api.models.RuleGate
 import run.ostrom.core.api.models.RuleGateCheck
@@ -298,6 +299,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ReceiptSubject.serializer(),
     RegisterPushDeviceRequest.serializer(),
     ReportCheckRequest.serializer(),
+    ResetTodoRequest.serializer(),
     Rule.serializer(),
     RuleGate.serializer(),
     RuleGateCheck.serializer(),
