@@ -2054,7 +2054,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getGithubLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "The caller's own GitHub link in the organization (`github.link.v1`): which GitHub account their cloud
@@ -2078,7 +2078,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unlinkGithub
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "Removes the caller's own GitHub link and their pending link attempts in one transaction, then revokes the
@@ -2100,7 +2100,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: startGithubDeviceLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "Starts GitHub's device flow for the caller's own link (`ostrom github link`, the app): the answer gives
@@ -2132,7 +2132,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: pollGithubDeviceLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "One poll of a device link, by the member who started it (anyone else, or an unknown, used or malformed
@@ -2169,7 +2169,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: startGithubWebLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "Starts GitHub's web flow for the caller's own link, from the console (a browser session only, 403
@@ -2190,7 +2190,7 @@ paths:
   /api/v1/github/link/callback:
     get:
       operationId: githubLinkCallback
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "GitHub's return from a web link (the App's callback URL, `<OSTROM_PUBLIC_URL>/api/v1/github/link/callback`).
@@ -2224,7 +2224,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listGithubLinks
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "Every member's GitHub link in the organization (an owner or an admin, a person only: 403 otherwise),
@@ -2256,7 +2256,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMemberGithubLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "Another member's GitHub link (an owner or an admin, a person only: 403 otherwise; a member of another
@@ -2284,7 +2284,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unlinkMemberGithub
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "Removes a member's GitHub link, as `unlinkGithub` does for one's own (an owner or an admin's browser
@@ -2312,7 +2312,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: startMemberGithubWebLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: "An owner or an admin links a GitHub account to another member, typically an account nobody signs in to
@@ -10662,7 +10662,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: setCloudSessionGithubAccess
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Changes the session's GitHub access (`runners.cloud.github.v1`): `owner`, `shared` or `none`. Only the
@@ -10996,7 +10996,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: fetchRunnerGithubToken
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner of a cloud session asks for the GitHub token its agent's `git` and `gh` use

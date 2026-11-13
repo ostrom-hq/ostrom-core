@@ -11,6 +11,8 @@ DELETE /api/v1/auth/sessions/{}
 DELETE /api/v1/automations/{}
 DELETE /api/v1/cloud/sessions/{}
 DELETE /api/v1/devices/{}
+DELETE /api/v1/github/link
+DELETE /api/v1/github/links/{}
 DELETE /api/v1/groups/{}
 DELETE /api/v1/groups/{}/members/{}
 DELETE /api/v1/launches/{}
@@ -75,6 +77,12 @@ GET /api/v1/github/app/install/callback
 GET /api/v1/github/app/install/start
 GET /api/v1/github/app/manifest/callback
 GET /api/v1/github/app/manifest/start
+GET /api/v1/github/link
+GET /api/v1/github/link/callback
+GET /api/v1/github/link/start
+GET /api/v1/github/links
+GET /api/v1/github/links/{}
+GET /api/v1/github/links/{}/start
 GET /api/v1/groups
 GET /api/v1/groups/{}
 GET /api/v1/health
@@ -177,6 +185,7 @@ POST /api/v1/automations/{}/webhook/rotate-secret
 POST /api/v1/billing/stripe/webhook
 POST /api/v1/checks
 POST /api/v1/cloud/runner/checks
+POST /api/v1/cloud/runner/github
 POST /api/v1/cloud/runner/heartbeat
 POST /api/v1/cloud/runner/launch
 POST /api/v1/cloud/sessions
@@ -188,6 +197,8 @@ POST /api/v1/gates
 POST /api/v1/gates/{}/consume
 POST /api/v1/gates/{}/release
 POST /api/v1/gates/{}/reserve
+POST /api/v1/github/link/device
+POST /api/v1/github/link/device/{}
 POST /api/v1/groups
 POST /api/v1/groups/{}/members/{}/pause
 POST /api/v1/import/teamcode
@@ -244,6 +255,7 @@ POST /webhooks/stripe
 PUT /api/v1/artifacts/{}/members/{}
 PUT /api/v1/automations/{}
 PUT /api/v1/budgets
+PUT /api/v1/cloud/sessions/{}/github
 PUT /api/v1/gates/policy
 PUT /api/v1/groups/{}/members/{}
 PUT /api/v1/inference/settings
