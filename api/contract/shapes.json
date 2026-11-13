@@ -2642,6 +2642,11 @@
         "required": true,
         "nullable": false
       },
+      "instanceAdmin": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
       "csrfToken": {
         "type": "string",
         "required": false,

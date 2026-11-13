@@ -39,6 +39,12 @@ public object ServerFeatures {
     /** The API versions a client built on this ostrom-core speaks. */
     public val SUPPORTED_API_VERSIONS: Set<Int> = setOf(API_VERSION)
 
+    /**
+     * The instance's administration (`/api/v1/admin/...`): its administrators and its settings sections, stored in
+     * PostgreSQL with their secrets sealed, set in the console instead of the environment or the Helm chart.
+     */
+    public const val ADMIN_SETTINGS: String = "admin.settings.v1"
+
     /** Shared artifacts, their viewer and their MCP server. */
     public const val ARTIFACTS: String = "artifacts.v1"
 
@@ -233,7 +239,7 @@ public object ServerFeatures {
 
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
-        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, ENVIRONMENT, EVENTS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE,
+        ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, ENVIRONMENT, EVENTS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE,
         HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH,
         PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS,
