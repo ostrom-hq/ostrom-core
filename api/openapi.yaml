@@ -13755,23 +13755,19 @@ paths:
       x-ostrom-status: planned
       tags:
       - webhooks
-      summary: Outgoing webhooks
+      summary: The organization's outgoing webhooks
+      description: 'Outgoing webhooks (`webhooks.v1`) send the events of the organization''s feed (`GET /api/v1/events`)
+        to the caller''s own services as signed HTTP requests, retried until the receiver answers. A webhook receives the
+        whole organization''s events, so only an owner or an admin reads and manages them: with a browser session, a
+        personal token of theirs, or a service key of theirs holding `cloud:admin` (403 `forbidden` for anyone else, a
+        member''s key and a `team:read` key included). At most 20 per organization, oldest first.'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Webhook'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/WebhookList'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -13787,25 +13783,57 @@ paths:
       x-ostrom-status: planned
       tags:
       - webhooks
-      summary: Add an outgoing webhook; its secret is returned once
+      summary: Add an outgoing webhook; its signing secret is returned once
+      description: 'The target is an `https` URL of at most 2 048 characters, without credentials or fragment, on the
+        public internet: `localhost`, loopback, private (RFC 1918, unique-local IPv6), link-local, carrier-grade NAT,
+        multicast, unspecified, reserved and cloud metadata addresses are refused (400 `webhook_host_not_allowed`), in
+        numeric spellings too. A name is resolved again at every delivery, through the server''s pinned resolver: a name
+        that answers such an address is refused at the connection (`host_not_allowed` in the delivery log), DNS rebinding
+        included. Redirects are not followed. The operator may allow loopback and private targets
+        (`OSTROM_WEBHOOKS_ALLOW_PRIVATE_TARGETS=true`); link-local, unspecified and metadata addresses stay refused.
+        `types` names 1 to 64 event types of the feed (400 `invalid_webhook` for an unknown one), `description` is at
+        most 200 characters. A webhook starts at the newest event: nothing earlier is sent. Past 20 webhooks, 409
+        `webhook_limit`. The secret (`whsec_` and 32 random bytes, base64url) is in this answer only: it is stored
+        sealed with the server''s key and never readable again.'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                url:
-                  type: string
-                events:
-                  type: array
-                  items:
-                    type: string
-              required:
-              - url
-              - events
+              $ref: '#/components/schemas/CreateWebhookRequest'
       responses:
         '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedWebhook'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/webhooks/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: getWebhook
+      x-ostrom-status: planned
+      tags:
+      - webhooks
+      summary: One outgoing webhook
+      responses:
+        '200':
           description: OK
           content:
             application/json:
@@ -13821,21 +13849,46 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /api/v1/webhooks/{id}:
-    parameters:
-    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: updateWebhook
+      x-ostrom-status: planned
+      tags:
+      - webhooks
+      summary: Change an outgoing webhook
+      description: '`version` is the one being replaced (409 `stale_version` otherwise). An omitted `enabled` keeps the
+        current state, so editing a paused or automatically disabled webhook never enables it again; enabling it starts
+        at the newest event (the pause is not replayed) and clears its failure count. A webhook kept on its URL can still
+        be paused, relabelled or deleted after the operator withdrew private targets; a new URL must pass the address
+        rule, and a paused one on a refused URL cannot be enabled again (400 `webhook_host_not_allowed`).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
     delete:
       operationId: deleteWebhook
       x-ostrom-status: planned
       tags:
       - webhooks
-      summary: Remove an outgoing webhook
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+      summary: Remove an outgoing webhook and its delivery log
       responses:
         '204':
           description: Done
@@ -13852,33 +13905,102 @@ paths:
   /api/v1/webhooks/{id}/deliveries:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
     get:
       operationId: listWebhookDeliveries
       x-ostrom-status: planned
       tags:
       - webhooks
-      summary: Deliveries
+      summary: The delivery log of a webhook, newest first
+      description: 'Each delivery is one event for one webhook: its state (`pending`, `delivered`, `failed`), attempts,
+        the next attempt while pending, the last HTTP status and a short error code (`timeout`, `connect`, `tls`, `dns`,
+        `host_not_allowed`, `secret_unreadable`, `expired`). The receiver''s answer is never read nor stored. The log is
+        kept 14 days.'
       parameters:
-      - name: id
-        in: path
-        required: true
+      - name: limit
+        in: query
+        required: false
+        description: 1 to 200, 50 by default.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      type: object
-                      additionalProperties: {}
-                required:
-                - items
+                $ref: '#/components/schemas/WebhookDeliveryList'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/webhooks/{id}/test:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      operationId: testWebhook
+      x-ostrom-status: planned
+      tags:
+      - webhooks
+      summary: Queue one signed `webhook.test` delivery
+      description: 'Sent once, never retried, and never counted in the failures that disable a webhook; its data is
+        `{"message": ...}`. At most 3 tests in 10 seconds per webhook (429 `webhook_test_rate`, `Retry-After: 10`).'
+      responses:
+        '202':
+          description: Queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookDelivery'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/webhooks/{id}/rotate-secret:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      operationId: rotateWebhookSecret
+      x-ostrom-status: planned
+      tags:
+      - webhooks
+      summary: A new signing secret, shown once
+      description: The former secret stops at once; every delivery still queued is signed with the new one.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedWebhook'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -13969,54 +14091,58 @@ paths:
       x-ostrom-status: planned
       tags:
       - events
-      summary: Live events of the organization (SSE)
+      summary: The organization's live event feed (SSE)
+      description: 'One server-sent event stream (`events.v1`) for everything the caller may see happen, instead of one
+        connection per resource. Each frame is `id: <seq>`, `event: <type>`, `data: <OrgEvent>`. `seq` is the
+        organization''s own sequence, gap-free and allocated in the transaction of the change it reports, so an event
+        exists exactly when its change committed and a reader never skips one, whichever replica it reads from. The types
+        are an open list: a client ignores a type it does not know. The data holds identifiers and short labels, never a
+        transcript, a prompt or a secret.
+
+
+        **Who sees what.** A member sees the events that belong to them (`memberId`); an owner or an admin sees the
+        whole organization''s, events that belong to no member included. A service key needs `cloud:read` (or
+        `cloud:write`, `cloud:admin`) and sees its creator''s events; the whole organization''s with `cloud:admin` or
+        `team:read`. Anything else: 403 `forbidden`.
+
+
+        **Resuming.** Send `Last-Event-ID` (an `EventSource` does it by itself) or `?after=`; the header wins. Without
+        either the stream starts at the newest event; `after=0` starts at the oldest retained one. A cursor ahead of the
+        organization''s events is 400 `invalid_cursor`. Events are kept 7 days: when the cursor is older than the oldest
+        kept event, `event: gap` with `{"oldestSeq": n}` comes first, then the stream goes on from there.
+        `?types=a,b` keeps only those types (400 `invalid_event_type` for an unknown one, at most 64). Keep-alive
+        comments every 15 s, `retry: 2000`; the credential is checked again every 15 s and the stream ends with
+        `event: denied` once it stopped being valid. It never ends otherwise: reconnect from the last `id`.'
+      parameters:
+      - name: Last-Event-ID
+        in: header
+        required: false
+        description: The `seq` of the last event handled; wins over `after`.
+        schema:
+          type: string
+      - name: after
+        in: query
+        required: false
+        description: The `seq` of the last event handled (0 replays every retained event).
+        schema:
+          type: integer
+          format: int64
+      - name: types
+        in: query
+        required: false
+        description: Comma-separated event types to keep.
+        schema:
+          type: string
       responses:
         '200':
           description: Server-sent events
           content:
             text/event-stream:
+              x-ostrom-status: planned
               schema:
                 type: string
-        '400':
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '404':
-          $ref: '#/components/responses/Error'
-        '409':
-          $ref: '#/components/responses/Error'
-  /api/v1/events/history:
-    parameters:
-    - $ref: '#/components/parameters/OstromOrg'
-    get:
-      operationId: listEvents
-      x-ostrom-status: planned
-      tags:
-      - events
-      summary: Recent events, to catch up
-      parameters:
-      - name: since
-        in: query
-        required: false
-        schema:
-          type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      type: object
-                      additionalProperties: {}
-                required:
-                - items
+              x-ostrom-event-data:
+                $ref: '#/components/schemas/OrgEvent'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -15587,6 +15713,15 @@ components:
       - sizeBytes
       - fileCount
       x-ostrom-kotlin: pending
+    EventGap:
+      type: object
+      description: 'The data of `event: gap`: events after the cursor were purged, the stream goes on at the oldest kept'
+      properties:
+        oldestSeq:
+          type: integer
+          format: int64
+      required:
+      - oldestSeq
     GitHubDeviceLink:
       type: object
       description: 'A device link just started: open `verificationUri`, enter `userCode`, then poll with `id` every
@@ -18943,6 +19078,39 @@ components:
       - type
       additionalProperties: {}
       x-ostrom-kotlin: pending
+    OrgEvent:
+      type: object
+      description: 'One event of the organization''s feed (`GET /api/v1/events`), and the `data` of a webhook delivery'
+      properties:
+        seq:
+          type: integer
+          format: int64
+          description: The organization's sequence, gap-free and increasing
+        type:
+          type: string
+          description: The event type, also the SSE `event:` field (`cloud.wait.created`); an open list
+        subject:
+          type: string
+          description: What the event is about (`session`, `wait`, `workflow_run`...)
+        subjectId:
+          type: string
+        memberId:
+          type: string
+          description: The member the subject belonged to when it happened; absent for an event of the whole organization
+        at:
+          type: string
+          description: ISO instant of the change
+        data:
+          type: object
+          additionalProperties: {}
+          description: The type's facts, identifiers and short labels only
+      required:
+      - seq
+      - type
+      - subject
+      - subjectId
+      - at
+      - data
     PinSkillRequest:
       type: object
       description: "The version to pin"
@@ -23103,27 +23271,162 @@ components:
       - cancelled
     Webhook:
       type: object
-      description: An outgoing webhook
+      description: 'An outgoing webhook of the organization. Each event of `types` is POSTed to `url` as JSON
+        `{id, type, createdAt, data}`, `data` being the `OrgEvent` (`{"message": ...}` for `webhook.test`), with the
+        headers `Ostrom-Delivery` (one id per event and webhook, the same on every retry: deduplicate on it),
+        `Ostrom-Event`, `Ostrom-Timestamp` (Unix seconds) and `Ostrom-Signature: v1=<hex>`, the HMAC-SHA256 of
+        `<timestamp>.<raw body>` keyed with the whole `whsec_` secret. A receiver compares in constant time and rejects a
+        timestamp more than five minutes old. The body is fixed when the event is queued: every retry sends the same
+        bytes, only the timestamp and the signature are fresh. A 2xx within 10 seconds is a delivery; a network error, a
+        timeout, a 5xx, 408 or 429 is retried, 8 attempts in all, after 10 s, 30 s, 2 min, 10 min, 30 min, 2 h and 6 h;
+        any other answer (a 4xx, a redirect) is final. A delivery still pending after 24 hours is given up (`expired`).
+        Twenty final failures in a row disable the webhook (`too_many_failures`); a success resets the count. Deliveries
+        are not ordered: use `data.seq` when order matters.'
       properties:
         id:
           type: string
         url:
           type: string
-        events:
+        types:
           type: array
           items:
             type: string
+          description: The event types it receives, sorted
+        description:
+          type: string
         enabled:
           type: boolean
+        disabledReason:
+          type: string
+          description: '`disabled` (paused by a person) or `too_many_failures`; absent while enabled'
+        createdBy:
+          type: string
+          description: The member who created it
         createdAt:
           type: string
+        updatedAt:
+          type: string
+        version:
+          type: integer
+          description: Sent back by `updateWebhook`
+        consecutiveFailures:
+          type: integer
+          description: Final failures in a row since the last success
       required:
       - id
       - url
-      - events
+      - types
+      - description
       - enabled
+      - createdBy
       - createdAt
-      x-ostrom-kotlin: pending
+      - updatedAt
+      - version
+      - consecutiveFailures
+    WebhookList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhook'
+      required:
+      - items
+    CreatedWebhook:
+      type: object
+      description: A webhook and its signing secret, in the answer to its creation or a rotation only
+      properties:
+        webhook:
+          $ref: '#/components/schemas/Webhook'
+        secret:
+          type: string
+          description: '`whsec_…`; store it now, it is never readable again'
+      required:
+      - webhook
+      - secret
+    CreateWebhookRequest:
+      type: object
+      properties:
+        url:
+          type: string
+        types:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+      required:
+      - url
+      - types
+    UpdateWebhookRequest:
+      type: object
+      properties:
+        version:
+          type: integer
+        url:
+          type: string
+        types:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+          description: Absent keeps the current state
+      required:
+      - version
+      - url
+      - types
+    WebhookDelivery:
+      type: object
+      description: One event for one webhook, and its attempts
+      properties:
+        id:
+          type: string
+          description: Also the `Ostrom-Delivery` header
+        eventSeq:
+          type: integer
+          format: int64
+          description: The event's `seq`; absent for a test
+        eventType:
+          type: string
+        state:
+          type: string
+          description: '`pending`, `delivered` or `failed`'
+        attempts:
+          type: integer
+        nextAttemptAt:
+          type: string
+          description: While pending
+        lastStatus:
+          type: integer
+          description: The last HTTP status the receiver answered
+        lastError:
+          type: string
+          description: '`timeout`, `connect`, `tls`, `dns`, `host_not_allowed`, `secret_unreadable` or `expired`'
+        createdAt:
+          type: string
+        deliveredAt:
+          type: string
+        test:
+          type: boolean
+      required:
+      - id
+      - eventType
+      - state
+      - attempts
+      - createdAt
+      - test
+    WebhookDeliveryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookDelivery'
+      required:
+      - items
     Workflow:
       type: object
       description: A workflow

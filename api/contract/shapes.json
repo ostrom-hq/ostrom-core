@@ -1722,6 +1722,43 @@
       }
     }
   },
+  "CreateWebhookRequest": {
+    "properties": {
+      "url": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "types": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CreatedWebhook": {
+    "properties": {
+      "webhook": {
+        "type": {
+          "ref": "Webhook"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "secret": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "Decision": {
     "properties": {
       "id": {
@@ -1983,6 +2020,15 @@
       },
       "message": {
         "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "EventGap": {
+    "properties": {
+      "oldestSeq": {
+        "type": "integer",
         "required": true,
         "nullable": false
       }
@@ -3208,6 +3254,47 @@
       "logged-only",
       "not-sent"
     ]
+  },
+  "OrgEvent": {
+    "properties": {
+      "seq": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "type": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "subject": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "subjectId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "memberId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "data": {
+        "type": {
+          "map": "any"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
   },
   "Organization": {
     "properties": {
@@ -5614,6 +5701,37 @@
       }
     }
   },
+  "UpdateWebhookRequest": {
+    "properties": {
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "types": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "enabled": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "Verification": {
     "properties": {
       "ok": {
@@ -5992,6 +6110,152 @@
       "waitMillis": {
         "type": "integer",
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Webhook": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "types": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "disabledReason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdBy": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "consecutiveFailures": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "WebhookDelivery": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "eventSeq": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "eventType": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "state": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "attempts": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "nextAttemptAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "lastStatus": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "lastError": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "deliveredAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "test": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "WebhookDeliveryList": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "WebhookDelivery"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "WebhookList": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "Webhook"
+          }
+        },
+        "required": true,
         "nullable": false
       }
     }

@@ -174,6 +174,15 @@ import run.ostrom.core.api.models.WorkflowPendingDeliverable
 import run.ostrom.core.api.models.WorkflowRun
 import run.ostrom.core.api.models.WorkflowSessionPending
 import run.ostrom.core.api.models.WorkflowSettings
+import run.ostrom.core.api.models.OrgEvent
+import run.ostrom.core.api.models.EventGap
+import run.ostrom.core.api.models.Webhook
+import run.ostrom.core.api.models.WebhookList
+import run.ostrom.core.api.models.CreatedWebhook
+import run.ostrom.core.api.models.CreateWebhookRequest
+import run.ostrom.core.api.models.UpdateWebhookRequest
+import run.ostrom.core.api.models.WebhookDelivery
+import run.ostrom.core.api.models.WebhookDeliveryList
 import kotlinx.serialization.KSerializer
 
 /** Every model of the API contract: the schemas of `api/openapi.yaml` that have a Kotlin model. */
@@ -340,6 +349,15 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     WaitRef.serializer(),
     WaitSpec.serializer(),
     WaitWake.serializer(),
+    OrgEvent.serializer(),
+    EventGap.serializer(),
+    Webhook.serializer(),
+    WebhookList.serializer(),
+    CreatedWebhook.serializer(),
+    CreateWebhookRequest.serializer(),
+    UpdateWebhookRequest.serializer(),
+    WebhookDelivery.serializer(),
+    WebhookDeliveryList.serializer(),
     WaitWakeRequest.serializer(),
     Workflow.serializer(),
     WorkflowEdge.serializer(),
