@@ -17892,7 +17892,7 @@ components:
       type: object
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
-        `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `environment.v1`, `gates.v1`, `github.v1`,
+        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
@@ -18083,6 +18083,8 @@ components:
         serverUrl:
           type: string
           maxLength: 512
+          description: The https origin session pods call back, without a path; never a link-local, unspecified or
+            cloud metadata address in any spelling. Absent uses the server's public URL
         workspaceAccessMode:
           type: string
           enum: [ReadWriteOncePod, ReadWriteOnce]
@@ -18112,7 +18114,8 @@ components:
         updatedAt:
           type: string
           format: date-time
-          description: The `updatedAt` of the runtime edited; absent while nothing is stored
+          description: The `updatedAt` of the runtime edited; absent only while nothing is stored (absent when a
+            runtime is stored, or not the stored one, is a 409 `cloud_runtime_conflict`)
     CloudCluster:
       x-ostrom-kotlin: pending
       type: object
