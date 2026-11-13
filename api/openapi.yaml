@@ -2122,6 +2122,296 @@ paths:
       responses:
         '302':
           description: Redirect
+  /api/v1/github/link:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getGithubLink
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "The caller's own GitHub link in the organization (`github.link.v1`): which GitHub account their cloud
+        sessions use for Git and `gh`, never a token. A person only: the console, the app or the CLI's login (a service
+        key, an agent or a device token, 403). Works while cloud sessions are off, so a member can still see and remove
+        a link"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubLink'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unlinkGithub
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "Removes the caller's own GitHub link and their pending link attempts in one transaction, then revokes the
+        access token at GitHub (best effort, with the App that issued it). 204 also when not linked. The member's
+        authorization of the App stays on GitHub, where only they manage it. Journaled `github.link.removed`"
+      responses:
+        '204':
+          description: Unlinked, or nothing to unlink
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/github/link/device:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: startGithubDeviceLink
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "Starts GitHub's device flow for the caller's own link (`ostrom github link`, the app): the answer gives
+        the code to enter on GitHub; the client then polls `pollGithubDeviceLink`. The token exchange happens on the
+        server: no client ever sees a GitHub token. GitHub's device code is kept sealed; the attempt is single-use and
+        ends with GitHub's code (15 minutes at most); a new start replaces the member's previous attempt. 404 while
+        cloud sessions are off on the instance (`runners.cloud.v1` absent); 409 `github_app_not_configured` (the
+        instance's App has no OAuth client), 409 `github_device_flow_disabled` (Device Flow is off in the App's
+        settings: link from the console), 503 `github_unreachable`"
+      responses:
+        '201':
+          description: Started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubDeviceLink'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/github/link/device/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: pollGithubDeviceLink
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "One poll of a device link, by the member who started it (anyone else, or an unknown, used or malformed
+        id: 404 `github_link_not_found`). The server asks GitHub at most once per interval whatever the client's pace
+        (the next poll time is moved by compare-and-set before GitHub is called) and honors `slow_down`. A poll still
+        completes a link started before cloud sessions were turned off. Linking an account already linked to another
+        member of the organization is refused, 409 `github_account_in_use` (the fresh token is revoked); linking again
+        replaces the member's link"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubDeviceLinkPoll'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/github/link/start:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: startGithubWebLink
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "Starts GitHub's web flow for the caller's own link, from the console (a browser session only, 403
+        otherwise; a navigation started by another site, 403): a redirect to GitHub's authorization with a single-use
+        `state` and PKCE (S256), whose hash is bound to the browser session that started it, for 10 minutes. GitHub
+        then returns to `githubLinkCallback`. 404 while cloud sessions are off; 409 `github_app_not_configured`"
+      responses:
+        '302':
+          description: Redirect to GitHub
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/github/link/callback:
+    get:
+      operationId: githubLinkCallback
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "GitHub's return from a web link (the App's callback URL, `<OSTROM_PUBLIC_URL>/api/v1/github/link/callback`).
+        The single-use state identifies the attempt and its member, and must come back with the browser session that
+        started it: a link opened in another browser binds nothing (`github_link_browser_mismatch`). The browser is
+        always sent back to the console's `/github` page with `linked=1` or `error=<error.type>`
+        (`github_link_not_found`, `github_link_browser_mismatch`, `github_link_denied`, `github_account_in_use`,
+        `github_app_not_configured`, `github_unreachable`): this route never answers with an error body"
+      parameters:
+      - name: code
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: error
+        in: query
+        required: false
+        schema:
+          type: string
+      security: []
+      responses:
+        '302':
+          description: Redirect to the console
+  /api/v1/github/links:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listGithubLinks
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "Every member's GitHub link in the organization (an owner or an admin, a person only: 403 otherwise),
+        by GitHub login; never a token"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GitHubLink'
+                required:
+                - items
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/github/links/{memberId}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getMemberGithubLink
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "Another member's GitHub link (an owner or an admin, a person only: 403 otherwise; a member of another
+        organization, unknown or malformed, 404)"
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubLink'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unlinkMemberGithub
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "Removes a member's GitHub link, as `unlinkGithub` does for one's own (an owner or an admin's browser
+        session: 403 otherwise; 404 for a member of another organization). Journaled `github.link.removed` with the
+        administrator as actor and the member as subject"
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Unlinked, or nothing to unlink
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/github/links/{memberId}/start:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: startMemberGithubWebLink
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: "An owner or an admin links a GitHub account to another member, typically an account nobody signs in to
+        (a robot): the web flow of `startGithubWebLink`, with the attempt, and so the link, bound to that member and the
+        state to the administrator's browser session. GitHub authorizes whichever account is signed in to github.com in
+        that browser, so the administrator signs in there as the account the member should use. Another role, or a
+        credential that is not a browser session, 403; a member of another organization, 404. Journaled
+        `github.link.started` (the administrator as actor, the member as subject) before `github.link.created`; linking
+        a member already linked replaces the link; the administrator never sees a token"
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '302':
+          description: Redirect to GitHub
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /webhooks/github:
     post:
       operationId: githubWebhook
@@ -8669,6 +8959,57 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/github:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: setCloudSessionGithubAccess
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "Changes the session's GitHub access (`runners.cloud.github.v1`): `owner`, `shared` or `none`. Only the
+        owner, signed in (console, app) or with the CLI's login, never a service key acting for them (403
+        `github_owner_only`); anyone else, 404. Turning access off waits for a pause (409 `session_not_paused`), because a
+        running agent keeps a token it already received until it expires; turning it on or sharing applies from the
+        runner's next token renewal. Journaled `cloud.session.github_access_changed`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                access:
+                  type: string
+                  enum:
+                  - owner
+                  - shared
+                  - none
+              required:
+              - access
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/terminal/ticket:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -8947,6 +9288,52 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/github:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: fetchRunnerGithubToken
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner of a cloud session asks for the GitHub token its agent's `git` and `gh` use
+        (`runners.cloud.github.v1`), with the execution's runner token (checked before the body is read): the
+        user-to-server token of the member the session runs for, refreshed on the server when it expires within an hour,
+        scoped to what both the App's installation and that member can reach. `not_linked` when the owner has no usable
+        link, the session's `githubAccess` is `none`, or the owner left the organization; `unavailable` when GitHub
+        could not refresh it and no token stays valid for 5 more minutes. Only the runner of the current execution of a
+        running session gets it (409 `execution_fenced` otherwise); `Cache-Control: no-store`. The token is never
+        logged, journaled or written to the session"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                epoch:
+                  type: integer
+                  format: int64
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunnerGitHubToken'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
@@ -11977,6 +12364,79 @@ components:
       - createdAt
       - createdBy
       x-ostrom-kotlin: pending
+    GitHubDeviceLink:
+      type: object
+      description: 'A device link just started: open `verificationUri`, enter `userCode`, then poll with `id` every
+        `interval` seconds until `expiresAt`'
+      properties:
+        id:
+          type: string
+        userCode:
+          type: string
+        verificationUri:
+          type: string
+        expiresAt:
+          type: string
+        interval:
+          type: integer
+      required:
+      - id
+      - userCode
+      - verificationUri
+      - expiresAt
+      - interval
+      x-ostrom-kotlin: pending
+    GitHubDeviceLinkPoll:
+      type: object
+      description: One poll of a device link; `link` once linked, `interval` (seconds) while pending
+      properties:
+        status:
+          type: string
+          enum:
+          - pending
+          - linked
+          - expired
+          - denied
+        interval:
+          type: integer
+        link:
+          $ref: '#/components/schemas/GitHubLink'
+      required:
+      - status
+      x-ostrom-kotlin: pending
+    GitHubLink:
+      type: object
+      description: "A member's GitHub link: the account their cloud sessions use for Git and `gh`. Never a token: tokens
+        reach only the runner of the member's own sessions. `state` is `not_linked`, `linked` or `reconnect_required`
+        (GitHub refused the refresh token, or the instance's App changed: the member links again)"
+      properties:
+        memberId:
+          type: string
+        state:
+          type: string
+          enum:
+          - not_linked
+          - linked
+          - reconnect_required
+        appConfigured:
+          type: boolean
+          description: Whether the instance's GitHub App can link accounts (its OAuth client is known)
+        login:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        linkedAt:
+          type: string
+        refreshedAt:
+          type: string
+        accessExpiresAt:
+          type: string
+      required:
+      - memberId
+      - state
+      - appConfigured
+      x-ostrom-kotlin: pending
     HooksCheck:
       type: object
       description: "What the CLI does when none of Ostrom's hooks runs in the agent's session"
@@ -12673,8 +13133,8 @@ components:
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
-        `governance.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `secrets.v1`,
+        `github.link.v1`, `governance.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.github.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `slack.v1`, `usage.v1`, `waits.v1`, `workflows.v1`, `license.v1`. A client
         ignores a key it does not know."
       properties:
@@ -12850,6 +13310,15 @@ components:
           type: string
         runnerId:
           type: string
+        githubAccess:
+          type: string
+          enum:
+          - owner
+          - shared
+          - none
+          description: "Who may instruct the agent while it holds the owner's GitHub token (`runners.cloud.github.v1`):
+            `owner` (the default) the owner only, `shared` everyone who may use the session, `none` no GitHub token at all.
+            Absent from a server without the feature"
         runId:
           type: string
         automationId:
@@ -14662,6 +15131,26 @@ components:
       required:
       - type
       additionalProperties: {}
+      x-ostrom-kotlin: pending
+    RunnerGitHubToken:
+      type: object
+      description: "The GitHub token of a cloud session's owner, for its runner only (`fetchRunnerGithubToken`): `token`,
+        `expiresAt` and `login` (the linked account, for the agent's `gh` configuration) when `status` is `linked`"
+      properties:
+        status:
+          type: string
+          enum:
+          - linked
+          - not_linked
+          - unavailable
+        token:
+          type: string
+        expiresAt:
+          type: string
+        login:
+          type: string
+      required:
+      - status
       x-ostrom-kotlin: pending
     StepUpOrForbidden:
       description: 'A 403 of a write that may need a fresh sign-in: `step_up_required` (sign in again, then send
