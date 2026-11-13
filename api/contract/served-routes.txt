@@ -158,6 +158,7 @@ POST /api/v1/auth/email
 POST /api/v1/auth/email/verify
 POST /api/v1/auth/launcher/login
 POST /api/v1/auth/link
+POST /api/v1/auth/signup-grant
 POST /api/v1/auth/links
 POST /api/v1/auth/logout
 POST /api/v1/auth/logout/everywhere

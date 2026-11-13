@@ -402,7 +402,7 @@ paths:
   /api/v1/auth/signup-grant:
     post:
       operationId: grantSignUp
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: "Before signing in on an invite-only instance, the console presents the token of the instance's setup link
