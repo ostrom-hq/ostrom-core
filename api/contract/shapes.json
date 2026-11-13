@@ -3790,6 +3790,31 @@
       "cancelled"
     ]
   },
+  "WaitWake": {
+    "properties": {
+      "open": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "messages": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "WaitWakeRequest": {
+    "properties": {
+      "waitMillis": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "Workflow": {
     "properties": {
       "id": {

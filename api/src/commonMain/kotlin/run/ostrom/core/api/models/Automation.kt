@@ -299,3 +299,20 @@ public data class WaitAnswer(
     val author: String,
     val answeredAt: String,
 )
+
+/**
+ * How long the server may hold a wake of a session's waits back (`POST /api/v1/waits/wake`).
+ *
+ * @property waitMillis 0 to 30 000; 25 000 when absent.
+ */
+@Serializable
+public data class WaitWakeRequest(val waitMillis: Long? = null)
+
+/**
+ * What the waits of a session have to say to its Stop hook.
+ *
+ * @property open A wait asked by the session is still open: the hook keeps holding the agent.
+ * @property messages The answers that arrived, oldest first, each handed over once (`[Ostrom wait answered] …`).
+ */
+@Serializable
+public data class WaitWake(val open: Boolean, val messages: List<String>)
