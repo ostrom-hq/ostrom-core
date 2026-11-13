@@ -6420,6 +6420,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: resolver
+        in: query
+        required: false
+        description: "`human` (by default: what \"Waiting for you\" shows), `time`, `event` or `all`; 400 otherwise.
+          A wait for a time or an event waits for nobody, so it is listed only when asked for"
+        schema:
+          type: string
+          enum:
+          - human
+          - time
+          - event
+          - all
       - name: mine
         in: query
         required: false
@@ -6486,7 +6498,10 @@ paths:
       summary: Ask a person (agent ask_human); Idempotency-Key header
       description: "`assignee` is a member id or a username (at most 64 characters; an id wins over a username that
         spells it), the caller by default; an unknown one is 400. A member asks in a session only when they run it
-        (403 `wait_session_owner_only`, an administrator included) and while it runs (409 `session_not_running`)."
+        (403 `wait_session_owner_only`, an administrator included) and while it runs (409 `session_not_running`).
+        A `time` or `event` wait (`resolver`) is asked by an agent in its session only, and resolves by itself: at
+        `dueAt`, or when its `eventUrl` is called, or at `timeoutAt`; the session's Stop hook wakes the agent with it
+        (`POST /api/v1/waits/wake`). Nobody answers it (409 `resolves_by_itself`); its asker cancels it."
       requestBody:
         required: true
         content:
@@ -6505,6 +6520,41 @@ paths:
                   type: string
                 question:
                   $ref: '#/components/schemas/WaitSpec'
+                resolver:
+                  type: string
+                  description: "`human` by default. `time` or `event`: a wait that resolves by itself, asked by an agent
+                    in its session (agent token) for that session only, with a title and no fields, actions or other
+                    assignee"
+                  enum:
+                  - human
+                  - time
+                  - event
+                at:
+                  type: string
+                  format: date-time
+                  description: "`time`: the instant it resolves, ISO-8601 UTC, in the future and at most 30 days away
+                    (exactly one of `at` and `after`)"
+                after:
+                  type: integer
+                  format: int64
+                  minimum: 30
+                  maximum: 2592000
+                  description: "`time`: seconds from now, 30 to 30 days (exactly one of `at` and `after`)"
+                source:
+                  type: string
+                  description: "`event`: where the event comes from, `webhook` (the only value, by default)"
+                  enum:
+                  - webhook
+                timeoutSeconds:
+                  type: integer
+                  format: int64
+                  minimum: 30
+                  maximum: 604800
+                  description: "`event`: how long it waits before it resolves as timed out (86 400 by default)"
+                resumeMessage:
+                  type: string
+                  maxLength: 2000
+                  description: "`time` or `event`: a line added to the message that wakes the session"
               required:
               - question
       responses:
@@ -6732,6 +6782,59 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/waits/{id}/event:
+    post:
+      operationId: receiveWaitEvent
+      x-ostrom-status: planned
+      tags:
+      - waits
+      summary: The event an `event` wait waits for, from a CI or a script
+      description: "No sign-in: the wait's secret (`wev_…`, in its `eventUrl` once, at creation) is the proof, in the
+        `token` query parameter or the `Ostrom-Wait-Token` header. The server keeps only its SHA-256 and compares it in
+        constant time. An unknown wait, a wrong secret and a wait no longer open all answer 404. A JSON body of at most
+        16 KiB (413 beyond); an empty body is `{\"result\": \"success\"}`. At most 30 calls a minute per wait (429
+        `wait_event_rate_limit`). What it carries reaches the agent as data from an outside caller, never as
+        instructions. Call the server directly: an agent's relay never carries this address."
+      security: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: token
+        in: query
+        required: false
+        description: The wait's secret, unless given in the `Ostrom-Wait-Token` header
+        schema:
+          type: string
+      - name: Ostrom-Wait-Token
+        in: header
+        required: false
+        description: The wait's secret, unless given in the `token` query parameter
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaitEventRequest'
+      responses:
+        '202':
+          description: The wait is resolved and its session will be woken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitEventReceived'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '429':
           $ref: '#/components/responses/Error'
   /api/v1/mcp/servers:
     parameters:
@@ -13185,7 +13288,8 @@ components:
         `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.github.v1`, `secrets.v1`,
-        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `slack.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `workflows.v1`,
+        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `slack.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
+        `workflows.v1`,
         `license.v1`. A client
         ignores a key it does not know."
       properties:
@@ -17847,6 +17951,25 @@ components:
           type: string
         resolvedAt:
           type: string
+        resolver:
+          type: string
+          description: "`human` (absent means `human`), `time` or `event`: who resolves it"
+        dueAt:
+          type: string
+          description: "`time`: when it resolves"
+        timeoutAt:
+          type: string
+          description: "`event`: when it resolves as timed out if nothing arrived"
+        eventSource:
+          type: string
+          description: "`event`: where the event comes from (`webhook`)"
+        resumeMessage:
+          type: string
+          description: "`time` or `event`: the line added to the message that wakes the session"
+        eventUrl:
+          type: string
+          description: "`event` with `source: webhook`, in the answer that creates it only: the address a CI or a
+            script calls (`POST /api/v1/waits/{id}/event?token=wev_…`). It holds the wait's secret, never shown again"
       required:
       - id
       - kind
@@ -17854,6 +17977,32 @@ components:
       - assignee
       - question
       - createdAt
+    WaitEventRequest:
+      type: object
+      description: "What an outside caller posts to an `event` wait: data for the agent, never instructions"
+      properties:
+        result:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: "`success` or `failure` by convention; `success` by default"
+        url:
+          type: string
+          description: An https link (a CI run, a deployment)
+        note:
+          type: string
+          maxLength: 2000
+    WaitEventReceived:
+      type: object
+      description: The wait the event resolved
+      properties:
+        id:
+          type: string
+        status:
+          $ref: '#/components/schemas/WaitStatus'
+      required:
+      - id
+      - status
     WaitWakeRequest:
       type: object
       description: How long the server may hold the answer back

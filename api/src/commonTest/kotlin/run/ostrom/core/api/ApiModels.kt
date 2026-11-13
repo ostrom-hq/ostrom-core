@@ -86,6 +86,8 @@ import run.ostrom.core.api.models.WaitAnswer
 import run.ostrom.core.api.models.WaitField
 import run.ostrom.core.api.models.WaitRef
 import run.ostrom.core.api.models.WaitSpec
+import run.ostrom.core.api.models.WaitEventReceived
+import run.ostrom.core.api.models.WaitEventRequest
 import run.ostrom.core.api.models.WaitWake
 import run.ostrom.core.api.models.WaitWakeRequest
 import run.ostrom.core.api.models.Workflow
@@ -182,6 +184,8 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     WaitField.serializer(),
     WaitRef.serializer(),
     WaitSpec.serializer(),
+    WaitEventReceived.serializer(),
+    WaitEventRequest.serializer(),
     WaitWake.serializer(),
     WaitWakeRequest.serializer(),
     Workflow.serializer(),
