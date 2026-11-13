@@ -87,7 +87,7 @@ internal class Transport(
         route: StreamRoute,
         after: Long?,
         onOpen: suspend () -> Unit,
-        onFrame: suspend (ServerSentEvent) -> Unit,
+        onFrame: suspend (event: String, data: String) -> Unit,
     ): StreamEnd = http.prepareGet("$origin${route.path}") {
         for ((name, value) in route.query) parameter(name, value)
         authorize()
@@ -103,15 +103,16 @@ internal class Transport(
         // Only read once a frame ended the stream: the reader throws when the stream closes first.
         var end = StreamEnd.DENIED
         readServerSentEvents(response.bodyAsChannel()) { frame ->
-            when (frame.event) {
-                null -> true
-                DENIED -> false
-                route.endEvent -> {
+            val name = frame.event
+            when {
+                name == null -> true
+                name == DENIED -> false
+                name == route.endEvent -> {
                     end = StreamEnd.ENDED
                     false
                 }
                 else -> {
-                    onFrame(frame)
+                    onFrame(name, frame.data)
                     true
                 }
             }
@@ -134,7 +135,7 @@ internal class Transport(
         return OstromException(
             status = status,
             type = detail?.type,
-            message = if (detail == null) "Ostrom answered HTTP $status." else detail.message,
+            message = detail?.message ?: "Ostrom answered HTTP $status.",
             retryAfterSeconds = retryAfterSeconds(response.headers[HttpHeaders.RetryAfter]),
             requestBound = detail?.requestBound == true,
         )
@@ -155,7 +156,7 @@ internal class Transport(
     @Serializable
     private class ErrorBody(val error: Detail) {
         @Serializable
-        class Detail(val type: String, val message: String, val requestBound: Boolean = false)
+        class Detail(val type: String, val message: String? = null, val requestBound: Boolean = false)
     }
 
     companion object {
@@ -187,6 +188,10 @@ public enum class StreamEnd {
     /** `event: denied`: the server stopped accepting the credential. */
     DENIED,
 }
+
+/** The query parameters of a call: the pairs whose value is set, in order. */
+internal fun query(vararg parameters: Pair<String, String?>): List<Pair<String, String>> =
+    parameters.mapNotNull { (name, value) -> value?.let { name to it } }
 
 /** `Retry-After` as delta seconds; HTTP dates and malformed values are ignored. */
 internal fun retryAfterSeconds(value: String?): Long? {

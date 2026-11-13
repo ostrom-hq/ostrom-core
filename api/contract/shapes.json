@@ -63,6 +63,94 @@
       }
     }
   },
+  "ActivityActor": {
+    "properties": {
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ActivityItem": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "actor": {
+        "type": {
+          "ref": "ActivityActor"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "summary": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "costUsd": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "approvalId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "gateId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ActivityPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "ActivityItem"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "AddTodoItemRequest": {
     "properties": {
       "sessionId": {
@@ -110,6 +198,22 @@
       },
       "note": {
         "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "AnswerWaitRequest": {
+    "properties": {
+      "action": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "values": {
+        "type": {
+          "map": "any"
+        },
         "required": false,
         "nullable": false
       }
@@ -326,6 +430,40 @@
       "reject"
     ]
   },
+  "ApprovalCallerView": {
+    "properties": {
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "self": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "canApprove": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "reasonType": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "selfApproval": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "ApprovalCheck": {
     "properties": {
       "name": {
@@ -371,6 +509,40 @@
       }
     }
   },
+  "ApprovalQueue": {
+    "properties": {
+      "operator": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "you": {
+        "type": {
+          "ref": "ApprovalViewer"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "pending": {
+        "type": {
+          "array": {
+            "ref": "ApprovalView"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "recent": {
+        "type": {
+          "array": {
+            "ref": "ApprovalView"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "ApprovalStatus": {
     "enum": [
       "pending",
@@ -378,6 +550,164 @@
       "rejected",
       "expired"
     ]
+  },
+  "ApprovalView": {
+    "properties": {
+      "approval": {
+        "type": {
+          "ref": "Approval"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "who": {
+        "type": {
+          "ref": "ApprovalWho"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "what": {
+        "type": {
+          "ref": "ApprovalWhat"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "gate": {
+        "type": {
+          "ref": "GateRef"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "rules": {
+        "type": {
+          "array": {
+            "ref": "Rule"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "diff": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "pr": {
+        "type": {
+          "ref": "GatePullRequest"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "askedVia": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "note": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "receipt": {
+        "type": {
+          "ref": "Receipt"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "verification": {
+        "type": {
+          "ref": "Verification"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "you": {
+        "type": {
+          "ref": "ApprovalCallerView"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ApprovalViewer": {
+    "properties": {
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "via": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ApprovalWhat": {
+    "properties": {
+      "action": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "command": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sessionRepo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "harness": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ApprovalWho": {
+    "properties": {
+      "dev": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "session": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
   },
   "ApproverGate": {
     "properties": {
@@ -462,6 +792,116 @@
       }
     }
   },
+  "Artifact": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "owner": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "access": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "relation": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "latestVersion": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "publicUrl": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ArtifactPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "Artifact"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ArtifactTicket": {
+    "properties": {
+      "artifactId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "contentUrl": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ArtifactTicketRequest": {
+    "properties": {
+      "version": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "ArtifactType": {
     "enum": [
       "skill",
@@ -474,6 +914,55 @@
       "subagent",
       "receipt"
     ]
+  },
+  "ArtifactVersion": {
+    "properties": {
+      "number": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "files": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "entry": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "createdBy": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ArtifactVersionPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "ArtifactVersion"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
   },
   "AuthToken": {
     "properties": {
@@ -1478,6 +1967,45 @@
       }
     }
   },
+  "ExceededBudget": {
+    "properties": {
+      "scope": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "subject": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "period": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "usd": {
+        "type": "number",
+        "required": true,
+        "nullable": false
+      },
+      "hardStop": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "since": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "GateAction": {
     "properties": {
       "class": {
@@ -1927,6 +2455,20 @@
       "github-app",
       "gh-token"
     ]
+  },
+  "KeyRotation": {
+    "properties": {
+      "kid": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "signature": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
   },
   "LinkTodoItemRequest": {
     "properties": {
@@ -2583,6 +3125,32 @@
       }
     }
   },
+  "NotificationPreferences": {
+    "properties": {
+      "requests": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "decisions": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "spending": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "quietHours": {
+        "type": {
+          "ref": "QuietHours"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "NotificationStatus": {
     "enum": [
       "queued",
@@ -2874,6 +3442,80 @@
       }
     }
   },
+  "PublicKey": {
+    "properties": {
+      "kid": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "alg": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "publicKeyPem": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "rotation": {
+        "type": {
+          "ref": "KeyRotation"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "PushDevice": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "provider": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "platform": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "locale": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "QuietHours": {
+    "properties": {
+      "start": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "end": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "timeZone": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "Receipt": {
     "properties": {
       "id": {
@@ -3073,6 +3715,19 @@
       }
     }
   },
+  "ReceiptKeyList": {
+    "properties": {
+      "keys": {
+        "type": {
+          "array": {
+            "ref": "PublicKey"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "ReceiptNode": {
     "properties": {
       "id": {
@@ -3133,6 +3788,24 @@
       }
     }
   },
+  "ReceiptPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "Receipt"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "ReceiptRule": {
     "properties": {
       "id": {
@@ -3179,6 +3852,30 @@
       "session",
       "policy"
     ]
+  },
+  "RegisterPushDeviceRequest": {
+    "properties": {
+      "pushToken": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "provider": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "platform": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "locale": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
   },
   "ReportCheckRequest": {
     "properties": {
@@ -3859,6 +4556,127 @@
       "open",
       "invite"
     ]
+  },
+  "Spending": {
+    "properties": {
+      "period": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "from": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "to": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "totalUsd": {
+        "type": "number",
+        "required": true,
+        "nullable": false
+      },
+      "budgetUsd": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "byAgent": {
+        "type": {
+          "array": {
+            "ref": "SpendingLine"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "byRepo": {
+        "type": {
+          "array": {
+            "ref": "SpendingLine"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "byPerson": {
+        "type": {
+          "array": {
+            "ref": "SpendingLine"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "byWorkflow": {
+        "type": {
+          "array": {
+            "ref": "SpendingLine"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "daily": {
+        "type": {
+          "array": {
+            "ref": "SpendingDay"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "exceeded": {
+        "type": {
+          "array": {
+            "ref": "ExceededBudget"
+          }
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "SpendingDay": {
+    "properties": {
+      "date": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "usd": {
+        "type": "number",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "SpendingLine": {
+    "properties": {
+      "key": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "usd": {
+        "type": "number",
+        "required": true,
+        "nullable": false
+      },
+      "sessions": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
   },
   "StartSessionRequest": {
     "properties": {
@@ -4746,6 +5564,35 @@
       }
     }
   },
+  "Verification": {
+    "properties": {
+      "ok": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "digest": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "kid": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "orgBound": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "Wait": {
     "properties": {
       "id": {
@@ -4979,6 +5826,24 @@
       },
       "maxLength": {
         "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WaitPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "Wait"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
         "required": false,
         "nullable": false
       }

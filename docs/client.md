@@ -37,6 +37,7 @@ val client = OstromClient(
     userAgent = "ostrom-app/1.2.0 (iOS 18.1)",
 )
 val me = client.auth.me()
+val pending = client.approvals.queue().pending
 client.close()
 ```
 
@@ -61,6 +62,21 @@ client.close()
 | (client) | `capabilities()` | `GET /api/v1/capabilities` |
 | `auth` | `signInMethods()`, `githubStartUrl(redirectUri, state, codeChallenge)`, `startUrl(provider, …)`, `exchangeMobileCode(code, codeVerifier, redirectUri)`, `unlock(unlockKey, requestId)`, `me()`, `account()`, `logout()`, `startDeviceLogin(scopes)`, `pollDeviceLogin(deviceCode)` | `/api/v1/auth/providers`, `/api/v1/auth/{provider}/start` (a URL to open, no request), `/api/v1/auth/mobile/token`, `/api/v1/auth/mobile/unlock`, `/api/v1/auth/me`, `/api/v1/auth/me/account`, `/api/v1/auth/logout`, `/api/v1/auth/device`, `/api/v1/auth/device/token` |
 | `organizations` | `mine()` | `GET /api/v1/me/organizations` |
+| `approvals` | `queue()`, `view(id)`, `answer(id, answer, shownDigest, note)` | `GET /api/v1/approvals/queue`, `GET /api/v1/approvals/{id}/view`, `POST /api/v1/approvals/{id}/answer` |
+| `receipts` | `list(before, limit)`, `get(id)`, `keys()` | `GET /api/v1/receipts`, `GET /api/v1/receipts/{id}`, `GET /api/v1/receipts/keys` |
+| `spending` | `report(period)` | `GET /api/v1/spending` |
+| `activity` | `page(before, repo)` | `GET /api/v1/activity` |
+| `pushDevices` | `register(pushToken, provider, platform, locale)`, `delete(id)` | `POST /api/v1/push-devices`, `DELETE /api/v1/push-devices/{id}` |
+| `notifications` | `preferences()`, `save(preferences)` | `GET` and `PUT /api/v1/me/notifications` |
+| `waits` | `list(status, mine, before, limit, resolver)`, `get(id)`, `answer(id, action, values)` | `GET /api/v1/waits`, `GET /api/v1/waits/{id}`, `POST /api/v1/waits/{id}/answer` |
+| `artifacts` | `list(before, limit)`, `get(id)`, `versions(id)`, `ticket(id, version)` | `GET /api/v1/artifacts`, `GET /api/v1/artifacts/{id}`, `GET /api/v1/artifacts/{id}/versions`, `POST /api/v1/artifacts/{id}/tickets` |
+| `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
+
+Every parameter left null is not sent, so the server's default applies. The models are those of
+`run.ostrom.core.api.models`, named like the schemas of `api/openapi.yaml`; an enum the contract declares inline
+(`reasonType`, `relation`, `access`, the spending `period`) stays a `String`, so a new value never breaks a decode.
+A yes from the phone (`approvals.answer` with `ApprovalAnswer.APPROVE`) needs a recent `auth.unlock`; without one it
+throws `403 step_up_required`, with `requestBound` when the unlock is bound to another request.
 
 `pollDeviceLogin` throws `OstromException` while the sign-in is pending: `428 authorization_pending`, `400 slow_down`,
 `400 access_denied`, `400 expired_token`; the caller decides.
@@ -78,6 +94,12 @@ before any frame; `event: denied` ends it (`StreamEnd.DENIED`). A stream that cl
 status `0` and no type: reconnect from the last sequence handled. A line or an event over its bound throws status
 `0` with type `malformed_event` (`OstromClient.MALFORMED_EVENT`): reconnecting would replay it, so the caller stops.
 A network failure surfaces as the engine's exception, and an exception from the caller's handler is rethrown as is.
+
+`events.follow` reads the organization's feed with it. The feed's event schemas are not in the contract yet, so each
+event reaches `onEvent` as a `StreamEvent(type, data)` with its JSON data; an unknown type is passed on like the
+others, and an event without data is skipped. `types` keeps only those types (at most 64, sent sorted as
+`?types=a,b`). A `gap` frame (`{"oldestSeq":…}`) calls `onGap` before the events that follow: events after the
+cursor were purged, so the caller reloads what it shows. An event whose data is not JSON throws `malformed_event`.
 
 ## The CLI
 

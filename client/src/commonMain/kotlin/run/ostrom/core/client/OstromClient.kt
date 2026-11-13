@@ -68,6 +68,33 @@ public class OstromClient(
     /** The caller's organizations. */
     public val organizations: OrganizationsClient = OrganizationsClient(transport)
 
+    /** The caller's yes queue and their answers. */
+    public val approvals: ApprovalsClient = ApprovalsClient(transport)
+
+    /** Signed receipts and their keys. */
+    public val receipts: ReceiptsClient = ReceiptsClient(transport)
+
+    /** What the agents cost. */
+    public val spending: SpendingClient = SpendingClient(transport)
+
+    /** The organization's activity feed. */
+    public val activity: ActivityClient = ActivityClient(transport)
+
+    /** The caller's phones registered for push notifications. */
+    public val pushDevices: PushDevicesClient = PushDevicesClient(transport)
+
+    /** What the caller is notified of. */
+    public val notifications: NotificationsClient = NotificationsClient(transport)
+
+    /** The waits a person answers. */
+    public val waits: WaitsClient = WaitsClient(transport)
+
+    /** Published artifacts. */
+    public val artifacts: ArtifactsClient = ArtifactsClient(transport)
+
+    /** The organization's live events. */
+    public val events: EventsClient = EventsClient(transport)
+
     /**
      * What the server speaks and serves (`GET /api/v1/capabilities`). Without a token the server answers `401`
      * `authentication_required`, which says "an Ostrom server, sign in next".

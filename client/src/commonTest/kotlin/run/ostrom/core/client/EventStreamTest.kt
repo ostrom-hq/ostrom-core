@@ -26,7 +26,9 @@ class EventStreamTest {
         query: List<Pair<String, String>> = emptyList(),
         onOpen: suspend () -> Unit = {},
         onFrame: suspend (ServerSentEvent) -> Unit,
-    ): StreamEnd = transport.follow(StreamRoute("/api/v1/events", query, endEvent), after, onOpen, onFrame)
+    ): StreamEnd = transport.follow(StreamRoute("/api/v1/events", query, endEvent), after, onOpen) { event, data ->
+        onFrame(ServerSentEvent(event, data))
+    }
 
     @Test
     fun theFeedDeliversFramesInOrderSkipsKeepAlivesAndSendsItsCursor() = runTest {

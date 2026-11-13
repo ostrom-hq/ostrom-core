@@ -1680,20 +1680,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                pushToken:
-                  type: string
-                provider:
-                  type: string
-                platform:
-                  type: string
-                locale:
-                  type: string
-              required:
-              - pushToken
-              - provider
-              - platform
+              $ref: '#/components/schemas/RegisterPushDeviceRequest'
       responses:
         '201':
           description: OK
@@ -1848,16 +1835,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/ActivityItem'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/ActivityPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4670,16 +4648,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Receipt'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/ReceiptPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -4706,14 +4675,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  keys:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PublicKey'
-                required:
-                - keys
+                $ref: '#/components/schemas/ReceiptKeyList'
         '400':
           $ref: '#/components/responses/Error'
         '404':
@@ -6426,16 +6388,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Wait'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/WaitPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -6681,15 +6634,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                action:
-                  type: string
-                values:
-                  type: object
-                  additionalProperties: {}
-              required:
-              - action
+              $ref: '#/components/schemas/AnswerWaitRequest'
       responses:
         '200':
           description: OK
@@ -10986,16 +10931,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Artifact'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/ArtifactPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -11286,16 +11222,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/ArtifactVersion'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/ArtifactVersionPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -11530,11 +11457,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                version:
-                  type: integer
-                  description: The version; the latest when absent
+              $ref: '#/components/schemas/ArtifactTicketRequest'
       responses:
         '200':
           description: OK
@@ -14542,7 +14465,18 @@ components:
       required:
       - kind
       - name
-      x-ostrom-kotlin: pending
+    ActivityPage:
+      type: object
+      description: "A page of the organization's activity; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityItem'
+        next:
+          type: string
+      required:
+      - items
     ActivityItem:
       type: object
       description: 'A line of the activity feed (kind: session.started, session.ended, gate.requested, gate.decided, check.passed,
@@ -14574,7 +14508,6 @@ components:
       - kind
       - actor
       - summary
-      x-ostrom-kotlin: pending
     AgentEvent:
       type: string
       enum:
@@ -14820,7 +14753,6 @@ components:
       - login
       - self
       - canApprove
-      x-ostrom-kotlin: pending
     ApprovalCheck:
       type: object
       description: A CI check shown with an approval
@@ -14871,7 +14803,6 @@ components:
       - you
       - pending
       - recent
-      x-ostrom-kotlin: pending
     ApprovalStatus:
       type: string
       enum:
@@ -14879,6 +14810,32 @@ components:
       - approved
       - rejected
       - expired
+    ApprovalWho:
+      type: object
+      description: "Who asked for an approval: the developer, their agent, its model and session"
+      properties:
+        dev:
+          type: string
+        agent:
+          type: string
+        model:
+          type: string
+        session:
+          type: string
+    ApprovalWhat:
+      type: object
+      description: "What an approval is for: the action, its command and repository, the session's repository and harness"
+      properties:
+        action:
+          type: string
+        command:
+          type: string
+        repo:
+          type: string
+        sessionRepo:
+          type: string
+        harness:
+          type: string
     ApprovalView:
       type: object
       description: 'An approval as the console and the app show it: the request, the gate, the rules, the commits and checks
@@ -14887,29 +14844,9 @@ components:
         approval:
           $ref: '#/components/schemas/Approval'
         who:
-          type: object
-          properties:
-            dev:
-              type: string
-            agent:
-              type: string
-            model:
-              type: string
-            session:
-              type: string
+          $ref: '#/components/schemas/ApprovalWho'
         what:
-          type: object
-          properties:
-            action:
-              type: string
-            command:
-              type: string
-            repo:
-              type: string
-            sessionRepo:
-              type: string
-            harness:
-              type: string
+          $ref: '#/components/schemas/ApprovalWhat'
         gate:
           $ref: '#/components/schemas/GateRef'
         rules:
@@ -14936,7 +14873,6 @@ components:
       required:
       - approval
       - you
-      x-ostrom-kotlin: pending
     ApprovalViewer:
       type: object
       description: Who is looking at the yes queue
@@ -14951,7 +14887,6 @@ components:
       required:
       - login
       - via
-      x-ostrom-kotlin: pending
     ApproverGate:
       type: object
       description: A gate seen from its approvers, with the actions it covers
@@ -15018,6 +14953,18 @@ components:
       - approvers
       - unanswered
       - ungated
+    ArtifactPage:
+      type: object
+      description: "A page of artifacts; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Artifact'
+        next:
+          type: string
+      required:
+      - items
     Artifact:
       type: object
       description: A published page or file set, behind the login
@@ -15059,7 +15006,6 @@ components:
       - url
       - createdAt
       - updatedAt
-      x-ostrom-kotlin: pending
     ArtifactAccess:
       type: string
       description: 'Who reads it; `personal` when absent at publication. `personal`: the owner and the members it is
@@ -15118,6 +15064,13 @@ components:
       - sha256
       - contentBase64
       x-ostrom-kotlin: pending
+    ArtifactTicketRequest:
+      type: object
+      description: "Which version of an artifact a ticket opens"
+      properties:
+        version:
+          type: integer
+          description: The version; the latest when absent
     ArtifactTicket:
       type: object
       description: A reading ticket
@@ -15140,7 +15093,6 @@ components:
       - url
       - contentUrl
       - expiresAt
-      x-ostrom-kotlin: pending
     ArtifactType:
       type: string
       enum:
@@ -15153,6 +15105,18 @@ components:
       - notify
       - subagent
       - receipt
+    ArtifactVersionPage:
+      type: object
+      description: "A page of the versions of an artifact; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtifactVersion'
+        next:
+          type: string
+      required:
+      - items
     ArtifactVersion:
       type: object
       description: A version of an artifact
@@ -15176,7 +15140,6 @@ components:
       - entry
       - createdAt
       - createdBy
-      x-ostrom-kotlin: pending
     Assignment:
       type: object
       description: "A member's explicit decision"
@@ -19422,7 +19385,6 @@ components:
       - requests
       - decisions
       - spending
-      x-ostrom-kotlin: pending
     NotificationStatus:
       type: string
       enum:
@@ -19889,6 +19851,16 @@ components:
       - emails
       - providers
       x-ostrom-kotlin: pending
+    ReceiptKeyList:
+      type: object
+      description: "The public keys that sign the instance's receipts"
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicKey'
+      required:
+      - keys
     PublicKey:
       type: object
       description: A public key of the instance
@@ -19905,7 +19877,6 @@ components:
       - kid
       - alg
       - publicKeyPem
-      x-ostrom-kotlin: pending
     KeyRotation:
       type: object
       description: 'How a receipt key was handed over by the key it replaces. Absent on a key handed over by nobody (the
@@ -19923,7 +19894,22 @@ components:
       required:
       - kid
       - signature
-      x-ostrom-kotlin: pending
+    RegisterPushDeviceRequest:
+      type: object
+      description: "A phone to notify: its push token, the push provider and the platform"
+      properties:
+        pushToken:
+          type: string
+        provider:
+          type: string
+        platform:
+          type: string
+        locale:
+          type: string
+      required:
+      - pushToken
+      - provider
+      - platform
     PushDevice:
       type: object
       description: A phone registered for push notifications
@@ -19943,7 +19929,6 @@ components:
       - provider
       - platform
       - createdAt
-      x-ostrom-kotlin: pending
     QuietHours:
       type: object
       description: Hours without notifications
@@ -19958,7 +19943,18 @@ components:
       - start
       - end
       - timeZone
-      x-ostrom-kotlin: pending
+    ReceiptPage:
+      type: object
+      description: "A page of receipts; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Receipt'
+        next:
+          type: string
+      required:
+      - items
     Receipt:
       type: object
       description: 'A signed receipt: who asked for what, under which rules, who said yes, and when'
@@ -21047,7 +21043,6 @@ components:
       - byRepo
       - byPerson
       - daily
-      x-ostrom-kotlin: pending
     ExceededBudget:
       type: object
       description: A budget spent past its limit in its current day or month
@@ -21082,7 +21077,6 @@ components:
       - usd
       - hardStop
       - since
-      x-ostrom-kotlin: pending
     SpendingDay:
       type: object
       description: Spending of one day
@@ -21094,7 +21088,6 @@ components:
       required:
       - date
       - usd
-      x-ostrom-kotlin: pending
     SpendingLine:
       type: object
       description: Spending of one agent, repository or person
@@ -21112,7 +21105,6 @@ components:
       - label
       - usd
       - sessions
-      x-ostrom-kotlin: pending
     StartSessionRequest:
       type: object
       description: Starts a session or a segment (hook `SessionStart`). The same launch finds its open segment again (SessionStart
@@ -22365,7 +22357,29 @@ components:
             receipt that names another organization is not ok, with a `reason` that names no organization. Planned"
       required:
       - ok
-      x-ostrom-kotlin: pending
+    WaitPage:
+      type: object
+      description: "A page of waits; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wait'
+        next:
+          type: string
+      required:
+      - items
+    AnswerWaitRequest:
+      type: object
+      description: "An answer to a wait: one of its actions and the values of its fields"
+      properties:
+        action:
+          type: string
+        values:
+          type: object
+          additionalProperties: {}
+      required:
+      - action
     Wait:
       type: object
       description: 'A wait: a question to a person, asked by an agent (`ask_human`) or by a wait node of a run. First answer
