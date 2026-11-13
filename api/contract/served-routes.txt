@@ -274,6 +274,7 @@ POST /api/v1/waits/{}/answer
 POST /api/v1/waits/{}/cancel
 POST /api/v1/waits/{}/event
 POST /api/v1/workflows
+POST /api/v1/workflows/mcp
 POST /api/v1/workflows/session/deliver
 POST /api/v1/workflows/{}/runs
 POST /webhooks/github
