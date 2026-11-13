@@ -133,6 +133,12 @@ public object ServerFeatures {
     /** Waits (human answers asked by agents). */
     public const val WAITS: String = "waits.v1"
 
+    /**
+     * The wake of an agent's session by the answers to its waits (`POST /api/v1/waits/wake`): a launch's Stop hook holds
+     * its agent while a wait is open and hands it the answer.
+     */
+    public const val WAITS_WAKE: String = "waits.wake.v1"
+
     /** Workflows and their runs. */
     public const val WORKFLOWS: String = "workflows.v1"
 
@@ -143,6 +149,7 @@ public object ServerFeatures {
     public val ALL: List<String> = listOf(
         ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, IMPORT_TEAMCODE,
         INFERENCE, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
-        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, USAGE, WAITS, WORKFLOWS, LICENSE,
+        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, USAGE, WAITS, WAITS_WAKE, WORKFLOWS,
+        LICENSE,
     )
 }
