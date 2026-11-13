@@ -134,8 +134,8 @@ public object ServerFeatures {
     public const val WAITS: String = "waits.v1"
 
     /**
-     * The wake of an agent's session by the answers to its waits (`POST /api/v1/waits/wake`): a launch's Stop hook holds
-     * its agent while a wait is open and hands it the answer.
+     * The wake of an agent's session by the answers to its waits (`POST /api/v1/waits/wake`): a launch's Stop hook
+     * holds its agent while a wait is open and hands it the answer.
      */
     public const val WAITS_WAKE: String = "waits.wake.v1"
 
