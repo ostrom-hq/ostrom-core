@@ -5837,17 +5837,10 @@ paths:
       - name: workflow
         in: query
         required: false
-        description: Only the runs of this workflow (planned)
+        description: "Only the runs of this workflow (planned; a `limit` of 1 to 100, 50 by default, comes with it once
+          the server bounds the page)"
         schema:
           type: string
-      - name: limit
-        in: query
-        required: false
-        description: 1 to 100, 50 by default (planned)
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 100
       - name: status
         in: query
         required: false
