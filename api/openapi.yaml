@@ -8112,6 +8112,650 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/environment:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getEnvironment
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "The caller's own environment variables (`environment.v1`), with their values: every environment variant
+        assigned to them, team or personal, that resolves now. A variable that cannot be served (a value that does not
+        decrypt) is withheld and listed in `unavailable`, by name only; the others are still returned. `ostrom claude`
+        reads it before starting the agent and again every 60 seconds while it runs. A person only: a browser session or
+        a token with `environment:read` (the CLI's); a service key, an agent or a device token, 403. A member who is
+        disabled gets none. `Cache-Control: no-store`; never journaled with its values"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentValues'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/environment/variants:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listEnvironmentVariants
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "The organization's environment variants (`environment.v1`), metadata only: never a value. An owner or an
+        admin (scope `secrets:read`); personal variants are listed by `listPersonalEnvironmentVariants`"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentVariantsPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Creates an environment variant: a named value for one environment variable (its slot). Several variants
+        can exist for one variable (`org-a`, `org-b` for `GITHUB_TOKEN`); names are unique per variable,
+        case-insensitively. `shared` keeps one encrypted value on the variant (required); `perMember` keeps none, each
+        assignment carries the member's own. Reserved names are refused (400 `invalid_environment_variant`): `PATH`,
+        `HOME`, `USER`, `LOGNAME`, `SHELL`, `PWD`, `TMPDIR`, `TMP`, `TEMP`, `IFS`, `ENV`, `BASH_ENV`, `PROMPT_COMMAND`,
+        `NODE_OPTIONS`, `NODE_PATH`, `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, `_JAVA_OPTIONS`, `PYTHONPATH`,
+        `PYTHONSTARTUP`, `PYTHONHOME`, `PERL5OPT`, `PERL5LIB`, `RUBYOPT`, `RUBYLIB`, `GIT_SSH`, `GIT_SSH_COMMAND`,
+        `GIT_EXEC_PATH`, `GIT_CONFIG_GLOBAL`, `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`, `SSL_CERT_FILE`,
+        `SSL_CERT_DIR`, `NODE_EXTRA_CA_CERTS`, `REQUESTS_CA_BUNDLE`, and the prefixes `LD_`, `DYLD_`, `OSTROM_`,
+        `TEAMCODE_`, `ANTHROPIC_`, `CLAUDE_`, `OPENAI_`, `CODEX_`, `XDG_`, `GIT_CONFIG_` (personal variants too). The
+        runner's own commands (clone, fetch, setup) never see a variable named with `GIT_`, `GH_` or `SSH_`, so a
+        value cannot redirect the credential socket. At most 500 team variants (409 `variant_limit`). An owner or an admin from
+        the console (scope `secrets:write`, step-up). The value is encrypted at rest with the secrets key (AES-256-GCM,
+        bound to the organization and the variant) and never returned. Journaled `environment.variant.created` without
+        the value"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentVariantCreate'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentVariant'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/environment/variants/personal:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listPersonalEnvironmentVariants
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Every member's personal environment variants, by owner (at most 500), with `owner` and their definition
+        (variable and name, none of them secret) for review, and `hasValue`, never a value. An owner or an admin (scope
+        `secrets:read`)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentVariantsPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/environment/variants/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    patch:
+      operationId: updateEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Renames a team variant or replaces its shared value. `expectedVersion` is the version read: another
+        version is 409 `variant_version_conflict`, so two administrators never silently overwrite each other. Each
+        change bumps `version` and reaches every assignee at their next resolution (a running Claude Code within a
+        minute, see `getEnvironment`). The variable and the binding never change: create another variant. A personal
+        variant is 409 `variant_personal` (only its owner edits it). Journaled `environment.variant.updated`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The variant
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentVariantUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentVariant'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Deletes a variant, team or personal (an administrator may remove a member's personal one), and its
+        assignments. Journaled `environment.variant.deleted`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The variant
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/environment/variants/{id}/bulk-assign:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: bulkAssignEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Assigns a shared team variant to every member enabled now: rows marked `bulk`, replacing earlier bulk
+        selections of that variable, keeping direct ones and skipping excluded members. An action, not a standing rule:
+        members who join later get nothing until assigned. A per-member variant is 409 `variant_not_shared`. Journaled
+        `environment.variant.bulk_assigned`, and `environment.assigned` once per member changed"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The variant
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentBulkAssignment'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/environment/variants/{id}/promote:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: promoteEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Makes a member's personal variant a team variant: its owner is cleared and keeps the selection, everyone
+        else gets it only by assignment. 409 `variant_exists` when a team variant of the same name exists for that
+        variable. A team variant is returned as it is. Journaled `environment.variant.promoted` (on a change only)"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The variant
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentVariant'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/environment/assignments:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listEnvironmentAssignments
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Every member's effective environment assignments and exclusions, metadata only (scope `secrets:read`, an
+        owner or an admin), by member then variable: at most 5,000 of each, so a large organization asks one member at a
+        time (`member`)"
+      parameters:
+      - name: member
+        in: query
+        required: false
+        description: A member's id
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentAssignmentsPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/environment/assignments/{member}/{variable}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: assignEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Selects a team variant for one member's variable, replacing any previous selection of that variable (a
+        member has at most one per variable). A per-member variant needs the member's `value`; a shared one refuses it.
+        409 `variant_excluded` while the member is excluded from the variable, 409 `variant_personal` for a personal
+        variant. A shared variant is never an implicit grant: a member receives a variable only through an assignment.
+        Journaled `environment.assigned` (subject: the member), never with the value"
+      parameters:
+      - name: member
+        in: path
+        required: true
+        description: The member's id (`Member.id`)
+        schema:
+          type: string
+      - name: variable
+        in: path
+        required: true
+        description: The environment variable name
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentAssign'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentAssignment'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unassignEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Removes the member's selection for the variable; nothing falls back to an earlier bulk value. 204 also
+        when there was none. Journaled `environment.unassigned`"
+      parameters:
+      - name: member
+        in: path
+        required: true
+        description: The member's id (`Member.id`)
+        schema:
+          type: string
+      - name: variable
+        in: path
+        required: true
+        description: The environment variable name
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Removed
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/environment/exclusions/{member}/{variable}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: excludeEnvironmentVariable
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Excludes a member from a variable: removes their current selection, then refuses a direct assignment
+        (409 `variant_excluded`), and a bulk assignment skips them, until the exclusion is removed. The member cannot
+        declare a personal variant for it either; a personal variant they already declared stays, unassigned, until they
+        delete it. Journaled `environment.excluded`"
+      parameters:
+      - name: member
+        in: path
+        required: true
+        description: The member's id (`Member.id`)
+        schema:
+          type: string
+      - name: variable
+        in: path
+        required: true
+        description: The environment variable name
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Excluded
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: includeEnvironmentVariable
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Removes an exclusion; it grants nothing back. Journaled `environment.included`"
+      parameters:
+      - name: member
+        in: path
+        required: true
+        description: The member's id (`Member.id`)
+        schema:
+          type: string
+      - name: variable
+        in: path
+        required: true
+        description: The environment variable name
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Removed
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/environment/variants:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMyEnvironmentVariants
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "The caller's own personal environment variants, metadata only. A person only (a browser session; a
+        service key, an agent or a device token, 403)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentVariantsPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createMyEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Declares a personal environment value: a shared-binding variant owned by the caller and assigned to them
+        alone, in one transaction (`direct`). 409 `slot_taken` when the caller already has a selection for the variable
+        (an administrator's assignment is not overridden by a member), 409 `variant_excluded` when an administrator
+        excluded them from it, 409 `variant_limit` past 20 personal variants. An administrator who later assigns a team
+        variant for that variable replaces it; the personal variant then stays unassigned until its owner deletes it.
+        Same rules and encryption as a team variant; `binding` must be `shared`. Journaled
+        `environment.variant.personal.created`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentVariantCreate'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentVariant'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/environment/variants/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    patch:
+      operationId: updateMyEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Renames one of the caller's personal variants or replaces its value, with `expectedVersion`. Another
+        member's variant, or a team one, is 404. Journaled `environment.variant.personal.updated`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The variant
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentVariantUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentVariant'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteMyEnvironmentVariant
+      x-ostrom-status: planned
+      tags:
+      - secrets
+      summary: "Deletes one of the caller's personal variants and its assignment. Journaled
+        `environment.variant.personal.deleted`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The variant
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/import/teamcode:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -9587,6 +10231,8 @@ paths:
                   description: The agent's first message, up to 20,000 characters; an interactive agent when absent
                 name:
                   type: string
+                environment:
+                  $ref: '#/components/schemas/CloudEnvironment'
               required:
               - agent
       responses:
@@ -10108,6 +10754,120 @@ paths:
         '400':
           $ref: '#/components/responses/Error'
         '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/environment:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: fetchRunnerEnvironment
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner of a cloud session reads what to prepare (`runners.cloud.environment.v1`), with the
+        execution's runner token (checked before the body is read): the session's recipe (`environment`), the Git
+        identity of the member the session runs for, and that member's environment variables, resolved on every call.
+        Only the runner of the current execution while the session is `creating` or `resuming` (409 `execution_fenced`
+        for another execution, 409 `not_preparing` once it is ready). A recipe whose `requiredVariables` the owner
+        lacks, or that `requireGitHub` without a usable link, is 409 `preparation_failed`, and the session fails (first
+        execution) or pauses with that reason (resume). The GitHub token is not in the answer: `git` and `gh` read it
+        through the runner's credential socket (`fetchRunnerGithubToken`). `Cache-Control: no-store`; never logged or
+        journaled"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerExecution'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunnerEnvironment'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/preparation:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: reportRunnerPreparation
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner reports its preparation (`runners.cloud.environment.v1`): a `phase` (`configuring_git`,
+        `cloning_repositories`, `fetching_repositories`, `running_setup`), shown on the session, or a failed step as
+        `{step, index, exitCode}` only. The server writes the session's message itself (no command output or runner text
+        reaches the API), sets `failure.code = preparation_failed` (`retryable` for clone, fetch and GitHub failures),
+        and stops the execution: a first execution fails the session and deletes its workspace, a resume pauses it and
+        keeps the workspace. Same audience as `fetchRunnerEnvironment`. Returns the heartbeat's instruction"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerPreparationReport'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunnerHeartbeatAnswer'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/variables:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: fetchRunnerVariables
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner of a cloud session reads the environment variables of the member the session runs for
+        (`runners.cloud.variables.v1`), to start the agent with them and to serve them to its Bash commands while it
+        runs (Claude Code's `CLAUDE_ENV_FILE`, asked again when its last answer is older than 30 seconds). Only the
+        runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`): 409
+        `execution_fenced` for another execution, 409 `variables_unavailable` otherwise. A disabled owner gets none.
+        `Cache-Control: no-store`; never logged or journaled"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerExecution'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentValues'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
@@ -15486,9 +16246,9 @@ components:
       type: object
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
-        `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
+        `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.github.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`,
         `license.v1`. A client
@@ -15619,6 +16379,83 @@ components:
       - gemini
       - shell
       x-ostrom-kotlin: pending
+    CloudEnvironment:
+      type: object
+      description: "The preparation recipe of a cloud session (`runners.cloud.environment.v1`): what the runner does in the
+        workspace before the agent starts, the same on every execution. Stored on the session at creation and never
+        edited, so a resume prepares exactly what the first execution did. Holds no secret: variable values and the
+        GitHub token are resolved for the session's owner at every start. The image carries the toolchain; the recipe
+        says what to do with it"
+      properties:
+        repositories:
+          type: array
+          maxItems: 16
+          description: Cloned on the first execution into `/workspace/<path>`, only fetched (`git fetch --prune origin`)
+            afterwards; work on the workspace is never reset or cloned again
+          items:
+            $ref: '#/components/schemas/CloudRepository'
+        workingDirectory:
+          type: string
+          description: Relative to `/workspace`, where the setup commands and the agent start; must exist after cloning.
+            The first repository's directory when absent and there is one, the workspace otherwise
+        setup:
+          $ref: '#/components/schemas/CloudSetup'
+        requiredVariables:
+          type: array
+          maxItems: 64
+          description: Environment variable names the owner must be assigned (`getEnvironment`); preparation fails
+            (`preparation_failed`, naming them) without them, and a variable withheld in `unavailable` counts as missing
+          items:
+            type: string
+        requireGitHub:
+          type: boolean
+          description: Preparation fails when the owner has no usable GitHub link (`github.link.v1`)
+        gitEmailDomain:
+          type: string
+          description: The domain of the Git e-mail address for an owner without a GitHub link
+            (`users.noreply.ostrom.invalid` when absent); a linked owner commits as `<id>+<login>@users.noreply.github.com`
+      x-ostrom-kotlin: pending
+    CloudRepository:
+      type: object
+      description: A repository the runner clones into the workspace
+      properties:
+        url:
+          type: string
+          description: "`https://github.com/<owner>/<name>[.git]`: no credentials, query or fragment"
+        path:
+          type: string
+          description: Relative to `/workspace` (at most 8 segments of letters, digits, `.`, `_`, `-`), outside `.ostrom`
+            and `.home`, never inside another repository's; the repository's name when absent
+        ref:
+          type: string
+          description: The branch, tag or commit checked out after cloning; the default branch when absent. A ref that
+            looks like an option is refused
+        branch:
+          type: string
+          description: A local branch created at `ref` after cloning, for example one branch per task
+      required:
+      - url
+      x-ostrom-kotlin: pending
+    CloudSetup:
+      type: object
+      description: Commands run with `/bin/sh -c` in the working directory, in the agent's container and under its user,
+        with the owner's environment variables; their output goes to the session's terminal, its known variable values
+        masked
+      properties:
+        create:
+          type: array
+          maxItems: 16
+          description: Run once per workspace, in order; each is marked done on the workspace when it succeeds, so an
+            interrupted first start runs only what did not finish (up to 4,096 characters each)
+          items:
+            type: string
+        start:
+          type: array
+          maxItems: 16
+          description: Run on every execution (first start and every resume), in order, after `create`
+          items:
+            type: string
+      x-ostrom-kotlin: pending
     CloudSession:
       type: object
       description: 'A cloud agent session: one pod (or local container) per execution, with a workspace kept across pauses'
@@ -15666,6 +16503,8 @@ components:
           type: string
         runnerId:
           type: string
+        environment:
+          $ref: '#/components/schemas/CloudEnvironment'
         githubAccess:
           type: string
           enum:
@@ -15696,9 +16535,12 @@ components:
       properties:
         code:
           type: string
-          description: start_failed, execution_lost, idle_timeout, max_duration or hours_exhausted
+          description: start_failed, execution_lost, idle_timeout, max_duration, hours_exhausted or preparation_failed
         message:
           type: string
+        retryable:
+          type: boolean
+          description: Whether trying again may succeed (a clone or a fetch), for `preparation_failed`
       required:
       - code
       - message
@@ -16150,6 +16992,222 @@ components:
       required:
       - type
       - message
+    EnvironmentAssign:
+      type: object
+      description: Selects a team variant for a member's variable
+      properties:
+        variantId:
+          type: string
+        value:
+          type: string
+          minLength: 1
+          maxLength: 16384
+          description: The member's own value, required for a `perMember` variant and refused for a `shared` one; 1 to
+            16,384 characters, without NUL, written once, never returned
+      required:
+      - variantId
+      x-ostrom-kotlin: pending
+    EnvironmentAssignment:
+      type: object
+      description: One member's selection for one variable, metadata only
+      properties:
+        member:
+          type: string
+        variable:
+          type: string
+        variantId:
+          type: string
+        variantName:
+          type: string
+        version:
+          type: integer
+          description: The variant's version, bumped by its edits
+        source:
+          type: string
+          enum:
+          - direct
+          - bulk
+        personal:
+          type: boolean
+          description: The member's own personal variant
+        hasMemberValue:
+          type: boolean
+          description: A `perMember` variant's value for this member is stored
+        assignedAt:
+          type: string
+          format: date-time
+          description: Changed by a new selection or a new member value
+      required:
+      - member
+      - variable
+      - variantId
+      - variantName
+      - version
+      - source
+      - personal
+      - hasMemberValue
+      - assignedAt
+      x-ostrom-kotlin: pending
+    EnvironmentAssignmentsPage:
+      type: object
+      description: Effective environment assignments and exclusions, by member then variable; always one page
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnvironmentAssignment'
+        exclusions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnvironmentExclusion'
+      required:
+      - items
+      - exclusions
+      x-ostrom-kotlin: pending
+    EnvironmentBulkAssignment:
+      type: object
+      description: What a bulk assignment did
+      properties:
+        assigned:
+          type: integer
+        keptDirect:
+          type: integer
+          description: Members kept on their direct selection
+        excluded:
+          type: integer
+          description: Members skipped because they are excluded from the variable
+      required:
+      - assigned
+      - keptDirect
+      - excluded
+      x-ostrom-kotlin: pending
+    EnvironmentExclusion:
+      type: object
+      description: A member excluded from a variable
+      properties:
+        member:
+          type: string
+        variable:
+          type: string
+      required:
+      - member
+      - variable
+      x-ostrom-kotlin: pending
+    EnvironmentValues:
+      type: object
+      description: "A member's environment variables with their values: never logged, stored, or shown to anyone else"
+      properties:
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+          description: By name
+        unavailable:
+          type: array
+          description: Assigned variables withheld because their value cannot be read now, by name only
+          items:
+            type: string
+      required:
+      - variables
+      - unavailable
+      x-ostrom-kotlin: pending
+    EnvironmentVariant:
+      type: object
+      description: "An environment variant (`environment.v1`): a named value for one environment variable, never with its
+        value"
+      properties:
+        id:
+          type: string
+        variable:
+          type: string
+          description: The environment variable it fills, `[A-Z_][A-Z0-9_]*`, at most 128 characters
+        name:
+          type: string
+          description: The variant's name, unique per variable and owner (case-insensitively), 1 to 120 characters
+        binding:
+          type: string
+          enum:
+          - shared
+          - perMember
+          description: "`shared`: one value on the variant; `perMember`: each assignment carries the member's own value"
+        owner:
+          type: string
+          description: The member a personal variant belongs to, assigned to them alone; absent for a team variant
+        hasValue:
+          type: boolean
+          description: A shared value is stored
+        version:
+          type: integer
+          description: Bumped at each change
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - variable
+      - name
+      - binding
+      - hasValue
+      - version
+      - createdAt
+      - updatedAt
+      x-ostrom-kotlin: pending
+    EnvironmentVariantCreate:
+      type: object
+      description: Creates an environment variant; the variable and the binding never change afterwards
+      properties:
+        variable:
+          type: string
+        name:
+          type: string
+        binding:
+          type: string
+          enum:
+          - shared
+          - perMember
+          description: "`shared` when absent; a personal variant is always `shared`"
+        value:
+          type: string
+          minLength: 1
+          maxLength: 16384
+          description: The shared value, required for `shared` and refused for `perMember`; 1 to 16,384 characters,
+            without NUL, written once, never returned
+      required:
+      - variable
+      - name
+      x-ostrom-kotlin: pending
+    EnvironmentVariantUpdate:
+      type: object
+      description: Renames a variant or replaces its shared value
+      properties:
+        expectedVersion:
+          type: integer
+          description: The version read; another one is 409 `variant_version_conflict`
+        name:
+          type: string
+        value:
+          type: string
+          minLength: 1
+          maxLength: 16384
+          description: A new shared value (a `shared` variant only, 400 otherwise); 1 to 16,384 characters, without NUL;
+            absent keeps the stored one
+      required:
+      - expectedVersion
+      x-ostrom-kotlin: pending
+    EnvironmentVariantsPage:
+      type: object
+      description: Environment variants, by variable then name; always one page (at most 500)
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnvironmentVariant'
+      required:
+      - items
+      x-ostrom-kotlin: pending
     Evidence:
       type: object
       description: A line of evidence shown with an approval
@@ -17616,6 +18674,115 @@ components:
             $ref: '#/components/schemas/SkillInstallationReport'
       required:
       - installations
+      x-ostrom-kotlin: pending
+    RunnerEnvironment:
+      type: object
+      description: "What the runner prepares for one execution: holds secrets, never logged or stored"
+      properties:
+        environment:
+          $ref: '#/components/schemas/CloudEnvironment'
+        git:
+          $ref: '#/components/schemas/RunnerGitIdentity'
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+          description: The owner's environment variables, by name
+        unavailable:
+          type: array
+          items:
+            type: string
+      required:
+      - environment
+      - git
+      - variables
+      - unavailable
+      x-ostrom-kotlin: pending
+    RunnerExecution:
+      type: object
+      description: The execution a runner call is for
+      properties:
+        sessionId:
+          type: string
+        epoch:
+          type: integer
+          format: int64
+      required:
+      - sessionId
+      - epoch
+      x-ostrom-kotlin: pending
+    RunnerGitIdentity:
+      type: object
+      description: "The Git identity the agent commits with, the session owner's: a linked GitHub account's login and
+        no-reply address, otherwise the member's name and `<name>@<gitEmailDomain>`"
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+      required:
+      - name
+      - email
+      x-ostrom-kotlin: pending
+    RunnerHeartbeatAnswer:
+      type: object
+      description: What the runner must do next
+      properties:
+        instruction:
+          type: string
+          description: run or stop
+        state:
+          type: string
+      required:
+      - instruction
+      - state
+      x-ostrom-kotlin: pending
+    RunnerPreparationFailure:
+      type: object
+      description: A failed preparation step, as structured fields only
+      properties:
+        step:
+          type: string
+          enum:
+          - git_identity
+          - clone
+          - checkout
+          - fetch
+          - working_directory
+          - setup_create
+          - setup_start
+          - runner
+        index:
+          type: integer
+          description: The repository or the setup command, from 0
+        exitCode:
+          type: integer
+      required:
+      - step
+      x-ostrom-kotlin: pending
+    RunnerPreparationReport:
+      type: object
+      description: A preparation phase, or its failure
+      properties:
+        sessionId:
+          type: string
+        epoch:
+          type: integer
+          format: int64
+        phase:
+          type: string
+          enum:
+          - configuring_git
+          - cloning_repositories
+          - fetching_repositories
+          - running_setup
+          description: The phase starting, or the one that failed
+        failure:
+          $ref: '#/components/schemas/RunnerPreparationFailure'
+      required:
+      - sessionId
+      - epoch
+      - phase
       x-ostrom-kotlin: pending
     RunnerGitHubToken:
       type: object

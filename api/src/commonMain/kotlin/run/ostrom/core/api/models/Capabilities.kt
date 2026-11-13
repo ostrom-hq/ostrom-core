@@ -54,6 +54,13 @@ public object ServerFeatures {
     /** Spend budgets. */
     public const val BUDGETS: String = "budgets.v1"
 
+    /**
+     * Environment variants: named values for environment variables, team (`/api/v1/environment/variants`, assigned
+     * by administrators) or personal (`/api/v1/me/environment/variants`), and the caller's own values
+     * (`GET /api/v1/environment`) that `ostrom claude` gives its agent.
+     */
+    public const val ENVIRONMENT: String = "environment.v1"
+
     /** Gates, approvals and checks. */
     public const val GATES: String = "gates.v1"
 
@@ -120,6 +127,19 @@ public object ServerFeatures {
      * `githubAccess` and `PUT /api/v1/cloud/sessions/{id}/github`. Only with cloud runners and [GITHUB_LINK].
      */
     public const val RUNNERS_CLOUD_GITHUB: String = "runners.cloud.github.v1"
+
+    /**
+     * The preparation recipe of cloud sessions (the session's `environment`: repositories, working directory, setup
+     * commands, required variables, Git identity) and the runner's `POST /api/v1/cloud/runner/environment` and
+     * `POST /api/v1/cloud/runner/preparation`. Only with cloud runners.
+     */
+    public const val RUNNERS_CLOUD_ENVIRONMENT: String = "runners.cloud.environment.v1"
+
+    /**
+     * The agent of a cloud session runs with its owner's environment variables: the runner's
+     * `POST /api/v1/cloud/runner/variables`. Only with cloud runners and [ENVIRONMENT].
+     */
+    public const val RUNNERS_CLOUD_VARIABLES: String = "runners.cloud.variables.v1"
 
     /**
      * Team hooks: immutable versions published by an administrator or a CI key (`hooks:publish`), pinned only by an
@@ -192,9 +212,10 @@ public object ServerFeatures {
 
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
-        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE,
-        INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS,
-        REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING,
-        SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, LICENSE,
+        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, ENVIRONMENT, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS,
+        IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES,
+        RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
+        RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS,
+        USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, LICENSE,
     )
 }
