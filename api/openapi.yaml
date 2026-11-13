@@ -1570,11 +1570,16 @@ paths:
                     person who created it, within the scope, and never as an admin): `inference:use` (the inference
                     gateway), `mcp:use` (the relayed MCP servers), `usage:read` (the creator's own usage),
                     `cloud:read` and `cloud:write` (the creator's own cloud sessions; write includes read),
-                    `artifacts:read` and `artifacts:write` (the artifacts the creator can read; write includes read).
+                    `artifacts:read` and `artifacts:write` (the artifacts the creator can read; write includes read),
+                    `skills:read` and `hooks:read` (the skills and team hooks delivered to the creator, `skills.v1` and
+                    `hooks.v1`).
                     Reserved to an owner or an admin, and only while its creator still is one, checked at every call:
                     `team:read` (a read-only view of the organization: usage, spending, budgets, accounts, MCP usage and
                     the member directory, no session, transcript or artifact of a member) and `cloud:admin` (cloud:write
-                    with an administrator's rights over every cloud session of the organization). The CI scopes cannot
+                    with an administrator's rights over every cloud session of the organization), `skills:publish` (publish skill
+                    versions, `publishSkillVersion`), `skills:pin` (with `skills:publish`: pin at publication or with
+                    `pinSkill`), `skills:assign` (with `skills:publish`: deliver to all members at publication) and
+                    `hooks:publish` (publish hook versions, which only an administrator pins). The CI scopes cannot
                     be mixed with the others (400). A key stops working as soon as its creator leaves the organization.
                     A server that serves the wide catalogue lists `servicekeys.scopes.v1` in its capabilities; an older
                     one accepts only the CI scopes. A key is refused on every operation its scopes do not open,
@@ -11336,23 +11341,15 @@ paths:
       x-ostrom-status: planned
       tags:
       - delivery
-      summary: Skills delivered to developers
+      summary: "The organization's skill catalog (administrators)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Every skill of the organization, team and personal (`ownerId`), newest change first, at most 550."
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Skill'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/SkillCatalog'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -11366,16 +11363,117 @@ paths:
   /api/v1/skills/{name}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
-    put:
-      operationId: publishSkill
+    delete:
+      operationId: retireSkill
       x-ostrom-status: planned
       tags:
       - delivery
-      summary: Publish a skill version
+      summary: "Remove a skill from the catalog: unpinned, delivered to nobody, closed to publication"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Versions and decisions remain; `restoreSkill` reopens publication without pinning anything. Idempotent: `skill.retired` is audited only when the skill was active. A member's personal skill is refused with 409 `skill_personal`: promote it first."
       parameters:
       - name: name
         in: path
         required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skills/{name}/restore:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: restoreSkill
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Restore a removed skill (nothing is pinned)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Idempotent; audited `skill.restored` when the skill was retired. A member's personal skill is refused with 409 `skill_personal`: promote it first."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skills/{name}/versions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listSkillVersions
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "A skill's versions, newest first (administrators)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). At most 200 versions. A personal skill's versions are readable too, as metadata."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillDetail'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: publishSkillVersion
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Publish an immutable skill version (CI or an administrator)"
+      description: "An owner or an admin from the console, or a service key with `skills:publish` created by an owner or an admin (the creator's role is checked again at every call). The first publication creates the skill. `pin` also pins the version in the same transaction (a key needs `skills:pin` besides); `allMembers` delivers the skill to every member without an explicit decision (a key needs `skills:assign`); without them nothing changes what members receive. 201 for a new version; 200 with `created: false` when the label exists with the same digest (a CI retry: nothing is audited, `pin`/`allMembers` still converge). 409 `skill_version_conflict` (the label holds other content), `skill_version_retired`, `skill_retired`, `name_taken` (a member's personal skill holds the name), `skill_limit` (500 skills), `skill_version_limit` (200 versions). 400 `invalid_skill_name`, `invalid_skill_version`, `invalid_skill_path`, `invalid_skill_artifact` (1 to 200 files, `SKILL.md` at the root, unique paths ignoring case, no path both a file and a directory, mode `file` or `executable`, standard padded base64; `symlink` is refused). 413 `skill_artifact_too_large` above 5 MiB of content (the body is bounded at 8 MiB). 403 `credential_scope` for a key without the scope a field needs, `forbidden` otherwise."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
         schema:
           type: string
       requestBody:
@@ -11383,28 +11481,102 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                version:
-                  type: string
-                files:
-                  type: array
-                  items:
-                    type: object
-                    additionalProperties:
-                      type: string
-                description:
-                  type: string
-              required:
-              - version
-              - files
+              $ref: '#/components/schemas/PublishSkillVersionRequest'
+      responses:
+        '200':
+          description: Already published with the same digest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillPublication'
+        '201':
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillPublication'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+  /api/v1/skills/{name}/versions/{version}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    delete:
+      operationId: retireSkillVersion
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Retire a version: it can never be pinned again"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). 409 `skill_version_pinned` for the pinned version (pin another first). Idempotent. A member's personal skill is refused with 409 `skill_personal`: promote it first."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        description: "A version label: 1 to 64 characters `[0-9A-Za-z][0-9A-Za-z.+_-]*`, case-sensitive"
+        schema:
+          type: string
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Skill'
+                $ref: '#/components/schemas/SkillVersion'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skills/{name}/pin:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: pinSkill
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Pin the delivered version (update or rollback)"
+      description: "An owner or an admin of the organization, from the console (a browser session); or a service key holding `skills:publish` and `skills:pin` created by one. Idempotent: `skill.pinned` is audited (with the key's id) only when the pin changes. 409 `skill_retired`, `skill_version_retired`. A member's personal skill is refused with 409 `skill_personal`: promote it first."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinSkillRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -11416,20 +11588,458 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
     delete:
-      operationId: deleteSkill
+      operationId: unpinSkill
       x-ostrom-status: planned
       tags:
       - delivery
-      summary: Delete a skill
+      summary: "Unpin: stop delivery without touching versions or decisions"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Idempotent. A member's personal skill is refused with 409 `skill_personal`: promote it first."
       parameters:
       - name: name
         in: path
         required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skills/{name}/audience:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: setSkillAudience
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Deliver to all members, or only to members set to yes"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). With `allMembers`, every member without an explicit decision receives the pinned version, members who join later included; an explicit `deny` still excludes. Idempotent. A member's personal skill is refused with 409 `skill_personal`: promote it first."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetAudienceRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skills/{name}/assignments:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listSkillAssignments
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The members' explicit decisions on a skill"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). At most 1 000 decisions, by member id."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentList'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skills/{name}/assignments/{memberId}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: setSkillAssignment
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Set a member's decision: allow (yes) or deny (no)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). 404 for a member of another organization. Idempotent; audited `skill.access.allowed` or `skill.access.denied`. A member's personal skill is refused with 409 `skill_personal`: promote it first."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      - name: memberId
+        in: path
+        required: true
+        description: "The member's id"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetAssignmentRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: clearSkillAssignment
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Clear a member's decision (not assigned)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Idempotent; audited `skill.access.cleared` when a decision was set. A member's personal skill is refused with 409 `skill_personal`: promote it first."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      - name: memberId
+        in: path
+        required: true
+        description: "The member's id"
         schema:
           type: string
       responses:
         '204':
           description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skills/{name}/promote:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: promoteSkill
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Make a member's personal skill a team skill, with nothing pinned"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Clears the owner, the pin and the audience: the administrator pins a version afterwards and assigns it. 409 `skill_not_personal` for a team skill. Audited `skill.promoted`."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/skills:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMySkills
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The caller's personal skills"
+      description: "The member themself, with a person's credential (the console, or the CLI's token, which holds `skills:write` for writes and `skills:read` for reads); a service key or an agent token is refused (403). A skill that is not the caller's is 404. At most 50, newest change first."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillCatalog'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/skills/{name}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    delete:
+      operationId: retireMySkill
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Retire one of the caller's personal skills (also unpins it)"
+      description: "The member themself, with a person's credential (the console, or the CLI's token, which holds `skills:write` for writes and `skills:read` for reads); a service key or an agent token is refused (403). A skill that is not the caller's is 404. Idempotent."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/skills/{name}/restore:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: restoreMySkill
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Restore one of the caller's personal skills (nothing is pinned)"
+      description: "The member themself, with a person's credential (the console, or the CLI's token, which holds `skills:write` for writes and `skills:read` for reads); a service key or an agent token is refused (403). A skill that is not the caller's is 404. Idempotent."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/skills/{name}/versions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMySkillVersions
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "A personal skill's versions, newest first"
+      description: "The member themself, with a person's credential (the console, or the CLI's token, which holds `skills:write` for writes and `skills:read` for reads); a service key or an agent token is refused (403). A skill that is not the caller's is 404. "
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillDetail'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: publishMySkillVersion
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Publish a version of a personal skill, delivered to the caller only"
+      description: "The member themself, with a person's credential (the console, or the CLI's token, which holds `skills:write` for writes and `skills:read` for reads); a service key or an agent token is refused (403). A skill that is not the caller's is 404. Same body and answers as `publishSkillVersion`, without `allMembers` (400 `invalid_skill_audience`). One namespace per organization: a name the team or another member uses is 409 `name_taken`, naming nobody. At most 50 personal skills per member (409 `skill_limit`); they do not count toward the team's 500. With `pin`, the owner approves the version for themself."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishSkillVersionRequest'
+      responses:
+        '200':
+          description: Already published with the same digest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillPublication'
+        '201':
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillPublication'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/skills/{name}/pin:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: pinMySkill
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Pin the version of a personal skill the caller receives"
+      description: "The member themself, with a person's credential (the console, or the CLI's token, which holds `skills:write` for writes and `skills:read` for reads); a service key or an agent token is refused (403). A skill that is not the caller's is 404. "
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinSkillRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unpinMySkill
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Unpin a personal skill"
+      description: "The member themself, with a person's credential (the console, or the CLI's token, which holds `skills:write` for writes and `skills:read` for reads); a service key or an agent token is refused (403). A skill that is not the caller's is 404. "
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillEntry'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -11448,21 +12058,176 @@ paths:
       x-ostrom-status: planned
       tags:
       - delivery
-      summary: Skills to install on this workstation
+      summary: "The skills the caller receives: pinned versions their decisions or the audience allow"
+      description: "The member themself with a person's credential (the console, the CLI's token) or a service key holding `skills:read` created by them; evaluated at every request on the shared state. A skill is effective when it is active, its pinned version is not retired, and the member's decision allows it (an explicit decision wins; with none, the audience decides). A personal skill reaches its owner only."
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  skills:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Skill'
-                required:
-                - skills
+                $ref: '#/components/schemas/SkillManifest'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{memberId}/skill-delivery:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getMemberSkillDelivery
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The skills a member receives (an administrator, or the member themself)"
+      description: "An owner or an admin of the organization, or the member themself (as `getSkillDelivery`). 404 for a member of another organization."
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        description: "The member's id"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillManifest'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skill-delivery/{name}/{version}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: downloadSkill
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The files of a skill version the caller receives"
+      description: "The member themself with a person's credential (the console, the CLI's token) or a service key holding `skills:read` created by them; only the currently effective pinned version is served: any other version, or a skill the caller no longer receives, is 404. The server recomputes the digest from the stored files and refuses to serve a mismatch (500 `skill_integrity`)."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The skill's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        description: "A version label: 1 to 64 characters `[0-9A-Za-z][0-9A-Za-z.+_-]*`, case-sensitive"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillArtifact'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/skill-delivery/installations:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMySkillInstallations
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The installation status the caller's workstations reported"
+      description: "The member themself, with a person's credential."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillInstallationList'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: reportSkillInstallations
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Report the skills installed on this workstation"
+      description: "The CLI's token only: the status is stored for the workstation it signs in (409 `device_required` for any other credential). Up to 500 skills, each once, named in the catalog (404 otherwise); a reported version must be published for that skill, with a matching digest when one is given (400 `invalid_skill_installation`). A status never grants nor revokes access, and is kept when access is removed; signing the workstation out deletes its reports. Not audited."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportSkillInstallationsRequest'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{memberId}/skill-installations:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMemberSkillInstallations
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The installation status a member's workstations reported (administrators)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). At most 1 000 rows, newest first."
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        description: "The member's id"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillInstallationList'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -11481,23 +12246,358 @@ paths:
       x-ostrom-status: planned
       tags:
       - delivery
-      summary: Hooks delivered to developers
+      summary: "The organization's team hooks (administrators)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). At most 100, newest change first."
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Hook'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/HookCatalog'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/{name}/versions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listHookVersions
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "A hook's versions with their definitions, newest first (administrators)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). "
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookDetail'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: publishHookVersion
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Publish an immutable hook version (CI or an administrator); never pins"
+      description: "An owner or an admin from the console, or a service key with `hooks:publish` created by an owner or an admin (checked again at every call). A hook executes code on members' computers, so publication never delivers: only an administrator pins, from the console. 201 for a new version, 200 with `created: false` for the same label and digest. `allMembers` sets the audience to all members: always for an administrator, and for a key only while the hook has no pinned version or is already for all members (403 `hook_audience_requires_administrator` otherwise, nothing stored). 409 `hook_version_conflict`, `hook_limit` (100 hooks), `hook_version_limit` (200 versions). 400 `invalid_hook_name`, `invalid_hook_version`, `invalid_hook_definition` (events among PreToolUse, PostToolUse, UserPromptSubmit, Stop, SubagentStop, SessionStart, SessionEnd, PreCompact, Notification, each once; a matcher of 1 to 256 characters without control characters; a timeout of 1 to 600 seconds; `command` an executable file of the artifact), `invalid_hook_path`, `invalid_hook_artifact` (1 to 50 files). 413 `hook_artifact_too_large` above 1 MiB (the body is bounded at 2 MiB). 403 `credential_scope` for a key without `hooks:publish`."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishHookVersionRequest'
+      responses:
+        '200':
+          description: Already published with the same digest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookPublication'
+        '201':
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookPublication'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/{name}/versions/{version}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: readHookVersion
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Read a version's definition and files, pinned or not, verified against its digest"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). So an administrator reads the code before pinning it. 500 `hook_integrity` on a mismatch."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        description: "A version label: 1 to 64 characters `[0-9A-Za-z][0-9A-Za-z.+_-]*`, case-sensitive"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookArtifact'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/{name}/pin:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: pinHook
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Pin the delivered version (update or rollback); administrators only"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). No key ever pins a hook. Idempotent; audited `hook.pinned`."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinSkillRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unpinHook
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Unpin: stop delivery"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Idempotent."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/{name}/audience:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: setHookAudience
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Deliver to all members, or only to members set to yes"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). An explicit `deny` still excludes; each member still approves each version on their computer."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetAudienceRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/{name}/assignments:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listHookAssignments
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The members' explicit decisions on a hook"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). "
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentList'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/{name}/assignments/{memberId}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: setHookAssignment
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Set a member's decision: allow (yes) or deny (no)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Idempotent; audited `hook.access.allowed` or `hook.access.denied`."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      - name: memberId
+        in: path
+        required: true
+        description: "The member's id"
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetAssignmentRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: clearHookAssignment
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "Clear a member's decision"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). Idempotent."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      - name: memberId
+        in: path
+        required: true
+        description: "The member's id"
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -11516,21 +12616,89 @@ paths:
       x-ostrom-status: planned
       tags:
       - delivery
-      summary: Hooks to install on this workstation
+      summary: "The hooks the caller receives: pinned versions their decisions or the audience allow"
+      description: "The member themself with a person's credential (the console, the CLI's token) or a service key holding `hooks:read` created by them; the CLI installs only the versions the member approved on their computer."
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  hooks:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Hook'
-                required:
-                - hooks
+                $ref: '#/components/schemas/HookManifest'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{memberId}/hook-delivery:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getMemberHookDelivery
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The hooks a member receives (administrators)"
+      description: "An owner or an admin of the organization, from the console (a browser session); every token and service key is refused (403 `forbidden`). 404 for a member of another organization."
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        description: "The member's id"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookManifest'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/hook-delivery/{name}/{version}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: downloadHook
+      x-ostrom-status: planned
+      tags:
+      - delivery
+      summary: "The definition and files of a hook version the caller receives"
+      description: "The member themself with a person's credential (the console, the CLI's token) or a service key holding `hooks:read` created by them; only the currently effective pinned version; 404 otherwise. 500 `hook_integrity` on a mismatch."
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: "The hook's name: 1 to 64 lowercase letters, digits and single hyphens"
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        description: "A version label: 1 to 64 characters `[0-9A-Za-z][0-9A-Za-z.+_-]*`, case-sensitive"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookArtifact'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -13125,6 +14293,35 @@ components:
       - path
       - content
       x-ostrom-kotlin: pending
+    ArtifactFileContent:
+      type: object
+      description: "A delivered file, with what verifies it"
+      properties:
+        path:
+          type: string
+          description: "Its path"
+        mode:
+          type: string
+          description: "`file` or `executable`"
+          enum:
+          - file
+          - executable
+        size:
+          type: integer
+          description: "In bytes"
+        sha256:
+          type: string
+          description: "Lower-case hex of its content"
+        contentBase64:
+          type: string
+          description: "Standard padded base64"
+      required:
+      - path
+      - mode
+      - size
+      - sha256
+      - contentBase64
+      x-ostrom-kotlin: pending
     ArtifactTicket:
       type: object
       description: A reading ticket
@@ -13183,6 +14380,94 @@ components:
       - entry
       - createdAt
       - createdBy
+      x-ostrom-kotlin: pending
+    Assignment:
+      type: object
+      description: "A member's explicit decision"
+      properties:
+        memberId:
+          type: string
+          description: "The member"
+        decision:
+          type: string
+          description: "`allow` (yes) or `deny` (no)"
+          enum:
+          - allow
+          - deny
+        updatedAt:
+          type: string
+          description: "ISO 8601"
+      required:
+      - memberId
+      - decision
+      - updatedAt
+      x-ostrom-kotlin: pending
+    AssignmentList:
+      type: object
+      description: "The explicit decisions, by member id"
+      properties:
+        items:
+          type: array
+          description: "The decisions"
+          items:
+            $ref: '#/components/schemas/Assignment'
+      required:
+      - items
+      x-ostrom-kotlin: pending
+    EffectiveHook:
+      type: object
+      description: "A pinned hook version the member receives"
+      properties:
+        name:
+          type: string
+          description: "The hook"
+        version:
+          type: string
+          description: "The pinned version"
+        digest:
+          type: string
+          description: "Its digest"
+        definition:
+          $ref: '#/components/schemas/HookDefinition'
+        sizeBytes:
+          type: integer
+          description: "Its content, in bytes"
+        fileCount:
+          type: integer
+          description: "Its files"
+      required:
+      - name
+      - version
+      - digest
+      - definition
+      - sizeBytes
+      - fileCount
+      x-ostrom-kotlin: pending
+    EffectiveSkill:
+      type: object
+      description: "A pinned skill version the member receives"
+      properties:
+        name:
+          type: string
+          description: "The skill"
+        version:
+          type: string
+          description: "The pinned version"
+        digest:
+          type: string
+          description: "Its digest"
+        sizeBytes:
+          type: integer
+          description: "Its content, in bytes"
+        fileCount:
+          type: integer
+          description: "Its files"
+      required:
+      - name
+      - version
+      - digest
+      - sizeBytes
+      - fileCount
       x-ostrom-kotlin: pending
     GitHubDeviceLink:
       type: object
@@ -13256,6 +14541,158 @@ components:
       - memberId
       - state
       - appConfigured
+      x-ostrom-kotlin: pending
+    HookArtifact:
+      type: object
+      description: "A version's definition and files; the digest is recomputable from them"
+      properties:
+        name:
+          type: string
+          description: "The hook"
+        version:
+          type: string
+          description: "The version"
+        digest:
+          type: string
+          description: "Its digest"
+        definition:
+          $ref: '#/components/schemas/HookDefinition'
+        files:
+          type: array
+          description: "Sorted by path"
+          items:
+            $ref: '#/components/schemas/ArtifactFileContent'
+      required:
+      - name
+      - version
+      - digest
+      - definition
+      - files
+      x-ostrom-kotlin: pending
+    HookCatalog:
+      type: object
+      description: "Hooks, newest change first"
+      properties:
+        items:
+          type: array
+          description: "The hooks"
+          items:
+            $ref: '#/components/schemas/HookEntry'
+      required:
+      - items
+      x-ostrom-kotlin: pending
+    HookDefinition:
+      type: object
+      description: "When and what a team hook runs: `command` is a file of the artifact, run with no argument and the event's JSON on standard input, as the agent defines it"
+      properties:
+        events:
+          type: array
+          description: "One or more agent events, each once (Codex has no Notification)"
+          items:
+            type: string
+            enum:
+            - PreToolUse
+            - PostToolUse
+            - UserPromptSubmit
+            - Stop
+            - SubagentStop
+            - SessionStart
+            - SessionEnd
+            - PreCompact
+            - Notification
+        matcher:
+          type:
+          - string
+          - 'null'
+          description: "1 to 256 characters passed to the agent unchanged (a tool name for PreToolUse)"
+        command:
+          type: string
+          description: "The path of an executable file of the artifact"
+        timeoutSeconds:
+          type: integer
+          description: "1 to 600 (60 by default)"
+      required:
+      - events
+      - command
+      x-ostrom-kotlin: pending
+    HookDetail:
+      type: object
+      description: "A hook and its versions, newest first"
+      properties:
+        hook:
+          $ref: '#/components/schemas/HookEntry'
+        versions:
+          type: array
+          description: "Its versions"
+          items:
+            $ref: '#/components/schemas/HookVersion'
+      required:
+      - hook
+      - versions
+      x-ostrom-kotlin: pending
+    HookEntry:
+      type: object
+      description: "A team hook. Delivered only through its pinned version, which only an administrator sets."
+      properties:
+        id:
+          type: string
+          description: "Its id"
+        name:
+          type: string
+          description: "Its name"
+        pinnedVersion:
+          type:
+          - string
+          - 'null'
+          description: "The approved version, delivered; null when nothing is delivered"
+        allMembers:
+          type: boolean
+          description: "Delivered to every member without an explicit decision"
+        createdAt:
+          type: string
+          description: "ISO 8601"
+        updatedAt:
+          type: string
+          description: "ISO 8601"
+      required:
+      - id
+      - name
+      - pinnedVersion
+      - allMembers
+      - createdAt
+      - updatedAt
+      x-ostrom-kotlin: pending
+    HookManifest:
+      type: object
+      description: "What a member receives, sorted by name"
+      properties:
+        memberId:
+          type: string
+          description: "The member"
+        hooks:
+          type: array
+          description: "The hooks"
+          items:
+            $ref: '#/components/schemas/EffectiveHook'
+      required:
+      - memberId
+      - hooks
+      x-ostrom-kotlin: pending
+    HookPublication:
+      type: object
+      description: "What a publication did"
+      properties:
+        hook:
+          $ref: '#/components/schemas/HookEntry'
+        version:
+          $ref: '#/components/schemas/HookVersion'
+        created:
+          type: boolean
+          description: "False when the label was already published with the same digest"
+      required:
+      - hook
+      - version
+      - created
       x-ostrom-kotlin: pending
     HooksCheck:
       type: object
@@ -13953,9 +15390,9 @@ components:
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
-        `github.link.v1`, `governance.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
+        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.github.v1`, `secrets.v1`,
-        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
+        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`,
         `license.v1`. A client
         ignores a key it does not know."
@@ -15198,25 +16635,42 @@ components:
       - version
       - checks
       x-ostrom-kotlin: pending
-    Hook:
+    HookVersion:
       type: object
-      description: A hook delivered to developers outside session packages
+      description: "An immutable published version: its definition, files and digest never change"
       properties:
-        name:
-          type: string
         version:
           type: string
+          description: "Its label"
+        digest:
+          type: string
+          description: "`sha256:<64 hex>` over `hook\\0<events sorted, comma-separated>\\0<matcher or empty>\\0<command>\\0<timeout>\\n` then the skills' file lines"
+        definition:
+          $ref: '#/components/schemas/HookDefinition'
+        sizeBytes:
+          type: integer
+          description: "Its content, in bytes"
+        fileCount:
+          type: integer
+          description: "Its files"
+        publishedBy:
+          type: string
+          description: "The member who published it (the key's creator for a key)"
+        publishedAt:
+          type: string
+          description: "ISO 8601"
         pinned:
           type: boolean
-        assignedTo:
-          type: array
-          items:
-            type: string
+          description: "The hook's pinned version"
       required:
-      - name
       - version
+      - digest
+      - definition
+      - sizeBytes
+      - fileCount
+      - publishedBy
+      - publishedAt
       - pinned
-      - assignedTo
       x-ostrom-kotlin: pending
     ImportItem:
       type: object
@@ -15965,6 +17419,72 @@ components:
       - type
       additionalProperties: {}
       x-ostrom-kotlin: pending
+    PinSkillRequest:
+      type: object
+      description: "The version to pin"
+      properties:
+        version:
+          type: string
+          description: "A published, non-retired label"
+      required:
+      - version
+      x-ostrom-kotlin: pending
+    PublishHookVersionRequest:
+      type: object
+      description: "A hook version to publish; it is not delivered until an administrator pins it"
+      properties:
+        version:
+          type: string
+          description: "Its label"
+        definition:
+          $ref: '#/components/schemas/HookDefinition'
+        files:
+          type: array
+          description: "1 to 50 files, the command among them as `executable`"
+          items:
+            $ref: '#/components/schemas/SkillFileUpload'
+        allMembers:
+          type: boolean
+          description: "Deliver the hook to all members once pinned (a key: only before the first pin)"
+      required:
+      - version
+      - definition
+      - files
+      x-ostrom-kotlin: pending
+    PublishSkillVersionRequest:
+      type: object
+      description: "A version to publish"
+      properties:
+        version:
+          type: string
+          description: "Its label"
+        files:
+          type: array
+          description: "1 to 200 files, `SKILL.md` at the root"
+          items:
+            $ref: '#/components/schemas/SkillFileUpload'
+        pin:
+          type: boolean
+          description: "Pin it in the same transaction (a key needs `skills:pin`)"
+        allMembers:
+          type: boolean
+          description: "Deliver the skill to all members (a key needs `skills:assign`); false leaves the audience as it is"
+      required:
+      - version
+      - files
+      x-ostrom-kotlin: pending
+    ReportSkillInstallationsRequest:
+      type: object
+      description: "Up to 500 reports, each skill once"
+      properties:
+        installations:
+          type: array
+          description: "The reports"
+          items:
+            $ref: '#/components/schemas/SkillInstallationReport'
+      required:
+      - installations
+      x-ostrom-kotlin: pending
     RunnerGitHubToken:
       type: object
       description: "The GitHub token of a cloud session's owner, for its runner only (`fetchRunnerGithubToken`): `token`,
@@ -15984,6 +17504,292 @@ components:
           type: string
       required:
       - status
+      x-ostrom-kotlin: pending
+    SetAssignmentRequest:
+      type: object
+      description: "A decision"
+      properties:
+        decision:
+          type: string
+          description: "`allow` or `deny`"
+          enum:
+          - allow
+          - deny
+      required:
+      - decision
+      x-ostrom-kotlin: pending
+    SetAudienceRequest:
+      type: object
+      description: "Who receives the pinned version without an explicit decision"
+      properties:
+        allMembers:
+          type: boolean
+          description: "True: every member; false: only members set to `allow`"
+      required:
+      - allMembers
+      x-ostrom-kotlin: pending
+    SkillArtifact:
+      type: object
+      description: "The files of one effective version; the digest is recomputable from their metadata"
+      properties:
+        name:
+          type: string
+          description: "The skill"
+        version:
+          type: string
+          description: "The version"
+        digest:
+          type: string
+          description: "Its digest"
+        files:
+          type: array
+          description: "Sorted by path"
+          items:
+            $ref: '#/components/schemas/ArtifactFileContent'
+      required:
+      - name
+      - version
+      - digest
+      - files
+      x-ostrom-kotlin: pending
+    SkillCatalog:
+      type: object
+      description: "Skills, newest change first"
+      properties:
+        items:
+          type: array
+          description: "The skills"
+          items:
+            $ref: '#/components/schemas/SkillEntry'
+      required:
+      - items
+      x-ostrom-kotlin: pending
+    SkillDetail:
+      type: object
+      description: "A skill and its versions, newest first"
+      properties:
+        skill:
+          $ref: '#/components/schemas/SkillEntry'
+        versions:
+          type: array
+          description: "Its versions"
+          items:
+            $ref: '#/components/schemas/SkillVersion'
+      required:
+      - skill
+      - versions
+      x-ostrom-kotlin: pending
+    SkillEntry:
+      type: object
+      description: "A skill of the catalog. Delivered only through its pinned version."
+      properties:
+        id:
+          type: string
+          description: "Its id"
+        name:
+          type: string
+          description: "Its name"
+        pinnedVersion:
+          type:
+          - string
+          - 'null'
+          description: "The approved version, delivered; null when nothing is delivered"
+        retired:
+          type: boolean
+          description: "Removed from the catalog: delivered to nobody, closed to publication"
+        allMembers:
+          type: boolean
+          description: "Delivered to every member without an explicit decision, members who join later included"
+        ownerId:
+          type:
+          - string
+          - 'null'
+          description: "The member a personal skill belongs to (delivered to them only); null for a team skill"
+        createdAt:
+          type: string
+          description: "ISO 8601"
+        updatedAt:
+          type: string
+          description: "ISO 8601"
+      required:
+      - id
+      - name
+      - pinnedVersion
+      - retired
+      - allMembers
+      - ownerId
+      - createdAt
+      - updatedAt
+      x-ostrom-kotlin: pending
+    SkillFileUpload:
+      type: object
+      description: "A file sent for publication"
+      properties:
+        path:
+          type: string
+          description: "Relative, `/` separators, at most 8 segments and 255 characters; each segment `[A-Za-z0-9_][A-Za-z0-9._+-]*`, not ending with a dot, not a Windows device name"
+        mode:
+          type: string
+          description: "`file` (by default) or `executable`; `symlink` is refused"
+          enum:
+          - file
+          - executable
+        contentBase64:
+          type: string
+          description: "The content, standard padded base64"
+      required:
+      - path
+      - contentBase64
+      x-ostrom-kotlin: pending
+    SkillInstallation:
+      type: object
+      description: "A skill's state on one workstation, as it last reported it"
+      properties:
+        deviceId:
+          type: string
+          description: "The workstation (`GET /api/v1/devices`)"
+        deviceName:
+          type: string
+          description: "Its name"
+        name:
+          type: string
+          description: "The skill"
+        version:
+          type:
+          - string
+          - 'null'
+          description: "The version"
+        digest:
+          type:
+          - string
+          - 'null'
+          description: "Its digest"
+        status:
+          type: string
+          description: "installed, failed, conflict or removed"
+          enum:
+          - installed
+          - failed
+          - conflict
+          - removed
+        reportedAt:
+          type: string
+          description: "ISO 8601"
+      required:
+      - deviceId
+      - deviceName
+      - name
+      - version
+      - digest
+      - status
+      - reportedAt
+      x-ostrom-kotlin: pending
+    SkillInstallationList:
+      type: object
+      description: "Installation reports, newest first"
+      properties:
+        items:
+          type: array
+          description: "The reports"
+          items:
+            $ref: '#/components/schemas/SkillInstallation'
+      required:
+      - items
+      x-ostrom-kotlin: pending
+    SkillInstallationReport:
+      type: object
+      description: "A skill's state on the reporting workstation"
+      properties:
+        name:
+          type: string
+          description: "The skill"
+        version:
+          type: string
+          description: "The version installed, if any"
+        digest:
+          type: string
+          description: "Its digest, if known; it names its version"
+        status:
+          type: string
+          description: "What the workstation did"
+          enum:
+          - installed
+          - failed
+          - conflict
+          - removed
+      required:
+      - name
+      - status
+      x-ostrom-kotlin: pending
+    SkillManifest:
+      type: object
+      description: "What a member receives, sorted by name"
+      properties:
+        memberId:
+          type: string
+          description: "The member"
+        skills:
+          type: array
+          description: "The skills"
+          items:
+            $ref: '#/components/schemas/EffectiveSkill'
+      required:
+      - memberId
+      - skills
+      x-ostrom-kotlin: pending
+    SkillPublication:
+      type: object
+      description: "What a publication did"
+      properties:
+        skill:
+          $ref: '#/components/schemas/SkillEntry'
+        version:
+          $ref: '#/components/schemas/SkillVersion'
+        created:
+          type: boolean
+          description: "False when the label was already published with the same digest"
+      required:
+      - skill
+      - version
+      - created
+      x-ostrom-kotlin: pending
+    SkillVersion:
+      type: object
+      description: "An immutable published version: its files and digest never change"
+      properties:
+        version:
+          type: string
+          description: "Its label"
+        digest:
+          type: string
+          description: "`sha256:<64 hex>` over one line per file sorted by path, `<path>\\0<mode>\\0<size>\\0<sha256 hex of content>\\n`"
+        sizeBytes:
+          type: integer
+          description: "Its content, in bytes"
+        fileCount:
+          type: integer
+          description: "Its files"
+        publishedBy:
+          type: string
+          description: "The member who published it (the key's creator for a key)"
+        publishedAt:
+          type: string
+          description: "ISO 8601"
+        retired:
+          type: boolean
+          description: "Can no longer be pinned"
+        pinned:
+          type: boolean
+          description: "The skill's pinned version"
+      required:
+      - version
+      - digest
+      - sizeBytes
+      - fileCount
+      - publishedBy
+      - publishedAt
+      - retired
+      - pinned
       x-ostrom-kotlin: pending
     StepUpOrForbidden:
       description: 'A 403 of a write that may need a fresh sign-in: `step_up_required` (sign in again, then send
@@ -17886,28 +19692,6 @@ components:
           description: The same value as the `__Host-ostrom_csrf` cookie, for the `X-CSRF-Token` header
       required:
       - redirect
-      x-ostrom-kotlin: pending
-    Skill:
-      type: object
-      description: A skill delivered to developers
-      properties:
-        name:
-          type: string
-        version:
-          type: string
-        description:
-          type: string
-        pinned:
-          type: boolean
-        assignedTo:
-          type: array
-          items:
-            type: string
-      required:
-      - name
-      - version
-      - pinned
-      - assignedTo
       x-ostrom-kotlin: pending
     Spending:
       type: object
