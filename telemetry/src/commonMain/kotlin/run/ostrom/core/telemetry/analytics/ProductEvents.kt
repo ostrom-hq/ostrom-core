@@ -22,7 +22,7 @@ public object ProductEvents {
     public fun memberJoined(userId: String, orgId: String, role: String, epochMillis: Long): ProductEvent =
         ProductEvent("member_joined", userId, epochMillis, mapOf("role" to PropertyValue.Text(role)), orgId)
 
-    /** `ostrom claude` (or another agent) registered a session. */
+    /** `ostrom run claude` (or another agent) registered a session. */
     public fun agentSessionStarted(
         userId: String,
         orgId: String,
