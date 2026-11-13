@@ -6519,7 +6519,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cancelAutomationRun
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: "Cancel a run: a queued one ends `cancelled` at once; a started one has its session paused, or its
@@ -6553,7 +6553,7 @@ paths:
   /api/v1/automations/{id}/v/{version}/trigger:
     post:
       operationId: triggerAutomationVersion
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - automations
       summary: "The signed webhook trigger, pinned to a version of the definition: runs only while the automation is at
