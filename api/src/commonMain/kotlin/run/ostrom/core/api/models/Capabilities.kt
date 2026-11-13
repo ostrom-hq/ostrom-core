@@ -60,6 +60,12 @@ public object ServerFeatures {
     /** The GitHub App integration: only with a GitHub App configured. */
     public const val GITHUB: String = "github.v1"
 
+    /**
+     * Members' GitHub links (`/api/v1/github/link`, `/api/v1/github/links`): the account each member's cloud sessions
+     * use for Git and `gh`. Only with an instance App whose OAuth client is known.
+     */
+    public const val GITHUB_LINK: String = "github.link.v1"
+
     /** Groups and governance policies. */
     public const val GOVERNANCE: String = "governance.v1"
 
@@ -96,6 +102,12 @@ public object ServerFeatures {
     /** Cloud runners started by the server: only with a runtime driver configured. */
     public const val RUNNERS_CLOUD: String = "runners.cloud.v1"
 
+    /**
+     * Cloud sessions use their owner's GitHub link: the runner's `POST /api/v1/cloud/runner/github`, the session's
+     * `githubAccess` and `PUT /api/v1/cloud/sessions/{id}/github`. Only with cloud runners and [GITHUB_LINK].
+     */
+    public const val RUNNERS_CLOUD_GITHUB: String = "runners.cloud.github.v1"
+
     /** Organization secrets. */
     public const val SECRETS: String = "secrets.v1"
 
@@ -129,8 +141,8 @@ public object ServerFeatures {
 
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
-        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GOVERNANCE, IMPORT_TEAMCODE, INFERENCE, MCP,
-        NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, SECRETS,
-        SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, USAGE, WAITS, WORKFLOWS, LICENSE,
+        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, IMPORT_TEAMCODE,
+        INFERENCE, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
+        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SLACK, USAGE, WAITS, WORKFLOWS, LICENSE,
     )
 }
