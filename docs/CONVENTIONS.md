@@ -2,7 +2,15 @@
 
 These conventions apply to every Ostrom repository: `ostrom-core`, `ostrom-cli`, `ostrom-server`, `ostrom-web`
 and `ostrom-app`. They are Nathan Fallet's practices, read in his most recent code, adapted to a product that is
-**Kotlin/Native only** (no JVM in production) with a React/TypeScript web app and a React Native (Expo) mobile app.
+**Kotlin/Native only** (no JVM in production) with a React/TypeScript web app and a Kotlin Multiplatform app.
+
+**The app is the exception to "Kotlin/Native only".** `ostrom-app` is a Kotlin Multiplatform module with a Compose
+Multiplatform UI for iOS, Android and the desktop, built like TeamCode's companion and partly ported from it
+(Apache-2.0). It replaced the React Native (Expo) app on 13/11/2026 (`ostrom-app` decision 0001). Its Android and
+desktop builds run on a JVM; that is allowed for the app only, not for the server or the CLI. The app follows the
+Kotlin sections of this file: Clean Architecture layers, Koin, fakes, Kover, and `CancellationException`. Section 13
+(TypeScript) now applies to `ostrom-web` only. The app's UI tests are Compose UI tests on the desktop JVM, as TeamCode's
+are.
 
 Read this file before every pull request: it grows. Each rule cites where it comes from. Sources, all read on
 30/10/2026:
@@ -517,7 +525,7 @@ literally in the test, not recomputed with the code under test.
 
 - CLI: end-to-end tests launch the **real native binary** against the **real server** in CI, with a fake agent script
   that plays the hooks as Claude Code or Codex would; the hook start-up time has a budget asserted by a test (`BRIEF`).
-- Web: Playwright against the real server (container + PostgreSQL). App: Maestro on an Android emulator.
+- Web: Playwright against the real server (container + PostgreSQL). App: Compose UI tests of the whole app on the desktop JVM against a fake server (no emulator in CI), as TeamCode's companion.
 - Load: k6 against the server on each server pull request (short run, p95/p99 thresholds that fail the job), and a long
   nightly run.
 - Never call a real model provider in normal tests or pull request CI (`teamcode:AGENTS.md`).
@@ -704,7 +712,7 @@ queue short:
   integration tests with a PostgreSQL service container, then the repository's end-to-end and load tests.
 - Test tasks always execute in CI: never `FROM-CACHE` or `UP-TO-DATE` (the template's init script does it).
 - No secret in clear; publication uses `GITHUB_TOKEN` with `packages: write` on the publishing job only.
-- Package managers: Gradle for Kotlin; **npm** for `ostrom-app` (Expo's default) and **pnpm** for `ostrom-web`. The
+- Package managers: Gradle for Kotlin; Gradle for `ostrom-app` too (it builds `ostrom-core` from source at a pinned commit), and **pnpm** for `ostrom-web`. The
   pnpm variant of `build-ts.yml` is written in it, commented out: `pnpm/action-setup` (pinned by SHA) **before**
   `setup-node`, the version taken from `packageManager` in `package.json` (required), then `cache: pnpm`,
   `pnpm install --frozen-lockfile` and `pnpm run <script>` (no `--` before script arguments: `pnpm run test --coverage`).
@@ -792,8 +800,8 @@ first.
 
 ### 13.6 Tests
 
-Vitest (web) or Jest (Expo app) with **100 %** thresholds on lines, branches, functions and statements; Testing Library
-for components; Playwright end-to-end against the real server; Maestro for the app.
+Vitest (web) with **100 %** thresholds on lines, branches, functions and statements; Testing Library for components;
+Playwright end-to-end against the real server.
 
 ---
 
