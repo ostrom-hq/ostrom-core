@@ -6165,7 +6165,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: deliverWorkflowSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: "Deliver for the agent step a session works on (`workflows.deliver.v1`): the run's starter naming
@@ -6204,7 +6204,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: pendingWorkflowSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - workflows
       summary: "Whether the session's agent step still waits for its delivery, for the Stop hook (`workflows.deliver.v1`)"
