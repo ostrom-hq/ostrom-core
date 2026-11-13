@@ -11281,9 +11281,9 @@ paths:
       tags:
       - artifacts
       summary: Publish an artifact
-      description: '`link` (public) only from a person: a browser session (or the unlocked app), never a token a program
-        can present, so an agent never makes an artifact public (403 `forbidden`); `personal` and `team` from any
-        credential with `artifacts:write`'
+      description: '`link` (public) only from a person: a browser session, the unlocked app or the CLI''s sign-in, never
+        a token a program can present (a personal token, an agent token, a service key), so an agent never makes an
+        artifact public (403 `forbidden`); `personal` and `team` from any credential with `artifacts:write`'
       requestBody:
         required: true
         content:
@@ -11801,8 +11801,8 @@ paths:
       - artifacts
       summary: Change an artifact's title or access; absent fields stay as they are
       description: 'The owner only (403 for any other reader, an administrator included). Changing `access` needs a
-        person, a browser session or the unlocked app, never a token a program can present (403 `forbidden`), so an
-        agent never makes an artifact public; a title alone may come from a token with `artifacts:write`'
+        person, a browser session, the unlocked app or the CLI''s sign-in, never a token a program can present (403
+        `forbidden`), so an agent never makes an artifact public; a title alone may come from a token with `artifacts:write`'
       parameters:
       - name: id
         in: path
@@ -11844,8 +11844,8 @@ paths:
       - artifacts
       summary: Delete an artifact
       description: The owner only (403 for any other reader, an administrator included), and only from a person, a
-        browser session or the unlocked app, never a token a program can present (403 `forbidden`), so an agent never
-        deletes an artifact
+        browser session, the unlocked app or the CLI's sign-in, never a token a program can present (403 `forbidden`),
+        so an agent never deletes an artifact
       parameters:
       - name: id
         in: path
@@ -12135,8 +12135,8 @@ paths:
       tags:
       - artifacts
       summary: 'A reading ticket: a sealed address of the entry page on the content origin, for the caller only'
-      description: 'For a person only, a browser session or the unlocked app (403 `forbidden` for a token a program can
-        present). The ticket is sealed (encrypted and authenticated, so the page learns nothing of its reader) and names
+      description: 'For a person only, a browser session, the unlocked app or the CLI''s sign-in (403 `forbidden` for a
+        token a program can present). The ticket is sealed (encrypted and authenticated, so the page learns nothing of its reader) and names
         the member and the credential that asked: it lasts 8 hours (rounded down to 10 minutes, so reloading reuses the
         same address), and the server checks again at most every 30 seconds that the credential is still live, the
         member still in the organization and the artifact still readable by them, so signing out, leaving the
