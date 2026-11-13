@@ -1,10 +1,11 @@
-# The routes ostrom-server main serves (ostrom-server@ff49f59c), read from its sources by scripts/served-routes.py.
+# The routes ostrom-server main serves (ostrom-server@06150e95), read from its sources by scripts/served-routes.py.
 # api-types/scripts/check-served.mjs (run by `npm run contract` in CI) fails when an operation's x-ostrom-status
 # disagrees: served when a line below has its method and path (path parameters written {}), planned otherwise.
 # A "!" line, kept by hand when regenerating, is a route main serves in another shape than the contract's: its
 # operation stays planned until the server serves the contract's shape. Regenerate in the pull request that changes
 # what main serves.
 DELETE /api/v1/accounts/{}
+DELETE /api/v1/artifacts/storage
 DELETE /api/v1/artifacts/{}
 DELETE /api/v1/artifacts/{}/members/{}
 DELETE /api/v1/auth/sessions/{}
@@ -39,6 +40,9 @@ GET /api/v1/approvals/queue
 GET /api/v1/approvals/{}
 GET /api/v1/approvals/{}/view
 GET /api/v1/artifacts
+GET /api/v1/artifacts/policy
+GET /api/v1/artifacts/settings
+GET /api/v1/artifacts/storage
 GET /api/v1/artifacts/{}
 GET /api/v1/artifacts/{}/members
 GET /api/v1/artifacts/{}/versions
@@ -163,6 +167,7 @@ POST /api/v1/analysis/start
 POST /api/v1/approvals/{}/answer
 POST /api/v1/artifacts
 POST /api/v1/artifacts/mcp
+POST /api/v1/artifacts/storage/test
 POST /api/v1/artifacts/{}/tickets
 POST /api/v1/artifacts/{}/versions
 POST /api/v1/auth/device
@@ -271,6 +276,8 @@ POST /api/v1/workflows
 POST /api/v1/workflows/{}/runs
 POST /webhooks/github
 POST /webhooks/stripe
+PUT /api/v1/artifacts/settings
+PUT /api/v1/artifacts/storage
 PUT /api/v1/artifacts/{}/members/{}
 PUT /api/v1/automations/{}
 PUT /api/v1/budgets
