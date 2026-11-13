@@ -230,6 +230,7 @@ POST /api/v1/tokens/{}/rotate
 POST /api/v1/usage/events
 POST /api/v1/waits
 POST /api/v1/waits/mcp
+POST /api/v1/waits/wake
 POST /api/v1/waits/{}/answer
 POST /api/v1/waits/{}/cancel
 POST /api/v1/workflows

@@ -6642,7 +6642,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: wakeWaits
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - waits
       summary: "What the waits of an agent's session have to say, for the Stop hook of its launch"
