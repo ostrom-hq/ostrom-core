@@ -9596,7 +9596,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cancelInferenceRequest
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Stop one of the caller's inference calls by its `x-ostrom-client-request-id` (`inference.cancel.v1`)

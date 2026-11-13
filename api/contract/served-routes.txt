@@ -208,6 +208,7 @@ POST /api/v1/github/link/device/{}
 POST /api/v1/groups
 POST /api/v1/groups/{}/members/{}/pause
 POST /api/v1/import/teamcode
+POST /api/v1/inference/requests/{}/cancel
 POST /api/v1/inference/v1/chat/completions
 POST /api/v1/inference/v1/messages
 POST /api/v1/inference/v1/responses
