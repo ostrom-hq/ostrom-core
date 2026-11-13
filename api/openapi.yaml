@@ -11885,7 +11885,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getArtifactStorage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: The organization's artifact bucket, as its owners and administrators see it
@@ -11908,7 +11908,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveArtifactStorage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Save the artifact bucket
@@ -11948,7 +11948,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteArtifactStorage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Remove the artifact bucket and its secret
@@ -11970,7 +11970,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: testArtifactStorage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Test the connection to the artifact bucket
@@ -12001,7 +12001,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getArtifactSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: The organization's artifact settings, and whether artifacts are active
@@ -12025,7 +12025,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveArtifactSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Save every artifact setting
@@ -12088,7 +12088,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getArtifactPolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Whether the caller may publish artifacts now
