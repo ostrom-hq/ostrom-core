@@ -6438,6 +6438,13 @@ paths:
         required: false
         schema:
           type: boolean
+      - name: assignee
+        in: query
+        required: false
+        description: "`all`, or a member id: the waits asked of them, for an administrator only (403 otherwise).
+          Without it, the waits asked of or by the caller"
+        schema:
+          type: string
       - name: sessionId
         in: query
         required: false
