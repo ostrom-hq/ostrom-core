@@ -21583,6 +21583,12 @@ components:
           type: array
           items:
             type: string
+        processes:
+          type: integer
+          minimum: 0
+          description: How many process workflows (pull request checks, release, instruction lists, skills) the
+            analysis found in this repository; each is stored proposed under its own id once, and a later analysis
+            never rewrites it. Absent before the analysis proposed processes.
       required:
       - name
       - defaultBranch
