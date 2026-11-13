@@ -18,7 +18,7 @@ is about the repository as a public product.
 | File | Content | Taken from |
 | --- | --- | --- |
 | `README.md` | Banner (light and dark through `<picture>`), the locked value proposition, badges, three-command start, a Mermaid architecture diagram, honest status | PostHog and Supabase (banner, links row), uv (one sentence then proof), Biome (status honesty) |
-| `LICENSE` | Exact SPDX text, detected by GitHub: Apache-2.0 (core, cli, e2e, site), AGPL-3.0 (server, web, app, helm) | all |
+| `LICENSE` | Exact SPDX text, detected by GitHub: Apache-2.0 (every repository) | all |
 | `ee/LICENSE`, `LICENSING.md` | server, web and app, once their `ee/` exists: commercial license of `ee/` and the table of what is under which license | PostHog and GitLab (`ee/` model), Cal.com |
 | `NOTICE` | Apache-2.0 repositories only, "The Ostrom Authors" | Apache Software Foundation practice |
 | `CONTRIBUTING.md` | Setup, the test bar, Conventional Commits, DCO, license headers, AI policy, releases | uv (concise), Biome (AI disclosure), PostHog (AI policy) |
@@ -96,7 +96,7 @@ the branch protection.
 
 ## What we did not take
 
-- **A CLA** (Cal.com's old one, Supabase's): the DCO is lighter for contributors and enough for an Apache/AGPL split.
+- **A CLA** (Cal.com's old one, Supabase's): the DCO is lighter for contributors and enough for an Apache-2.0 project (see the decision record on the license in ostrom-server, docs/decisions).
 - **Bots that comment on every pull request** (welcome messages, stale closers, AI reviewers): noise for a young
   project. A stale workflow can come when the issue volume needs it.
 - **Shields.io badges that need a public repository** for counts (contributors, downloads): added at launch, when

@@ -743,7 +743,7 @@ queue short:
 ### README
 
 Each repository's README says, in order: what the repository is (one paragraph), how to build and test it (the exact
-CI commands), how to run it locally, the license (core and CLI Apache-2.0; server, web and app AGPL-3.0 with `ee/`
+CI commands), how to run it locally, the license (Apache-2.0 everywhere, with `ee/`
 under the commercial license), and links to `docs/`. Badges optional. Feature pages under `docs/` record **what is
 implemented and what is planned**, and are corrected in the pull request that makes them wrong; a planned command is
 never presented as implemented (`teamcode:AGENTS.md`).
