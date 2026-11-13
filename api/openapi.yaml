@@ -8243,6 +8243,10 @@ paths:
       tags:
       - inference
       summary: Anthropic-compatible Messages endpoint, metered against budgets
+      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as `InferenceSettings.memberConcurrency` allows them. Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
+      parameters:
+      - $ref: '#/components/parameters/OstromWorkload'
+      - $ref: '#/components/parameters/OstromClientRequestId'
       requestBody:
         required: true
         content:
@@ -8287,6 +8291,10 @@ paths:
       tags:
       - inference
       summary: OpenAI-compatible Responses endpoint, metered against budgets
+      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as `InferenceSettings.memberConcurrency` allows them. Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
+      parameters:
+      - $ref: '#/components/parameters/OstromWorkload'
+      - $ref: '#/components/parameters/OstromClientRequestId'
       requestBody:
         required: true
         content:
@@ -8331,6 +8339,10 @@ paths:
       tags:
       - inference
       summary: OpenAI-compatible chat completions endpoint
+      description: "Admission (`inference.queue.v1`): a call that cannot start now waits in the organization's admission queue, shared by every replica, instead of being refused: while every shared account it may use is busy (and no provider key of the organization takes it), or while the member already runs as many calls as `InferenceSettings.memberConcurrency` allows them. Ready members take turns, one member's calls go in arrival order, `interactive` calls go before `background` ones, which join them after 30 seconds of waiting. At most 128 calls wait per organization and 8 per member who has a concurrency limit; a call waits at most 90 seconds. Past a bound: 503 `queue_full`; past the wait: 503 `queue_timeout`; a wait lost (its replica stopped renewing it): 503 `queue_expired`; each with `Retry-After: 15`. Waiting holds no budget and no account. Budget and policy refusals stay immediate. A refusal of the gateway carries `x-ostrom-error` with its code (`no_capacity`, `queue_full`, `budget_exhausted`...)"
+      parameters:
+      - $ref: '#/components/parameters/OstromWorkload'
+      - $ref: '#/components/parameters/OstromClientRequestId'
       requestBody:
         required: true
         content:
@@ -8405,6 +8417,72 @@ paths:
           $ref: '#/components/responses/OpenAiInferenceError'
         '409':
           $ref: '#/components/responses/OpenAiInferenceError'
+  /api/v1/inference/queue:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getInferenceQueue
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: The inference calls waiting in the organization's admission queue (`inference.queue.v1`)
+      description: "Any member reads the counts (`inference:use` or `usage:read` on a key); no call, prompt or other
+        member is named. Counts only waits still renewed by their replica"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceQueue'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/inference/requests/{id}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: cancelInferenceRequest
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: Stop one of the caller's inference calls by its `x-ostrom-client-request-id` (`inference.cancel.v1`)
+      description: "Leaves a cancellation marker every replica reads: the call with that id, of the same member, stops
+        within about half a second wherever it runs (waiting in the queue, between accounts, or streaming), and a call
+        that arrives after the marker stops before it starts. 204 acknowledges the marker, also for an id no call
+        carries (it does not tell whether a call exists), never that the provider stopped or that anything is
+        refunded. Idempotent: sending it again changes nothing. A marker lasts 10 minutes; at most 256 per member and
+        4,096 per organization, past which 503 `cancellation_limit`. The same credentials as the inference endpoints
+        (an agent session, `inference:use`); a call of another member is never touched"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+      responses:
+        '204':
+          description: The marker is stored
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/inference/settings:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -13535,6 +13613,27 @@ components:
         readable `__Host-ostrom_csrf` cookie set beside it, from an allowed `Origin`; otherwise 403. Sign-out expires
         both cookies.'
   parameters:
+    OstromWorkload:
+      name: x-ostrom-workload
+      in: header
+      required: false
+      description: "The scheduling class of an inference call in the admission queue (`inference.queue.v1`):
+        `interactive` (the default) or `background` (unattended work, `ostrom run --workload background`). A hint the
+        caller sets, not a permission: it changes only the order of waiting calls. Never sent to a provider. Another
+        value, or the header twice, is refused with 400 `invalid_workload`"
+      schema:
+        type: string
+        enum: [interactive, background]
+    OstromClientRequestId:
+      name: x-ostrom-client-request-id
+      in: header
+      required: false
+      description: "The caller's own id of an inference call (`inference.cancel.v1`), a lowercase UUID, fresh for each
+        call: `cancelInferenceRequest` with it stops the call on whichever replica runs it, queued or streaming.
+        Never sent to a provider. Not a UUID in lowercase: 400 `invalid_request_id`"
+      schema:
+        type: string
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
     OstromOrg:
       name: Ostrom-Org
       in: header
@@ -15390,7 +15489,7 @@ components:
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
-        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
+        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.github.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`,
@@ -17185,6 +17284,29 @@ components:
           type: boolean
           default: true
           description: Whether members' shared subscription accounts serve before the org's keys
+        memberConcurrency:
+          type: object
+          description: "The most inference calls a member runs at once, by member id (`inference.queue.v1`); a member
+            absent has no limit. Past it, the member's next calls wait in the admission queue (at most 8 of them) until
+            one ends. At most 1,000 members"
+          additionalProperties:
+            type: integer
+            minimum: 1
+            maximum: 32
+      x-ostrom-kotlin: pending
+    InferenceQueue:
+      type: object
+      description: The organization's admission queue (`inference.queue.v1`)
+      properties:
+        waiting:
+          type: integer
+          description: Calls of the organization waiting now (at most 128)
+        waitingMine:
+          type: integer
+          description: The caller's own calls among them
+      required:
+      - waiting
+      - waitingMine
       x-ostrom-kotlin: pending
     McpSettings:
       type: object
