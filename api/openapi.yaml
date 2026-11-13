@@ -1520,9 +1520,21 @@ paths:
                   type: string
                 scopes:
                   type: array
-                  description: 'What a CI calls, nothing else: `sessions:write` (reportCheck, signWorkflowReceipt),
-                    `rules:read` (listRules, getRule), or both; any other scope, 400. A key is refused on every other
-                    operation, whatever it holds.'
+                  description: "What the key may do, from the catalogue below; any other scope, 400. CI scopes (a key
+                    acting for the organization, each call audited as `service_key.used`): `sessions:write` (reportCheck,
+                    signWorkflowReceipt), `rules:read` (listRules, getRule). Member scopes (the key then acts as the
+                    person who created it, within the scope, and never as an admin): `inference:use` (the inference
+                    gateway), `mcp:use` (the relayed MCP servers), `usage:read` (the creator's own usage),
+                    `cloud:read` and `cloud:write` (the creator's own cloud sessions; write includes read),
+                    `artifacts:read` and `artifacts:write` (the artifacts the creator can read; write includes read).
+                    Reserved to an owner or an admin, and only while its creator still is one, checked at every call:
+                    `team:read` (a read-only view of the organization: usage, spending, budgets, accounts, MCP usage and
+                    the member directory, no session, transcript or artifact of a member) and `cloud:admin` (cloud:write
+                    with an administrator's rights over every cloud session of the organization). The CI scopes cannot
+                    be mixed with the others (400). A key stops working as soon as its creator leaves the organization.
+                    A server that serves the wide catalogue lists `servicekeys.scopes.v1` in its capabilities; an older
+                    one accepts only the CI scopes. A key is refused on every operation its scopes do not open,
+                    whatever it holds."
                   items:
                     type: string
                 expiresInDays:
@@ -12591,7 +12603,7 @@ components:
         `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
         `governance.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `secrets.v1`,
-        `sessions.v1`, `sharing.v1`, `slack.v1`, `usage.v1`, `waits.v1`, `workflows.v1`, `license.v1`. A client
+        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `slack.v1`, `usage.v1`, `waits.v1`, `workflows.v1`, `license.v1`. A client
         ignores a key it does not know."
       properties:
         apiVersion:
