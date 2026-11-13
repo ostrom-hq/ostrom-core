@@ -12115,7 +12115,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: createArtifactUpload
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Announce the distinct files of the next version
@@ -12156,7 +12156,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: putArtifactUploadChunk
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: Send one chunk of an announced file
