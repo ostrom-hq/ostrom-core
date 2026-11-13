@@ -8239,9 +8239,15 @@ paths:
       summary: "Creates an environment variant: a named value for one environment variable (its slot). Several variants
         can exist for one variable (`org-a`, `org-b` for `GITHUB_TOKEN`); names are unique per variable,
         case-insensitively. `shared` keeps one encrypted value on the variant (required); `perMember` keeps none, each
-        assignment carries the member's own. Reserved names (`PATH`, `HOME`, `NODE_OPTIONS`, `HTTPS_PROXY`, the `LD_`,
-        `DYLD_`, `OSTROM_`, `ANTHROPIC_`, `CLAUDE_`, `OPENAI_`, `CODEX_`, `XDG_`, `GIT_CONFIG_` prefixes…) are refused
-        (400 `invalid_environment_variant`). At most 500 team variants (409 `variant_limit`). An owner or an admin from
+        assignment carries the member's own. Reserved names are refused (400 `invalid_environment_variant`): `PATH`,
+        `HOME`, `USER`, `LOGNAME`, `SHELL`, `PWD`, `TMPDIR`, `TMP`, `TEMP`, `IFS`, `ENV`, `BASH_ENV`, `PROMPT_COMMAND`,
+        `NODE_OPTIONS`, `NODE_PATH`, `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, `_JAVA_OPTIONS`, `PYTHONPATH`,
+        `PYTHONSTARTUP`, `PYTHONHOME`, `PERL5OPT`, `PERL5LIB`, `RUBYOPT`, `RUBYLIB`, `GIT_SSH`, `GIT_SSH_COMMAND`,
+        `GIT_EXEC_PATH`, `GIT_CONFIG_GLOBAL`, `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`, `SSL_CERT_FILE`,
+        `SSL_CERT_DIR`, `NODE_EXTRA_CA_CERTS`, `REQUESTS_CA_BUNDLE`, and the prefixes `LD_`, `DYLD_`, `OSTROM_`,
+        `TEAMCODE_`, `ANTHROPIC_`, `CLAUDE_`, `OPENAI_`, `CODEX_`, `XDG_`, `GIT_CONFIG_` (personal variants too). The
+        runner's own commands (clone, fetch, setup) never see a variable named with `GIT_`, `GH_` or `SSH_`, so a
+        value cannot redirect the credential socket. At most 500 team variants (409 `variant_limit`). An owner or an admin from
         the console (scope `secrets:write`, step-up). The value is encrypted at rest with the secrets key (AES-256-GCM,
         bound to the organization and the variant) and never returned. Journaled `environment.variant.created` without
         the value"
@@ -8432,7 +8438,7 @@ paths:
       - secrets
       summary: "Makes a member's personal variant a team variant: its owner is cleared and keeps the selection, everyone
         else gets it only by assignment. 409 `variant_exists` when a team variant of the same name exists for that
-        variable. Journaled `environment.variant.promoted`"
+        variable. A team variant is returned as it is. Journaled `environment.variant.promoted` (on a change only)"
       parameters:
       - name: id
         in: path
@@ -8598,7 +8604,8 @@ paths:
       - secrets
       summary: "Excludes a member from a variable: removes their current selection, then refuses a direct assignment
         (409 `variant_excluded`), and a bulk assignment skips them, until the exclusion is removed. The member cannot
-        declare a personal variant for it either. Journaled `environment.excluded`"
+        declare a personal variant for it either; a personal variant they already declared stays, unassigned, until they
+        delete it. Journaled `environment.excluded`"
       parameters:
       - name: member
         in: path
@@ -16398,7 +16405,7 @@ components:
           type: array
           maxItems: 64
           description: Environment variable names the owner must be assigned (`getEnvironment`); preparation fails
-            (`preparation_failed`, naming them) without them
+            (`preparation_failed`, naming them) without them, and a variable withheld in `unavailable` counts as missing
           items:
             type: string
         requireGitHub:
@@ -16988,8 +16995,10 @@ components:
           type: string
         value:
           type: string
+          minLength: 1
+          maxLength: 16384
           description: The member's own value, required for a `perMember` variant and refused for a `shared` one; 1 to
-            16,384 characters, written once, never returned
+            16,384 characters, without NUL, written once, never returned
       required:
       - variantId
       x-ostrom-kotlin: pending
@@ -17157,6 +17166,8 @@ components:
           description: "`shared` when absent; a personal variant is always `shared`"
         value:
           type: string
+          minLength: 1
+          maxLength: 16384
           description: The shared value, required for `shared` and refused for `perMember`; 1 to 16,384 characters,
             without NUL, written once, never returned
       required:
@@ -17174,7 +17185,10 @@ components:
           type: string
         value:
           type: string
-          description: A new shared value; absent keeps the stored one
+          minLength: 1
+          maxLength: 16384
+          description: A new shared value (a `shared` variant only, 400 otherwise); 1 to 16,384 characters, without NUL;
+            absent keeps the stored one
       required:
       - expectedVersion
       x-ostrom-kotlin: pending
@@ -18746,7 +18760,12 @@ components:
           format: int64
         phase:
           type: string
-          description: configuring_git, cloning_repositories, fetching_repositories or running_setup
+          enum:
+          - configuring_git
+          - cloning_repositories
+          - fetching_repositories
+          - running_setup
+          description: The phase starting, or the one that failed
         failure:
           $ref: '#/components/schemas/RunnerPreparationFailure'
       required:
