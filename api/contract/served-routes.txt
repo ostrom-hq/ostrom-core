@@ -143,6 +143,8 @@ PATCH /api/v1/orgs/{}
 PATCH /api/v1/orgs/{}/members/{}
 PATCH /api/v1/rules/{}
 POST /api/v1/accounts
+POST /api/v1/accounts/{}/access-only
+POST /api/v1/accounts/{}/handover
 POST /api/v1/analysis/replay
 POST /api/v1/analysis/restart
 POST /api/v1/analysis/start

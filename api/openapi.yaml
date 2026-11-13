@@ -11983,7 +11983,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: handOverSharedAccount
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Give Ostrom refresh ownership of an imported account (admins)
@@ -12016,7 +12016,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: makeSharedAccountAccessOnly
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Serve an imported account with its access token only, never renewing it (admins)
