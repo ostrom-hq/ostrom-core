@@ -6428,6 +6428,8 @@ paths:
       - name: sessionId
         in: query
         required: false
+        description: "Only that session's waits, asked of anyone: for the person who runs it only (404 otherwise,
+          an administrator included)"
         schema:
           type: string
       - name: runId
@@ -6482,6 +6484,9 @@ paths:
       tags:
       - waits
       summary: Ask a person (agent ask_human); Idempotency-Key header
+      description: "`assignee` is a member id or a username (at most 64 characters; an id wins over a username that
+        spells it), the caller by default; an unknown one is 400. A member asks in a session only when they run it
+        (403 `wait_session_owner_only`, an administrator included) and while it runs (409 `session_not_running`)."
       requestBody:
         required: true
         content:
@@ -6495,6 +6500,7 @@ paths:
                   type: string
                 assignee:
                   type: string
+                  description: A member id or a username
                 kind:
                   type: string
                 question:
@@ -6563,6 +6569,50 @@ paths:
                 {}
         '202':
           description: "Notification accepted"
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/waits/wake:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: wakeWaits
+      x-ostrom-status: planned
+      tags:
+      - waits
+      summary: "What the waits of an agent's session have to say, for the Stop hook of its launch"
+      description: "An agent token only, through its launch's local relay (the hooks' capability), in one of its
+        launch's sessions (`?session=`, any segment). Holds the call up to `waitMillis` (0 to 30 000, 25 000 by
+        default) and answers as soon as a wait of the session is answered: each answer is handed over once
+        (`messages`, oldest first, each starting with `[Ostrom wait answered]`). `open` says a wait asked by the
+        session is still open, so the hook keeps holding the agent; a session with no open wait answers at once."
+      parameters:
+      - name: session
+        in: query
+        required: true
+        description: "The session the agent runs in: any of its segments"
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaitWakeRequest'
+      responses:
+        '200':
+          description: The answers that arrived, and whether a wait is still open
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitWake'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -17803,6 +17853,29 @@ components:
       - assignee
       - question
       - createdAt
+    WaitWakeRequest:
+      type: object
+      description: How long the server may hold the answer back
+      properties:
+        waitMillis:
+          type: integer
+          minimum: 0
+          maximum: 30000
+    WaitWake:
+      type: object
+      description: What the waits of a session have to say to its Stop hook
+      properties:
+        open:
+          type: boolean
+          description: A wait asked by the session is still open
+        messages:
+          type: array
+          description: "The answers that arrived, oldest first, each handed over once"
+          items:
+            type: string
+      required:
+      - open
+      - messages
     WaitAction:
       type: object
       description: A button of a wait
