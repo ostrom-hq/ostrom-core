@@ -199,6 +199,7 @@ POST /api/v1/cloud/sessions/{}/resume
 POST /api/v1/cloud/sessions/{}/terminal/ticket
 POST /api/v1/confirmations/{}/answer
 POST /api/v1/gates
+POST /api/v1/gates/local-denials
 POST /api/v1/gates/{}/consume
 POST /api/v1/gates/{}/release
 POST /api/v1/gates/{}/reserve
@@ -213,6 +214,7 @@ POST /api/v1/inference/v1/responses
 POST /api/v1/invitations/accept
 POST /api/v1/invitations/preview
 POST /api/v1/launches
+POST /api/v1/launches/{}/hooks-missing
 POST /api/v1/mcp/servers
 POST /api/v1/mcp/servers/{}/policies
 POST /api/v1/mcp/{}

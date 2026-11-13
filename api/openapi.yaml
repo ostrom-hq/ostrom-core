@@ -1057,7 +1057,7 @@ paths:
   /api/v1/launches/{launchId}/hooks-missing:
     post:
       operationId: reportHooksMissing
-      x-ostrom-status: planned
+      x-ostrom-status: served
       description: "The launch's own agent token only, as for `endLaunch`: the CLI waited for the first of Ostrom's
         hooks in the agent's session, saw none, and says so, with whether it stopped the agent. The organization's audit
         log then holds the event `hooks.missing` (subject `launch:<launchId>`, `meta` holding `agent`, `repo`,
@@ -3959,7 +3959,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reportLocalGateDenial
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - gates
       summary: Record that the hook refused a gated action on the workstation without asking the server (audit A6)
