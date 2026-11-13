@@ -5755,10 +5755,20 @@ paths:
       tags:
       - workflows
       summary: Start a run
+      description: "Planned with `workflows.deliver.v1` (docs/decisions/workflows-one-system.md in ostrom-server): any
+        member starts an accepted workflow as themselves; at most 20 unfinished runs per member (409 `run_limit`); the
+        same `Idempotency-Key` returns the first run (200, `Idempotency-Replayed: true`); `repository` is the repository
+        of the agent nodes that name none (400 `repository_required` when one needs it)"
       parameters:
       - name: id
         in: path
         required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: false
+        description: 1 to 128 characters of `A-Za-z0-9._:-` (planned)
         schema:
           type: string
       requestBody:
@@ -5772,7 +5782,16 @@ paths:
                   type: object
                   additionalProperties:
                     type: string
+                repository:
+                  type: string
+                  description: "`owner/name`, for the agent nodes that name none (planned)"
       responses:
+        '200':
+          description: "The first run of this `Idempotency-Key` (planned)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowRun'
         '201':
           description: OK
           content:
@@ -5847,6 +5866,26 @@ paths:
       - workflows
       summary: Runs
       parameters:
+      - name: all
+        in: query
+        required: false
+        description: "Every member's runs: an administrator (planned; one's own otherwise)"
+        schema:
+          type: boolean
+      - name: workflow
+        in: query
+        required: false
+        description: Only the runs of this workflow (planned)
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: 1 to 100, 50 by default (planned)
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
       - name: status
         in: query
         required: false
@@ -5946,6 +5985,218 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/deliver:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: deliverRun
+      x-ostrom-status: planned
+      tags:
+      - workflows
+      summary: "Hand in what the run's current agent node asks for (`workflows.deliver.v1`): the run's starter, a person
+        or their key with `workflows:write`"
+      description: "The output is checked against the node's deliverable: `artifact` (an artifact id), `url` (https, on
+        the node's `domain` or a subdomain of it when set), `text`, or `json` matching its `schema` (a subset: `type`,
+        an object's `properties` and `required`, an array's `items`, a string's `enum`). A wrong one is 400
+        `invalid_deliverable` and stores nothing; a run whose current node waits for no delivery is 409
+        `nothing_to_deliver`; a session whose todo still has open items is 409 `todo_open` (`todos.v1`). Of two
+        deliveries of one visit, one wins, the other is 409 `nothing_to_deliver`. Another member's run, or one that
+        does not exist, is 404"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliverRequest'
+      responses:
+        '200':
+          description: The run after the delivery
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowRun'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/workflows/session/deliver:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: deliverWorkflowSession
+      x-ostrom-status: planned
+      tags:
+      - workflows
+      summary: "Deliver for the agent step a session works on (`workflows.deliver.v1`): the run's starter naming
+        `sessionId`, or the session's agent token with the scope `workflow:session`"
+      description: "Finds the unfinished run whose latest active visit is an agent visit bound to the session, then does
+        exactly what `deliverRun` does (same checks, same errors). An agent token is confined to its launch's session
+        whatever `sessionId` says, and `workflow:session` grants nothing else (not `deliverRun`, not a read of a run). A
+        service key carrying the scope, or an agent token issued before it existed, is 403 `credential_scope`. A session
+        that does not exist or is another member's is 404; the caller's own session that runs no step is 409
+        `nothing_to_deliver`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliverSessionRequest'
+      responses:
+        '200':
+          description: The run after the delivery
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowRun'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/workflows/session/pending:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: pendingWorkflowSession
+      x-ostrom-status: planned
+      tags:
+      - workflows
+      summary: "Whether the session's agent step still waits for its delivery, for the Stop hook (`workflows.deliver.v1`)"
+      description: "`needsAction` is true when the session has an unfinished run whose latest active visit is an agent
+        visit bound to it and the session holds no open wait; it then names the run, the step's title and the form of
+        its deliverable (never its schema or its instruction). The same credentials and session resolution as
+        `deliverWorkflowSession`; the caller's own session that runs no step is 200 with `needsAction: false`. Writes
+        nothing"
+      parameters:
+      - name: sessionId
+        in: query
+        required: false
+        description: Required for a person or a key; an agent token's own session otherwise
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowSessionPending'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/workflows/mcp:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: workflowsMcp
+      x-ostrom-status: planned
+      tags:
+      - workflows
+      summary: "The `ostrom-workflow` MCP server (JSON-RPC over HTTP, `workflows.deliver.v1`): one tool, `deliver
+        {output}`, for the agent token of the session that works on an agent step (scope `workflow:session`)"
+      description: "Bridged to the agent by the CLI's session relay (`ostrom mcp --session … --server ostrom-workflow`),
+        which names the session; the agent cannot name another. The tool tells the agent to call it once, when the task
+        of the current step is done, with exactly what the step asked for, then to end its turn, and never for an
+        ordinary session. Refusals (`invalid_deliverable`, `nothing_to_deliver`, `todo_open`, `credential_scope`,
+        `not_found`) come back as tool errors saying what to do"
+      parameters:
+      - name: session
+        in: query
+        required: false
+        description: The session, filled by the relay
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        '200':
+          description: The JSON-RPC answer
+          content:
+            application/json:
+              schema: {}
+        '202':
+          description: A notification, nothing to answer
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/workflows/settings:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getWorkflowSettings
+      x-ostrom-status: planned
+      tags:
+      - workflows
+      summary: "Who may decide workflows (`workflows.settings.v1`), and whether the caller may; every member reads it"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowSettings'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveWorkflowSettings
+      x-ostrom-status: planned
+      tags:
+      - workflows
+      summary: "Change who may decide workflows: an owner or an admin, in the console (browser session); audited
+        `workflow.editors.changed`"
+      description: "`all` (every member), `admins` (the default: owners and admins only) or `members` with `memberIds`
+        (active members of the organization; 400 `invalid_editors` otherwise). An editor accepts, edits and deletes
+        workflows as an admin does, signed decisions included; a workflow that holds a `gate` node stays an owner's or
+        an admin's decision whatever the mode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowEditors'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
           $ref: '#/components/responses/Error'
   /api/v1/automations:
     parameters:
@@ -6308,6 +6559,95 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/automations/{id}/runs/{runId}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: cancelAutomationRun
+      x-ostrom-status: planned
+      tags:
+      - automations
+      summary: "Cancel a run: a queued one ends `cancelled` at once; a started one has its session paused, or its
+        workflow run cancelled. The owner, or an administrator"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationRun'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/automations/{id}/v/{version}/trigger:
+    post:
+      operationId: triggerAutomationVersion
+      x-ostrom-status: planned
+      tags:
+      - automations
+      summary: "The signed webhook trigger, pinned to a version of the definition: runs only while the automation is at
+        `version`, otherwise 409 `automation_version_changed` and nothing is recorded; `latest` follows the current
+        version, as `triggerAutomation` does. Enabling, pausing and rotating the secret do not change the version"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        description: A version number, or `latest`
+        schema:
+          type: string
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        '202':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+                  status:
+                    type: string
+                  deduplicated:
+                    type: boolean
+                required:
+                - deduplicated
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyAttempts'
   /api/v1/automations/{id}/trigger:
     post:
       operationId: triggerAutomation
@@ -15210,6 +15550,25 @@ components:
       required:
       - items
       x-ostrom-kotlin: pending
+    DeliverRequest:
+      type: object
+      description: What an agent step delivers (`deliverRun`)
+      properties:
+        output:
+          description: "Any JSON value: a string for `text`, `url` and `artifact`, an object or an array for `json`"
+      required:
+      - output
+    DeliverSessionRequest:
+      type: object
+      description: What a session's agent step delivers (`deliverWorkflowSession`)
+      properties:
+        sessionId:
+          type: string
+          description: Required for a person or a key; an agent token delivers for its own session
+        output:
+          description: "Any JSON value, as in `DeliverRequest`"
+      required:
+      - output
     EffectiveHook:
       type: object
       description: "A pinned hook version the member receives"
@@ -15755,6 +16114,15 @@ components:
       properties:
         workflowId:
           type: string
+        inputs:
+          type: object
+          description: "The workflow's inputs, templates rendered like the prompt; one that renders empty is left out
+            (the workflow's default applies). Workflow action only, with an empty prompt"
+          additionalProperties:
+            type: string
+        repository:
+          type: string
+          description: "`owner/name`: the session's repository, or a workflow run's for its agent nodes that name none"
         prompt:
           type: string
         agent:
@@ -16250,7 +16618,7 @@ components:
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
-        `workflows.v1`,
+        `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
         ignores a key it does not know."
       properties:
@@ -16800,6 +17168,9 @@ components:
         label:
           type: string
         schema: {}
+        domain:
+          type: string
+          description: "A `url` deliverable only: the host it must be on (`github.com`), or a subdomain of it"
       required:
       - type
     Dev:
@@ -17839,7 +18210,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [setting, secret, server, policy, assignment, account]
+          enum: [setting, secret, server, policy, assignment, account, workflow, editors, automation]
           description: Clients keep an unknown kind as UNKNOWN
         name:
           type: string
@@ -19097,6 +19468,126 @@ components:
       - $ref: '#/components/schemas/StepUpRequired'
       - $ref: '#/components/schemas/Forbidden'
       x-ostrom-kotlin: pending
+    TeamCodeAutomation:
+      type: object
+      description: "A row of TeamCode's `automations` table, without its secrets; the server maps it to an Ostrom
+        automation of the mapped owner, disabled until the cutover run"
+      properties:
+        id:
+          type: string
+        ownerId:
+          type: string
+        name:
+          type: string
+        triggerKind:
+          type: string
+        cron:
+          type: string
+        timezone:
+          type: string
+        catchup:
+          type: string
+        catchupGraceMinutes:
+          type: integer
+        actionKind:
+          type: string
+        profileId:
+          type: string
+        model:
+          type: string
+        effort:
+          type: string
+        maxRuntimeMinutes:
+          type: integer
+        prompt:
+          type: string
+        variables:
+          type: array
+          items: {}
+        samplePayload: {}
+        overlap:
+          type: string
+        maxRunsPerDay:
+          type: integer
+        enabled:
+          type: boolean
+        version:
+          type: integer
+        workflowId:
+          type: string
+        workflowInputs:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - id
+      - ownerId
+      - name
+      - triggerKind
+      - actionKind
+      - enabled
+      x-ostrom-kotlin: pending
+    TeamCodeProfile:
+      type: object
+      description: "The repositories of a TeamCode cloud profile's current version that a workflow or an automation
+        names; the first becomes the `repository` of the node or the action"
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        repositories:
+          type: array
+          items:
+            type: string
+        setupCommands:
+          type: integer
+          description: How many setup commands the recipe has (they are not carried, the report says so)
+      required:
+      - id
+      - repositories
+      x-ostrom-kotlin: pending
+    TeamCodeWorkflow:
+      type: object
+      description: "A row of TeamCode's `workflows` table, its definition as TeamCode stores it; the server maps it to
+        an Ostrom `Workflow` (`tc-<id>`, accepted, docs/decisions/workflows-one-system.md in ostrom-server)"
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: integer
+        definition:
+          type: object
+          description: TeamCode's definition JSON (`start`, `sessionMode`, `inputs`, `nodes`, `limits`, `description`)
+        updatedById:
+          type: string
+        createdAt:
+          type: integer
+          description: Epoch milliseconds
+        updatedAt:
+          type: integer
+          description: Epoch milliseconds
+      required:
+      - id
+      - name
+      - version
+      - definition
+      x-ostrom-kotlin: pending
+    TeamCodeWorkflowEditors:
+      type: object
+      description: TeamCode's `workflow_settings` row
+      properties:
+        mode:
+          type: string
+        memberIds:
+          type: array
+          items:
+            type: string
+      required:
+      - mode
+      x-ostrom-kotlin: pending
     TokenScope:
       type: object
       properties:
@@ -19279,6 +19770,9 @@ components:
           type: string
         deliverable:
           $ref: '#/components/schemas/Deliverable'
+        repository:
+          type: string
+          description: "Agent: the repository (`owner/name`) its session works in, else the run's"
     NodeRunOn:
       type: object
       description: What triggers a node
@@ -19333,6 +19827,9 @@ components:
           type: string
         childRunId:
           type: string
+        nodeTitle:
+          type: string
+          description: The node's label in the run's copy of the definition
         startedAt:
           type: string
         endedAt:
@@ -21356,6 +21853,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TeamCodeAccount'
+        workflows:
+          type: array
+          description: TeamCode's workflows (planned with `workflows.deliver.v1`)
+          items:
+            $ref: '#/components/schemas/TeamCodeWorkflow'
+        workflowEditors:
+          $ref: '#/components/schemas/TeamCodeWorkflowEditors'
+        automations:
+          type: array
+          description: TeamCode's automations, without their secrets (planned)
+          items:
+            $ref: '#/components/schemas/TeamCodeAutomation'
+        profiles:
+          type: array
+          description: The cloud profiles the workflows and automations name (planned)
+          items:
+            $ref: '#/components/schemas/TeamCodeProfile'
         memberMap:
           type: object
           description: TeamCode member id to Ostrom member id (`Member.id`); unmapped members are skipped
@@ -22631,6 +23145,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WorkflowInput'
+        sessionMode:
+          type: string
+          description: "`same`: the agent steps of a run are messages of one session; `handoff` (when absent): each
+            agent step starts a session whose first message carries what the earlier steps delivered"
+        limits:
+          $ref: '#/components/schemas/WorkflowLimits'
         sources:
           type: array
           items:
@@ -22669,6 +23189,20 @@ components:
       required:
       - from
       - to
+    WorkflowEditors:
+      type: object
+      description: Who may decide workflows besides owners and admins
+      properties:
+        mode:
+          type: string
+          description: "`all`, `admins` (the default) or `members`"
+        memberIds:
+          type: array
+          description: The members who may, with `members` (`Member.id`)
+          items:
+            type: string
+      required:
+      - mode
     WorkflowInput:
       type: object
       description: An input of a workflow run
@@ -22686,6 +23220,17 @@ components:
       required:
       - id
       - label
+    WorkflowLimits:
+      type: object
+      description: "The bounds of a run of the workflow: `maxNodes` (50, at most 100), `maxVisits` in all (100, at most
+        500), `maxDepth` of sub-workflows (3, at most 5)"
+      properties:
+        maxNodes:
+          type: integer
+        maxVisits:
+          type: integer
+        maxDepth:
+          type: integer
     WorkflowNode:
       type: object
       description: A workflow node
@@ -22758,6 +23303,16 @@ components:
       - agent
       - wait
       - workflow
+    WorkflowPendingDeliverable:
+      type: object
+      description: The form of a pending deliverable, never its schema
+      properties:
+        type:
+          type: string
+        domain:
+          type: string
+      required:
+      - type
     WorkflowRun:
       type: object
       description: A workflow run
@@ -22784,16 +23339,27 @@ components:
             type: string
         currentNodeId:
           type: string
+        currentNodeKind:
+          $ref: '#/components/schemas/WorkflowNodeKind'
         parentRunId:
           type: string
         sessionId:
           type: string
+        repository:
+          type: string
+          description: The repository of the agent nodes that name none
         visits:
           type: array
           items:
             $ref: '#/components/schemas/NodeVisit'
         failure:
           type: string
+        failureCode:
+          type: string
+          description: "A stable code: `session_failed`, `session_deleted`, `session_missing`, `ended_without_delivery`,
+            `repository_missing`, `starter_unavailable`, `wait_cancelled`, `wait_missing`, `max_visits:<node>`,
+            `max_total_visits`, `max_depth`, `workflow_missing`, `invalid_arguments`, `sub_workflow_failed`,
+            `sub_workflow_cancelled`, `expired`, `no_transition`, or the code of a refusal that cannot be retried"
         output:
           type: string
         receiptId:
@@ -22811,9 +23377,38 @@ components:
       - startedBy
       - source
       - startedAt
+    WorkflowSessionPending:
+      type: object
+      description: Whether a session's agent step still waits for its delivery (`pendingWorkflowSession`)
+      properties:
+        needsAction:
+          type: boolean
+        runId:
+          type: string
+        nodeTitle:
+          type: string
+        deliverable:
+          $ref: '#/components/schemas/WorkflowPendingDeliverable'
+      required:
+      - needsAction
+    WorkflowSettings:
+      type: object
+      description: The editing rights of workflows, and the caller's
+      properties:
+        editors:
+          $ref: '#/components/schemas/WorkflowEditors'
+        canEdit:
+          type: boolean
+          description: Whether the caller may decide a workflow without a gate node
+      required:
+      - editors
+      - canEdit
     WorkflowStatus:
       type: string
+      description: "`rejected`: a proposal a person turned down, kept so the analysis never proposes it again; it
+        compiles nothing and never runs"
       enum:
       - proposed
       - accepted
       - edited
+      - rejected

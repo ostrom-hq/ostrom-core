@@ -624,6 +624,18 @@
         "required": false,
         "nullable": false
       },
+      "inputs": {
+        "type": {
+          "map": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "repository": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
       "prompt": {
         "type": "string",
         "required": false,
@@ -1286,6 +1298,29 @@
       }
     }
   },
+  "DeliverRequest": {
+    "properties": {
+      "output": {
+        "type": "any",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "DeliverSessionRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "output": {
+        "type": "any",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "Deliverable": {
     "properties": {
       "type": {
@@ -1300,6 +1335,11 @@
       },
       "schema": {
         "type": "any",
+        "required": false,
+        "nullable": false
+      },
+      "domain": {
+        "type": "string",
         "required": false,
         "nullable": false
       }
@@ -2312,6 +2352,11 @@
         },
         "required": false,
         "nullable": false
+      },
+      "repository": {
+        "type": "string",
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -2429,6 +2474,11 @@
         "nullable": false
       },
       "childRunId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "nodeTitle": {
         "type": "string",
         "required": false,
         "nullable": false
@@ -5147,6 +5197,18 @@
         "required": false,
         "nullable": false
       },
+      "sessionMode": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "limits": {
+        "type": {
+          "ref": "WorkflowLimits"
+        },
+        "required": false,
+        "nullable": false
+      },
       "sources": {
         "type": {
           "array": {
@@ -5204,6 +5266,22 @@
       }
     }
   },
+  "WorkflowEditors": {
+    "properties": {
+      "mode": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "memberIds": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "WorkflowInput": {
     "properties": {
       "id": {
@@ -5227,6 +5305,25 @@
         "nullable": false
       },
       "maxLength": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WorkflowLimits": {
+    "properties": {
+      "maxNodes": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "maxVisits": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "maxDepth": {
         "type": "integer",
         "required": false,
         "nullable": false
@@ -5373,6 +5470,20 @@
       "workflow"
     ]
   },
+  "WorkflowPendingDeliverable": {
+    "properties": {
+      "type": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "domain": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "WorkflowRun": {
     "properties": {
       "id": {
@@ -5429,12 +5540,24 @@
         "required": false,
         "nullable": false
       },
+      "currentNodeKind": {
+        "type": {
+          "ref": "WorkflowNodeKind"
+        },
+        "required": false,
+        "nullable": false
+      },
       "parentRunId": {
         "type": "string",
         "required": false,
         "nullable": false
       },
       "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "repository": {
         "type": "string",
         "required": false,
         "nullable": false
@@ -5449,6 +5572,11 @@
         "nullable": false
       },
       "failure": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "failureCode": {
         "type": "string",
         "required": false,
         "nullable": false
@@ -5475,11 +5603,54 @@
       }
     }
   },
+  "WorkflowSessionPending": {
+    "properties": {
+      "needsAction": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "runId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "nodeTitle": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "deliverable": {
+        "type": {
+          "ref": "WorkflowPendingDeliverable"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WorkflowSettings": {
+    "properties": {
+      "editors": {
+        "type": {
+          "ref": "WorkflowEditors"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "canEdit": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "WorkflowStatus": {
     "enum": [
       "proposed",
       "accepted",
-      "edited"
+      "edited",
+      "rejected"
     ]
   }
 }

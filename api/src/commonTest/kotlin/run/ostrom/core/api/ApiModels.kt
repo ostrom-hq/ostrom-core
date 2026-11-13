@@ -30,6 +30,8 @@ import run.ostrom.core.api.models.CompleteTodoItemRequest
 import run.ostrom.core.api.models.CreateTodoRequest
 import run.ostrom.core.api.models.Decision
 import run.ostrom.core.api.models.DecisionSubject
+import run.ostrom.core.api.models.DeliverRequest
+import run.ostrom.core.api.models.DeliverSessionRequest
 import run.ostrom.core.api.models.Deliverable
 import run.ostrom.core.api.models.Dev
 import run.ostrom.core.api.models.DeviceCode
@@ -134,9 +136,14 @@ import run.ostrom.core.api.models.WaitWake
 import run.ostrom.core.api.models.WaitWakeRequest
 import run.ostrom.core.api.models.Workflow
 import run.ostrom.core.api.models.WorkflowEdge
+import run.ostrom.core.api.models.WorkflowEditors
 import run.ostrom.core.api.models.WorkflowInput
+import run.ostrom.core.api.models.WorkflowLimits
 import run.ostrom.core.api.models.WorkflowNode
+import run.ostrom.core.api.models.WorkflowPendingDeliverable
 import run.ostrom.core.api.models.WorkflowRun
+import run.ostrom.core.api.models.WorkflowSessionPending
+import run.ostrom.core.api.models.WorkflowSettings
 import kotlinx.serialization.KSerializer
 
 /** Every model of the API contract: the schemas of `api/openapi.yaml` that have a Kotlin model. */
@@ -170,6 +177,8 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     CreateTodoRequest.serializer(),
     Decision.serializer(),
     DecisionSubject.serializer(),
+    DeliverRequest.serializer(),
+    DeliverSessionRequest.serializer(),
     Deliverable.serializer(),
     Dev.serializer(),
     DeviceCode.serializer(),
@@ -274,7 +283,12 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     WaitWakeRequest.serializer(),
     Workflow.serializer(),
     WorkflowEdge.serializer(),
+    WorkflowEditors.serializer(),
     WorkflowInput.serializer(),
+    WorkflowLimits.serializer(),
     WorkflowNode.serializer(),
+    WorkflowPendingDeliverable.serializer(),
     WorkflowRun.serializer(),
+    WorkflowSessionPending.serializer(),
+    WorkflowSettings.serializer(),
 )
