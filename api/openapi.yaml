@@ -8466,6 +8466,75 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/mcp/hosted:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMcpHostedProcesses
+      x-ostrom-status: planned
+      tags:
+      - mcp
+      summary: The org's hosted stdio processes on the MCP host, read live (scope mcp:read)
+      description: "TeamCode's dashboard \"Hosted commands\": one item per hosted process (a `shared` server once, a
+        `perMember` server once per member it is assigned to), read live from the host's `/v1/status`. When the host
+        does not answer, `hostReachable` is false and each state is the one the minute sweep last recorded. 409
+        `mcp_host_disabled` without an MCP host; 409 `mcp_hosted_too_many` past 10,000 hosted assignments"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpHostedProcesses'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/hosted/restart:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: restartMcpHostedProcess
+      x-ostrom-status: planned
+      tags:
+      - mcp
+      summary: Restart a hosted stdio process (scope mcp:admin)
+      description: "TeamCode's \"Restart\": the host stops the process and lifts its backoff (`/v1/stop`); the next
+        operation starts it again. Journaled before the stop as `mcp.stdio.restarted`. 404 when the server is not a
+        stdio server assigned to that member (or, for a `shared` server, to anyone); 409 `mcp_host_disabled` without
+        an MCP host; 502 `mcp_host_unavailable` when the host does not answer"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpHostedRestart'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
   /api/v1/secrets:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -19841,7 +19910,7 @@ components:
         name:
           type: string
           pattern: ^[a-z0-9][a-z0-9._-]{0,63}$
-          description: 1 to 64 characters; `servers`, `settings`, `calls` and `usage` are reserved (they are paths of
+          description: 1 to 64 characters; `servers`, `settings`, `calls`, `usage` and `hosted` are reserved (they are paths of
             this API), and so is a name agents would see as one of Ostrom's own MCP servers, which every agent already
             has (`ostrom`, `ostrom-workflow` and `workflow`, since the launcher labels a server `ostrom-<name>` and keeps
             a name that starts with `ostrom`), whatever their case and surrounding spaces; a reserved name is refused
@@ -19870,6 +19939,17 @@ components:
           type: string
           readOnly: true
           description: The name the agent sees (`<agentPrefix>-<name>`), in a member's list
+        state:
+          type: string
+          readOnly: true
+          description: "A stdio server's process in a member's list, as the minute sweep last recorded it: `idle`,
+            `starting`, `ready`, `failed` (the last start failed), `backoff` or `unknown`; absent for an HTTP server or
+            when the state cannot be read (a server is never hidden for it)"
+        failure:
+          type: string
+          readOnly: true
+          description: The last failure of that process not yet followed by a successful start (a host error code such
+            as `start_failed` or `crashed`), in a member's list
         path:
           type: string
           readOnly: true
@@ -19892,6 +19972,85 @@ components:
       - transport
       - enabled
       - scope
+      x-ostrom-kotlin: pending
+    McpHostedProcesses:
+      type: object
+      description: The org's hosted stdio processes (`GET /api/v1/mcp/hosted`)
+      properties:
+        hostReachable:
+          type: boolean
+          description: False when the MCP host did not answer; the states are then the recorded ones
+        hostVersion:
+          type: string
+          description: The host's version, when it answered
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpHostedProcess'
+      required:
+      - hostReachable
+      - items
+      x-ostrom-kotlin: pending
+    McpHostedProcess:
+      type: object
+      description: One hosted stdio process; no secret, argument value or environment
+      properties:
+        server:
+          type: string
+          description: The server's name
+        member:
+          type: string
+          description: The member's id, for a `perMember` server's process; absent for a `shared` server's
+        memberName:
+          type: string
+          description: The member's display name, when known
+        launcher:
+          type: string
+          description: npm or pypi
+        package:
+          type: string
+          description: The pinned package
+        state:
+          type: string
+          description: idle, starting, ready, failed, backoff or unknown
+        failure:
+          type: string
+          description: The last failure not yet followed by a successful start
+        starts:
+          type: integer
+        failures:
+          type: integer
+        lastExitCode:
+          type: integer
+        coldStartMs:
+          type: integer
+          description: How long the last start took
+        memoryBytes:
+          type: integer
+          description: Resident memory of the process tree
+        stderr:
+          type: string
+          description: The last 4 KiB of the process's stderr, every secret value scrubbed (administrators only)
+      required:
+      - server
+      - launcher
+      - package
+      - state
+      - starts
+      - failures
+      x-ostrom-kotlin: pending
+    McpHostedRestart:
+      type: object
+      description: The process to restart
+      properties:
+        server:
+          type: string
+          description: The stdio server's name
+        member:
+          type: string
+          description: The member's id, for a `perMember` server; omitted for a `shared` server
+      required:
+      - server
       x-ostrom-kotlin: pending
     InferenceSettings:
       type: object
