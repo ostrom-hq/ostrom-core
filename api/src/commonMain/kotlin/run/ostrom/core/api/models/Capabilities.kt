@@ -207,6 +207,15 @@ public object ServerFeatures {
     /** Workflows and their runs. */
     public const val WORKFLOWS: String = "workflows.v1"
 
+    /**
+     * An agent node ends by delivering: `deliverRun`, `deliverWorkflowSession`, `pendingWorkflowSession` and the
+     * `ostrom-workflow` MCP server (`workflowsMcp`), with the agent token's `workflow:session` scope.
+     */
+    public const val WORKFLOWS_DELIVER: String = "workflows.deliver.v1"
+
+    /** Who may decide workflows (`getWorkflowSettings`, `saveWorkflowSettings`). */
+    public const val WORKFLOWS_SETTINGS: String = "workflows.settings.v1"
+
     /** The enterprise license (ee build only). */
     public const val LICENSE: String = "license.v1"
 
@@ -216,6 +225,6 @@ public object ServerFeatures {
         IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES,
         RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS,
-        USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, LICENSE,
+        USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )
 }

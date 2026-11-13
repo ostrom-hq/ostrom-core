@@ -48,6 +48,8 @@ public data class AutomationTrigger(
  * What an automation starts: a workflow run, or a cloud agent session with a prompt.
  *
  * @property workflowId Workflow to run.
+ * @property inputs The workflow's inputs, templates rendered like the prompt; an empty one is left out.
+ * @property repository The session's repository (`owner/name`), or a workflow run's for its agent nodes.
  * @property prompt Prompt of a cloud agent session (`{{payload.x}}` variables).
  * @property agent Coding agent.
  * @property model Model.
@@ -57,6 +59,8 @@ public data class AutomationTrigger(
 @Serializable
 public data class AutomationAction(
     val workflowId: String? = null,
+    val inputs: Map<String, String>? = null,
+    val repository: String? = null,
     val prompt: String? = null,
     val agent: String? = null,
     val model: String? = null,
@@ -168,10 +172,13 @@ public enum class RunStatus(
  * @property automationId Automation that started it.
  * @property inputs Inputs.
  * @property currentNodeId Node being visited.
+ * @property currentNodeKind Its kind.
  * @property parentRunId Parent run.
  * @property sessionId Agent session of the run.
+ * @property repository The repository of the agent nodes that name none.
  * @property visits Visits, in order.
  * @property failure Why it failed.
+ * @property failureCode Why it failed, as a stable code (`ended_without_delivery`, `max_visits:<node>`…).
  * @property output Output.
  * @property receiptId Receipt of the run.
  * @property startedAt ISO start.
@@ -189,10 +196,13 @@ public data class WorkflowRun(
     val automationId: String? = null,
     val inputs: Map<String, String> = emptyMap(),
     val currentNodeId: String? = null,
+    val currentNodeKind: WorkflowNodeKind? = null,
     val parentRunId: String? = null,
     val sessionId: String? = null,
+    val repository: String? = null,
     val visits: List<NodeVisit> = emptyList(),
     val failure: String? = null,
+    val failureCode: String? = null,
     val output: String? = null,
     val receiptId: String? = null,
     val startedAt: String,
@@ -212,6 +222,7 @@ public data class WorkflowRun(
  * @property waitId Wait.
  * @property gateId Gate request.
  * @property childRunId Child run.
+ * @property nodeTitle The node's label in the run's copy of the definition.
  * @property startedAt ISO start.
  * @property endedAt ISO end.
  */
@@ -227,6 +238,7 @@ public data class NodeVisit(
     val waitId: String? = null,
     val gateId: String? = null,
     val childRunId: String? = null,
+    val nodeTitle: String? = null,
     val startedAt: String,
     val endedAt: String? = null,
 )

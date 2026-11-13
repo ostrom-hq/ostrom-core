@@ -61,6 +61,9 @@ public enum class WorkflowStatus(
     ACCEPTED("accepted"),
     EDITED("edited"),
 
+    /** A proposal a person turned down: kept so the analysis never proposes it again; compiles nothing, never runs. */
+    REJECTED("rejected"),
+
     /** A value this version does not know, sent by a newer server; never sent. */
     UNKNOWN(""),
     ;
@@ -88,6 +91,9 @@ public enum class WorkflowStatus(
  * @property edges Edges between nodes.
  * @property start Id of the first node, when it is not the first `trigger`.
  * @property inputs Inputs of a run.
+ * @property sessionMode `same`: the agent steps of a run are messages of one session; `handoff` (null): each starts a
+ *   session whose first message carries what the earlier steps delivered.
+ * @property limits Bounds of a run; the defaults when null.
  * @property sources Where the analysis found it.
  * @property status Proposed or decided.
  * @property foundAt ISO time it was found or created.
@@ -106,6 +112,8 @@ public data class Workflow(
     val edges: List<WorkflowEdge>,
     val start: String? = null,
     val inputs: List<WorkflowInput> = emptyList(),
+    val sessionMode: String? = null,
+    val limits: WorkflowLimits? = null,
     val sources: List<RuleSource> = emptyList(),
     val status: WorkflowStatus,
     val foundAt: String,
@@ -128,6 +136,20 @@ public data class WorkflowEdge(
     val to: String?,
     val label: String? = null,
     val on: String? = null,
+)
+
+/**
+ * The bounds of a run of a workflow.
+ *
+ * @property maxNodes Nodes at most (50 when null, at most 100).
+ * @property maxVisits Visits of a run in all (100 when null, at most 500).
+ * @property maxDepth Depth of sub-workflows (3 when null, at most 5).
+ */
+@Serializable
+public data class WorkflowLimits(
+    val maxNodes: Int? = null,
+    val maxVisits: Int? = null,
+    val maxDepth: Int? = null,
 )
 
 /**
@@ -323,6 +345,7 @@ public data class GateAction(
  * @property agent Agent run by the server for a run (`claude-code`, `codex`…).
  * @property model Model of that agent.
  * @property deliverable What the agent must deliver for the run to move on.
+ * @property repository Agent: the repository (`owner/name`) its session works in, else the run's.
  */
 @Serializable
 public data class NodeRun(
@@ -337,6 +360,7 @@ public data class NodeRun(
     val agent: String? = null,
     val model: String? = null,
     val deliverable: Deliverable? = null,
+    val repository: String? = null,
 )
 
 /**
@@ -357,13 +381,75 @@ public data class NodeRunOn(
  * @property type `artifact`, `url`, `text` or `json`.
  * @property label Label.
  * @property schema JSON schema of a `json` deliverable.
+ * @property domain A `url` deliverable only: the host it must be on, or a subdomain of it.
  */
 @Serializable
 public data class Deliverable(
     val type: String,
     val label: String? = null,
     val schema: JsonElement? = null,
+    val domain: String? = null,
 )
+
+/**
+ * What an agent step delivers (`deliverRun`).
+ *
+ * @property output A string for `text`, `url` and `artifact`; an object or an array for `json`.
+ */
+@Serializable
+public data class DeliverRequest(val output: JsonElement)
+
+/**
+ * What a session's agent step delivers (`deliverWorkflowSession`).
+ *
+ * @property sessionId The session: required for a person or a key, an agent token's own otherwise.
+ * @property output As in [DeliverRequest].
+ */
+@Serializable
+public data class DeliverSessionRequest(val sessionId: String? = null, val output: JsonElement)
+
+/**
+ * The form of a pending deliverable, never its schema.
+ *
+ * @property type `artifact`, `url`, `text` or `json`.
+ * @property domain The host of a `url`.
+ */
+@Serializable
+public data class WorkflowPendingDeliverable(val type: String, val domain: String? = null)
+
+/**
+ * Whether a session's agent step still waits for its delivery (`pendingWorkflowSession`, the Stop hook).
+ *
+ * @property needsAction True when the step waits and the session holds no open wait.
+ * @property runId The run.
+ * @property nodeTitle The step's title.
+ * @property deliverable What it waits for.
+ */
+@Serializable
+public data class WorkflowSessionPending(
+    val needsAction: Boolean,
+    val runId: String? = null,
+    val nodeTitle: String? = null,
+    val deliverable: WorkflowPendingDeliverable? = null,
+)
+
+/**
+ * Who may decide workflows besides owners and admins.
+ *
+ * @property mode `all`, `admins` (the default) or `members`.
+ * @property memberIds The members who may, with `members`.
+ */
+@Serializable
+public data class WorkflowEditors(val mode: String, val memberIds: List<String>? = null)
+
+/**
+ * The editing rights of workflows, and the caller's.
+ *
+ * @property editors Who may.
+ * @property canEdit Whether the caller may decide a workflow without a gate node.
+ */
+@Serializable
+public data class WorkflowSettings(val editors: WorkflowEditors, val canEdit: Boolean)
 
 /**
  * A string suggested by the analysis, with what proves it.
