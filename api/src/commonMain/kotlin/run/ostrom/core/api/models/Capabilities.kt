@@ -75,6 +75,19 @@ public object ServerFeatures {
     /** The inference gateway (provider accounts, messages, responses). */
     public const val INFERENCE: String = "inference.v1"
 
+    /**
+     * The admission queue of the inference gateway, shared by every replica: a call waits for a busy shared account or
+     * the member's concurrency limit (`InferenceSettings.memberConcurrency`) instead of being refused, in turns between
+     * members, `x-ostrom-workload` `interactive` before `background`; `GET /api/v1/inference/queue`.
+     */
+    public const val INFERENCE_QUEUE: String = "inference.queue.v1"
+
+    /**
+     * The cancellation of an inference call by its `x-ostrom-client-request-id`
+     * (`POST /api/v1/inference/requests/{id}/cancel`), on whichever replica runs it.
+     */
+    public const val INFERENCE_CANCEL: String = "inference.cancel.v1"
+
     /** The MCP relay (servers, assignments, policies). */
     public const val MCP: String = "mcp.v1"
 
@@ -180,8 +193,8 @@ public object ServerFeatures {
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
         ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE,
-        INFERENCE, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
-        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS,
-        USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, LICENSE,
+        INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS,
+        REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING,
+        SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, LICENSE,
     )
 }
