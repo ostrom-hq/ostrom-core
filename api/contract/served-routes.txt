@@ -13,6 +13,9 @@ DELETE /api/v1/auth/sessions/{}
 DELETE /api/v1/automations/{}
 DELETE /api/v1/cloud/sessions/{}
 DELETE /api/v1/devices/{}
+DELETE /api/v1/environment/assignments/{}/{}
+DELETE /api/v1/environment/exclusions/{}/{}
+DELETE /api/v1/environment/variants/{}
 DELETE /api/v1/github/link
 DELETE /api/v1/github/links/{}
 DELETE /api/v1/groups/{}
@@ -21,6 +24,7 @@ DELETE /api/v1/launches/{}
 DELETE /api/v1/mcp/servers/{}
 DELETE /api/v1/mcp/servers/{}/assignments/{}
 DELETE /api/v1/mcp/servers/{}/policies/{}
+DELETE /api/v1/me/environment/variants/{}
 DELETE /api/v1/orgs/{}
 DELETE /api/v1/orgs/{}/invitations/{}
 DELETE /api/v1/orgs/{}/members/{}
@@ -75,6 +79,10 @@ GET /api/v1/cloud/sessions/{}/terminal
 GET /api/v1/confirmations/{}
 GET /api/v1/decisions
 GET /api/v1/devices
+GET /api/v1/environment
+GET /api/v1/environment/assignments
+GET /api/v1/environment/variants
+GET /api/v1/environment/variants/personal
 GET /api/v1/gates/approvers
 GET /api/v1/gates/catalog
 GET /api/v1/gates/catalog/signed
@@ -105,6 +113,7 @@ GET /api/v1/mcp/servers/{}/assignments
 GET /api/v1/mcp/servers/{}/policies
 GET /api/v1/mcp/settings
 GET /api/v1/mcp/usage
+GET /api/v1/me/environment/variants
 GET /api/v1/me/notifications
 GET /api/v1/me/organizations
 GET /api/v1/notifications
@@ -160,7 +169,9 @@ GET /l/{}/{}
 GET /ready
 PATCH /api/v1/accounts/{}
 PATCH /api/v1/artifacts/{}
+PATCH /api/v1/environment/variants/{}
 PATCH /api/v1/groups/{}
+PATCH /api/v1/me/environment/variants/{}
 PATCH /api/v1/orgs/{}
 PATCH /api/v1/orgs/{}/members/{}
 PATCH /api/v1/rules/{}
@@ -211,6 +222,9 @@ POST /api/v1/cloud/sessions/{}/pause
 POST /api/v1/cloud/sessions/{}/resume
 POST /api/v1/cloud/sessions/{}/terminal/ticket
 POST /api/v1/confirmations/{}/answer
+POST /api/v1/environment/variants
+POST /api/v1/environment/variants/{}/bulk-assign
+POST /api/v1/environment/variants/{}/promote
 POST /api/v1/gates
 POST /api/v1/gates/local-denials
 POST /api/v1/gates/{}/consume
@@ -232,6 +246,7 @@ POST /api/v1/launches/{}/hooks-missing
 POST /api/v1/mcp/servers
 POST /api/v1/mcp/servers/{}/policies
 POST /api/v1/mcp/{}
+POST /api/v1/me/environment/variants
 POST /api/v1/notifications
 POST /api/v1/orgs
 POST /api/v1/orgs/{}/billing/cancel
@@ -294,6 +309,8 @@ PUT /api/v1/artifacts/{}/members/{}
 PUT /api/v1/automations/{}
 PUT /api/v1/budgets
 PUT /api/v1/cloud/sessions/{}/github
+PUT /api/v1/environment/assignments/{}/{}
+PUT /api/v1/environment/exclusions/{}/{}
 PUT /api/v1/gates/policy
 PUT /api/v1/groups/{}/members/{}
 PUT /api/v1/inference/settings

@@ -9468,7 +9468,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getEnvironment
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "The caller's own environment variables (`environment.v1`), with their values: every environment variant
@@ -9497,7 +9497,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listEnvironmentVariants
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "The organization's environment variants (`environment.v1`), metadata only: never a value. An owner or an
@@ -9521,7 +9521,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Creates an environment variant: a named value for one environment variable (its slot). Several variants
@@ -9572,7 +9572,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listPersonalEnvironmentVariants
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Every member's personal environment variants, by owner (at most 500), with `owner` and their definition
@@ -9600,7 +9600,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     patch:
       operationId: updateEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Renames a team variant or replaces its shared value. `expectedVersion` is the version read: another
@@ -9645,7 +9645,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Deletes a variant, team or personal (an administrator may remove a member's personal one), and its
@@ -9680,7 +9680,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: bulkAssignEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Assigns a shared team variant to every member enabled now: rows marked `bulk`, replacing earlier bulk
@@ -9721,7 +9721,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: promoteEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Makes a member's personal variant a team variant: its owner is cleared and keeps the selection, everyone
@@ -9761,7 +9761,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listEnvironmentAssignments
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Every member's effective environment assignments and exclusions, metadata only (scope `secrets:read`, an
@@ -9796,7 +9796,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: assignEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Selects a team variant for one member's variable, replacing any previous selection of that variable (a
@@ -9847,7 +9847,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unassignEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Removes the member's selection for the variable; nothing falls back to an earlier bulk value. 204 also
@@ -9888,7 +9888,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: excludeEnvironmentVariable
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Excludes a member from a variable: removes their current selection, then refuses a direct assignment
@@ -9928,7 +9928,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: includeEnvironmentVariable
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Removes an exclusion; it grants nothing back. Journaled `environment.included`"
@@ -9968,7 +9968,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMyEnvironmentVariants
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "The caller's own personal environment variants, metadata only. A person only (a browser session; a
@@ -9992,7 +9992,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createMyEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Declares a personal environment value: a shared-binding variant owned by the caller and assigned to them
@@ -10035,7 +10035,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     patch:
       operationId: updateMyEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Renames one of the caller's personal variants or replaces its value, with `expectedVersion`. Another
@@ -10077,7 +10077,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteMyEnvironmentVariant
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - secrets
       summary: "Deletes one of the caller's personal variants and its assignment. Journaled
