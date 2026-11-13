@@ -12430,11 +12430,11 @@ paths:
       tags:
       - artifacts
       summary: Publish a new version
-      description: 'With `uploadId` (planned), the commit of an upload: every file is either sent by that upload or
-        already in the artifact''s folder (409 `artifact_blob_missing`), `baseVersion` must be the live version (409
-        `artifact_conflict`), only the owner (and invited editors) publish (403), `quotaPublishesPerHour` (429
-        `artifact_rate_limited` with `Retry-After`), the byte quotas (409 `artifact_quota_exceeded`), versions beyond
-        `maxVersionsPerArtifact` are pruned. Files are stored in the organization''s bucket, never in PostgreSQL; 409
+      description: 'With `uploadId`, the commit of an upload: every file is either sent by that upload or already in
+        the artifact''s folder (409 `artifact_blob_missing`), `baseVersion` must be the live version (409
+        `artifact_conflict`, whose `current` is the live version (planned)), only the owner (and invited editors)
+        publish (403). Planned: `quotaPublishesPerHour` (429 `artifact_rate_limited` with `Retry-After`), the byte
+        quotas (409 `artifact_quota_exceeded`), versions beyond `maxVersionsPerArtifact` are pruned. Files are stored in the organization''s bucket, never in PostgreSQL; 409
         with the inactive reason while artifacts are inactive'
       parameters:
       - name: id
@@ -12497,7 +12497,12 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
-          $ref: '#/components/responses/Error'
+          description: 'A refusal; for `artifact_conflict`, `current` is the live version, for the publisher to merge
+            (planned)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactConflict'
   /api/v1/artifacts/{id}/versions/{number}/file:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -16718,6 +16723,17 @@ components:
       required:
       - files
       x-ostrom-kotlin: pending
+    ArtifactConflict:
+      type: object
+      description: 'The refusal of a publication: `ApiError` with, for `artifact_conflict`, the live version (TeamCode''s
+        `{error, current}`)'
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+        current:
+          $ref: '#/components/schemas/ArtifactVersion'
+      required:
+      - error
     ArtifactUpload:
       type: object
       description: '`missing` are the SHA-256 values to send, in chunks of at most `chunkBytes`, before `expiresAt`'

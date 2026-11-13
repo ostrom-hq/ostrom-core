@@ -24,6 +24,7 @@ import run.ostrom.core.api.models.ApproverGate
 import run.ostrom.core.api.models.ApproverLine
 import run.ostrom.core.api.models.ApproversGraph
 import run.ostrom.core.api.models.Artifact
+import run.ostrom.core.api.models.ArtifactConflict
 import run.ostrom.core.api.models.ArtifactPage
 import run.ostrom.core.api.models.ArtifactTicket
 import run.ostrom.core.api.models.ArtifactTicketRequest
@@ -211,6 +212,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ApproverLine.serializer(),
     ApproversGraph.serializer(),
     Artifact.serializer(),
+    ArtifactConflict.serializer(),
     ArtifactPage.serializer(),
     ArtifactTicket.serializer(),
     ArtifactTicketRequest.serializer(),

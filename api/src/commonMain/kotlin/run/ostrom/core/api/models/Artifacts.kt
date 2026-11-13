@@ -80,6 +80,19 @@ public data class ArtifactVersion(
 )
 
 /**
+ * The refusal of a publication (TeamCode's `{error, current}`): an [ApiError] with, for `artifact_conflict`, the live
+ * version, for the publisher to merge.
+ *
+ * @property error What was refused.
+ * @property current The live version, for `artifact_conflict`.
+ */
+@Serializable
+public data class ArtifactConflict(
+    val error: ErrorDetail,
+    val current: ArtifactVersion? = null,
+)
+
+/**
  * Which version a ticket opens (`POST /api/v1/artifacts/{id}/tickets`).
  *
  * @property version The version; the latest when absent.

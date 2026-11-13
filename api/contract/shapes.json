@@ -846,6 +846,24 @@
       }
     }
   },
+  "ArtifactConflict": {
+    "properties": {
+      "error": {
+        "type": {
+          "ref": "ErrorDetail"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "current": {
+        "type": {
+          "ref": "ArtifactVersion"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "ArtifactPage": {
     "properties": {
       "items": {
