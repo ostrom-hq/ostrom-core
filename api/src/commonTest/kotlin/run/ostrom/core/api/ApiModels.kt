@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package run.ostrom.core.api
 
+import run.ostrom.core.api.models.AddTodoItemRequest
 import run.ostrom.core.api.models.AnswerApprovalRequest
 import run.ostrom.core.api.models.ApiError
 import run.ostrom.core.api.models.Approval
@@ -21,11 +22,14 @@ import run.ostrom.core.api.models.CompiledNode
 import run.ostrom.core.api.models.CompiledNotify
 import run.ostrom.core.api.models.CompiledScript
 import run.ostrom.core.api.models.CompiledTrigger
+import run.ostrom.core.api.models.CompleteTodoItemRequest
+import run.ostrom.core.api.models.CreateTodoRequest
 import run.ostrom.core.api.models.Decision
 import run.ostrom.core.api.models.DecisionSubject
 import run.ostrom.core.api.models.Deliverable
 import run.ostrom.core.api.models.Dev
 import run.ostrom.core.api.models.DiffStats
+import run.ostrom.core.api.models.DropTodoItemRequest
 import run.ostrom.core.api.models.EndSessionRequest
 import run.ostrom.core.api.models.ErrorDetail
 import run.ostrom.core.api.models.Evidence
@@ -38,6 +42,7 @@ import run.ostrom.core.api.models.GatePushRef
 import run.ostrom.core.api.models.GateRef
 import run.ostrom.core.api.models.GateRequest
 import run.ostrom.core.api.models.GateResponse
+import run.ostrom.core.api.models.LinkTodoItemRequest
 import run.ostrom.core.api.models.Member
 import run.ostrom.core.api.models.MemberInvite
 import run.ostrom.core.api.models.NodeCondition
@@ -47,6 +52,7 @@ import run.ostrom.core.api.models.NodeRunOn
 import run.ostrom.core.api.models.NodeSuggestions
 import run.ostrom.core.api.models.NodeVisit
 import run.ostrom.core.api.models.NodeWhen
+import run.ostrom.core.api.models.NoteTodoItemRequest
 import run.ostrom.core.api.models.Notification
 import run.ostrom.core.api.models.Organization
 import run.ostrom.core.api.models.PackageEnvelope
@@ -75,11 +81,32 @@ import run.ostrom.core.api.models.Session
 import run.ostrom.core.api.models.SessionGateAnswer
 import run.ostrom.core.api.models.SessionPackage
 import run.ostrom.core.api.models.SessionResponse
+import run.ostrom.core.api.models.SessionTodo
 import run.ostrom.core.api.models.StartSessionRequest
+import run.ostrom.core.api.models.StartTodoItemRequest
+import run.ostrom.core.api.models.StartTodoItemResponse
 import run.ostrom.core.api.models.StringListSuggestion
 import run.ostrom.core.api.models.StringSuggestion
 import run.ostrom.core.api.models.SuggestedChannel
 import run.ostrom.core.api.models.Team
+import run.ostrom.core.api.models.Todo
+import run.ostrom.core.api.models.TodoCheck
+import run.ostrom.core.api.models.TodoCheckReport
+import run.ostrom.core.api.models.TodoContext
+import run.ostrom.core.api.models.TodoDoneWhen
+import run.ostrom.core.api.models.TodoHookErrorRequest
+import run.ostrom.core.api.models.TodoHookEvent
+import run.ostrom.core.api.models.TodoItem
+import run.ostrom.core.api.models.TodoItemInput
+import run.ostrom.core.api.models.TodoLink
+import run.ostrom.core.api.models.TodoNote
+import run.ostrom.core.api.models.TodoProof
+import run.ostrom.core.api.models.TodoStopDecision
+import run.ostrom.core.api.models.TodoStopHook
+import run.ostrom.core.api.models.TodoStopHookRequest
+import run.ostrom.core.api.models.TodoStopHooks
+import run.ostrom.core.api.models.TodoStopItemReport
+import run.ostrom.core.api.models.TodoStopRequest
 import run.ostrom.core.api.models.Wait
 import run.ostrom.core.api.models.WaitAction
 import run.ostrom.core.api.models.WaitAnswer
@@ -99,6 +126,7 @@ import kotlinx.serialization.KSerializer
 
 /** Every model of the API contract: the schemas of `api/openapi.yaml` that have a Kotlin model. */
 internal val apiModels: List<KSerializer<*>> = listOf(
+    AddTodoItemRequest.serializer(),
     AnswerApprovalRequest.serializer(),
     ApiError.serializer(),
     Approval.serializer(),
@@ -119,11 +147,14 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     CompiledNotify.serializer(),
     CompiledScript.serializer(),
     CompiledTrigger.serializer(),
+    CompleteTodoItemRequest.serializer(),
+    CreateTodoRequest.serializer(),
     Decision.serializer(),
     DecisionSubject.serializer(),
     Deliverable.serializer(),
     Dev.serializer(),
     DiffStats.serializer(),
+    DropTodoItemRequest.serializer(),
     EndSessionRequest.serializer(),
     ErrorDetail.serializer(),
     Evidence.serializer(),
@@ -136,6 +167,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GateRef.serializer(),
     GateRequest.serializer(),
     GateResponse.serializer(),
+    LinkTodoItemRequest.serializer(),
     Member.serializer(),
     MemberInvite.serializer(),
     NodeCondition.serializer(),
@@ -145,6 +177,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     NodeSuggestions.serializer(),
     NodeVisit.serializer(),
     NodeWhen.serializer(),
+    NoteTodoItemRequest.serializer(),
     Notification.serializer(),
     Organization.serializer(),
     PackageEnvelope.serializer(),
@@ -173,11 +206,32 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     SessionGateAnswer.serializer(),
     SessionPackage.serializer(),
     SessionResponse.serializer(),
+    SessionTodo.serializer(),
     StartSessionRequest.serializer(),
+    StartTodoItemRequest.serializer(),
+    StartTodoItemResponse.serializer(),
     StringListSuggestion.serializer(),
     StringSuggestion.serializer(),
     SuggestedChannel.serializer(),
     Team.serializer(),
+    Todo.serializer(),
+    TodoCheck.Serializer,
+    TodoCheckReport.serializer(),
+    TodoContext.serializer(),
+    TodoDoneWhen.serializer(),
+    TodoHookErrorRequest.serializer(),
+    TodoHookEvent.serializer(),
+    TodoItem.serializer(),
+    TodoItemInput.serializer(),
+    TodoLink.serializer(),
+    TodoNote.serializer(),
+    TodoProof.serializer(),
+    TodoStopDecision.serializer(),
+    TodoStopHook.serializer(),
+    TodoStopHookRequest.serializer(),
+    TodoStopHooks.serializer(),
+    TodoStopItemReport.serializer(),
+    TodoStopRequest.serializer(),
     Wait.serializer(),
     WaitAction.serializer(),
     WaitAnswer.serializer(),

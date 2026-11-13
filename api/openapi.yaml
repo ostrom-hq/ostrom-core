@@ -69,6 +69,7 @@ tags:
 - name: secrets
 - name: sessions
 - name: sharing
+- name: todos
 - name: waits
 - name: webhooks
 - name: workflows
@@ -6836,6 +6837,581 @@ paths:
           $ref: '#/components/responses/Error'
         '429':
           $ref: '#/components/responses/Error'
+  /api/v1/todos/session:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getSessionTodo
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Read a session's todo"
+      description: "The list with its items in order, the last proof of each, its hook events and `nextItemId`; `todo` is
+        null while the session has none. Answers to drop requests are applied on this read (one read of the waits
+        for every open drop request): yes drops the item, no or a cancelled wait puts it back to `todo`. Callers:
+        the session's agent token (the token of its launch), confined to that session whatever `sessionId` names;
+        the session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner or an
+        administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes (403
+        `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
+        of another organization or an unknown one answers 404 `not_found`."
+      parameters:
+      - name: sessionId
+        in: query
+        required: false
+        description: "The session (its id, or the id of one of its segments `~r<n>`); ignored for an agent token"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTodo'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createSessionTodo
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Create a session's todo, once per session"
+      description: "The plan `reference`, optional `refs` and every item in order, each with a complete description and at
+        least one typed check (`TodoCheck`). No check names a PR number or a version: the PR is found by the
+        marker `startTodoItem` returns. 400 for an invalid list: `invalid_todo` (a text too long, a bad slug,
+        more than 10 refs), `description_too_short` (a description outside 80 to 4 000 characters),
+        `check_required` (an item without a typed check), `invalid_check` (a check missing a field of its type, a
+        type this server does not know, a command timeout outside 1 to 120 seconds), `guessed_number` (a check
+        naming a PR number or a version), `too_many_items` (more than 500), `duplicate_item`,
+        `unknown_dependency`, `dependency_cycle`. 409 `todo_exists` when the session already has one. Callers:
+        the session's agent token (the token of its launch), confined to that session whatever `sessionId` names;
+        the session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner or an
+        administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes (403
+        `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
+        of another organization or an unknown one answers 404 `not_found`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTodoRequest'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTodo'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/items:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: addTodoItem
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Add an item found on the way"
+      description: "Marked `discovered` with its `reason`, placed after the item in progress and after its own dependencies.
+        The same 400 keys as the creation; 404 `todo_not_found` without a list; 409 `todo_closed` when the list
+        is done or abandoned. Callers: the session's agent token (the token of its launch), confined to that
+        session whatever `sessionId` names; the session's owner, a person, who names `sessionId` (400
+        `invalid_request` without it); an owner or an administrator of the organization reads (`getSessionTodo`,
+        `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets 403
+        `forbidden`. Another person's session, a session of another organization or an unknown one answers 404
+        `not_found`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTodoItemRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTodo'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/items/{item}/start:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: startTodoItem
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Start an item, and get the marker for its pull request"
+      description: "Puts the item in progress; another item in progress goes back to `todo`, unless this one is given to a
+        background agent (`background`). `marker` (`<!-- ostrom-todo: <list8>/<item> -->`, `list8` the first 8
+        characters of the list's id) goes in the body of the item's pull request, which the checks find by it.
+        404 `todo_not_found`, `unknown_item`; 409 `todo_closed`, `dependency_open` (a dependency is neither done
+        nor dropped), `item_closed` (done or dropped), `drop_pending` (a drop waits for the owner). Callers: the
+        session's agent token (the token of its launch), confined to that session whatever `sessionId` names; the
+        session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner or an
+        administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes (403
+        `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
+        of another organization or an unknown one answers 404 `not_found`."
+      parameters:
+      - name: item
+        in: path
+        required: true
+        description: "The item's id: a slug of at most 40 characters; any other value answers 404 `unknown_item`"
+        schema:
+          type: string
+          pattern: '^[a-z0-9][a-z0-9-]{0,39}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartTodoItemRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartTodoItemResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/items/{item}/notes:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: noteTodoItem
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Append a dated note to an item"
+      description: "Notes are only appended, never rewritten: at most 2 000 characters each (400 `invalid_todo`) and 100 per
+        item (400 `too_many_notes`). 404 `todo_not_found`, `unknown_item`; 409 `todo_closed`. Callers: the
+        session's agent token (the token of its launch), confined to that session whatever `sessionId` names; the
+        session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner or an
+        administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes (403
+        `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
+        of another organization or an unknown one answers 404 `not_found`."
+      parameters:
+      - name: item
+        in: path
+        required: true
+        description: "The item's id: a slug of at most 40 characters; any other value answers 404 `unknown_item`"
+        schema:
+          type: string
+          pattern: '^[a-z0-9][a-z0-9-]{0,39}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteTodoItemRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTodo'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/items/{item}/proof:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: completeTodoItem
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Report what an item's checks observed; done only if every check passed"
+      description: "`checks` gives, by position in the item's stored condition, whether each check passed, what was observed
+        and https URLs. The condition is the stored one: the caller neither chooses nor changes the checks.
+        `artifact_published` and `wait_answered` are verified by the server through the item's links, whatever
+        the report says. A failed, unknown or unreported check refuses with 409 `not_done` (the message says what
+        is missing) and the proof is kept on the item. 400 `invalid_proof` (a position outside the condition or
+        given twice, `observed` over 2 000 characters, more than 10 URLs or one not https); 404 `todo_not_found`,
+        `unknown_item`; 409 `item_closed` (drop requested or dropped), `todo_closed`. Callers: the session's
+        agent token (the token of its launch), confined to that session whatever `sessionId` names; the session's
+        owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner or an administrator
+        of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes (403 `forbidden`). A
+        service key or a runner token gets 403 `forbidden`. Another person's session, a session of another
+        organization or an unknown one answers 404 `not_found`."
+      parameters:
+      - name: item
+        in: path
+        required: true
+        description: "The item's id: a slug of at most 40 characters; any other value answers 404 `unknown_item`"
+        schema:
+          type: string
+          pattern: '^[a-z0-9][a-z0-9-]{0,39}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteTodoItemRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTodo'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/items/{item}/link:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: linkTodoItem
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Bind a pull request, a release, an artifact or a wait to an item"
+      description: "`kind` `pr` or `release` (their https address in `ref`), `artifact` or `wait` (their id). A link is
+        frozen: the same `ref` may be completed with `number`, `sha` (a PR's merge commit) or `tag`; another one
+        of the same kind is refused with 409 `already_linked`, except to replace a pull request closed without
+        merge (`replaceClosed`), which a note records. 400 `invalid_link`; 404 `todo_not_found`, `unknown_item`;
+        409 `todo_closed`. Callers: the session's agent token (the token of its launch), confined to that session
+        whatever `sessionId` names; the session's owner, a person, who names `sessionId` (400 `invalid_request`
+        without it); an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`)
+        but never writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another
+        person's session, a session of another organization or an unknown one answers 404 `not_found`."
+      parameters:
+      - name: item
+        in: path
+        required: true
+        description: "The item's id: a slug of at most 40 characters; any other value answers 404 `unknown_item`"
+        schema:
+          type: string
+          pattern: '^[a-z0-9][a-z0-9-]{0,39}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkTodoItemRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTodo'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/items/{item}/drop:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: requestTodoDrop
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Ask the session's owner to drop an item"
+      description: "Opens an ordinary wait for the session's owner (actions `yes` and `no`) and puts the item in
+        `drop_requested`; it is dropped only on the owner's yes, applied on the next read or change. Nothing is
+        ever deleted. 404 `todo_not_found`, `unknown_item`; 409 `item_closed` (done or dropped), `drop_pending`
+        (a drop already waits), `todo_closed`. Callers: the session's agent token (the token of its launch),
+        confined to that session whatever `sessionId` names; the session's owner, a person, who names `sessionId`
+        (400 `invalid_request` without it); an owner or an administrator of the organization reads
+        (`getSessionTodo`, `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token
+        gets 403 `forbidden`. Another person's session, a session of another organization or an unknown one
+        answers 404 `not_found`."
+      parameters:
+      - name: item
+        in: path
+        required: true
+        description: "The item's id: a slug of at most 40 characters; any other value answers 404 `unknown_item`"
+        schema:
+          type: string
+          pattern: '^[a-z0-9][a-z0-9-]{0,39}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DropTodoItemRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTodo'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/context:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: readTodoContext
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "The reminder block of the session's todo"
+      description: "The plan reference, the item in progress (else the next one) in full with its last check, then the list
+        one line per item, with no instruction to go on. Read by the `SessionStart` hook (`ostrom hook
+        todo-context`, matcher `compact|resume`) after a compaction and on resume; `text` is null without an
+        active list. Callers: the session's agent token (the token of its launch), confined to that session
+        whatever `sessionId` names; the session's owner, a person, who names `sessionId` (400 `invalid_request`
+        without it); an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`)
+        but never writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another
+        person's session, a session of another organization or an unknown one answers 404 `not_found`."
+      parameters:
+      - name: sessionId
+        in: query
+        required: false
+        description: "The session (its id, or the id of one of its segments `~r<n>`); ignored for an agent token"
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoContext'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/stop:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: stopTodoSession
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Decide what a stop of the agent leads to (the Stop hook)"
+      description: "Asked by the Stop hook (`ostrom hook todo-stop`) up to three times per stop. `begin` answers `allow`
+        (`why`: `no_list`; `hook_disabled` when an administrator turned the hook off for the session's owner,
+        before anything is run or written; `finished`; `background_task`; `wait_open` when any wait of the
+        session is open) or `verify`. On `verify` the hook runs the checks of the item in progress (a `command`
+        too, at most 120 s) and of every `todo` item whose checks are all cheap (`pr_merged`, `release_contains`,
+        `artifact_published`, `wait_answered`), reads the transcript for the pull requests the session opened
+        (`orphans`), and sends their outcome: the server ticks what passed, verifies `artifact_published` and
+        `wait_answered` itself, adds each orphan PR no item covers as a `discovered` item \"Finish PR #n\"
+        ending on `pr_merged`, counts the stop and answers `settle` (every item is done or dropped), `block`
+        (`reason`: the resume message for the agent, at most 8 000 characters) or `allow`. On `settle` the hook
+        re-runs every check of the done items: all hold, the list is `done` and the answer `allow` (`settled`);
+        else a regressed item is reopened and the stop blocked; an `attested` check never reopens an item. The
+        third blocked stop in a row with no item finished, added or noted opens a wait for the owner
+        (\"Blocked: …\", Resume / Drop this item / Stop here), resets the counter and answers `allow`
+        (`escalated`). The hook fails open and reports its failures with `recordTodoHookError`. 400
+        `invalid_stop` (an unknown phase, an item reported twice, more than 500 items or 5 orphans),
+        `invalid_proof`. Callers: the session's agent token (the token of its launch), confined to that session
+        whatever `sessionId` names; the session's owner, a person, who names `sessionId` (400 `invalid_request`
+        without it); an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`)
+        but never writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another
+        person's session, a session of another organization or an unknown one answers 404 `not_found`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoStopRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoStopDecision'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/session/hook-error:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: recordTodoHookError
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Record a failure of the Stop hook on the list"
+      description: "The hook fails open (a broken hook never holds the agent) and says so here: the event `hook_error`, its
+        text kept to 500 characters, joins `hookEvents` (the newest 20). 404 `todo_not_found` without a list.
+        Callers: the session's agent token (the token of its launch), confined to that session whatever
+        `sessionId` names; the session's owner, a person, who names `sessionId` (400 `invalid_request` without
+        it); an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but
+        never writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's
+        session, a session of another organization or an unknown one answers 404 `not_found`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoHookErrorRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTodo'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/stop-hook:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listTodoStopHooks
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "The members whose todo Stop hook is off"
+      description: "A member has the hook on until an administrator turns it off. An owner or an administrator of the
+        organization, with a browser session only: any token (a personal or agent token, a service key) gets 403
+        `forbidden`, a member 403 `forbidden`."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoStopHooks'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/todos/stop-hook/members/{memberId}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: setMemberTodoStopHook
+      x-ostrom-status: planned
+      tags:
+      - todos
+      summary: "Turn the todo Stop hook on or off for a member"
+      description: "When off, every `begin` of a stop of the sessions this member owns answers `allow` (`hook_disabled`)
+        before anything is run, counted or written; their lists are still kept, verified by `completeTodoItem`
+        and shown. An owner or an administrator of the organization, with a browser session only: any token gets
+        403 `forbidden`. 404 `not_found` for a member of another organization or an unknown one."
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        description: The member's id (`Member.id`), not a login
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoStopHookRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoStopHook'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/mcp/servers:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -13288,7 +13864,7 @@ components:
         `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `import.teamcode.v1`, `inference.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.github.v1`, `secrets.v1`,
-        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `slack.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
+        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`,
         `license.v1`. A client
         ignores a key it does not know."
@@ -17734,6 +18310,674 @@ components:
       required:
       - tokens
       x-ostrom-kotlin: pending
+    SessionTodo:
+      type: object
+      description: "The answer of a read or a change of a session's todo"
+      properties:
+        todo:
+          oneOf:
+          - $ref: '#/components/schemas/Todo'
+          - type: 'null'
+          description: The list; null while the session has none
+      required:
+      - todo
+    StartTodoItemResponse:
+      type: object
+      description: The answer of `startTodoItem`
+      properties:
+        todo:
+          $ref: '#/components/schemas/Todo'
+        marker:
+          type: string
+          description: "`<!-- ostrom-todo: <list8>/<item> -->`, `list8` the first 8 characters of the list's id: put it in
+            the body of the item's pull request, which the checks find by it whatever its number"
+      required:
+      - todo
+      - marker
+    Todo:
+      type: object
+      description: "A session's todo: the plan reference and its items, each with a complete description and a typed end
+        condition (`todos.v1`). An item is done only when its checks pass; items are added, never deleted"
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+          description: "The session's root id: a reopened segment (`~r<n>`) keeps its list"
+        reference:
+          type: string
+          description: One paragraph pointing to the full plan, shown to the agent at every stop
+        refs:
+          type: array
+          items:
+            $ref: '#/components/schemas/WaitRef'
+        status:
+          $ref: '#/components/schemas/TodoStatus'
+        stall:
+          type: integer
+          description: Blocked stops in a row without progress; at 3 a wait asks the owner (0 when absent)
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TodoItem'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        nextItemId:
+          type: string
+          description: The first `todo` item whose dependencies are done or dropped; absent when none
+        hookEvents:
+          type: array
+          description: What the Stop hook recorded about itself, oldest first (the newest 20)
+          items:
+            $ref: '#/components/schemas/TodoHookEvent'
+      required:
+      - id
+      - sessionId
+      - reference
+      - status
+      - items
+      - createdAt
+      - updatedAt
+    TodoStatus:
+      type: string
+      description: "`done`: every item is done or dropped and the final verification held"
+      enum:
+      - active
+      - done
+      - abandoned
+    TodoItem:
+      type: object
+      description: An item of a todo, as the server keeps it
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        doneWhen:
+          $ref: '#/components/schemas/TodoDoneWhen'
+        dependsOn:
+          type: array
+          items:
+            type: string
+        origin:
+          $ref: '#/components/schemas/TodoItemOrigin'
+        originReason:
+          type: string
+          description: Why a discovered item was added
+        status:
+          $ref: '#/components/schemas/TodoItemStatus'
+        proof:
+          $ref: '#/components/schemas/TodoProof'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TodoNote'
+        dropReason:
+          type: string
+        dropWaitId:
+          type: string
+          description: The wait that asks the session's owner about the drop
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/TodoLink'
+        unverified:
+          type: boolean
+          description: "Every check of the condition is `attested`: nothing verifies it (false when absent)"
+      required:
+      - id
+      - name
+      - description
+      - doneWhen
+      - origin
+      - status
+    TodoItemOrigin:
+      type: string
+      description: "`plan`: written with the list; `discovered`: added on the way"
+      enum:
+      - plan
+      - discovered
+    TodoItemStatus:
+      type: string
+      description: "`drop_requested`: a wait asks the owner; `dropped`: on the owner's yes, never deleted"
+      enum:
+      - todo
+      - doing
+      - done
+      - drop_requested
+      - dropped
+    TodoItemInput:
+      type: object
+      description: An item as the agent writes it
+      properties:
+        id:
+          type: string
+          description: "A slug of at most 40 characters (`[a-z0-9][a-z0-9-]*`), unique in the list"
+        name:
+          type: string
+          description: One line, at most 80 characters
+        description:
+          type: string
+          description: "80 to 4 000 characters: what, where, why, what is out of scope; enough for a new agent to do it
+            alone"
+        doneWhen:
+          $ref: '#/components/schemas/TodoDoneWhen'
+        dependsOn:
+          type: array
+          description: Ids of the items that must be done or dropped before this one starts
+          items:
+            type: string
+      required:
+      - id
+      - name
+      - description
+      - doneWhen
+    TodoDoneWhen:
+      type: object
+      description: The end condition of an item, frozen once created
+      properties:
+        text:
+          type: string
+          description: What "done" means, at most 1 000 characters
+        checks:
+          type: array
+          description: At least one typed check
+          items:
+            $ref: '#/components/schemas/TodoCheck'
+      required:
+      - text
+      - checks
+    TodoCheck:
+      description: "One typed check of an end condition, told apart by `type`. A check is read again at every stop, so it
+        must stay true once the work moves on (never a transient state such as a PR still open); no check names a PR
+        number or a version. `pr_merged`, `pr_closed`, `release_contains`, `ci_green` (with `gh`) and `command` (in a
+        shell) run on the agent's machine; `artifact_published` and `wait_answered` are verified by the server through
+        the item's links; `attested` is the agent's word, the last resort. A client shows a `type` it does not know as
+        text"
+      oneOf:
+      - $ref: '#/components/schemas/TodoCheckPrMerged'
+      - $ref: '#/components/schemas/TodoCheckPrClosed'
+      - $ref: '#/components/schemas/TodoCheckReleaseContains'
+      - $ref: '#/components/schemas/TodoCheckCiGreen'
+      - $ref: '#/components/schemas/TodoCheckCommand'
+      - $ref: '#/components/schemas/TodoCheckArtifactPublished'
+      - $ref: '#/components/schemas/TodoCheckWaitAnswered'
+      - $ref: '#/components/schemas/TodoCheckAttested'
+      discriminator:
+        propertyName: type
+        mapping:
+          pr_merged: '#/components/schemas/TodoCheckPrMerged'
+          pr_closed: '#/components/schemas/TodoCheckPrClosed'
+          release_contains: '#/components/schemas/TodoCheckReleaseContains'
+          ci_green: '#/components/schemas/TodoCheckCiGreen'
+          command: '#/components/schemas/TodoCheckCommand'
+          artifact_published: '#/components/schemas/TodoCheckArtifactPublished'
+          wait_answered: '#/components/schemas/TodoCheckWaitAnswered'
+          attested: '#/components/schemas/TodoCheckAttested'
+    TodoCheckPrMerged:
+      type: object
+      description: "The item's pull request (linked, or found by its marker among the PRs of the token's login) is merged"
+      properties:
+        type:
+          type: string
+          const: pr_merged
+        repo:
+          type: string
+          description: "`owner/name`"
+      required:
+      - type
+      - repo
+    TodoCheckPrClosed:
+      type: object
+      description: "The item's pull request is closed without merge, for the stated reason"
+      properties:
+        type:
+          type: string
+          const: pr_closed
+        repo:
+          type: string
+        reason:
+          type: string
+          description: At most 1 000 characters
+      required:
+      - type
+      - repo
+      - reason
+    TodoCheckReleaseContains:
+      type: object
+      description: "The earliest published, non-draft release of `repo` whose tag is at or ahead of the merge commit of
+        the item `of` (or of `commit`); it is linked to the item with its tag"
+      properties:
+        type:
+          type: string
+          const: release_contains
+        repo:
+          type: string
+        of:
+          type: string
+          description: The id of the item whose pull request's merge commit the release must contain
+        commit:
+          type: string
+      required:
+      - type
+      - repo
+    TodoCheckCiGreen:
+      type: object
+      description: "Every workflow run of `repo` on the merge commit of the item `of` (or on `ref`) completed green; none
+        yet, running or failed is not done"
+      properties:
+        type:
+          type: string
+          const: ci_green
+        repo:
+          type: string
+        of:
+          type: string
+        ref:
+          type: string
+        workflow:
+          type: string
+          description: Only the runs of this workflow
+      required:
+      - type
+      - repo
+    TodoCheckCommand:
+      type: object
+      description: "A command run on the agent's machine (`sh -c`, `cmd /c` on Windows) exits with `expectExit`. `run`
+        may cite `${pr:<item>.number}`, `${pr:<item>.mergeSha}` and `${release:<item>.tag}`, replaced from the links; a
+        value not linked yet leaves the check unknown. Output bounded to 300 characters and masked"
+      properties:
+        type:
+          type: string
+          const: command
+        run:
+          type: string
+          description: At most 2 000 characters
+        cwd:
+          type: string
+        expectExit:
+          type: integer
+          description: 0 when absent
+        timeoutSeconds:
+          type: integer
+          minimum: 1
+          maximum: 120
+          description: 60 when absent
+      required:
+      - type
+      - run
+    TodoCheckArtifactPublished:
+      type: object
+      description: "The artifact `id` (or the one linked to the item) is published, at `minVersion` or later; verified by
+        the server"
+      properties:
+        type:
+          type: string
+          const: artifact_published
+        id:
+          type: string
+        minVersion:
+          type: integer
+      required:
+      - type
+    TodoCheckWaitAnswered:
+      type: object
+      description: The wait linked to the item is answered, with `action` when given; verified by the server
+      properties:
+        type:
+          type: string
+          const: wait_answered
+        action:
+          type: string
+      required:
+      - type
+    TodoCheckAttested:
+      type: object
+      description: "The agent's word for `what`: nothing verifies it, the item is shown as not verified"
+      properties:
+        type:
+          type: string
+          const: attested
+        what:
+          type: string
+          description: At most 1 000 characters
+      required:
+      - type
+      - what
+    TodoCheckReport:
+      type: object
+      description: What the check at `index` of the item's stored condition observed
+      properties:
+        index:
+          type: integer
+        passed:
+          type: boolean
+          description: "true passed, false failed, absent unknown (unreachable, not linked yet): only true counts"
+        observed:
+          type: string
+          description: At most 2 000 characters
+        urls:
+          type: array
+          description: At most 10 https addresses
+          items:
+            type: string
+      required:
+      - index
+      - observed
+    TodoProof:
+      type: object
+      description: The last verification of an item, kept when it refused
+      properties:
+        at:
+          type: string
+          format: date-time
+        passed:
+          type: boolean
+          description: true passed, false failed, absent unknown
+        text:
+          type: string
+        urls:
+          type: array
+          items:
+            type: string
+      required:
+      - at
+      - text
+    TodoNote:
+      type: object
+      description: A dated note of an item; notes are only appended
+      properties:
+        at:
+          type: string
+          format: date-time
+        text:
+          type: string
+      required:
+      - at
+      - text
+    TodoLinkKind:
+      type: string
+      enum:
+      - pr
+      - release
+      - artifact
+      - wait
+    TodoLink:
+      type: object
+      description: A link of an item, frozen once bound
+      properties:
+        kind:
+          $ref: '#/components/schemas/TodoLinkKind'
+        ref:
+          type: string
+          description: The https address of a pull request or a release, or the id of an artifact or a wait
+        number:
+          type: integer
+        sha:
+          type: string
+          description: A pull request's merge commit
+        tag:
+          type: string
+          description: A release's tag
+        at:
+          type: string
+          format: date-time
+      required:
+      - kind
+      - ref
+      - at
+    TodoHookEventKind:
+      type: string
+      description: "`blocked`: the third stop without progress opened a wait; `hook_error`: the hook failed open"
+      enum:
+      - blocked
+      - hook_error
+    TodoHookEvent:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        kind:
+          $ref: '#/components/schemas/TodoHookEventKind'
+        text:
+          type: string
+      required:
+      - at
+      - kind
+      - text
+    CreateTodoRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          description: The session, named by its owner; ignored for an agent token
+        reference:
+          type: string
+          description: "One paragraph pointing to the full plan (an artifact link, or the person's request as is), at most
+            4 000 characters"
+        refs:
+          type: array
+          description: At most 10 links shown with the reference
+          items:
+            $ref: '#/components/schemas/WaitRef'
+        items:
+          type: array
+          description: Every step of the plan, in order, at most 500
+          items:
+            $ref: '#/components/schemas/TodoItemInput'
+      required:
+      - reference
+      - items
+    AddTodoItemRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        item:
+          $ref: '#/components/schemas/TodoItemInput'
+        reason:
+          type: string
+          description: Why the plan needs it, at most 1 000 characters
+      required:
+      - item
+      - reason
+    StartTodoItemRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        background:
+          type: boolean
+          description: The item is given to a background agent; the item in progress stays in progress (false when absent)
+        agent:
+          type: string
+          description: The background agent's name
+    NoteTodoItemRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        text:
+          type: string
+          description: At most 2 000 characters
+      required:
+      - text
+    DropTodoItemRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        reason:
+          type: string
+          description: Why the item no longer makes sense, at most 1 000 characters
+      required:
+      - reason
+    LinkTodoItemRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        kind:
+          $ref: '#/components/schemas/TodoLinkKind'
+        ref:
+          type: string
+          description: The https address of a pull request or a release, or the id of an artifact or a wait
+        number:
+          type: integer
+        sha:
+          type: string
+        tag:
+          type: string
+        replaceClosed:
+          type: boolean
+          description: Replace a pull request closed without merge (false when absent)
+      required:
+      - kind
+      - ref
+    CompleteTodoItemRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        checks:
+          type: array
+          description: One report per position of the stored condition
+          items:
+            $ref: '#/components/schemas/TodoCheckReport'
+      required:
+      - checks
+    TodoContext:
+      type: object
+      description: The reminder block of a session's todo
+      properties:
+        text:
+          type:
+          - string
+          - 'null'
+          description: The reference, the item in progress (else the next one) and the list; null without an active list
+      required:
+      - text
+    TodoStopPhase:
+      type: string
+      enum:
+      - begin
+      - verify
+      - settle
+    TodoStopItemReport:
+      type: object
+      description: The outcome of the checks the Stop hook ran for one item
+      properties:
+        itemId:
+          type: string
+        checks:
+          type: array
+          description: By position in the item's stored condition
+          items:
+            $ref: '#/components/schemas/TodoCheckReport'
+      required:
+      - itemId
+    TodoStopRequest:
+      type: object
+      description: One stop of the agent, asked by the Stop hook
+      properties:
+        sessionId:
+          type: string
+        phase:
+          $ref: '#/components/schemas/TodoStopPhase'
+          description: "`begin` when absent"
+        background:
+          type: boolean
+          description: A background task or a scheduled wake-up of the session still runs (false when absent)
+        items:
+          type: array
+          description: "`verify`: the checks of the item in progress and of the `todo` items whose checks are all cheap;
+            `settle`: every check of the done items. Each item once, at most 500"
+          items:
+            $ref: '#/components/schemas/TodoStopItemReport'
+        orphans:
+          type: array
+          description: "`verify`: the https addresses of the pull requests the session opened, at most 5"
+          items:
+            type: string
+        lastMessage:
+          type: string
+          description: The agent's last message, kept to 2 000 characters
+    TodoStopAction:
+      type: string
+      description: "`allow` the stop passes; `verify` run the cheap checks and ask again; `settle` run every check of the
+        done items and ask again; `block` refuse the stop with `reason`"
+      enum:
+      - allow
+      - verify
+      - settle
+      - block
+    TodoStopDecision:
+      type: object
+      description: The server's answer to a stop
+      properties:
+        action:
+          $ref: '#/components/schemas/TodoStopAction'
+        todo:
+          $ref: '#/components/schemas/Todo'
+        reason:
+          type: string
+          description: "`block`: the resume message for the agent, at most 8 000 characters"
+        why:
+          type: string
+          description: "`allow`: `no_list`, `hook_disabled`, `finished`, `background_task`, `wait_open`, `settled` or
+            `escalated`"
+        escalated:
+          type: boolean
+          description: The third stop without progress opened a wait for the owner (false when absent)
+      required:
+      - action
+    TodoHookErrorRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        text:
+          type: string
+          description: What failed, kept to 500 characters
+      required:
+      - text
+    TodoStopHookRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: true to hold the agent while its todo has open items
+      required:
+      - enabled
+    TodoStopHook:
+      type: object
+      description: The todo Stop hook setting of a member; a member without one has it on
+      properties:
+        memberId:
+          type: string
+          description: The member's id (`Member.id`)
+        enabled:
+          type: boolean
+      required:
+      - memberId
+      - enabled
+    TodoStopHooks:
+      type: object
+      properties:
+        members:
+          type: array
+          description: Every member of the organization whose hook is off
+          items:
+            $ref: '#/components/schemas/TodoStopHook'
+      required:
+      - members
     Usage:
       type: object
       description: Spending over a period

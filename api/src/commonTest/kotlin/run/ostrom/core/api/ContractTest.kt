@@ -44,12 +44,16 @@ class ContractTest {
 
     private fun differences(name: String, schema: JsonObject, model: JsonObject): List<String> {
         val values = schema["enum"]
-        return if (values != null) {
-            enumDifferences(name, values, model["enum"])
-        } else {
-            objectDifferences(name, schema, model)
+        val union = schema["oneOf"]
+        return when {
+            values != null -> enumDifferences(name, values, model["enum"])
+            union != null -> unionDifferences(name, union, model["oneOf"])
+            else -> objectDifferences(name, schema, model)
         }
     }
+
+    private fun unionDifferences(name: String, union: JsonElement, actual: JsonElement?): List<String> =
+        if (union == actual) emptyList() else listOf("$name: union $union in the contract, $actual in Kotlin")
 
     private fun enumDifferences(name: String, values: JsonElement, actual: JsonElement?): List<String> =
         if (values == actual) emptyList() else listOf("$name: enum $values in the contract, $actual in Kotlin")

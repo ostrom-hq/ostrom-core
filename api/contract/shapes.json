@@ -1,4 +1,25 @@
 {
+  "AddTodoItemRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "item": {
+        "type": {
+          "ref": "TodoItemInput"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "AgentEvent": {
     "enum": [
       "SessionStart",
@@ -1041,6 +1062,56 @@
       }
     }
   },
+  "CompleteTodoItemRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "checks": {
+        "type": {
+          "array": {
+            "ref": "TodoCheckReport"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CreateTodoRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "reference": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "refs": {
+        "type": {
+          "array": {
+            "ref": "WaitRef"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "items": {
+        "type": {
+          "array": {
+            "ref": "TodoItemInput"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "Decision": {
     "properties": {
       "id": {
@@ -1163,6 +1234,20 @@
       },
       "deletions": {
         "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "DropTodoItemRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
         "required": true,
         "nullable": false
       }
@@ -1680,6 +1765,47 @@
       "gh-token"
     ]
   },
+  "LinkTodoItemRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "kind": {
+        "type": {
+          "ref": "TodoLinkKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "number": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "sha": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "tag": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "replaceClosed": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "Member": {
     "properties": {
       "id": {
@@ -2024,6 +2150,20 @@
           "ref": "RiskLevel"
         },
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "NoteTodoItemRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "text": {
+        "type": "string",
+        "required": true,
         "nullable": false
       }
     }
@@ -3373,6 +3513,17 @@
       }
     }
   },
+  "SessionTodo": {
+    "properties": {
+      "todo": {
+        "type": {
+          "ref": "Todo"
+        },
+        "required": true,
+        "nullable": true
+      }
+    }
+  },
   "StartSessionRequest": {
     "properties": {
       "id": {
@@ -3423,6 +3574,41 @@
       "model": {
         "type": "string",
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "StartTodoItemRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "background": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "StartTodoItemResponse": {
+    "properties": {
+      "todo": {
+        "type": {
+          "ref": "Todo"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "marker": {
+        "type": "string",
+        "required": true,
         "nullable": false
       }
     }
@@ -3540,6 +3726,685 @@
         "type": {
           "array": "string"
         },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "Todo": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "reference": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "refs": {
+        "type": {
+          "array": {
+            "ref": "WaitRef"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "TodoStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "stall": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "items": {
+        "type": {
+          "array": {
+            "ref": "TodoItem"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "nextItemId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "hookEvents": {
+        "type": {
+          "array": {
+            "ref": "TodoHookEvent"
+          }
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheck": {
+    "oneOf": {
+      "property": "type",
+      "mapping": {
+        "pr_merged": "TodoCheckPrMerged",
+        "pr_closed": "TodoCheckPrClosed",
+        "release_contains": "TodoCheckReleaseContains",
+        "ci_green": "TodoCheckCiGreen",
+        "command": "TodoCheckCommand",
+        "artifact_published": "TodoCheckArtifactPublished",
+        "wait_answered": "TodoCheckWaitAnswered",
+        "attested": "TodoCheckAttested"
+      }
+    }
+  },
+  "TodoCheckArtifactPublished": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "minVersion": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheckAttested": {
+    "properties": {
+      "what": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheckCiGreen": {
+    "properties": {
+      "repo": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "of": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "workflow": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheckCommand": {
+    "properties": {
+      "run": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "cwd": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "expectExit": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "timeoutSeconds": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheckPrClosed": {
+    "properties": {
+      "repo": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheckPrMerged": {
+    "properties": {
+      "repo": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheckReleaseContains": {
+    "properties": {
+      "repo": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "of": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "commit": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheckReport": {
+    "properties": {
+      "index": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "passed": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "observed": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "urls": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoCheckWaitAnswered": {
+    "properties": {
+      "action": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoContext": {
+    "properties": {
+      "text": {
+        "type": "string",
+        "required": true,
+        "nullable": true
+      }
+    }
+  },
+  "TodoDoneWhen": {
+    "properties": {
+      "text": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "checks": {
+        "type": {
+          "array": {
+            "ref": "TodoCheck"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoHookErrorRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "text": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoHookEvent": {
+    "properties": {
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": {
+          "ref": "TodoHookEventKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "text": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoHookEventKind": {
+    "enum": [
+      "blocked",
+      "hook_error"
+    ]
+  },
+  "TodoItem": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "doneWhen": {
+        "type": {
+          "ref": "TodoDoneWhen"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "dependsOn": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "origin": {
+        "type": {
+          "ref": "TodoItemOrigin"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "originReason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "TodoItemStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "proof": {
+        "type": {
+          "ref": "TodoProof"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "notes": {
+        "type": {
+          "array": {
+            "ref": "TodoNote"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "dropReason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "dropWaitId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "links": {
+        "type": {
+          "array": {
+            "ref": "TodoLink"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "unverified": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoItemInput": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "doneWhen": {
+        "type": {
+          "ref": "TodoDoneWhen"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "dependsOn": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoItemOrigin": {
+    "enum": [
+      "plan",
+      "discovered"
+    ]
+  },
+  "TodoItemStatus": {
+    "enum": [
+      "todo",
+      "doing",
+      "done",
+      "drop_requested",
+      "dropped"
+    ]
+  },
+  "TodoLink": {
+    "properties": {
+      "kind": {
+        "type": {
+          "ref": "TodoLinkKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "number": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "sha": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "tag": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoLinkKind": {
+    "enum": [
+      "pr",
+      "release",
+      "artifact",
+      "wait"
+    ]
+  },
+  "TodoNote": {
+    "properties": {
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "text": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoProof": {
+    "properties": {
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "passed": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "text": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "urls": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoStatus": {
+    "enum": [
+      "active",
+      "done",
+      "abandoned"
+    ]
+  },
+  "TodoStopAction": {
+    "enum": [
+      "allow",
+      "verify",
+      "settle",
+      "block"
+    ]
+  },
+  "TodoStopDecision": {
+    "properties": {
+      "action": {
+        "type": {
+          "ref": "TodoStopAction"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "todo": {
+        "type": {
+          "ref": "Todo"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "why": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "escalated": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoStopHook": {
+    "properties": {
+      "memberId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoStopHookRequest": {
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoStopHooks": {
+    "properties": {
+      "members": {
+        "type": {
+          "array": {
+            "ref": "TodoStopHook"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "TodoStopItemReport": {
+    "properties": {
+      "itemId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "checks": {
+        "type": {
+          "array": {
+            "ref": "TodoCheckReport"
+          }
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "TodoStopPhase": {
+    "enum": [
+      "begin",
+      "verify",
+      "settle"
+    ]
+  },
+  "TodoStopRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "phase": {
+        "type": {
+          "ref": "TodoStopPhase"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "background": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "items": {
+        "type": {
+          "array": {
+            "ref": "TodoStopItemReport"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "orphans": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "lastMessage": {
+        "type": "string",
         "required": false,
         "nullable": false
       }
