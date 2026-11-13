@@ -27,7 +27,7 @@ Prerequisites: JDK 21 (only for Gradle and the test target) and Git. Kotlin/Nati
 first build.
 
 ```sh
-./gradlew jvmTest koverVerify     # every common test, and the 100 % coverage gate
+./gradlew jvmTest koverVerifyCoverage     # every common test, and the 100 % coverage gate (jvm only)
 ./gradlew macosArm64Test          # the same tests in native code (linuxX64Test on Linux)
 ./gradlew check                   # everything CI runs on your platform
 ```

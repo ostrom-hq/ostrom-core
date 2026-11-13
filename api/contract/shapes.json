@@ -1,4 +1,68 @@
 {
+  "Account": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "displayName": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "primaryEmail": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "avatarUrl": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "emails": {
+        "type": {
+          "array": {
+            "ref": "AccountEmail"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "providers": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "AccountEmail": {
+    "properties": {
+      "email": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "verified": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "AddTodoItemRequest": {
     "properties": {
       "sessionId": {
@@ -410,6 +474,51 @@
       "subagent",
       "receipt"
     ]
+  },
+  "AuthToken": {
+    "properties": {
+      "token": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "scopes": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "AuthUser": {
+    "properties": {
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "avatarUrl": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
   },
   "Automation": {
     "properties": {
@@ -1220,6 +1329,60 @@
       }
     }
   },
+  "DeviceCode": {
+    "properties": {
+      "deviceCode": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "userCode": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "verificationUri": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "interval": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "expiresIn": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "verificationUriComplete": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DeviceLoginStart": {
+    "properties": {
+      "scopes": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DeviceTokenRequest": {
+    "properties": {
+      "deviceCode": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "DiffStats": {
     "properties": {
       "files": {
@@ -1806,6 +1969,43 @@
       }
     }
   },
+  "Me": {
+    "properties": {
+      "dev": {
+        "type": {
+          "ref": "Dev"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "member": {
+        "type": {
+          "ref": "Member"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "organization": {
+        "type": {
+          "ref": "Organization"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "capabilities": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "csrfToken": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "Member": {
     "properties": {
       "id": {
@@ -1889,6 +2089,118 @@
       "invited",
       "billing"
     ]
+  },
+  "MobileToken": {
+    "properties": {
+      "token": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "user": {
+        "type": {
+          "ref": "AuthUser"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "unlockKey": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "MobileTokenRequest": {
+    "properties": {
+      "code": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "codeVerifier": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "redirectUri": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "MobileUnlock": {
+    "properties": {
+      "authenticatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "MobileUnlockRequest": {
+    "properties": {
+      "unlockKey": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "requestId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "MyOrganization": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "slug": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "avatarUrl": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "role": {
+        "type": {
+          "ref": "MemberRole"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "MyOrganizationList": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "MyOrganization"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
   },
   "NodeCondition": {
     "properties": {
@@ -3523,6 +3835,30 @@
         "nullable": true
       }
     }
+  },
+  "SignInMethods": {
+    "properties": {
+      "methods": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "signUp": {
+        "type": {
+          "ref": "SignUpPolicy"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "SignUpPolicy": {
+    "enum": [
+      "open",
+      "invite"
+    ]
   },
   "StartSessionRequest": {
     "properties": {

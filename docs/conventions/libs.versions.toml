@@ -23,6 +23,10 @@ kover = "0.9.11"
 detekt = "1.23.8"
 maven-publish = "0.37.0"
 zodable = "1.7.6"
+# Android targets of ostrom-core's api and client and of the companion app (teamcode's versions).
+agp = "9.4.1"
+android-compileSdk = "36"
+android-minSdk = "26"
 
 [plugins]
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -38,6 +42,7 @@ zodable = { id = "dev.zodable", version.ref = "zodable" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-serialization-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 kover-gradle-plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 
 # Kotlinx

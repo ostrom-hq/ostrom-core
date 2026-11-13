@@ -62,6 +62,12 @@ kotlin {
 // 100 % of lines and branches of commonMain, measured through the jvm() test run (BRIEF, rule TESTS).
 // An exclusion is added here with a one-line reason, and reviewed.
 kover {
+    currentProject {
+        // The variant every check reads (koverVerifyCoverage, koverXmlReportCoverage): the jvm() test run alone. Kover's
+        // total variant also takes the Android target of a module with ostrom.mobile, whose tasks need an Android SDK;
+        // this one never does, so ostrom-server's and ostrom-cli's CI, which include this build, keep running without.
+        createVariant("coverage") { add("jvm") }
+    }
     reports {
         filters {
             excludes {

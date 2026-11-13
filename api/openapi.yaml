@@ -263,39 +263,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                code:
-                  type: string
-                codeVerifier:
-                  type: string
-                redirectUri:
-                  type: string
-              required:
-              - code
-              - codeVerifier
-              - redirectUri
+              $ref: '#/components/schemas/MobileTokenRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                  user:
-                    $ref: '#/components/schemas/AuthUser'
-                  expiresAt:
-                    type: string
-                  unlockKey:
-                    type: string
-                    description: "Kept by the app behind the phone's biometrics (keychain item that requires them),
-                      presented to `unlockMobileApp` before a yes; never sent anywhere else"
-                required:
-                - token
-                - user
+                $ref: '#/components/schemas/MobileToken'
         '400':
           $ref: '#/components/responses/Error'
         '404':
@@ -316,40 +291,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                unlockKey:
-                  type: string
-                requestId:
-                  type: string
-                  x-ostrom-status: planned
-                  description: "The approval this unlock is for: the `id` of the `Approval`, as in the path of
-                    `answerApproval`. A yes from the app to a high-risk action is taken only with an unlock bound to
-                    its own approval, less than 60 seconds old, and only once; otherwise 403 `step_up_required` with
-                    `error.requestBound` true. High risk is every action whose `risk` is not `low`, an approval
-                    without an `action` included (no yes is low today: the server measures no risk). The first yes
-                    sent after the unlock uses it, whatever its outcome (a 409, another 403 or a 5xx included): a yes
-                    sent again unlocks again. A token holds one binding: a new unlock replaces the last one, so an
-                    app unlocks just before each yes. Every unlock, bound or not, also opens the 5-minute window,
-                    which a low-risk yes and every no are given with. The server does not check the id: one that
-                    names no approval the caller may answer serves no yes. The binding limits one unlock to one yes;
-                    it does not prove to the server a biometric per unlock (the `unlockKey` stays the app's). Planned:
-                    the server does not read it yet"
-              required:
-              - unlockKey
+              $ref: '#/components/schemas/MobileUnlockRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  authenticatedAt:
-                    type: string
-                    format: date-time
-                required:
-                - authenticatedAt
+                $ref: '#/components/schemas/MobileUnlock'
         '401':
           $ref: '#/components/responses/Error'
         '403':
@@ -660,12 +609,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                deviceCode:
-                  type: string
-              required:
-              - deviceCode
+              $ref: '#/components/schemas/DeviceTokenRequest'
       responses:
         '200':
           description: OK
@@ -1814,14 +1758,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MyOrganization'
-                required:
-                - items
+                $ref: '#/components/schemas/MyOrganizationList'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -14925,7 +14862,69 @@ components:
       - token
       - login
       - scopes
-      x-ostrom-kotlin: pending
+    MobileTokenRequest:
+      type: object
+      description: "The one-time code of the mobile sign-in (PKCE), with the verifier and the exact redirect URI of its start"
+      properties:
+        code:
+          type: string
+        codeVerifier:
+          type: string
+        redirectUri:
+          type: string
+      required:
+      - code
+      - codeVerifier
+      - redirectUri
+    MobileToken:
+      type: object
+      description: "The token of a mobile sign-in, its person and the key the app keeps behind the phone's biometrics"
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/AuthUser'
+        expiresAt:
+          type: string
+        unlockKey:
+          type: string
+          description: "Kept by the app behind the phone's biometrics (keychain item that requires them),
+            presented to `unlockMobileApp` before a yes; never sent anywhere else"
+      required:
+      - token
+      - user
+    MobileUnlockRequest:
+      type: object
+      description: "The phone's biometric unlock: the app's key, and the approval the unlock is for"
+      properties:
+        unlockKey:
+          type: string
+        requestId:
+          type: string
+          x-ostrom-status: planned
+          description: "The approval this unlock is for: the `id` of the `Approval`, as in the path of
+            `answerApproval`. A yes from the app to a high-risk action is taken only with an unlock bound to
+            its own approval, less than 60 seconds old, and only once; otherwise 403 `step_up_required` with
+            `error.requestBound` true. High risk is every action whose `risk` is not `low`, an approval
+            without an `action` included (no yes is low today: the server measures no risk). The first yes
+            sent after the unlock uses it, whatever its outcome (a 409, another 403 or a 5xx included): a yes
+            sent again unlocks again. A token holds one binding: a new unlock replaces the last one, so an
+            app unlocks just before each yes. Every unlock, bound or not, also opens the 5-minute window,
+            which a low-risk yes and every no are given with. The server does not check the id: one that
+            names no approval the caller may answer serves no yes. The binding limits one unlock to one yes;
+            it does not prove to the server a biometric per unlock (the `unlockKey` stays the app's). Planned:
+            the server does not read it yet"
+      required:
+      - unlockKey
+    MobileUnlock:
+      type: object
+      description: "When the unlock was recorded"
+      properties:
+        authenticatedAt:
+          type: string
+          format: date-time
+      required:
+      - authenticatedAt
     AuthUser:
       type: object
       description: The signed-in person
@@ -14938,7 +14937,6 @@ components:
           type: string
       required:
       - login
-      x-ostrom-kotlin: pending
     Automation:
       type: object
       description: 'An automation: a cron or a signed webhook that starts a workflow run or an agent session'
@@ -16037,7 +16035,6 @@ components:
           items:
             type: string
             enum: ['policy:write', 'harness:write', 'gates:policy', 'budgets:write']
-      x-ostrom-kotlin: pending
     DeviceAuthorization:
       type: object
       description: "A pending `ostrom login`, as the console shows it"
@@ -16072,6 +16069,14 @@ components:
       - expiresAt
       - requestedAt
       x-ostrom-kotlin: pending
+    DeviceTokenRequest:
+      type: object
+      description: "The device code to exchange for a token (RFC 8628 section 3.4)"
+      properties:
+        deviceCode:
+          type: string
+      required:
+      - deviceCode
     DeviceCode:
       type: object
       description: OAuth device flow start
@@ -16095,7 +16100,6 @@ components:
       - verificationUri
       - interval
       - expiresIn
-      x-ostrom-kotlin: pending
     DiffStats:
       type: object
       description: The size of a change
@@ -17366,7 +17370,6 @@ components:
       required:
       - dev
       - capabilities
-      x-ostrom-kotlin: pending
     Member:
       type: object
       description: A member of an organization
@@ -17415,6 +17418,16 @@ components:
           description: The slug of a team they join; none when absent
       required:
       - login
+    MyOrganizationList:
+      type: object
+      description: "The organizations the caller is an active member of"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MyOrganization'
+      required:
+      - items
     MyOrganization:
       type: object
       description: One of the caller's organizations, to choose the one `Ostrom-Org` names
@@ -17437,7 +17450,6 @@ components:
       - name
       - avatarUrl
       - role
-      x-ostrom-kotlin: pending
     Account:
       type: object
       description: The signed-in person's account
@@ -17473,7 +17485,6 @@ components:
       - createdAt
       - emails
       - providers
-      x-ostrom-kotlin: pending
     AccountEmail:
       type: object
       properties:
@@ -17484,7 +17495,6 @@ components:
       required:
       - email
       - verified
-      x-ostrom-kotlin: pending
     OpenAiChatCompletionChunk:
       type: object
       description: "One `data:` of a chat completions stream, as the OpenAI-compatible provider sends it and the gateway
@@ -19706,6 +19716,10 @@ components:
       required:
       - token
       x-ostrom-kotlin: pending
+    SignUpPolicy:
+      type: string
+      description: "Who may get a new account on an instance (`SignInMethods.signUp`)"
+      enum: [open, invite]
     SignInMethods:
       type: object
       description: "The sign-in methods this instance offers"
@@ -19715,8 +19729,7 @@ components:
           items:
             type: string
         signUp:
-          type: string
-          enum: [open, invite]
+          $ref: '#/components/schemas/SignUpPolicy'
           description: "Who may get a new account (`OSTROM_SIGNUP`). `open`: anyone who signs in. `invite` (the default
             of a self-hosted instance): a sign-in creates an account only with a pending invitation for the address it
             proves, an invitation link (`grantSignUp`), the instance's one-time setup link (`ostrom-server bootstrap`)
@@ -19725,7 +19738,6 @@ components:
             from a server older than this field: treat as `open`"
       required:
       - methods
-      x-ostrom-kotlin: pending
     SignedGatePolicy:
       type: object
       description: 'A gate policy signed by the instance: `signature` (base64, Ed25519 by the key `kid` of

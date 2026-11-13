@@ -52,10 +52,17 @@ jobs:
       # served-routes.py says what the contract may call served: its tests run every line of it.
       - run: python3 scripts/test_served_routes.py
       # detekt, the jvm() test run with Kover at 100 % of commonMain, the linuxX64 tests; linuxArm64 and mingwX64 tests
-      # and the macosArm64 klibs are cross-compiled.
+      # and the macosArm64 and iOS klibs are cross-compiled. The Android SDK variables are unset: these tasks must
+      # configure and run without an SDK, as in the CI of ostrom-server and ostrom-cli, which include this build.
       - run: >-
-          ./gradlew --no-daemon --continue detekt jvmTest koverVerify koverXmlReport linuxX64Test
+          env -u ANDROID_HOME -u ANDROID_SDK_ROOT
+          ./gradlew --no-daemon --continue detekt jvmTest koverVerifyCoverage koverXmlReportCoverage linuxX64Test
           compileTestKotlinLinuxArm64 compileTestKotlinMingwX64 compileKotlinMacosArm64
+          compileKotlinIosArm64 compileKotlinIosSimulatorArm64
+      # The Android target of api and client (build-logic ostrom.mobile): commonTest on the host JVM, with the runner's
+      # Android SDK.
+      - name: Android host tests
+        run: ./gradlew --no-daemon testAndroidHostTest
       - name: Uncovered lines and branches
         if: always()
         run: python3 .github/scripts/kover_missed.py
@@ -135,7 +142,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_GRADLE_PROJECT_ostromCoreVersion: 0.1.${{ github.run_number }}
         run: ./gradlew --no-daemon publishAllPublicationsToGitHubPackagesRepository
-      - run: echo "Published run.ostrom:ostrom-api, ostrom-receipts, ostrom-telemetry and ostrom-actions 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+      - run: echo "Published run.ostrom:ostrom-api, ostrom-client, ostrom-receipts, ostrom-telemetry and ostrom-actions 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'

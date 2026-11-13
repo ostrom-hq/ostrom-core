@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package run.ostrom.core.api
 
+import run.ostrom.core.api.models.Account
+import run.ostrom.core.api.models.AccountEmail
 import run.ostrom.core.api.models.AddTodoItemRequest
 import run.ostrom.core.api.models.AnswerApprovalRequest
 import run.ostrom.core.api.models.ApiError
@@ -11,6 +13,8 @@ import run.ostrom.core.api.models.ApprovalCommit
 import run.ostrom.core.api.models.ApproverGate
 import run.ostrom.core.api.models.ApproverLine
 import run.ostrom.core.api.models.ApproversGraph
+import run.ostrom.core.api.models.AuthToken
+import run.ostrom.core.api.models.AuthUser
 import run.ostrom.core.api.models.Automation
 import run.ostrom.core.api.models.AutomationAction
 import run.ostrom.core.api.models.AutomationTrigger
@@ -28,6 +32,9 @@ import run.ostrom.core.api.models.Decision
 import run.ostrom.core.api.models.DecisionSubject
 import run.ostrom.core.api.models.Deliverable
 import run.ostrom.core.api.models.Dev
+import run.ostrom.core.api.models.DeviceCode
+import run.ostrom.core.api.models.DeviceLoginStart
+import run.ostrom.core.api.models.DeviceTokenRequest
 import run.ostrom.core.api.models.DiffStats
 import run.ostrom.core.api.models.DropTodoItemRequest
 import run.ostrom.core.api.models.EndSessionRequest
@@ -43,8 +50,15 @@ import run.ostrom.core.api.models.GateRef
 import run.ostrom.core.api.models.GateRequest
 import run.ostrom.core.api.models.GateResponse
 import run.ostrom.core.api.models.LinkTodoItemRequest
+import run.ostrom.core.api.models.Me
 import run.ostrom.core.api.models.Member
 import run.ostrom.core.api.models.MemberInvite
+import run.ostrom.core.api.models.MobileToken
+import run.ostrom.core.api.models.MobileTokenRequest
+import run.ostrom.core.api.models.MobileUnlock
+import run.ostrom.core.api.models.MobileUnlockRequest
+import run.ostrom.core.api.models.MyOrganization
+import run.ostrom.core.api.models.MyOrganizationList
 import run.ostrom.core.api.models.NodeCondition
 import run.ostrom.core.api.models.NodePosition
 import run.ostrom.core.api.models.NodeRun
@@ -82,6 +96,7 @@ import run.ostrom.core.api.models.SessionGateAnswer
 import run.ostrom.core.api.models.SessionPackage
 import run.ostrom.core.api.models.SessionResponse
 import run.ostrom.core.api.models.SessionTodo
+import run.ostrom.core.api.models.SignInMethods
 import run.ostrom.core.api.models.StartSessionRequest
 import run.ostrom.core.api.models.StartTodoItemRequest
 import run.ostrom.core.api.models.StartTodoItemResponse
@@ -110,11 +125,11 @@ import run.ostrom.core.api.models.TodoStopRequest
 import run.ostrom.core.api.models.Wait
 import run.ostrom.core.api.models.WaitAction
 import run.ostrom.core.api.models.WaitAnswer
+import run.ostrom.core.api.models.WaitEventReceived
+import run.ostrom.core.api.models.WaitEventRequest
 import run.ostrom.core.api.models.WaitField
 import run.ostrom.core.api.models.WaitRef
 import run.ostrom.core.api.models.WaitSpec
-import run.ostrom.core.api.models.WaitEventReceived
-import run.ostrom.core.api.models.WaitEventRequest
 import run.ostrom.core.api.models.WaitWake
 import run.ostrom.core.api.models.WaitWakeRequest
 import run.ostrom.core.api.models.Workflow
@@ -126,6 +141,8 @@ import kotlinx.serialization.KSerializer
 
 /** Every model of the API contract: the schemas of `api/openapi.yaml` that have a Kotlin model. */
 internal val apiModels: List<KSerializer<*>> = listOf(
+    Account.serializer(),
+    AccountEmail.serializer(),
     AddTodoItemRequest.serializer(),
     AnswerApprovalRequest.serializer(),
     ApiError.serializer(),
@@ -136,6 +153,8 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ApproverGate.serializer(),
     ApproverLine.serializer(),
     ApproversGraph.serializer(),
+    AuthToken.serializer(),
+    AuthUser.serializer(),
     Automation.serializer(),
     AutomationAction.serializer(),
     AutomationTrigger.serializer(),
@@ -153,6 +172,9 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     DecisionSubject.serializer(),
     Deliverable.serializer(),
     Dev.serializer(),
+    DeviceCode.serializer(),
+    DeviceLoginStart.serializer(),
+    DeviceTokenRequest.serializer(),
     DiffStats.serializer(),
     DropTodoItemRequest.serializer(),
     EndSessionRequest.serializer(),
@@ -168,8 +190,15 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GateRequest.serializer(),
     GateResponse.serializer(),
     LinkTodoItemRequest.serializer(),
+    Me.serializer(),
     Member.serializer(),
     MemberInvite.serializer(),
+    MobileToken.serializer(),
+    MobileTokenRequest.serializer(),
+    MobileUnlock.serializer(),
+    MobileUnlockRequest.serializer(),
+    MyOrganization.serializer(),
+    MyOrganizationList.serializer(),
     NodeCondition.serializer(),
     NodePosition.serializer(),
     NodeRun.serializer(),
@@ -207,6 +236,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     SessionPackage.serializer(),
     SessionResponse.serializer(),
     SessionTodo.serializer(),
+    SignInMethods.serializer(),
     StartSessionRequest.serializer(),
     StartTodoItemRequest.serializer(),
     StartTodoItemResponse.serializer(),
@@ -235,11 +265,11 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     Wait.serializer(),
     WaitAction.serializer(),
     WaitAnswer.serializer(),
+    WaitEventReceived.serializer(),
+    WaitEventRequest.serializer(),
     WaitField.serializer(),
     WaitRef.serializer(),
     WaitSpec.serializer(),
-    WaitEventReceived.serializer(),
-    WaitEventRequest.serializer(),
     WaitWake.serializer(),
     WaitWakeRequest.serializer(),
     Workflow.serializer(),
