@@ -8990,6 +8990,9 @@ paths:
       tags:
       - artifacts
       summary: Artifacts the caller can read, newest first
+      description: 'Theirs, those shared with them, and every `team` or `link` artifact of the organization. A role
+        opens nobody''s `personal` artifact: an owner or an administrator lists another member''s only when it is
+        shared with them, as any member (TeamCode #238)'
       parameters:
       - name: before
         in: query
@@ -9037,6 +9040,9 @@ paths:
       tags:
       - artifacts
       summary: Publish an artifact
+      description: '`link` (public) only from a person: a browser session (or the unlocked app), never a token a program
+        can present, so an agent never makes an artifact public (403 `forbidden`); `personal` and `team` from any
+        credential with `artifacts:write`'
       requestBody:
         required: true
         content:
@@ -9192,6 +9198,7 @@ paths:
       tags:
       - artifacts
       summary: An artifact
+      description: 404 for a `personal` artifact the caller neither owns nor is shared with, whatever their role
       parameters:
       - name: id
         in: path
@@ -9221,6 +9228,9 @@ paths:
       tags:
       - artifacts
       summary: Change an artifact's title or access; absent fields stay as they are
+      description: 'The owner only (403 for any other reader, an administrator included). Changing `access` needs a
+        person, a browser session or the unlocked app, never a token a program can present (403 `forbidden`), so an
+        agent never makes an artifact public; a title alone may come from a token with `artifacts:write`'
       parameters:
       - name: id
         in: path
@@ -9261,6 +9271,9 @@ paths:
       tags:
       - artifacts
       summary: Delete an artifact
+      description: The owner only (403 for any other reader, an administrator included), and only from a person, a
+        browser session or the unlocked app, never a token a program can present (403 `forbidden`), so an agent never
+        deletes an artifact
       parameters:
       - name: id
         in: path
@@ -9455,8 +9468,9 @@ paths:
       tags:
       - artifacts
       summary: Share with a member
-      description: Works on every access, `personal` included. A `personal` artifact stays `personal`, which already
-        means its owner, the members it is shared with and the organization's administrators; sharing never changes
+      description: The owner only (403 for any other reader, an administrator included). Works on every access,
+        `personal` included. A `personal` artifact stays `personal`, which already means its owner and the members it
+        is shared with (never an administrator for their role alone); sharing never changes
         `access` (`ArtifactAccess` has no `members` value). A `team` or `link` artifact is already readable by every
         member, so sharing it only adds the member to the list. The console shows a `personal` artifact shared with
         members as "shared with N members", N being the length of `listArtifactMembers`
@@ -9491,6 +9505,7 @@ paths:
       tags:
       - artifacts
       summary: Stop sharing with a member
+      description: The owner only (403 for any other reader, an administrator included)
       parameters:
       - name: id
         in: path
@@ -9524,8 +9539,14 @@ paths:
       x-ostrom-status: served
       tags:
       - artifacts
-      summary: 'A reading ticket: a signed address of the entry page on the content origin, valid one hour (rounded to
-        10 minutes). It stays valid until it expires, even after the artifact stops being shared'
+      summary: 'A reading ticket: a sealed address of the entry page on the content origin, for the caller only'
+      description: 'For a person only, a browser session or the unlocked app (403 `forbidden` for a token a program can
+        present). The ticket is sealed (encrypted and authenticated, so the page learns nothing of its reader) and names
+        the member and the credential that asked: it lasts 8 hours (rounded down to 10 minutes, so reloading reuses the
+        same address), and the server checks again at most every 30 seconds that the credential is still live, the
+        member still in the organization and the artifact still readable by them, so signing out, leaving the
+        organization or losing access stops it within 30 seconds. At most 60 tickets a minute per credential (429
+        `rate_limited` with `Retry-After`)'
       parameters:
       - name: id
         in: path
@@ -9564,6 +9585,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '429':
           $ref: '#/components/responses/Error'
   /api/v1/accounts:
     parameters:
@@ -11785,6 +11808,14 @@ components:
           type: string
         access:
           type: string
+        relation:
+          type: string
+          description: 'What the caller is to it: `owner`, `viewer` (shared with them) or `team` (a `team` or `link`
+            artifact of their organization). Only the owner changes it, shares it or deletes it'
+          enum:
+          - owner
+          - viewer
+          - team
         latestVersion:
           type: integer
         url:
@@ -11809,7 +11840,9 @@ components:
       x-ostrom-kotlin: pending
     ArtifactAccess:
       type: string
-      description: Who reads it; `personal` when absent at publication
+      description: 'Who reads it; `personal` when absent at publication. `personal`: the owner and the members it is
+        shared with, never an administrator for their role alone; `team`: every member; `link`: anyone with its public
+        link, set only by a person'
       enum:
       - personal
       - team
