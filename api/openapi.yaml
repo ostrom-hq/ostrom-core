@@ -10646,6 +10646,241 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/cloud/runtime:
+    get:
+      operationId: getCloudRuntime
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: How cloud sessions run on this instance
+      description: 'A person who administers the instance (TeamCode''s cloud runtime, `/dashboard/cloud`). The database
+        is the source of truth: the former `OSTROM_RUNNERS_*` variables only seed it once, then are ignored with a
+        warning. `effectiveServerUrl` is the URL session pods call back (the stored one, or the public URL)'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudRuntime'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveCloudRuntime
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Save how cloud sessions run on this instance
+      description: 'A person who administers the instance. A `PUT` replaces the whole runtime; `updatedAt` is the one of
+        the runtime edited (absent while nothing is stored), 409 `cloud_runtime_conflict` when another save came first
+        (TeamCode 3b716702). Turning it off refuses only new work: running sessions go on until they end. A value the
+        server refuses is 400 `invalid_cloud_runtime` naming the field. Every replica uses the new runtime within 30
+        seconds'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCloudRuntimeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudRuntime'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/clusters:
+    get:
+      operationId: listCloudClusters
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: The Kubernetes clusters cloud sessions run on
+      description: 'A person who administers the instance (TeamCode''s `cloud_clusters`). The CA bundle and the
+        service-account token are write-only: sealed with the server''s secrets key, never returned'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudClusterList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createCloudCluster
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Connect a cluster
+      description: 'A person who administers the instance. `apiUrl` is an https URL whose host is never a link-local,
+        unspecified, loopback or cloud metadata address, in any numeric spelling (decimal, octal, hexadecimal, short
+        forms, IPv4-mapped IPv6; TeamCode a73e03f3): 400 `invalid_cloud_cluster` otherwise. A new cluster needs its CA
+        bundle and token; `version` is 0'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCloudClusterRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudCluster'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/clusters/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: The cluster
+      schema:
+        type: string
+        format: uuid
+    put:
+      operationId: updateCloudCluster
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Change a cluster
+      description: 'A person who administers the instance. `version` must be the stored one (409
+        `cloud_cluster_conflict`). An absent CA bundle or token keeps the stored one, except when `apiUrl` changes:
+        a credential is never sent to another server, so a new URL needs both again (TeamCode 0ad9b80f; 400
+        `invalid_cloud_cluster`). 404 `cloud_cluster_not_found` for an unknown id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCloudClusterRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudCluster'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/profiles:
+    get:
+      operationId: listCloudProfiles
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: The organization's cloud profiles
+      description: 'A member of the organization: an owner or an admin sees every profile, a member the ones assigned
+        to them (TeamCode''s `cloud_profiles`). A profile names the cluster and namespace a session runs in and the
+        session image the team chose: Ostrom imposes none'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProfileList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createCloudProfile
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Create a cloud profile
+      description: 'An owner or an admin of the organization, signed in. The namespace must be one the cluster allows
+        and the image a valid reference; 400 `invalid_cloud_profile` naming the field otherwise. `version` is 0'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCloudProfileRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProfile'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/profiles/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: The profile
+      schema:
+        type: string
+        format: uuid
+    put:
+      operationId: updateCloudProfile
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Publish a new version of a cloud profile
+      description: 'An owner or an admin of the organization, signed in. `version` is the current one (409
+        `cloud_profile_conflict` otherwise); each save publishes an immutable version, which a running session keeps.
+        404 `cloud_profile_not_found` for a profile of another organization or none'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCloudProfileRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProfile'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -17775,6 +18010,294 @@ components:
       - failure
       - pending
       - skipped
+    CloudRuntime:
+      type: object
+      description: How cloud sessions run on this instance (TeamCode's cloud runtime and cloud settings)
+      required: [enabled, runnerBinary, workspaceAccessMode, effectiveServerUrl, failedWorkspaceRetentionDays, maxRunningSessionsPerMember, maxRetainedSessionsPerMember, memberTransfers]
+      properties:
+        enabled:
+          type: boolean
+          description: Whether new cloud sessions start; off refuses only new work
+        runnerImage:
+          type: string
+          description: The delivery image carrying the `ostrom` Linux binary at `runnerBinary`, copied into each session pod by an init container; absent before it is set
+        runnerBinary:
+          type: string
+          description: Where the binary is in `runnerImage`, `/usr/local/bin/ostrom` by default
+        serverUrl:
+          type: string
+          description: The https origin session pods call back; absent uses the public URL
+        effectiveServerUrl:
+          type: string
+          description: The origin session pods call back
+        workspaceAccessMode:
+          type: string
+          enum: [ReadWriteOncePod, ReadWriteOnce]
+        pausedRetentionDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+          description: Days a paused session keeps its workspace; absent keeps it
+        failedWorkspaceRetentionDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        maxRunningSessionsPerMember:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        maxRetainedSessionsPerMember:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        transcriptRetentionDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+          description: Days transcript events are kept; absent keeps them
+        memberTransfers:
+          type: string
+          enum: [offer, disabled]
+          description: Whether an owner who is not an administrator may offer a session to another member
+        updatedAt:
+          type: string
+          format: date-time
+          description: When it was saved last; absent while nothing is stored
+    SaveCloudRuntimeRequest:
+      type: object
+      required: [enabled, runnerBinary, workspaceAccessMode, failedWorkspaceRetentionDays, maxRunningSessionsPerMember, maxRetainedSessionsPerMember, memberTransfers]
+      properties:
+        enabled:
+          type: boolean
+        runnerImage:
+          type: string
+          maxLength: 512
+        runnerBinary:
+          type: string
+          maxLength: 256
+        serverUrl:
+          type: string
+          maxLength: 512
+        workspaceAccessMode:
+          type: string
+          enum: [ReadWriteOncePod, ReadWriteOnce]
+        pausedRetentionDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        failedWorkspaceRetentionDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        maxRunningSessionsPerMember:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        maxRetainedSessionsPerMember:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        transcriptRetentionDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        memberTransfers:
+          type: string
+          enum: [offer, disabled]
+        updatedAt:
+          type: string
+          format: date-time
+          description: The `updatedAt` of the runtime edited; absent while nothing is stored
+    CloudCluster:
+      type: object
+      description: A connected Kubernetes cluster; its CA bundle and service-account token are never returned
+      required: [id, name, apiUrl, allowedNamespaces, maxRunningPods, version, caCertificate, serviceAccountToken, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        apiUrl:
+          type: string
+        allowedNamespaces:
+          type: array
+          items:
+            type: string
+        maxRunningPods:
+          type: integer
+        defaultStorageClass:
+          type: string
+        version:
+          type: integer
+        caCertificate:
+          $ref: '#/components/schemas/InstanceSecretState'
+        serviceAccountToken:
+          $ref: '#/components/schemas/InstanceSecretState'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CloudClusterList:
+      type: object
+      required: [clusters]
+      properties:
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudCluster'
+    SaveCloudClusterRequest:
+      type: object
+      required: [name, apiUrl, allowedNamespaces, maxRunningPods, version]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        apiUrl:
+          type: string
+          maxLength: 512
+        caCertificate:
+          type: string
+          maxLength: 65536
+          description: PEM bundle; absent keeps the stored one (not when `apiUrl` changes)
+        serviceAccountToken:
+          type: string
+          maxLength: 16384
+          description: Bearer token; absent keeps the stored one (not when `apiUrl` changes)
+        allowedNamespaces:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+            pattern: '^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$'
+        maxRunningPods:
+          type: integer
+          minimum: 1
+          maximum: 100000
+        defaultStorageClass:
+          type: string
+          maxLength: 253
+        version:
+          type: integer
+          minimum: 0
+    CloudResources:
+      type: object
+      required: [cpuMillis, memoryMebibytes]
+      properties:
+        cpuMillis:
+          type: integer
+          minimum: 100
+          maximum: 64000
+        memoryMebibytes:
+          type: integer
+          minimum: 128
+          maximum: 262144
+    CloudProfileSpec:
+      type: object
+      description: What a session of the profile runs (TeamCode's profile spec)
+      required: [clusterId, namespace, image]
+      properties:
+        clusterId:
+          type: string
+          format: uuid
+        namespace:
+          type: string
+        image:
+          type: string
+          maxLength: 512
+          description: The session image the team chose
+        allowedImageOverrides:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+          description: Images a member may ask for instead, by exact reference or a prefix ending in `*`
+        imagePullSecrets:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+          description: Names of Secrets of the namespace
+        resources:
+          $ref: '#/components/schemas/CloudResources'
+        workspaceSizeGibibytes:
+          type: integer
+          minimum: 1
+          maximum: 2048
+        storageClass:
+          type: string
+        agentKind:
+          type: string
+        agentVersion:
+          type: string
+        idleTimeoutMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        minIdleTimeoutMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        maxIdleTimeoutMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+    CloudProfile:
+      type: object
+      required: [id, name, version, spec, assignedMemberIds, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        version:
+          type: integer
+        spec:
+          $ref: '#/components/schemas/CloudProfileSpec'
+        assignedMemberIds:
+          type: array
+          items:
+            type: string
+          description: Members allowed to use it; owners and admins may always
+        clusterName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CloudProfileList:
+      type: object
+      required: [profiles]
+      properties:
+        profiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudProfile'
+    SaveCloudProfileRequest:
+      type: object
+      required: [name, version, spec]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        version:
+          type: integer
+          minimum: 0
+        spec:
+          $ref: '#/components/schemas/CloudProfileSpec'
+        assignedMemberIds:
+          type: array
+          maxItems: 1000
+          items:
+            type: string
     CloudAgentKind:
       type: string
       description: >-

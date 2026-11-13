@@ -1385,6 +1385,303 @@
       "skipped"
     ]
   },
+  "CloudCluster": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "apiUrl": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "allowedNamespaces": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "maxRunningPods": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "defaultStorageClass": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "caCertificate": {
+        "type": {
+          "ref": "InstanceSecretState"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "serviceAccountToken": {
+        "type": {
+          "ref": "InstanceSecretState"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudClusterList": {
+    "properties": {
+      "clusters": {
+        "type": {
+          "array": {
+            "ref": "CloudCluster"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudProfile": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "spec": {
+        "type": {
+          "ref": "CloudProfileSpec"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "assignedMemberIds": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "clusterName": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudProfileList": {
+    "properties": {
+      "profiles": {
+        "type": {
+          "array": {
+            "ref": "CloudProfile"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudProfileSpec": {
+    "properties": {
+      "clusterId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "namespace": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "image": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "allowedImageOverrides": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "imagePullSecrets": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "resources": {
+        "type": {
+          "ref": "CloudResources"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "workspaceSizeGibibytes": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "storageClass": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "agentKind": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "agentVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "idleTimeoutMinutes": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "minIdleTimeoutMinutes": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "maxIdleTimeoutMinutes": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudResources": {
+    "properties": {
+      "cpuMillis": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "memoryMebibytes": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudRuntime": {
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "runnerImage": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "runnerBinary": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "serverUrl": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "effectiveServerUrl": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "workspaceAccessMode": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "pausedRetentionDays": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "failedWorkspaceRetentionDays": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "maxRunningSessionsPerMember": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "maxRetainedSessionsPerMember": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "transcriptRetentionDays": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "memberTransfers": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "CompiledHook": {
     "properties": {
       "id": {
@@ -4313,6 +4610,144 @@
       "failed",
       "cancelled"
     ]
+  },
+  "SaveCloudClusterRequest": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "apiUrl": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "caCertificate": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "serviceAccountToken": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "allowedNamespaces": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "maxRunningPods": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "defaultStorageClass": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "SaveCloudProfileRequest": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "spec": {
+        "type": {
+          "ref": "CloudProfileSpec"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "assignedMemberIds": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "SaveCloudRuntimeRequest": {
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "runnerImage": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "runnerBinary": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "serverUrl": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "workspaceAccessMode": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "pausedRetentionDays": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "failedWorkspaceRetentionDays": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "maxRunningSessionsPerMember": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "maxRetainedSessionsPerMember": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "transcriptRetentionDays": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "memberTransfers": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
   },
   "ScriptApproval": {
     "properties": {
