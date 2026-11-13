@@ -18011,6 +18011,7 @@ components:
       - pending
       - skipped
     CloudRuntime:
+      x-ostrom-kotlin: pending
       type: object
       description: How cloud sessions run on this instance (TeamCode's cloud runtime and cloud settings)
       required: [enabled, runnerBinary, workspaceAccessMode, effectiveServerUrl, failedWorkspaceRetentionDays, maxRunningSessionsPerMember, maxRetainedSessionsPerMember, memberTransfers]
@@ -18064,6 +18065,7 @@ components:
           format: date-time
           description: When it was saved last; absent while nothing is stored
     SaveCloudRuntimeRequest:
+      x-ostrom-kotlin: pending
       type: object
       required: [enabled, runnerBinary, workspaceAccessMode, failedWorkspaceRetentionDays, maxRunningSessionsPerMember, maxRetainedSessionsPerMember, memberTransfers]
       properties:
@@ -18109,6 +18111,7 @@ components:
           format: date-time
           description: The `updatedAt` of the runtime edited; absent while nothing is stored
     CloudCluster:
+      x-ostrom-kotlin: pending
       type: object
       description: A connected Kubernetes cluster; its CA bundle and service-account token are never returned
       required: [id, name, apiUrl, allowedNamespaces, maxRunningPods, version, caCertificate, serviceAccountToken, createdAt, updatedAt]
@@ -18141,6 +18144,7 @@ components:
           type: string
           format: date-time
     CloudClusterList:
+      x-ostrom-kotlin: pending
       type: object
       required: [clusters]
       properties:
@@ -18149,6 +18153,7 @@ components:
           items:
             $ref: '#/components/schemas/CloudCluster'
     SaveCloudClusterRequest:
+      x-ostrom-kotlin: pending
       type: object
       required: [name, apiUrl, allowedNamespaces, maxRunningPods, version]
       properties:
@@ -18185,6 +18190,7 @@ components:
           type: integer
           minimum: 0
     CloudResources:
+      x-ostrom-kotlin: pending
       type: object
       required: [cpuMillis, memoryMebibytes]
       properties:
@@ -18197,6 +18203,7 @@ components:
           minimum: 128
           maximum: 262144
     CloudProfileSpec:
+      x-ostrom-kotlin: pending
       type: object
       description: What a session of the profile runs (TeamCode's profile spec)
       required: [clusterId, namespace, image]
@@ -18247,6 +18254,7 @@ components:
           minimum: 1
           maximum: 1440
     CloudProfile:
+      x-ostrom-kotlin: pending
       type: object
       required: [id, name, version, spec, assignedMemberIds, createdAt, updatedAt]
       properties:
@@ -18273,6 +18281,7 @@ components:
           type: string
           format: date-time
     CloudProfileList:
+      x-ostrom-kotlin: pending
       type: object
       required: [profiles]
       properties:
@@ -18281,6 +18290,7 @@ components:
           items:
             $ref: '#/components/schemas/CloudProfile'
     SaveCloudProfileRequest:
+      x-ostrom-kotlin: pending
       type: object
       required: [name, version, spec]
       properties:
