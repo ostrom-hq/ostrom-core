@@ -78,6 +78,7 @@ GET /api/v1/github/app/manifest/start
 GET /api/v1/groups
 GET /api/v1/groups/{}
 GET /api/v1/health
+GET /api/v1/inference/queue
 GET /api/v1/inference/settings
 GET /api/v1/inference/v1/models
 GET /api/v1/instance

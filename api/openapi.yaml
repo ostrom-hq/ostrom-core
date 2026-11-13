@@ -9281,7 +9281,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getInferenceQueue
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: The inference calls waiting in the organization's admission queue (`inference.queue.v1`)
