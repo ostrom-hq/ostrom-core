@@ -108,6 +108,13 @@ public object ServerFeatures {
      */
     public const val RUNNERS_CLOUD_GITHUB: String = "runners.cloud.github.v1"
 
+    /**
+     * Team hooks: immutable versions published by an administrator or a CI key (`hooks:publish`), pinned only by an
+     * administrator in the console, members' decisions and the audience, and the delivery routes (`hooks:read`);
+     * each member approves each version on their computer.
+     */
+    public const val HOOKS: String = "hooks.v1"
+
     /** Organization secrets. */
     public const val SECRETS: String = "secrets.v1"
 
@@ -120,6 +127,13 @@ public object ServerFeatures {
      * `sessions:write` and `rules:read`, and acts as its creator within them.
      */
     public const val SERVICE_KEY_SCOPES: String = "servicekeys.scopes.v1"
+
+    /**
+     * Team skills (TeamCode's skill catalog): immutable versions published by an administrator or a CI key
+     * (`skills:publish`, `skills:pin`, `skills:assign`), a pinned version per skill, members' decisions and the
+     * audience, members' personal skills, the delivery routes (`skills:read`) and workstation installation reports.
+     */
+    public const val SKILLS: String = "skills.v1"
 
     /** Sharing with other members and organizations. */
     public const val SHARING: String = "sharing.v1"
@@ -165,9 +179,9 @@ public object ServerFeatures {
 
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
-        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, IMPORT_TEAMCODE,
+        ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, GATES, GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE,
         INFERENCE, MCP, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
-        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SLACK, TODOS, USAGE,
-        WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, LICENSE,
+        RUNNERS_CLOUD_GITHUB, SECRETS, SESSIONS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS,
+        USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WORKFLOWS, LICENSE,
     )
 }
