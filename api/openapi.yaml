@@ -427,6 +427,12 @@ paths:
                 type: string
         '400':
           $ref: '#/components/responses/Error'
+        '403':
+          description: "forbidden: the call does not come from the console (its `Origin` header is missing or another)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '404':
           description: "not_found: the token is unknown, used or expired (ask for a new setup link or invitation)"
           content:
