@@ -10793,6 +10793,8 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/profiles:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listCloudProfiles
       x-ostrom-status: planned
@@ -10842,6 +10844,7 @@ paths:
           $ref: '#/components/responses/Error'
   /api/v1/cloud/profiles/{id}:
     parameters:
+    - $ref: '#/components/parameters/OstromOrg'
     - name: id
       in: path
       required: true
