@@ -12170,6 +12170,13 @@ paths:
                   type: boolean
                 lastModelRequestAt:
                   type: string
+                background:
+                  type: boolean
+                  description: >-
+                    The agent has background work in flight or scheduled wake-ups (Claude Code's Stop hook lists
+                    background_tasks or session_crons). The idle pause counts it as activity up to the organization's
+                    backgroundWorkMaxMinutes after the stretch began (TeamCode cloud.sessions.background-work.v1).
+                    Absent means false; a server that predates it ignores it.
               required:
               - sessionId
               - epoch
