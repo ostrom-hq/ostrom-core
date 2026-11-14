@@ -20435,25 +20435,31 @@ components:
       - verificationUri
       - expiresAt
       - interval
-      x-ostrom-kotlin: pending
     GitHubDeviceLinkPoll:
       type: object
       description: One poll of a device link; `link` once linked, `interval` (seconds) while pending
       properties:
         status:
-          type: string
-          enum:
-          - pending
-          - linked
-          - expired
-          - denied
+          $ref: '#/components/schemas/GitHubDeviceLinkStatus'
         interval:
           type: integer
         link:
           $ref: '#/components/schemas/GitHubLink'
       required:
       - status
-      x-ostrom-kotlin: pending
+    GitHubDeviceLinkStatus:
+      type: string
+      enum:
+      - pending
+      - linked
+      - expired
+      - denied
+    GitHubLinkState:
+      type: string
+      enum:
+      - not_linked
+      - linked
+      - reconnect_required
     GitHubLink:
       type: object
       description: "A member's GitHub link: the account their cloud sessions use for Git and `gh`. Never a token: tokens
@@ -20463,11 +20469,7 @@ components:
         memberId:
           type: string
         state:
-          type: string
-          enum:
-          - not_linked
-          - linked
-          - reconnect_required
+          $ref: '#/components/schemas/GitHubLinkState'
         appConfigured:
           type: boolean
           description: Whether the instance's GitHub App can link accounts (its OAuth client is known)
@@ -20486,7 +20488,6 @@ components:
       - memberId
       - state
       - appConfigured
-      x-ostrom-kotlin: pending
     HookArtifact:
       type: object
       description: "A version's definition and files; the digest is recomputable from them"
