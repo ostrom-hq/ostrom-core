@@ -1846,9 +1846,16 @@ paths:
         phone is registered in the organization `Ostrom-Org` names, or the caller's only one (409 `org_required`
         when they belong to several and name none). One device per push token in an organization: the same token
         registered again keeps its device (its `id` and `createdAt`) and belongs to the member who registered it
-        last. A member keeps their ten most recently registered phones. The push token is never answered back. A
-        token that is not an Expo push token (`ExponentPushToken[…]`), a provider other than `expo` or a platform
-        other than `ios` and `android` is a 400.
+        last. A member keeps their ten most recently registered phones. The push token is never answered back. The
+        phone sends its FCM registration token (`provider: fcm`, iOS and Android alike) with its P-256 public key
+        (`publicKey`, SubjectPublicKeyInfo DER in base64), at every start of the app and when FCM rotates the token:
+        each push is encrypted for that key (`PushPayload`), so the provider sees a token and an opaque blob only.
+        Who sends the pushes is the instance's `push` settings section (Admin → Settings: `provider` `off` or
+        `firebase`, the Firebase service account sealed); while it is `off`, phones register and nothing is sent. With
+        `fcm`, a token that is not an FCM registration token or a missing or invalid public key is a 400; a platform
+        other than `ios` and `android`, or a provider other than `fcm` and `expo`, is a 400. Deprecated: `provider:
+        expo` with an Expo push token (`ExponentPushToken[…]`) and no public key is still taken until the apps
+        register FCM, then refused with a 400 like any other provider.
       requestBody:
         required: true
         content:
@@ -23523,20 +23530,72 @@ components:
       - signature
     RegisterPushDeviceRequest:
       type: object
-      description: "A phone to notify: its push token, the push provider and the platform"
+      description: "A phone to notify: its push token, the push provider, the platform and the key its pushes are encrypted for"
       properties:
         pushToken:
           type: string
+          description: The FCM registration token (`fcm`), or an Expo push token (`expo`, deprecated)
         provider:
           type: string
+          description: '`fcm` (`expo` is deprecated)'
         platform:
           type: string
+          description: '`ios` or `android`'
         locale:
           type: string
+        publicKey:
+          type: string
+          description: The phone's P-256 public key, SubjectPublicKeyInfo DER in base64; required with `fcm`
       required:
       - pushToken
       - provider
       - platform
+    PushPayload:
+      type: object
+      description: >-
+        What an `fcm` push carries, encrypted for the phone's public key (TeamCode's push payload). The FCM data is
+        `{"p": <encrypted payload>, "v": "1"}`; the encrypted payload is `base64(0x01 | ephemeral P-256 public key
+        (65 bytes, uncompressed) | nonce (12 bytes) | AES-256-GCM ciphertext and 16-byte tag)`, its key
+        `HKDF-SHA256(ECDH(ephemeral private, phone public), salt = ephemeral point | phone point, info =
+        "ostrom-push-v1", 32 bytes)`, both points as 65-byte uncompressed SEC1 points (`0x04 | x | y`, the phone's
+        read from its SubjectPublicKeyInfo), its plaintext this object's JSON, `v` always written. On iOS a generic alert shows when the
+        notification service extension cannot decrypt it.
+      properties:
+        v:
+          type: integer
+          description: The format, 1
+        id:
+          type: string
+        origin:
+          type: string
+          description: The server's public URL; with orgId and memberId, which signed-in account it is for
+        orgId:
+          type: string
+        memberId:
+          type: string
+        kind:
+          type: string
+          description: '`approval` or `test`'
+        title:
+          type: string
+        body:
+          type: string
+        approvalId:
+          type: string
+          description: The request a tap opens, for `approval`
+        at:
+          type: integer
+          format: int64
+          description: Unix milliseconds
+      required:
+      - id
+      - origin
+      - orgId
+      - memberId
+      - kind
+      - title
+      - body
+      - at
     PushDevice:
       type: object
       description: A phone registered for push notifications

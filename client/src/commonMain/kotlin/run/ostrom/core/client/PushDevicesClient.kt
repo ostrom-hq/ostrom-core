@@ -7,16 +7,21 @@ import run.ostrom.core.api.models.RegisterPushDeviceRequest
 
 /** The caller's phones registered for push notifications. Reached through [OstromClient.pushDevices]. */
 public class PushDevicesClient internal constructor(private val transport: Transport) {
-    /** Registers this phone (`POST /api/v1/push-devices`); keep [PushDevice.id] to [delete] it. */
+    /**
+     * Registers this phone (`POST /api/v1/push-devices`); keep [PushDevice.id] to [delete] it. With `fcm`, pass the
+     * phone's FCM registration token and its P-256 [publicKey] (SubjectPublicKeyInfo, DER, base64), which every push
+     * is encrypted for ([run.ostrom.core.api.models.PushPayload]).
+     */
     public suspend fun register(
         pushToken: String,
         provider: String,
         platform: String,
         locale: String? = null,
+        publicKey: String? = null,
     ): PushDevice = transport.jsonBody(
         HttpMethod.Post,
         "/api/v1/push-devices",
-        RegisterPushDeviceRequest(pushToken, provider, platform, locale),
+        RegisterPushDeviceRequest(pushToken, provider, platform, locale, publicKey),
     )
 
     /** Stops notifying a phone (`DELETE /api/v1/push-devices/{id}`), before a sign-out for example. */

@@ -160,12 +160,12 @@ class ResourceClientsTest {
         }
         server.client().use { client ->
             assertEquals("pd_1", client.pushDevices.register("tok", "fcm", "android").id)
-            client.pushDevices.register("tok", "apns", "ios", locale = "fr")
+            client.pushDevices.register("tok", "fcm", "ios", locale = "fr", publicKey = "MFkw")
             client.pushDevices.delete("pd_1")
         }
         assertJson("""{"pushToken":"tok","provider":"fcm","platform":"android"}""", server.requests[0].bodyText())
         assertJson(
-            """{"pushToken":"tok","provider":"apns","platform":"ios","locale":"fr"}""",
+            """{"pushToken":"tok","provider":"fcm","platform":"ios","locale":"fr","publicKey":"MFkw"}""",
             server.requests[1].bodyText(),
         )
         assertEquals("DELETE /api/v1/push-devices/pd_1", server.requests[2].call())
