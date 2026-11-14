@@ -116,6 +116,28 @@ class ResourceClientsTest {
     }
 
     @Test
+    fun rawReceiptsKeepTheFieldsThisVersionDoesNotKnow() = runTest {
+        val newer = receipt.trimEnd().removeSuffix("}") + ""","futureField":{"x":1}}"""
+        val server = ScriptedServer { request ->
+            when (request.url.encodedPath) {
+                "/api/v1/receipts" -> json("""{"items":[$newer],"next":"c2"}""")
+                else -> json(newer)
+            }
+        }
+        server.client().use { client ->
+            val page = client.receipts.listRaw(before = "c1", limit = 10)
+            assertEquals("c2", page.next)
+            assertEquals("""{"x":1}""", page.items.single()["futureField"].toString())
+            assertEquals("""{"x":1}""", client.receipts.getRaw("rcp_1")["futureField"].toString())
+            assertEquals(null, client.receipts.listRaw().items.single()["absent"])
+        }
+        assertEquals(
+            listOf("GET /api/v1/receipts?before=c1&limit=10", "GET /api/v1/receipts/rcp_1", "GET /api/v1/receipts"),
+            server.requests.map { it.call() },
+        )
+    }
+
+    @Test
     fun spendingAndActivityCarryTheirFilters() = runTest {
         val server = ScriptedServer { request ->
             when (request.url.encodedPath) {

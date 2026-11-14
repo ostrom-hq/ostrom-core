@@ -1,5 +1,7 @@
 plugins {
     id("ostrom.kmp")
+    // Android and iOS (build-logic ostrom.mobile): the companion app checks receipts on the phone.
+    id("ostrom.mobile")
     id("ostrom.publish")
 }
 
@@ -36,8 +38,15 @@ kotlin {
             api(libs.serialization.json)
             implementation(libs.cryptography.core)
         }
-        // OpenSSL 3, linked in, on every native target; the JDK provider for the jvm() test target.
+        // OpenSSL 3, linked in, on every native target (iOS included); the JDK provider for the jvm() test target and
+        // Android.
         nativeMain.dependencies { implementation(libs.cryptography.openssl3) }
+        // Only with ostrom.mobileTargets=true. Android has Ed25519 in its platform providers from API 33; verifying on an
+        // older one needs a provider that has it (an app registers Bouncy Castle at start).
+        findByName("androidMain")?.dependencies {
+            implementation(libs.cryptography.jdk)
+            runtimeOnly(libs.bouncycastle)
+        }
         jvmMain.dependencies {
             implementation(libs.cryptography.jdk)
             // the JDK alone cannot derive an Ed25519 public key from a private key; the provider does it through this
