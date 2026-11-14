@@ -4965,6 +4965,61 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/packages/settings:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getCompilerSettings
+      x-ostrom-status: planned
+      tags:
+      - packages
+      summary: How the organization compiles its packages (pin, code publishers, production approver)
+      description: 'A member of the organization. The defaults while nothing is stored (no `updatedAt`): `pin` `auto`,
+        every person who decides may publish code, no production approver'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompilerSettings'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveCompilerSettings
+      x-ostrom-status: planned
+      tags:
+      - packages
+      summary: Save how the organization compiles its packages
+      description: 'An owner or an admin of the organization, signed in as a person (the console). A `PUT` replaces
+        every setting (an omitted `codePublishers` or `prodApprover` is removed); `updatedAt` is the one of the settings
+        edited, absent while nothing is stored: 409 `compiler_settings_conflict` when another save came first,
+        including a first save when one is stored. A value the server refuses is 400
+        `invalid_compiler_settings` naming the field. Audited `compiler.settings.changed`. The next compilation
+        applies it'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCompilerSettingsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompilerSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/packages/current:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -19367,6 +19422,68 @@ components:
         updatedAt:
           type: string
           format: date-time
+    CompilerSettings:
+      x-ostrom-kotlin: pending
+      type: object
+      description: How an organization compiles its packages
+      required: [pin]
+      properties:
+        pin:
+          type: string
+          enum: [auto, manual]
+          description: "`auto` (the default): each compilation moves the repository's pin to the package it built.
+            `manual`: a person pins each version; an agent starting a session never sets the first pin"
+        codePublishers:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: 'The member logins (as in a signed decision) whose decision lets a workflow run code (its
+            scripts), compared without case and stored lower case without duplicates; absent for every person who
+            decides, empty for nobody'
+        prodApprover:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: The member login that approves a gate naming no approver; absent for none
+        updatedAt:
+          type: string
+          format: date-time
+          description: The last save; absent while nothing is stored
+        updatedBy:
+          type: string
+          description: The person who saved last; absent while nothing is stored
+    SaveCompilerSettingsRequest:
+      x-ostrom-kotlin: pending
+      type: object
+      required: [pin]
+      properties:
+        pin:
+          type: string
+          enum: [auto, manual]
+          description: "`auto` (the default): each compilation moves the repository's pin to the package it built.
+            `manual`: a person pins each version; an agent starting a session never sets the first pin"
+        codePublishers:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: 'The member logins (as in a signed decision) whose decision lets a workflow run code (its
+            scripts), compared without case and stored lower case without duplicates; absent for every person who
+            decides, empty for nobody'
+        prodApprover:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: The member login that approves a gate naming no approver; absent for none
+        updatedAt:
+          type: string
+          format: date-time
+          description: The `updatedAt` of the settings edited; absent while nothing is stored
     CloudSettings:
       x-ostrom-kotlin: pending
       type: object
