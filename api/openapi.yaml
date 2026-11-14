@@ -5606,7 +5606,8 @@ paths:
         through the provider in force, with each installation''s result (`sent`, `unregistered`, `retry`, `rejected`, and
         a short error code, never a provider''s answer). Any member signed in interactively (a browser session, the
         unlocked app or `ostrom login`), never a service key; once every ten seconds per replica (429
-        `push_test_rate_limited`). Announced by `notifications.push.test.v1`.'
+        `push_test_rate_limited`, `Retry-After`). 409 `push_off` while no provider is chosen, 409 `push_no_device` when
+        the caller has no phone push can reach. Announced by `notifications.push.test.v1`.'
       responses:
         '200':
           description: OK
@@ -5621,6 +5622,8 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+        '409':
           $ref: '#/components/responses/Error'
         '429':
           $ref: '#/components/responses/Error'
