@@ -12056,12 +12056,14 @@ paths:
                     `GET /api/v1/cloud/profiles`): its cluster, namespace, image, pull secrets, resources and workspace,
                     at its current version, which the session keeps (TeamCode's `profileId`). 404
                     `cloud_profile_not_found` when none of the organization's profiles has it, 403 `profile_unassigned`
-                    when it is not assigned to the owner (owners and admins use every profile). Absent: the
-                    organization's only profile the owner may use, 422 `profile_required` when there are none or
-                    several. 409 `cluster_unavailable` when its cluster is gone or its credentials must be entered
-                    again, 409 `namespace_not_allowed` when the cluster no longer allows its namespace. Ignored by a
-                    server whose sessions run on Docker or on registered runners. Planned: the server does not read it
-                    yet"
+                    when it is not assigned to the session's owner (the member the session is created for); members
+                    with the organization role owner or admin use every profile. Absent: the one profile that owner
+                    may use, 422 `profile_required` when they may use none or several. The create also checks the
+                    profile's cluster: 409 `cluster_unavailable` when it is gone or its credentials must be entered
+                    again, 409 `namespace_not_allowed` when it no longer allows the profile's namespace. The reconciler
+                    checks both again at each later start, where they become the session's `failure.code` (a first
+                    start fails, a resume is blocked). Ignored by a server whose sessions run on Docker or on
+                    registered runners. Planned: the server does not read it yet"
                 image:
                   type: string
                   x-ostrom-status: planned
