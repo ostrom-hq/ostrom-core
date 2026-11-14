@@ -12060,7 +12060,11 @@ paths:
       - runners
       summary: Create a cloud profile
       description: 'An owner or an admin of the organization, signed in. The namespace must be one the cluster allows
-        and the image a valid reference; 400 `invalid_cloud_profile` naming the field otherwise. `version` is 0'
+        and the image a valid reference; 400 `invalid_cloud_profile` naming the field otherwise. `version` is 0.
+        A server announcing `runners.cloud.retention.v1` also reads the workspace storage class (the profile''s,
+        else the cluster''s default) on the cluster: 422 `storage_class_missing` when it does not exist, 422
+        `storage_class_retains_volumes` when its `reclaimPolicy` is not `Delete`, since a deleted session must leave
+        no provider volume behind'
       requestBody:
         required: true
         content:
@@ -12082,6 +12086,8 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/profiles/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -12100,7 +12106,11 @@ paths:
       summary: Publish a new version of a cloud profile
       description: 'An owner or an admin of the organization, signed in. `version` is the current one (409
         `cloud_profile_conflict` otherwise); each save publishes an immutable version, which a running session keeps.
-        404 `cloud_profile_not_found` for a profile of another organization or none'
+        404 `cloud_profile_not_found` for a profile of another organization or none.
+        A server announcing `runners.cloud.retention.v1` also reads the workspace storage class (the profile''s,
+        else the cluster''s default) on the cluster: 422 `storage_class_missing` when it does not exist, 422
+        `storage_class_retains_volumes` when its `reclaimPolicy` is not `Delete`, since a deleted session must leave
+        no provider volume behind'
       requestBody:
         required: true
         content:
@@ -12123,6 +12133,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/settings:
     parameters:
@@ -20123,7 +20135,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
@@ -20372,6 +20384,18 @@ components:
           $ref: '#/components/schemas/InstanceSecretState'
         serviceAccountToken:
           $ref: '#/components/schemas/InstanceSecretState'
+        orphanedVolumes:
+          type: integer
+          description: "PersistentVolumes of this cluster's session workspaces whose claim is gone and that their
+            provisioner will not delete (reclaimPolicy other than Delete, or phase Failed), counted by the last garbage
+            collection: an administrator deletes the provider volumes (`runners.cloud.retention.v1`). Absent before
+            the first collection"
+        lastGarbageCollectionAt:
+          type: string
+          format: date-time
+          description: "When the last garbage collection of the cluster ran: every 10 minutes, it deletes the session
+            pods and workspace claims no session accounts for (`runners.cloud.retention.v1`). Absent before the
+            first collection"
         inCluster:
           type: boolean
           description: "Whether the cluster is the server's own, reached with the server pod's mounted service account
@@ -20863,6 +20887,21 @@ components:
           type: string
         pausedAt:
           type: string
+        expiresAt:
+          type: string
+          description: "When a paused session is terminated with its workspace (`terminatedReason` `expired`),
+            from the instance's `pausedRetentionDays` in force when it paused: a later change of the setting applies
+            to sessions paused afterwards, so shortening it never deletes existing work by surprise. Resuming clears
+            it. Absent while the session is not paused, or when paused sessions are kept indefinitely
+            (`runners.cloud.retention.v1`, TeamCode's `expiresAt`). A session paused before the server announced
+            the feature gets its `expiresAt` from the setting at its next reconciliation"
+        terminatedReason:
+          type: string
+          description: "Why a terminated session ended: `deleted` (its owner or an administrator) or `expired`
+            (its paused retention ran out). Absent from a session that is not terminated
+            (`runners.cloud.retention.v1`)"
+        workspaceDeletion:
+          $ref: '#/components/schemas/CloudWorkspaceDeletion'
         runnerId:
           type: string
         environment:
@@ -20896,6 +20935,34 @@ components:
       - agent
       - status
       - createdAt
+    CloudWorkspaceDeletion:
+      type: object
+      description: "The proof that a Kubernetes session's workspace is gone, provider volume included
+        (`runners.cloud.retention.v1`, TeamCode's `workspaceDeletion`). When the session ends, the reconciler records
+        the PersistentVolume bound to its claim and the provider's volume handle, deletes the claim, waits until it is
+        gone, then until the PersistentVolume is gone: with `reclaimPolicy: Delete`, the provisioner removes it only
+        once the provider deleted the volume. A volume with another policy, in phase `Failed`, or still there an hour
+        after its claim was deleted blocks the deletion (`volume_retained`, `volume_deletion_stalled`), checked
+        again every 10 minutes until an administrator deletes it. Absent from a session on Docker or a registered
+        runner"
+      properties:
+        state:
+          type: string
+          description: "`none` (the session holds its workspace), `pending`, `proven` or `blocked`"
+        claimDeletedAt:
+          type: string
+        volumeDeletedAt:
+          type: string
+        volumeHandle:
+          type: string
+          description: The provider's volume handle (CSI `volumeHandle`), kept as evidence
+        problem:
+          $ref: '#/components/schemas/CloudSessionFailure'
+          description: "Why the deletion is blocked: `volume_retained` (the volume's reclaimPolicy is not Delete;
+            `retryable` false) or `volume_deletion_stalled` (phase Failed, or still there an hour after its claim was
+            deleted; `retryable` true). Absent unless `state` is `blocked`"
+      required:
+      - state
     CloudSessionProfile:
       type: object
       description: "The cloud profile a session runs on, at the version it was created with (`runners.cloud.profiles.v1`,
@@ -20971,8 +21038,10 @@ components:
         code:
           type: string
           description: "start_failed, execution_lost, idle_timeout, max_duration, hours_exhausted, preparation_failed,
-            cluster_unavailable, namespace_not_allowed or server_url_missing (a session on a cloud profile whose
-            cluster stopped opening, whose namespace is no longer allowed, or whose runner has no server URL)"
+            cluster_unavailable, namespace_not_allowed, server_url_missing, storage_class_missing or
+            storage_class_retains_volumes (a session on a cloud profile whose cluster stopped opening, whose namespace
+            is no longer allowed, whose runner has no server URL, or whose workspace storage class is gone or keeps
+            provider volumes after their claim is deleted)"
         message:
           type: string
         retryable:

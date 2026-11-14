@@ -1602,6 +1602,23 @@
         "required": false,
         "nullable": false
       },
+      "expiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "terminatedReason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "workspaceDeletion": {
+        "type": {
+          "ref": "CloudWorkspaceDeletion"
+        },
+        "required": false,
+        "nullable": false
+      },
       "runnerId": {
         "type": "string",
         "required": false,
@@ -1735,6 +1752,37 @@
       "start": {
         "type": {
           "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudWorkspaceDeletion": {
+    "properties": {
+      "state": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "claimDeletedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "volumeDeletedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "volumeHandle": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "problem": {
+        "type": {
+          "ref": "CloudSessionFailure"
         },
         "required": false,
         "nullable": false
