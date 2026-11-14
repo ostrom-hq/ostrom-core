@@ -2,6 +2,7 @@
 package run.ostrom.core.client
 
 import io.ktor.client.request.HttpRequestData
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
@@ -211,6 +212,52 @@ class ResourceClientsTest {
             server.requests.map { it.call() },
         )
         assertJson(body, server.requests[1].bodyText())
+    }
+
+    @Test
+    fun notificationSettingsAreReadAndOneSwitchIsChanged() = runTest {
+        val body = """{"channels":["push"],"settings":[{"channel":"push","kind":"waiting","enabled":false}]}"""
+        val server = ScriptedServer { json(body) }
+        server.client().use { client ->
+            val settings = client.notifications.settings()
+            assertEquals(listOf("push"), settings.channels)
+            assertEquals(false, settings.settings.single().enabled)
+            assertEquals("waiting", client.notifications.setSetting("push", "waiting", true).settings.single().kind)
+        }
+        assertEquals(
+            listOf("GET /api/v1/notifications/settings", "PUT /api/v1/notifications/settings"),
+            server.requests.map { it.call() },
+        )
+        assertJson("""{"channel":"push","kind":"waiting","enabled":true}""", server.requests[1].bodyText())
+    }
+
+    @Test
+    fun aTestPushAnswersEachPhoneAndARefusalKeepsItsCode() = runTest {
+        var answer = 0
+        val server = ScriptedServer {
+            when (answer++) {
+                0 -> json("""{"ok":true,"results":[{"status":"sent"},{"status":"rejected","error":"bad_token"}]}""")
+                1 -> json("""{"error":{"type":"push_no_device","message":"No phone."}}""", HttpStatusCode.Conflict)
+                else -> json(
+                    """{"error":{"type":"push_test_rate_limited","message":"Later."}}""",
+                    HttpStatusCode.TooManyRequests,
+                    listOf(HttpHeaders.RetryAfter to "10"),
+                )
+            }
+        }
+        server.client().use { client ->
+            val results = client.notifications.sendTestPush()
+            assertEquals(true, results.ok)
+            assertEquals(listOf("sent", "rejected"), results.results.map { it.status })
+            assertEquals("bad_token", results.results[1].error)
+            val noDevice = assertFailsWith<OstromException> { client.notifications.sendTestPush() }
+            assertEquals(409, noDevice.status)
+            assertEquals("push_no_device", noDevice.type)
+            val limited = assertFailsWith<OstromException> { client.notifications.sendTestPush() }
+            assertEquals(429, limited.status)
+            assertEquals(10L, limited.retryAfterSeconds)
+        }
+        assertEquals(List(3) { "POST /api/v1/notifications/push/test" }, server.requests.map { it.call() })
     }
 
     @Test
