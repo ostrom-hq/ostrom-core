@@ -12674,7 +12674,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: fetchRunnerEnvironment
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner of a cloud session reads what to prepare (`runners.cloud.environment.v1`), with the
@@ -12714,7 +12714,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reportRunnerPreparation
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner reports its preparation (`runners.cloud.environment.v1`): a `phase` (`configuring_git`,
