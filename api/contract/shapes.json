@@ -843,6 +843,13 @@
         "type": "string",
         "required": true,
         "nullable": false
+      },
+      "origin": {
+        "type": {
+          "ref": "ArtifactOrigin"
+        },
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -859,6 +866,20 @@
         "type": {
           "ref": "ArtifactVersion"
         },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ArtifactOrigin": {
+    "properties": {
+      "launchId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "cloudSessionId": {
+        "type": "string",
         "required": false,
         "nullable": false
       }
@@ -974,6 +995,13 @@
       },
       "replayed": {
         "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "origin": {
+        "type": {
+          "ref": "ArtifactOrigin"
+        },
         "required": false,
         "nullable": false
       }

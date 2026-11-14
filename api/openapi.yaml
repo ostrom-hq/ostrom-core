@@ -17627,6 +17627,11 @@ components:
           type: string
         updatedAt:
           type: string
+        origin:
+          x-ostrom-status: planned
+          description: "Where it was created, when an agent created it: taken from the agent token, never from the
+            call. Absent for a person's publication. Planned: the server does not send it yet"
+          $ref: '#/components/schemas/ArtifactOrigin'
       required:
       - id
       - title
@@ -17646,6 +17651,20 @@ components:
       - team
       - link
       x-ostrom-kotlin: pending
+    ArtifactOrigin:
+      type: object
+      description: "The launch an agent published from (TeamCode's `cloud_session` origin): the launch of its agent
+        token, and the cloud session it was opened for. A session is only the origin; the artifact belongs to the
+        member the launch runs for"
+      properties:
+        launchId:
+          type: string
+          description: The launch whose agent token published
+        cloudSessionId:
+          type: string
+          description: The cloud session the launch was opened for; absent for `ostrom <agent>` on a machine
+      required:
+      - launchId
     ArtifactFile:
       type: object
       description: 'A file of the version to publish: its `content` inline, or, for a commit of an upload, its `sha256`
@@ -18127,6 +18146,11 @@ components:
         replayed:
           type: boolean
           description: The same commit again within 10 minutes, answered with the version it made
+        origin:
+          x-ostrom-status: planned
+          description: "Where it was committed, when an agent committed it: taken from the agent token, never from
+            the call. Absent for a person's publication. Planned: the server does not send it yet"
+          $ref: '#/components/schemas/ArtifactOrigin'
       required:
       - number
       - files

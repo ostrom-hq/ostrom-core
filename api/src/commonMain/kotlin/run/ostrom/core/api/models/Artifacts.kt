@@ -28,6 +28,7 @@ public data class ArtifactPage(
  * @property publicUrl Its public link, for `link` access.
  * @property createdAt ISO creation time.
  * @property updatedAt ISO time of the last change.
+ * @property origin Where an agent created it, from its agent token; absent for a person's publication (planned).
  */
 @Serializable
 public data class Artifact(
@@ -41,6 +42,19 @@ public data class Artifact(
     val publicUrl: String? = null,
     val createdAt: String,
     val updatedAt: String,
+    val origin: ArtifactOrigin? = null,
+)
+
+/**
+ * The launch an agent published from (TeamCode's `cloud_session` origin), taken from its agent token.
+ *
+ * @property launchId The launch whose agent token published.
+ * @property cloudSessionId The cloud session the launch was opened for; absent for `ostrom <agent>` on a machine.
+ */
+@Serializable
+public data class ArtifactOrigin(
+    val launchId: String,
+    val cloudSessionId: String? = null,
 )
 
 /**
@@ -66,6 +80,7 @@ public data class ArtifactVersionPage(
  * @property digest The SHA-256 of its canonical manifest, when known.
  * @property baseVersion The version its publisher started from, when known.
  * @property replayed True when a commit was the same as one made within 10 minutes, answered with that version.
+ * @property origin Where an agent committed it, from its agent token; absent for a person's publication (planned).
  */
 @Serializable
 public data class ArtifactVersion(
@@ -77,6 +92,7 @@ public data class ArtifactVersion(
     val digest: String? = null,
     val baseVersion: Int? = null,
     val replayed: Boolean? = null,
+    val origin: ArtifactOrigin? = null,
 )
 
 /**
