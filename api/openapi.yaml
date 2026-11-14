@@ -4973,7 +4973,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCompilerSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: How the organization compiles its packages (pin, code publishers, production approver)
@@ -4990,9 +4990,11 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
     put:
       operationId: saveCompilerSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - packages
       summary: Save how the organization compiles its packages
@@ -5020,6 +5022,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
