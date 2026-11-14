@@ -5481,6 +5481,95 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/notifications/push/test:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: sendTestPush
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: Send a test notification to the caller's own phones
+      description: 'One `test` push (`PushPayload.kind`) to each of the caller''s phones in the organization, sent at once
+        through the provider in force, with each installation''s result (`sent`, `unregistered`, `retry`, `rejected`, and
+        a short error code, never a provider''s answer). Any member signed in interactively (a browser session, the
+        unlocked app or `ostrom login`), never a service key; once every ten seconds per replica (429
+        `push_test_rate_limited`). Announced by `notifications.push.test.v1`.'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushTestResults'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/notifications/settings:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getNotificationSettings
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: The caller's notification switches, per channel and kind
+      description: 'What the caller is told about (`notifications.v1`): `waiting` (an agent or a wait needs them),
+        `turn_completed`, `turn_failed` and `session_failed`, on each channel the server offers (`push`, later `slack`
+        and `discord`). Every kind is on until the member turns it off; `channels` is empty while the server offers none.
+        A member reads and changes only their own, with an interactive login (a browser session, the unlocked app or
+        `ostrom login`); a service key has no person to notify (403).'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setNotificationSetting
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: Turn one kind on or off on one channel for the caller
+      description: 'A channel the server does not offer, or an unknown kind, is refused (400
+        `invalid_notification_setting`). Answers every switch in force, as `GET` does.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingChange'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
   /api/v1/rules:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -15690,9 +15779,10 @@ paths:
       summary: The organization's outgoing webhooks
       description: 'Outgoing webhooks (`webhooks.v1`) send the events of the organization''s feed (`GET /api/v1/events`)
         to the caller''s own services as signed HTTP requests, retried until the receiver answers. A webhook receives the
-        whole organization''s events, so only an owner or an admin reads and manages them: with a browser session, a
-        personal token of theirs, or a service key of theirs holding `cloud:admin` (403 `forbidden` for anyone else, a
-        member''s key and a `team:read` key included). At most 20 per organization, oldest first.'
+        whole organization''s events, so only an owner or an admin reads and manages them: with an interactive login (a
+        browser session, the unlocked app or `ostrom login`), or a service key of theirs holding `cloud:admin` (403
+        `forbidden` for anyone else: a personal token made in the console whatever its `cloud:*` scopes, a member''s key
+        and a `team:read` key included). At most 20 per organization, oldest first.'
       responses:
         '200':
           description: OK
@@ -19032,7 +19122,7 @@ components:
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
-        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`,
+        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
@@ -23375,6 +23465,52 @@ components:
       - requests
       - decisions
       - spending
+    NotificationSetting:
+      type: object
+      description: A member's switch for one kind on one channel
+      properties:
+        channel:
+          type: string
+          description: '`push` (later `slack`, `discord`); a client tolerates one it does not know'
+        kind:
+          type: string
+          description: '`waiting`, `turn_completed`, `turn_failed` or `session_failed`; a client tolerates one it does not
+            know'
+        enabled:
+          type: boolean
+      required:
+      - channel
+      - kind
+      - enabled
+    NotificationSettingChange:
+      type: object
+      description: One switch to set for the caller
+      properties:
+        channel:
+          type: string
+        kind:
+          type: string
+        enabled:
+          type: boolean
+      required:
+      - channel
+      - kind
+      - enabled
+    NotificationSettings:
+      type: object
+      description: The channels this server offers and every switch in force, defaults filled
+      properties:
+        channels:
+          type: array
+          items:
+            type: string
+        settings:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationSetting'
+      required:
+      - channels
+      - settings
     NotificationStatus:
       type: string
       enum:
@@ -23931,7 +24067,8 @@ components:
           type: string
         kind:
           type: string
-          description: '`approval` or `test`'
+          description: '`approval` (a request waits for the member''s yes), a notification kind (`waiting`,
+            `turn_completed`, `turn_failed`, `session_failed`) or `test`'
         title:
           type: string
         body:
@@ -23939,6 +24076,12 @@ components:
         approvalId:
           type: string
           description: The request a tap opens, for `approval`
+        sessionId:
+          type: string
+          description: The session a tap opens
+        waitId:
+          type: string
+          description: The wait a tap opens, for a wait outside a session
         at:
           type: integer
           format: int64
@@ -23971,6 +24114,94 @@ components:
       - provider
       - platform
       - createdAt
+    PushRelayRegisterRequest:
+      type: object
+      description: 'Ostrom Push relay (`push.v1`), `POST /v1/instances`: an instance introduces its Ed25519 public key.
+        The same key gets the same id. This and the other `PushRelay` schemas are the wire format between a server and
+        the relay that holds the Firebase project of the published apps; the relay sees an instance, a token and an
+        encrypted blob, never a member, a session or the text. Every request but this one carries `Ostrom-Instance`,
+        `Ostrom-Timestamp` (Unix seconds, at most 300 s off) and `Ostrom-Signature`, Ed25519 over
+        `<METHOD>\n<path>\n<timestamp>\n<sha256 of the body, lowercase hex>`, base64url without padding.'
+      properties:
+        publicKey:
+          type: string
+          description: The raw 32 bytes, base64url
+      required:
+      - publicKey
+    PushRelayRegisterResponse:
+      type: object
+      description: The relay's id for the instance
+      properties:
+        instanceId:
+          type: string
+      required:
+      - instanceId
+    PushRelaySendRequest:
+      type: object
+      description: '`POST /v1/send`: one push to one installation'
+      properties:
+        token:
+          type: string
+          description: The FCM registration token, at most 512 characters
+        platform:
+          type: string
+          description: '`ios` or `android`'
+        payload:
+          type: string
+          description: The encrypted `PushPayload`, base64, at most 3000 characters
+        collapseKey:
+          type: string
+          description: An opaque lowercase hex token grouping pushes that replace one another
+        ttlSeconds:
+          type: integer
+          format: int64
+          description: How long FCM keeps it, at most a day
+      required:
+      - token
+      - platform
+      - payload
+      - collapseKey
+      - ttlSeconds
+    PushRelaySendResponse:
+      type: object
+      description: The outcome of one push
+      properties:
+        status:
+          type: string
+          description: '`sent`, `unregistered` (forget the token), `retry` or `rejected` (refused for good)'
+        retryAfterSeconds:
+          type: integer
+          format: int64
+        error:
+          type: string
+          description: A short code
+      required:
+      - status
+    PushTestResult:
+      type: object
+      description: One installation's result of a test push
+      properties:
+        status:
+          type: string
+          description: '`sent`, `unregistered`, `retry` or `rejected`'
+        error:
+          type: string
+          description: A short code, never a provider's answer
+      required:
+      - status
+    PushTestResults:
+      type: object
+      description: A test push to the caller's phones; `ok` when one was sent
+      properties:
+        ok:
+          type: boolean
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PushTestResult'
+      required:
+      - ok
+      - results
     QuietHours:
       type: object
       description: Hours without notifications

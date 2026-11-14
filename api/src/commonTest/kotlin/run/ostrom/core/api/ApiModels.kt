@@ -102,6 +102,15 @@ import run.ostrom.core.api.models.Produced
 import run.ostrom.core.api.models.PublicKey
 import run.ostrom.core.api.models.PushDevice
 import run.ostrom.core.api.models.PushPayload
+import run.ostrom.core.api.models.NotificationSetting
+import run.ostrom.core.api.models.NotificationSettings
+import run.ostrom.core.api.models.NotificationSettingChange
+import run.ostrom.core.api.models.PushTestResult
+import run.ostrom.core.api.models.PushTestResults
+import run.ostrom.core.api.models.PushRelayRegisterRequest
+import run.ostrom.core.api.models.PushRelayRegisterResponse
+import run.ostrom.core.api.models.PushRelaySendRequest
+import run.ostrom.core.api.models.PushRelaySendResponse
 import run.ostrom.core.api.models.QuietHours
 import run.ostrom.core.api.models.Receipt
 import run.ostrom.core.api.models.ReceiptDecision
@@ -304,6 +313,15 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     PublicKey.serializer(),
     PushDevice.serializer(),
     PushPayload.serializer(),
+    NotificationSetting.serializer(),
+    NotificationSettings.serializer(),
+    NotificationSettingChange.serializer(),
+    PushTestResult.serializer(),
+    PushTestResults.serializer(),
+    PushRelayRegisterRequest.serializer(),
+    PushRelayRegisterResponse.serializer(),
+    PushRelaySendRequest.serializer(),
+    PushRelaySendResponse.serializer(),
     QuietHours.serializer(),
     Receipt.serializer(),
     ReceiptDecision.serializer(),

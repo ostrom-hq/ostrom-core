@@ -3612,6 +3612,64 @@
       }
     }
   },
+  "NotificationSetting": {
+    "properties": {
+      "channel": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "NotificationSettingChange": {
+    "properties": {
+      "channel": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "NotificationSettings": {
+    "properties": {
+      "channels": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "settings": {
+        "type": {
+          "array": {
+            "ref": "NotificationSetting"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "NotificationStatus": {
     "enum": [
       "queued",
@@ -4046,8 +4104,116 @@
         "required": false,
         "nullable": false
       },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "waitId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
       "at": {
         "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PushRelayRegisterRequest": {
+    "properties": {
+      "publicKey": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PushRelayRegisterResponse": {
+    "properties": {
+      "instanceId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PushRelaySendRequest": {
+    "properties": {
+      "token": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "platform": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "payload": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "collapseKey": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "ttlSeconds": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PushRelaySendResponse": {
+    "properties": {
+      "status": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "retryAfterSeconds": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "error": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "PushTestResult": {
+    "properties": {
+      "status": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "error": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "PushTestResults": {
+    "properties": {
+      "ok": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "results": {
+        "type": {
+          "array": {
+            "ref": "PushTestResult"
+          }
+        },
         "required": true,
         "nullable": false
       }
