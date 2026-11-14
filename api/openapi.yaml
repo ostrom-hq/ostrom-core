@@ -12429,6 +12429,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /api/v1/artifacts/mcp:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -12731,6 +12733,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '413':
           $ref: '#/components/responses/Error'
         '429':
           $ref: '#/components/responses/Error'
@@ -13086,6 +13090,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtifactConflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /api/v1/artifacts/{id}/versions/{number}/file:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
