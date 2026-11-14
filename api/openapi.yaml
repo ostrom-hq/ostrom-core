@@ -1854,9 +1854,9 @@ paths:
         Who sends the pushes is the instance's `push` settings section (Admin → Settings: `provider` `off` or
         `firebase`, the Firebase service account sealed); while it is `off`, phones register and nothing is sent. With
         `fcm`, a token that is not an FCM registration token or a missing or invalid public key is a 400; a platform
-        other than `ios` and `android`, or a provider other than `fcm` and `expo`, is a 400. Deprecated: `provider:
-        expo` with an Expo push token (`ExponentPushToken[…]`) and no public key is still taken until the apps
-        register FCM, then refused with a 400 like any other provider.
+        other than `ios` and `android`, or a provider other than `fcm`, is a 400. `expo` is refused (a 400) since
+        Expo was removed, as TeamCode has none; a phone an older app registered with it is never notified until the
+        app registers FCM.
       requestBody:
         required: true
         content:
@@ -24054,10 +24054,10 @@ components:
       properties:
         pushToken:
           type: string
-          description: The FCM registration token (`fcm`), or an Expo push token (`expo`, deprecated)
+          description: The FCM registration token
         provider:
           type: string
-          description: '`fcm` (`expo` is deprecated)'
+          description: '`fcm`'
         platform:
           type: string
           description: '`ios` or `android`'
