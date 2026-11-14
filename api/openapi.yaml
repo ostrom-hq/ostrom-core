@@ -11495,10 +11495,10 @@ paths:
       summary: Replace an unknown charge with what the provider billed (`capacity.usagereconciliation.v1`)
       description: "An administrator's attestation of provider evidence for that exact call; the server does not fetch
         or verify the record. Only a hold whose lease has run out and that no ledger line settled can be corrected,
-        once: a final correction, not a refund of known usage. `expectedUsd` must equal the charge displayed
-        (`PendingUsage.usd`) and `expectedProviderRequestId` the displayed provider request id (null when none was
-        captured), else 409 `stale_reconciliation` and the view must be reviewed again. `usd` is the verified total
-        (0 to 100 000 000), the same correction again answers the original record without another delta, a different
+        once: a final correction, not a refund of known usage. `expectedMicros` must equal the charge displayed
+        (`PendingUsage.micros`) and `expectedProviderRequestId` the displayed provider request id (absent when none was
+        captured), else 409 `stale_reconciliation` and the view must be reviewed again. `micros` is the verified
+        total (0 to $100 000 000), the same correction again answers the original record without another delta, a different
         one 409 `reconciled`. The correction applies to the day the hold was held and to the member, workflow and
         launch it was attributed to then; it creates nothing on today's ledger. Audited (`usage.reconciled`). Owners
         and admins, a person signed in (a sign-in less than 5 minutes old)"
@@ -11515,15 +11515,18 @@ paths:
             schema:
               type: object
               properties:
-                expectedUsd:
-                  type: number
-                  description: The charge as the reviewer saw it
+                expectedMicros:
+                  type: integer
+                  description: The charge as the reviewer saw it, USD millionths
                 expectedProviderRequestId:
                   type: string
-                  description: The provider request id as the reviewer saw it, absent when none
-                usd:
-                  type: number
-                  description: The verified total, 0 to 100 000 000
+                  maxLength: 128
+                  description: The provider request id as the reviewer saw it; absent when it showed none
+                micros:
+                  type: integer
+                  minimum: 0
+                  maximum: 100000000000000
+                  description: The verified total, USD millionths (0 to $100 000 000)
                 source:
                   type: string
                   enum:
@@ -11531,13 +11534,17 @@ paths:
                   - PROVIDER_CONFIRMATION
                 reference:
                   type: string
-                  description: A non-secret pointer to the evidence, 1 to 240 characters, one line
+                  minLength: 1
+                  maxLength: 240
+                  description: A non-secret pointer to the evidence, one line
                 reason:
                   type: string
-                  description: 1 to 240 characters, one line
+                  minLength: 1
+                  maxLength: 240
+                  description: One line
               required:
-              - expectedUsd
-              - usd
+              - expectedMicros
+              - micros
               - source
               - reference
               - reason
@@ -11622,7 +11629,7 @@ paths:
       tags:
       - budgets
       summary: Grant a temporary daily budget (`capacity.budgetoverrides.v1`)
-      description: "While active, `usd` replaces the member's own daily limit that stops the calls (or adds one when
+      description: "While active, `micros` replaces the member's own daily limit that stops the calls (or adds one when
         they have none): the total the member may spend today (UTC), not an addition, so a member who spent 80 under
         a day limit of 100 and is granted 300 may spend 220 more, and an override never refunds what was spent. `0`
         stops the member's calls; it does not mean unlimited. It ends at the earlier of `durationMinutes` and the next
@@ -11645,21 +11652,25 @@ paths:
             schema:
               type: object
               properties:
-                usd:
-                  type: number
-                  description: The member's total daily allowance, 0 to 100 000 000
+                micros:
+                  type: integer
+                  minimum: 0
+                  maximum: 100000000000000
+                  description: The member's total daily allowance, USD millionths (0 to $100 000 000)
                 durationMinutes:
                   type: integer
                   minimum: 1
                   maximum: 1440
                 reason:
                   type: string
-                  description: One line of 1 to 240 characters, without secrets
+                  minLength: 1
+                  maxLength: 240
+                  description: One line, without secrets
                 replacesId:
                   type: string
                   description: The override in force, to replace it
               required:
-              - usd
+              - micros
               - durationMinutes
               - reason
       responses:
@@ -11716,7 +11727,9 @@ paths:
               properties:
                 reason:
                   type: string
-                  description: One line of 1 to 240 characters
+                  minLength: 1
+                  maxLength: 240
+                  description: One line
               required:
               - reason
       responses:
@@ -20347,9 +20360,9 @@ components:
         member:
           type: string
           description: The member's `login`
-        usd:
-          type: number
-          description: The member's total daily allowance while it lasts
+        micros:
+          type: integer
+          description: The member's total daily allowance while it lasts, USD millionths
         createdAt:
           type: string
         expiresAt:
@@ -20371,7 +20384,7 @@ components:
       required:
       - id
       - member
-      - usd
+      - micros
       - createdAt
       - expiresAt
       - reason
@@ -20383,13 +20396,13 @@ components:
       properties:
         id:
           type: string
-        usd:
-          type: number
+        micros:
+          type: integer
         expiresAt:
           type: string
       required:
       - id
-      - usd
+      - micros
       - expiresAt
       x-ostrom-kotlin: pending
     PendingUsage:
@@ -20403,9 +20416,9 @@ components:
         member:
           type: string
           description: The member's `login`
-        usd:
-          type: number
-          description: The charge kept
+        micros:
+          type: integer
+          description: The charge kept, USD millionths
         heldAt:
           type: string
         leaseExpiredAt:
@@ -20420,7 +20433,7 @@ components:
       required:
       - id
       - member
-      - usd
+      - micros
       - heldAt
       - leaseExpiredAt
       x-ostrom-kotlin: pending
@@ -20431,6 +20444,7 @@ components:
       properties:
         id:
           type: string
+          description: The id of the hold that was corrected, as `PendingUsage.id` was
         member:
           type: string
         workflowId:
@@ -20441,10 +20455,10 @@ components:
           type: string
         heldAt:
           type: string
-        previousUsd:
-          type: number
-        usd:
-          type: number
+        previousMicros:
+          type: integer
+        micros:
+          type: integer
         source:
           type: string
           enum:
@@ -20462,8 +20476,8 @@ components:
       - id
       - member
       - heldAt
-      - previousUsd
-      - usd
+      - previousMicros
+      - micros
       - source
       - reference
       - reason
@@ -20472,7 +20486,7 @@ components:
       x-ostrom-kotlin: pending
     UsageReview:
       type: object
-      description: One of the two, never both
+      description: "`pending` while the hold is unknown, `reconciliation` once corrected: exactly one is present"
       properties:
         pending:
           $ref: '#/components/schemas/PendingUsage'
@@ -20495,12 +20509,20 @@ components:
           description: The UTC date (`YYYY-MM-DD`) from which it applies, until a later row of the same model
         inputMicros:
           type: integer
+          minimum: 1
+          maximum: 1000000000000
         cacheWriteMicros:
           type: integer
+          minimum: 0
+          maximum: 1000000000000
         cacheReadMicros:
           type: integer
+          minimum: 0
+          maximum: 1000000000000
         outputMicros:
           type: integer
+          minimum: 1
+          maximum: 1000000000000
       required:
       - provider
       - model
@@ -20515,6 +20537,7 @@ components:
       properties:
         prices:
           type: array
+          maxItems: 200
           items:
             $ref: '#/components/schemas/ApiPrice'
         defaults:
@@ -24832,7 +24855,8 @@ components:
       x-ostrom-kotlin: pending
     MyBudget:
       type: object
-      description: The caller's budget this month, in millionths of a US dollar
+      description: "The caller's budget this month, in millionths of a US dollar. Planned (`capacity.budgetoverrides.v1`):
+        `override`, the temporary daily budget in force, and `baseLimitMicros`; the server does not send them yet"
       properties:
         limitMicros:
           type: integer
