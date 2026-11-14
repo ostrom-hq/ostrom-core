@@ -40,6 +40,7 @@ import kotlinx.serialization.Serializable
  * @property activity Whether the agent works or waits for a person ([SessionActivityStates]), only while the segment
  *   is open (`sessions.activity.v1`).
  * @property activitySince ISO time [activity] began, by the server's clock.
+ * @property labels The labels of its launch (`createLaunch.labels`, `sessions.labels.v1`).
  */
 @Serializable
 public data class Session(
@@ -74,6 +75,7 @@ public data class Session(
     val lost: Boolean? = null,
     val activity: String? = null,
     val activitySince: String? = null,
+    val labels: Map<String, String>? = null,
 )
 
 /** The states of [Session.activity] and [SessionActivityRequest.state] (`sessions.activity.v1`). */
@@ -209,4 +211,22 @@ public data class SessionResponse(
 public data class SessionPage(
     val items: List<Session>,
     val next: String? = null,
+)
+
+/**
+ * The limits of one launch (`GET`/`PUT /api/v1/launches/{launchId}/limits`, `launches.limits.v1`), TeamCode's run
+ * policy `{budgetUnits, maxConcurrent, paused}` with the budget in USD millionths. Zero adds no cap; none grants more
+ * than the member's own limits.
+ *
+ * @property budgetMicros What the launch may spend over its life, USD millionths (0 to 100 000 000 000 000).
+ * @property maxConcurrent The most calls the launch runs at once (0 to 32); past it a call waits.
+ * @property paused True refuses the launch's next calls; the streams in flight finish.
+ * @property spentMicros On a read only: what the launch spent so far, ignored on a write.
+ */
+@Serializable
+public data class LaunchLimits(
+    val budgetMicros: Long,
+    val maxConcurrent: Int,
+    val paused: Boolean,
+    val spentMicros: Long? = null,
 )

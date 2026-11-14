@@ -989,6 +989,17 @@ paths:
                   type: string
                 model:
                   type: string
+                labels:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  x-ostrom-status: planned
+                  description: "Up to 16 non-secret key=value pairs attached to the launch (`sessions.labels.v1`), as
+                    TeamCode's `--label` (`labels` of `POST /runs`): a key is 1 to 63 characters, lowercase letters or
+                    digits then letters, digits, `.`, `_`, `/` or `-`; a value is up to 256 characters without control
+                    characters. 400 `invalid_label` otherwise. Fixed at start: they are copied onto every segment of the
+                    launch (`Session.labels`) and filtered by `listSessions`. Never put a secret in a label. Planned: the
+                    server does not read it yet"
                 workflowId:
                   type: string
                   x-ostrom-status: planned
@@ -1090,6 +1101,77 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+  /api/v1/launches/{launchId}/limits:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: launchId
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: getLaunchLimits
+      x-ostrom-status: planned
+      tags:
+      - sessions
+      summary: The limits of a launch and what it spent (`launches.limits.v1`)
+      description: "An owner or an admin from a signed-in session, a service key with `team:read`, or the launch's own
+        person (to read their own launch). 404 for a launch of another organization or one that does not exist. A launch
+        that was never given limits answers zeros (`budgetMicros` 0 and `maxConcurrent` 0 add no cap) and
+        `paused: false`. Planned: the server does not serve it yet"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaunchLimits'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setLaunchLimits
+      x-ostrom-status: planned
+      tags:
+      - sessions
+      summary: Set the limits of a launch (`launches.limits.v1`)
+      description: "TeamCode's `PUT /runs/{id}/policy` (docs/agent-sessions.md, \"Accounting, limits and guidance\"): an
+        owner or an admin from a signed-in session sets the lifetime budget, the concurrent calls and the pause of one
+        launch; an agent token never does (403). Zero adds no extra cap, and a cap never grants more than the member's,
+        the workflow's and the organization's own limits. A cap may be set below what the launch already spent: that
+        blocks later calls and rewrites nothing. 400 `invalid_launch_limits` for a `budgetMicros` outside 0 to
+        100000000000000 or a `maxConcurrent` outside 0 to 32; 409 `launch_ended` for a launch that ended or expired.
+        The organization's audit log holds `launch.limits_updated` (subject `launch:<launchId>`). Applied at the next
+        model call of the launch, on every replica. Past a limit the gateway answers its own refusals, each with
+        `x-ostrom-error`: `launch_paused` (403, the launch is paused), `launch_budget_exhausted` (429, the launch spent
+        its budget, or what is left does not cover the call), and a call over `maxConcurrent` waits in the admission
+        queue (`inference.queue.v1`) like a member over theirs. Planned: the server does not serve it yet"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LaunchLimits'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaunchLimits'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
           $ref: '#/components/responses/Error'
   /api/v1/policy/agents:
     parameters:
@@ -3740,6 +3822,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: label
+        in: query
+        required: false
+        x-ostrom-status: planned
+        description: "`key=value`, repeatable (at most 16): only the sessions whose launch carries every label given
+          (`sessions.labels.v1`, TeamCode's `GET /runs?label=k=v`). The key is everything before the first `=`. It
+          composes with the other filters and never widens what the caller may read. 400 `invalid_label` for a malformed
+          one. Planned: the server does not read it yet"
+        schema:
+          type: array
+          items:
+            type: string
       - name: limit
         in: query
         required: false
@@ -19286,7 +19380,7 @@ components:
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
-        `sessions.v1`, `sessions.activity.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
+        `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
         ignores a key it does not know."
@@ -25289,11 +25383,46 @@ components:
           x-ostrom-status: served
           description: "When `activity` began, by the server's clock: a repeated state keeps its time. Present with
             `activity` only."
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+          x-ostrom-status: planned
+          description: "The labels of its launch (`createLaunch.labels`, `sessions.labels.v1`), as TeamCode returns them
+            on a run; absent when the launch has none. Planned: the server does not send them yet"
       required:
       - id
       - agent
       - dev
       - startedAt
+    LaunchLimits:
+      type: object
+      description: "The limits of one launch (`launches.limits.v1`), TeamCode's run policy `{budgetUnits, maxConcurrent,
+        paused}` with the budget in USD millionths as every limit of Ostrom. Each is an additional cap for the model
+        calls the launch's agent token makes, never a substitute for the member's own limits"
+      properties:
+        budgetMicros:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 100000000000000
+          description: "What the launch may spend over its life, USD millionths; 0, the default, adds no cap"
+        maxConcurrent:
+          type: integer
+          minimum: 0
+          maximum: 32
+          description: "The most calls the launch runs at once; 0, the default, adds no cap. Past it a call waits"
+        paused:
+          type: boolean
+          description: "True refuses the launch's next calls (`launch_paused`); the streams in flight finish"
+        spentMicros:
+          type: integer
+          format: int64
+          description: "On a read only, what the launch spent so far, USD millionths; ignored on a write"
+      required:
+      - budgetMicros
+      - maxConcurrent
+      - paused
     SessionActivityRequest:
       type: object
       description: "What an agent's hook reports (`reportSessionActivity`): only the state, never the prompt, the
