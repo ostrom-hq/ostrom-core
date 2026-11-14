@@ -1723,6 +1723,54 @@
       }
     }
   },
+  "CreateMemoryRequest": {
+    "properties": {
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "summary": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "content": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scope": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "tags": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "refs": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "CreateTodoRequest": {
     "properties": {
       "sessionId": {
@@ -2755,6 +2803,285 @@
       "invited",
       "billing"
     ]
+  },
+  "MemoryCuration": {
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "lastRunAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "lastRunId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "lastSuperseded": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "lastQueued": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "MemoryEntry": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scope": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "summary": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "content": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "tags": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "refs": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "status": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "origin": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "authorId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "supersedesId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "lastReadAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "readCount": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "MemoryIndexEntry": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scope": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "summary": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "tags": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "MemoryIndexPage": {
+    "properties": {
+      "entries": {
+        "type": {
+          "array": {
+            "ref": "MemoryIndexEntry"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "MemoryProposals": {
+    "properties": {
+      "proposals": {
+        "type": {
+          "array": {
+            "ref": "MemoryEntry"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "MemoryReview": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scope": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "olderId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "olderTitle": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "olderOrigin": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "newerId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "newerTitle": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "newerOrigin": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "MemoryReviews": {
+    "properties": {
+      "reviews": {
+        "type": {
+          "array": {
+            "ref": "MemoryReview"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "MemorySearchResult": {
+    "properties": {
+      "entries": {
+        "type": {
+          "array": {
+            "ref": "MemoryIndexEntry"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
   },
   "MobileToken": {
     "properties": {
@@ -4717,6 +5044,15 @@
       }
     }
   },
+  "SetMemoryCurationRequest": {
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "SignInMethods": {
     "properties": {
       "methods": {
@@ -5036,6 +5372,58 @@
         "type": {
           "array": "string"
         },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "SupersededMemories": {
+    "properties": {
+      "entries": {
+        "type": {
+          "array": {
+            "ref": "SupersededMemory"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "SupersededMemory": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "scope": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "summary": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "authorId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "supersededById": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "supersededAt": {
+        "type": "string",
         "required": true,
         "nullable": false
       }
@@ -5742,6 +6130,49 @@
         "nullable": false
       },
       "lastMessage": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "UpdateMemoryRequest": {
+    "properties": {
+      "expectedVersion": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "summary": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "content": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "tags": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "refs": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "expiresAt": {
         "type": "string",
         "required": false,
         "nullable": false

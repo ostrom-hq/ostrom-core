@@ -60,6 +60,7 @@ tags:
 - name: import
 - name: inference
 - name: mcp
+- name: memory
 - name: meta
 - name: notifications
 - name: organization
@@ -7863,6 +7864,588 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/memory:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: createMemory
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Remember something"
+      description: "A personal entry by default, written directly by any caller (an agent's has origin `agent`,
+        a person's `human`). A `team` entry written by a person is direct. One written by an agent (an agent token, or
+        a call the CLI's local relay forwards with `x-ostrom-origin: agent`, whoever's sign-in it carries) is stored
+        `proposed` and the owner of the session it names (`sessionId`, or the agent token's own) is asked through a
+        wait: the answer is the entry with status `proposed`, which joins the organization's memory only once
+        accepted, within about ten seconds of the answer. 400 `memory_proposal_session` without a session, 404 for a
+        session that is not the caller's; a key that is no agent's session cannot propose (403
+        `memory_team_forbidden`). 400 `invalid_memory` for a field out of bounds: a title of 1 to 160 characters and a
+        summary of 1 to 300 on one line, content of 1 to 16,000 characters, at most 8 distinct tags
+        `[a-z0-9][a-z0-9._-]*` of at most 40 characters, at most 10 references of 1 to 300 characters, an expiry in
+        the future. 422 `memory_secret` when the title, summary, content or a reference looks like a credential
+        (provider and Ostrom token prefixes, private keys, bearer headers, `password=value`): nothing is stored. 409
+        `memory_limit` past 2,000 personal entries of the caller or 5,000 entries of the organization, 409
+        `memory_proposals_limit` while 20 proposals of the caller wait. Audited `memory.created` or `memory.proposed`,
+        with the entry's id, scope and origin, never its text. The memory is the organization's entries, which every
+        member reads, and the caller's own personal entries, which nobody else reads, administrators included: another
+        member's personal entry answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app,
+        the CLI's sign-in), an agent token holding `memory:use`, or a personal token or service key holding
+        `memory:use` (the key acts as its creator); any other credential, 403 `credential_scope`."
+      parameters:
+      - $ref: '#/components/parameters/OstromOrigin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMemoryRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/index:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMemory
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "The memory index"
+      description: "Active, unexpired entries as id, scope, title, one-line summary and tags, newest first (by
+        `updatedAt`, then id), never the content: the organization's and the caller's own personal ones. The memory is
+        the organization's entries, which every member reads, and the caller's own personal entries, which nobody else
+        reads, administrators included: another member's personal entry answers 404 as an unknown one. Callers: a
+        person (a browser session, the unlocked app, the CLI's sign-in), an agent token holding `memory:use`, or a
+        personal token or service key holding `memory:use` (the key acts as its creator); any other credential, 403
+        `credential_scope`."
+      parameters:
+      - name: scope
+        in: query
+        required: false
+        description: "`team` or `personal`; both when absent (400 `invalid_memory` otherwise)"
+        schema:
+          type: string
+      - name: tags
+        in: query
+        required: false
+        description: "Comma-separated tags: entries having any of them"
+        schema:
+          type: string
+      - name: after
+        in: query
+        required: false
+        description: "The `next` of the previous page (400 `invalid_memory` for any other value)"
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: "The page size, 1 to 50 (50 by default)"
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryIndexPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/search:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: searchMemory
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Search the memory"
+      description: "Entries whose title, summary or a tag contains every word of `q` (at most 5 words of 2 to
+        40 characters, case ignored), newest first, at most 20; the content is not searched. 400 `invalid_memory`
+        without a usable word. The memory is the organization's entries, which every member reads, and the caller's
+        own personal entries, which nobody else reads, administrators included: another member's personal entry
+        answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app, the CLI's sign-in), an
+        agent token holding `memory:use`, or a personal token or service key holding `memory:use` (the key acts as its
+        creator); any other credential, 403 `credential_scope`."
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: "The words to look for"
+        schema:
+          type: string
+      - name: tags
+        in: query
+        required: false
+        description: "Comma-separated tags: entries having any of them"
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: "At most this many entries, 1 to 20 (20 by default)"
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemorySearchResult'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/proposals:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMemoryProposals
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Team entries proposed by agents, waiting for an answer"
+      description: "Oldest first, at most 100: every member's for an administrator, the caller's own otherwise.
+        A person only (403 `memory_team_forbidden` for a token). The memory is the organization's entries, which every
+        member reads, and the caller's own personal entries, which nobody else reads, administrators included: another
+        member's personal entry answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app,
+        the CLI's sign-in), an agent token holding `memory:use`, or a personal token or service key holding
+        `memory:use` (the key acts as its creator); any other credential, 403 `credential_scope`."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryProposals'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/proposals/{id}/accept:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      description: "The proposal's id"
+      schema:
+        type: string
+    post:
+      operationId: acceptMemoryProposal
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Accept a proposal"
+      description: "An administrator adds the proposed entry to the organization's memory and closes its wait
+        (the session's owner normally answers the wait instead, where the text can be edited first). Audited
+        `memory.accepted`. 409 `memory_not_proposed` for an entry not waiting; 403 `forbidden` for a member. A person
+        only. The memory is the organization's entries, which every member reads, and the caller's own personal
+        entries, which nobody else reads, administrators included: another member's personal entry answers 404 as an
+        unknown one. Callers: a person (a browser session, the unlocked app, the CLI's sign-in), an agent token
+        holding `memory:use`, or a personal token or service key holding `memory:use` (the key acts as its creator);
+        any other credential, 403 `credential_scope`."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/proposals/{id}/reject:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      description: "The proposal's id"
+      schema:
+        type: string
+    post:
+      operationId: rejectMemoryProposal
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Reject a proposal"
+      description: "An administrator, or the proposal's author, drops it and closes its wait. Audited
+        `memory.rejected`; a rejected proposal is deleted after 30 days. 409 `memory_not_proposed` for an entry not
+        waiting; 403 `forbidden` for anyone else. A person only. The memory is the organization's entries, which every
+        member reads, and the caller's own personal entries, which nobody else reads, administrators included: another
+        member's personal entry answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app,
+        the CLI's sign-in), an agent token holding `memory:use`, or a personal token or service key holding
+        `memory:use` (the key acts as its creator); any other credential, 403 `credential_scope`."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/curation:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getMemoryCuration
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "The memory curation setting"
+      description: "Whether the organization's memory is curated and what the last run did. An administrator,
+        as a person only (403 `forbidden` otherwise). Off until an administrator turns it on; it never calls a model."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryCuration'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setMemoryCuration
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Turn the memory curation on or off"
+      description: "On: about once an hour the server reads each scope that changed since its last pass or was
+        curated over a week ago (the organization's entries, and each member's personal entries alone, at most 20
+        scopes a run), supersedes the older of two entries with the same title and text, and queues for a person every
+        pair it does not decide alone (different text under one title; a person's entry against a newer agent's; an
+        entry tagged `external`). Audited `memory.curation_enabled` or `memory.curation_disabled`. An administrator,
+        as a person only."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetMemoryCurationRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryCuration'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/reviews:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMemoryReviews
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Pairs of entries for a person to decide"
+      description: "Open reviews, oldest first, at most 100: the caller's own personal ones, plus the
+        organization's for an administrator. A person only. The memory is the organization's entries, which every
+        member reads, and the caller's own personal entries, which nobody else reads, administrators included: another
+        member's personal entry answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app,
+        the CLI's sign-in), an agent token holding `memory:use`, or a personal token or service key holding
+        `memory:use` (the key acts as its creator); any other credential, 403 `credential_scope`."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryReviews'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/reviews/{id}/apply:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      description: "The review's id"
+      schema:
+        type: string
+    post:
+      operationId: applyMemoryReview
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Supersede the older entry of a pair"
+      description: "The older entry becomes superseded by the newer one (restorable), audited
+        `memory.superseded`. 409 `memory_review_closed` when already answered, `memory_review_stale` when an entry is
+        no longer active. A person only. The memory is the organization's entries, which every member reads, and the
+        caller's own personal entries, which nobody else reads, administrators included: another member's personal
+        entry answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app, the CLI's sign-
+        in), an agent token holding `memory:use`, or a personal token or service key holding `memory:use` (the key
+        acts as its creator); any other credential, 403 `credential_scope`."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryReview'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/reviews/{id}/dismiss:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      description: "The review's id"
+      schema:
+        type: string
+    post:
+      operationId: dismissMemoryReview
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Keep both entries of a pair"
+      description: "Both entries stay and the pair is never queued again. 409 `memory_review_closed` when
+        already answered. A person only. The memory is the organization's entries, which every member reads, and the
+        caller's own personal entries, which nobody else reads, administrators included: another member's personal
+        entry answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app, the CLI's sign-
+        in), an agent token holding `memory:use`, or a personal token or service key holding `memory:use` (the key
+        acts as its creator); any other credential, 403 `credential_scope`."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryReview'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/superseded:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listSupersededMemory
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Superseded entries"
+      description: "Entries curation replaced, newest first, at most 100: the caller's own personal ones
+        (nobody else sees them), and the organization's for an administrator or their author. Kept 90 days. A person
+        only."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupersededMemories'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      description: "The entry's id"
+      schema:
+        type: string
+    get:
+      operationId: readMemory
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Read an entry"
+      description: "The entry with its content and references; counts as a read. The memory is the
+        organization's entries, which every member reads, and the caller's own personal entries, which nobody else
+        reads, administrators included: another member's personal entry answers 404 as an unknown one. Callers: a
+        person (a browser session, the unlocked app, the CLI's sign-in), an agent token holding `memory:use`, or a
+        personal token or service key holding `memory:use` (the key acts as its creator); any other credential, 403
+        `credential_scope`."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: updateMemory
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Change an entry"
+      description: "Replaces the entry; `expectedVersion` must be the version read (409 `memory_conflict`
+        otherwise). A personal entry is its owner's; an organization entry is its author's or an administrator's, as a
+        person only (403 `memory_team_forbidden` otherwise). Same bounds and credential filter as `createMemory`.
+        Audited `memory.updated`. The memory is the organization's entries, which every member reads, and the caller's
+        own personal entries, which nobody else reads, administrators included: another member's personal entry
+        answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app, the CLI's sign-in), an
+        agent token holding `memory:use`, or a personal token or service key holding `memory:use` (the key acts as its
+        creator); any other credential, 403 `credential_scope`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemoryRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: forgetMemory
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Forget an entry"
+      description: "Deletes it for good. Same rights as changing it. Audited `memory.forgotten`. The memory is
+        the organization's entries, which every member reads, and the caller's own personal entries, which nobody else
+        reads, administrators included: another member's personal entry answers 404 as an unknown one. Callers: a
+        person (a browser session, the unlocked app, the CLI's sign-in), an agent token holding `memory:use`, or a
+        personal token or service key holding `memory:use` (the key acts as its creator); any other credential, 403
+        `credential_scope`."
+      responses:
+        '204':
+          description: Forgotten
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/memory/{id}/restore:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    - name: id
+      in: path
+      required: true
+      description: "The entry's id"
+      schema:
+        type: string
+    post:
+      operationId: restoreMemory
+      x-ostrom-status: planned
+      tags:
+      - memory
+      summary: "Restore a superseded entry"
+      description: "The entry is active again and the one that replaced it, if still active, becomes the
+        superseded one. Audited `memory.restored`. A personal entry by its owner; an organization entry by its author
+        or an administrator (403 `forbidden` otherwise). 409 `memory_limit` when the memory is full. A person only."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/mcp/servers:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -15608,6 +16191,14 @@ components:
       schema:
         type: string
         pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    OstromOrigin:
+      name: x-ostrom-origin
+      in: header
+      required: false
+      description: "`agent`: set by the CLI's local relay on every memory call it forwards for an agent, whoever's
+        sign-in it carries (`memory.v1`). A team entry such a call writes is a proposal. Any other value is ignored"
+      schema:
+        type: string
     OstromOrg:
       name: Ostrom-Org
       in: header
@@ -17978,7 +18569,7 @@ components:
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
-        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `notifications.v1`, `notifications.push.v1`,
+        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
@@ -20275,6 +20866,341 @@ components:
       required:
       - authorizationUrl
       x-ostrom-kotlin: pending
+    MemoryIndexEntry:
+      type: object
+      description: "What the index or a search shows of an entry: never its content"
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+          enum: [team, personal]
+          description: "`team` or `personal`"
+        title:
+          type: string
+        summary:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+          description: "Sorted"
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - scope
+      - title
+      - summary
+      - updatedAt
+    MemoryIndexPage:
+      type: object
+      description: "A page of the memory index"
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryIndexEntry'
+        next:
+          type: string
+          description: "The `after` of the following page, absent on the last"
+      required:
+      - entries
+    MemorySearchResult:
+      type: object
+      description: "The entries a search found, newest first, at most 20"
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryIndexEntry'
+      required:
+      - entries
+    MemoryEntry:
+      type: object
+      description: "One entry of the memory with its content (`memory.v1`)"
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+          enum: [team, personal]
+          description: "`team` or `personal`"
+        title:
+          type: string
+          maxLength: 160
+        summary:
+          type: string
+          maxLength: 300
+        content:
+          type: string
+          maxLength: 16000
+        tags:
+          type: array
+          items:
+            type: string
+          description: "Sorted"
+        refs:
+          type: array
+          items:
+            type: string
+          description: "Free references (a ticket, a pull request, a URL, a path), never fetched"
+        status:
+          type: string
+          enum: [active, proposed, superseded, rejected]
+          description: "`active` (the only one listed, searched or read), `proposed` (a team entry an agent
+            proposed), `superseded` or `rejected`"
+        origin:
+          type: string
+          enum: [human, agent, curation]
+        authorId:
+          type: string
+          description: "The member who wrote it"
+        sessionId:
+          type: string
+          description: "The session an agent wrote it from"
+        supersedesId:
+          type: string
+          description: "The entry this one replaced"
+        expiresAt:
+          type: string
+          format: date-time
+          description: "No longer listed or read after this time; absent for no expiry"
+        version:
+          type: integer
+          description: "The version to send as `expectedVersion`"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastReadAt:
+          type: string
+          format: date-time
+        readCount:
+          type: integer
+      required:
+      - id
+      - scope
+      - title
+      - summary
+      - content
+      - status
+      - origin
+      - authorId
+      - version
+      - createdAt
+      - updatedAt
+    CreateMemoryRequest:
+      type: object
+      description: "A new entry; never stores a credential"
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 160
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: "One line"
+        content:
+          type: string
+          minLength: 1
+          maxLength: 16000
+        scope:
+          type: string
+          enum: [team, personal]
+          description: "`personal` by default"
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 8
+          description: "At most 8 distinct tags `[a-z0-9][a-z0-9._-]*`, 40 characters each"
+        refs:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+          description: "At most 10 references of 1 to 300 characters"
+        expiresAt:
+          type: string
+          format: date-time
+          description: "In the future; absent for no expiry"
+        sessionId:
+          type: string
+          description: "The session an agent proposes a team entry from; an agent token names its own"
+      required:
+      - title
+      - summary
+      - content
+    UpdateMemoryRequest:
+      type: object
+      description: "Replaces an entry"
+      properties:
+        expectedVersion:
+          type: integer
+          description: "The version read"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 160
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 300
+        content:
+          type: string
+          minLength: 1
+          maxLength: 16000
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 8
+        refs:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - expectedVersion
+      - title
+      - summary
+      - content
+    MemoryProposals:
+      type: object
+      description: "Team entries agents proposed, waiting for an answer, oldest first"
+      properties:
+        proposals:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryEntry'
+      required:
+      - proposals
+    MemoryCuration:
+      type: object
+      description: "Whether the organization's memory is curated, and what its last run did; off by default"
+      properties:
+        enabled:
+          type: boolean
+        lastRunAt:
+          type: string
+          format: date-time
+        lastRunId:
+          type: string
+          description: "As in the audit log"
+        lastSuperseded:
+          type: integer
+        lastQueued:
+          type: integer
+      required:
+      - enabled
+    SetMemoryCurationRequest:
+      type: object
+      description: "Turns the curation on or off"
+      properties:
+        enabled:
+          type: boolean
+      required:
+      - enabled
+    MemoryReview:
+      type: object
+      description: "A pair curation did not decide alone: applying it supersedes `olderId` by `newerId`"
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+          enum: [team, personal]
+        kind:
+          type: string
+          enum: [duplicate, same_title]
+          description: "`duplicate` (equal text) or `same_title` (one title, two texts)"
+        reason:
+          type: string
+        olderId:
+          type: string
+        olderTitle:
+          type: string
+        olderOrigin:
+          type: string
+          enum: [human, agent, curation]
+        newerId:
+          type: string
+        newerTitle:
+          type: string
+        newerOrigin:
+          type: string
+          enum: [human, agent, curation]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - scope
+      - kind
+      - reason
+      - olderId
+      - olderTitle
+      - olderOrigin
+      - newerId
+      - newerTitle
+      - newerOrigin
+      - createdAt
+    MemoryReviews:
+      type: object
+      description: "Open reviews, oldest first"
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryReview'
+      required:
+      - reviews
+    SupersededMemory:
+      type: object
+      description: "An entry curation replaced, restorable for 90 days"
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+          enum: [team, personal]
+        title:
+          type: string
+        summary:
+          type: string
+        authorId:
+          type: string
+        supersededById:
+          type: string
+        supersededAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - scope
+      - title
+      - summary
+      - authorId
+      - supersededAt
+    SupersededMemories:
+      type: object
+      description: "Superseded entries, newest first"
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupersededMemory'
+      required:
+      - entries
     McpArgumentCondition:
       type: object
       description: One test on a tool call's arguments

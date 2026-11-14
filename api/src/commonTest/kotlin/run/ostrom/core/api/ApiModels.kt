@@ -185,6 +185,19 @@ import run.ostrom.core.api.models.CreateWebhookRequest
 import run.ostrom.core.api.models.UpdateWebhookRequest
 import run.ostrom.core.api.models.WebhookDelivery
 import run.ostrom.core.api.models.WebhookDeliveryList
+import run.ostrom.core.api.models.CreateMemoryRequest
+import run.ostrom.core.api.models.MemoryCuration
+import run.ostrom.core.api.models.MemoryEntry
+import run.ostrom.core.api.models.MemoryIndexEntry
+import run.ostrom.core.api.models.MemoryIndexPage
+import run.ostrom.core.api.models.MemoryProposals
+import run.ostrom.core.api.models.MemoryReview
+import run.ostrom.core.api.models.MemoryReviews
+import run.ostrom.core.api.models.MemorySearchResult
+import run.ostrom.core.api.models.SetMemoryCurationRequest
+import run.ostrom.core.api.models.SupersededMemories
+import run.ostrom.core.api.models.SupersededMemory
+import run.ostrom.core.api.models.UpdateMemoryRequest
 import kotlinx.serialization.KSerializer
 
 /** Every model of the API contract: the schemas of `api/openapi.yaml` that have a Kotlin model. */
@@ -373,4 +386,17 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     WorkflowRun.serializer(),
     WorkflowSessionPending.serializer(),
     WorkflowSettings.serializer(),
+    CreateMemoryRequest.serializer(),
+    MemoryCuration.serializer(),
+    MemoryEntry.serializer(),
+    MemoryIndexEntry.serializer(),
+    MemoryIndexPage.serializer(),
+    MemoryProposals.serializer(),
+    MemoryReview.serializer(),
+    MemoryReviews.serializer(),
+    MemorySearchResult.serializer(),
+    SetMemoryCurationRequest.serializer(),
+    SupersededMemories.serializer(),
+    SupersededMemory.serializer(),
+    UpdateMemoryRequest.serializer(),
 )
