@@ -9796,8 +9796,17 @@ paths:
         `NODE_OPTIONS`, `NODE_PATH`, `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, `_JAVA_OPTIONS`, `PYTHONPATH`,
         `PYTHONSTARTUP`, `PYTHONHOME`, `PERL5OPT`, `PERL5LIB`, `RUBYOPT`, `RUBYLIB`, `GIT_SSH`, `GIT_SSH_COMMAND`,
         `GIT_EXEC_PATH`, `GIT_CONFIG_GLOBAL`, `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`, `SSL_CERT_FILE`,
-        `SSL_CERT_DIR`, `NODE_EXTRA_CA_CERTS`, `REQUESTS_CA_BUNDLE`, and the prefixes `LD_`, `DYLD_`, `OSTROM_`,
-        `TEAMCODE_`, `ANTHROPIC_`, `CLAUDE_`, `OPENAI_`, `CODEX_`, `XDG_`, `GIT_CONFIG_` (personal variants too). The
+        `SSL_CERT_DIR`, `NODE_EXTRA_CA_CERTS`, `REQUESTS_CA_BUNDLE`; what else steers the loader or a runtime
+        (`GLIBC_TUNABLES`, `NODE_TLS_REJECT_UNAUTHORIZED`, `NODE_ICU_DATA`, `ELECTRON_RUN_AS_NODE`, `PYTHONUSERBASE`,
+        `PYTHONEXECUTABLE`, `PYTHONPLATLIBDIR`, `PYTHONBREAKPOINT`, `PERL5DB`, `CLASSPATH`, `DOTNET_STARTUP_HOOKS`,
+        `CORECLR_PROFILER`, `CORECLR_PROFILER_PATH`, `CORECLR_ENABLE_PROFILING`, `CURL_CA_BUNDLE`, `SSLKEYLOGFILE`), the
+        shell (`OLDPWD`, `SHELLOPTS`, `BASHOPTS`, `CDPATH`, `GLOBIGNORE`, `PS4`, `ZDOTDIR`), Git, SSH and the GitHub CLI
+        (`GIT_TERMINAL_PROMPT`, `GH_CONFIG_DIR`, `GIT_ASKPASS`, `SSH_ASKPASS`, `GIT_PROXY_COMMAND`, `GIT_EXTERNAL_DIFF`,
+        `GIT_PAGER`, `GIT_EDITOR`, `GIT_SEQUENCE_EDITOR`, `GIT_TEMPLATE_DIR`, `GIT_DIR`, `GIT_WORK_TREE`,
+        `GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`, `GIT_ALTERNATE_OBJECT_DIRECTORIES`, `GIT_COMMON_DIR`) or an agent's
+        tools (`RIPGREP_CONFIG_PATH`); and the prefixes `LD_`, `DYLD_`, `OSTROM_`, `TEAMCODE_`, `ANTHROPIC_`,
+        `CLAUDE_`, `OPENAI_`, `CODEX_`, `XDG_`, `GIT_CONFIG_`, `BASH_FUNC_` (personal variants too). A variant stored
+        under a name reserved later is never served to an agent, and can still be unassigned or deleted. The
         runner's own commands (clone, fetch, setup) never see a variable named with `GIT_`, `GH_` or `SSH_`, so a
         value cannot redirect the credential socket. At most 500 team variants (409 `variant_limit`). An owner or an admin from
         the console (scope `secrets:write`, step-up). The value is encrypted at rest with the secrets key (AES-256-GCM,
@@ -19084,7 +19093,7 @@ components:
       x-ostrom-kotlin: pending
     BillingPlanLimits:
       type: object
-      description: 'The limits in force; null means unlimited. A request that would go past one (a member, a cloud agent, an agent hour, SSO, policies) is answered 402 `payment_required`, with a message naming the limit and where to upgrade.'
+      description: 'The limits in force; null means unlimited, and so does a `maxConcurrentCloudAgents` of 0, which every plan has since 14/11/2026 (cloud agents are never capped by the plan, as in TeamCode: the cluster''s `maxRunningPods` and the per-member cloud settings still apply). A request that would go past one (a member, an agent hour, SSO, policies) is answered 402 `payment_required`, with a message naming the limit and where to upgrade.'
       properties:
         maxPeople:
           type: [integer, 'null']
