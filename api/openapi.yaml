@@ -14067,7 +14067,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listSkills
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The organization's skill catalog (administrators)"
@@ -14094,7 +14094,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: retireSkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Remove a skill from the catalog: unpinned, delivered to nobody, closed to publication"
@@ -14128,7 +14128,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: restoreSkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Restore a removed skill (nothing is pinned)"
@@ -14162,7 +14162,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listSkillVersions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "A skill's versions, newest first (administrators)"
@@ -14193,7 +14193,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: publishSkillVersion
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Publish an immutable skill version (CI or an administrator)"
@@ -14241,7 +14241,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: retireSkillVersion
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Retire a version: it can never be pinned again"
@@ -14281,7 +14281,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: pinSkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Pin the delivered version (update or rollback)"
@@ -14318,7 +14318,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unpinSkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Unpin: stop delivery without touching versions or decisions"
@@ -14352,7 +14352,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: setSkillAudience
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Deliver to all members, or only to members set to yes"
@@ -14392,7 +14392,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listSkillAssignments
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The members' explicit decisions on a skill"
@@ -14426,7 +14426,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: setSkillAssignment
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Set a member's decision: allow (yes) or deny (no)"
@@ -14469,7 +14469,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: clearSkillAssignment
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Clear a member's decision (not assigned)"
@@ -14505,7 +14505,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: promoteSkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Make a member's personal skill a team skill, with nothing pinned"
@@ -14539,7 +14539,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMySkills
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The caller's personal skills"
@@ -14566,7 +14566,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: retireMySkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Retire one of the caller's personal skills (also unpins it)"
@@ -14600,7 +14600,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: restoreMySkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Restore one of the caller's personal skills (nothing is pinned)"
@@ -14634,7 +14634,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMySkillVersions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "A personal skill's versions, newest first"
@@ -14665,7 +14665,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: publishMySkillVersion
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Publish a version of a personal skill, delivered to the caller only"
@@ -14713,7 +14713,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: pinMySkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Pin the version of a personal skill the caller receives"
@@ -14750,7 +14750,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unpinMySkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Unpin a personal skill"
@@ -14784,7 +14784,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSkillDelivery
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The skills the caller receives: pinned versions their decisions or the audience allow"
@@ -14811,7 +14811,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMemberSkillDelivery
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The skills a member receives (an administrator, or the member themself)"
@@ -14845,7 +14845,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: downloadSkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The files of a skill version the caller receives"
@@ -14885,7 +14885,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMySkillInstallations
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The installation status the caller's workstations reported"
@@ -14909,7 +14909,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: reportSkillInstallations
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Report the skills installed on this workstation"
@@ -14938,7 +14938,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMemberSkillInstallations
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The installation status a member's workstations reported (administrators)"
@@ -17959,7 +17959,7 @@ components:
           type:
           - string
           - 'null'
-          description: "The approved version, delivered; null when nothing is delivered"
+          description: "The approved version, delivered; absent when nothing is delivered"
         allMembers:
           type: boolean
           description: "Delivered to every member without an explicit decision"
@@ -22363,7 +22363,7 @@ components:
           type:
           - string
           - 'null'
-          description: "The approved version, delivered; null when nothing is delivered"
+          description: "The approved version, delivered; absent when nothing is delivered"
         retired:
           type: boolean
           description: "Removed from the catalog: delivered to nobody, closed to publication"
@@ -22374,7 +22374,7 @@ components:
           type:
           - string
           - 'null'
-          description: "The member a personal skill belongs to (delivered to them only); null for a team skill"
+          description: "The member a personal skill belongs to (delivered to them only); absent for a team skill"
         createdAt:
           type: string
           description: "ISO 8601"
@@ -22384,10 +22384,8 @@ components:
       required:
       - id
       - name
-      - pinnedVersion
       - retired
       - allMembers
-      - ownerId
       - createdAt
       - updatedAt
       x-ostrom-kotlin: pending
@@ -22449,8 +22447,6 @@ components:
       - deviceId
       - deviceName
       - name
-      - version
-      - digest
       - status
       - reportedAt
       x-ostrom-kotlin: pending
