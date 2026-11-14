@@ -19870,7 +19870,8 @@ components:
           type: [string, 'null']
           maxLength: 256
           description: 'The secret GitHub signs the webhooks with; null or absent keeps the stored one for the same
-            `appId` (another App signs with its own, so none is kept); an empty string clears it. Optional, as an App
+            `appId` (another App signs with its own, so none is kept); an empty string clears it (for a first App or another
+            `appId` it leaves none, as null does). Optional, as an App
             may have its webhooks turned off: without it every webhook is refused (`webhookSecretSet` false)'
         version:
           type: [integer, 'null']
