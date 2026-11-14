@@ -11508,7 +11508,7 @@ paths:
   /api/v1/cloud/runtime:
     get:
       operationId: getCloudRuntime
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: How cloud sessions run on this instance
@@ -11528,7 +11528,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveCloudRuntime
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Save how cloud sessions run on this instance
@@ -11561,7 +11561,7 @@ paths:
   /api/v1/cloud/clusters:
     get:
       operationId: listCloudClusters
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: The Kubernetes clusters cloud sessions run on
@@ -11580,7 +11580,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createCloudCluster
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Connect a cluster
@@ -11620,7 +11620,7 @@ paths:
         format: uuid
     put:
       operationId: updateCloudCluster
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Change a cluster
@@ -11656,7 +11656,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listCloudProfiles
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: The organization's cloud profiles
@@ -11676,7 +11676,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createCloudProfile
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Create a cloud profile
@@ -11713,7 +11713,7 @@ paths:
         format: uuid
     put:
       operationId: updateCloudProfile
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Publish a new version of a cloud profile

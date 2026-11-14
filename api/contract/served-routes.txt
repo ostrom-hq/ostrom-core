@@ -68,7 +68,10 @@ GET /api/v1/budgets/me
 GET /api/v1/capabilities
 GET /api/v1/capacity
 GET /api/v1/checks
+GET /api/v1/cloud/clusters
+GET /api/v1/cloud/profiles
 GET /api/v1/cloud/runner/terminal
+GET /api/v1/cloud/runtime
 GET /api/v1/cloud/sessions
 GET /api/v1/cloud/sessions/{}
 GET /api/v1/cloud/sessions/{}/terminal
@@ -202,6 +205,8 @@ POST /api/v1/automations/{}/v/{}/trigger
 POST /api/v1/automations/{}/webhook/rotate-secret
 POST /api/v1/billing/stripe/webhook
 POST /api/v1/checks
+POST /api/v1/cloud/clusters
+POST /api/v1/cloud/profiles
 POST /api/v1/cloud/runner/checks
 POST /api/v1/cloud/runner/github
 POST /api/v1/cloud/runner/heartbeat
@@ -293,6 +298,9 @@ PUT /api/v1/artifacts/uploads/{}/blobs/{}/{}
 PUT /api/v1/artifacts/{}/members/{}
 PUT /api/v1/automations/{}
 PUT /api/v1/budgets
+PUT /api/v1/cloud/clusters/{}
+PUT /api/v1/cloud/profiles/{}
+PUT /api/v1/cloud/runtime
 PUT /api/v1/cloud/sessions/{}/github
 PUT /api/v1/gates/policy
 PUT /api/v1/groups/{}/members/{}
