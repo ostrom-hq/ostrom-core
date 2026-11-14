@@ -203,6 +203,34 @@
       }
     }
   },
+  "AnswerCloudPermissionRequest": {
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "behavior": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "message": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "answers": {
+        "type": {
+          "array": {
+            "ref": "CloudQuestionAnswer"
+          }
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "AnswerWaitRequest": {
     "properties": {
       "action": {
@@ -1487,6 +1515,278 @@
       }
     }
   },
+  "CloudEvent": {
+    "properties": {
+      "seq": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "type": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "at": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "epoch": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "data": {
+        "type": "any",
+        "required": true,
+        "nullable": false
+      },
+      "feed": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudEventPage": {
+    "properties": {
+      "events": {
+        "type": {
+          "array": {
+            "ref": "CloudEvent"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "firstSeq": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "lastSeq": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "nextAfter": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "nextBefore": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudFile": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "size": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "contentType": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sha256": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudFilePolicy": {
+    "properties": {
+      "available": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "maxFileBytes": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "maxMessageBytes": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "maxFilesPerMessage": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "types": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudInput": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "authorId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "text": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "wake": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "woke": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "clientMessageId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "deliveredAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "deliveredEpoch": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "consumedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "finishedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "reason": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "eventSeq": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "fileIds": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudInputPage": {
+    "properties": {
+      "inputs": {
+        "type": {
+          "array": {
+            "ref": "CloudInput"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "nextBefore": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudQuestionAnswer": {
+    "properties": {
+      "question": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "options": {
+        "type": {
+          "array": "integer"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "text": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "CloudRepository": {
     "properties": {
       "url": {
@@ -1648,6 +1948,28 @@
         "required": false,
         "nullable": false
       },
+      "mode": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "effort": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "permissionBypass": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "waiting": {
+        "type": {
+          "ref": "CloudSessionWaiting"
+        },
+        "required": false,
+        "nullable": false
+      },
       "runId": {
         "type": "string",
         "required": false,
@@ -1740,6 +2062,30 @@
       }
     }
   },
+  "CloudSessionWaiting": {
+    "properties": {
+      "reason": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "requestId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "since": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "eventSeq": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "CloudSetup": {
     "properties": {
       "create": {
@@ -1754,6 +2100,68 @@
           "array": "string"
         },
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSubagent": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "type": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "description": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "state": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "startedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "endedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "steps": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "parentId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "taskId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSubagentList": {
+    "properties": {
+      "agents": {
+        "type": {
+          "array": {
+            "ref": "CloudSubagent"
+          }
+        },
+        "required": true,
         "nullable": false
       }
     }
@@ -2151,6 +2559,16 @@
         "nullable": false
       },
       "profileId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "mode": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "effort": {
         "type": "string",
         "required": false,
         "nullable": false
@@ -5698,6 +6116,37 @@
       }
     }
   },
+  "SendCloudMessageRequest": {
+    "properties": {
+      "text": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "wake": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "clientMessageId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "expectedLastEventSeq": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "fileIds": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "Session": {
     "properties": {
       "id": {
@@ -6106,6 +6555,33 @@
       }
     }
   },
+  "SetCloudEffortRequest": {
+    "properties": {
+      "effort": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "SetCloudModelRequest": {
+    "properties": {
+      "model": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "SetCloudPermissionBypassRequest": {
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "SetMemoryCurationRequest": {
     "properties": {
       "enabled": {
@@ -6366,6 +6842,15 @@
       "profileId": {
         "type": "string",
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "StopCloudTaskRequest": {
+    "properties": {
+      "taskId": {
+        "type": "string",
+        "required": true,
         "nullable": false
       }
     }

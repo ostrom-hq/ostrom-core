@@ -13030,15 +13030,401 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/events:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listCloudEvents
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: A page of a conversation session's transcript, in ascending order
+      description: "`runners.cloud.conversation.v1` (TeamCode's `GET /cloud/sessions/{id}/events`). Owner, or an
+        administrator of the organization. `firstSeq` is the oldest retained event, `lastSeq` the session's newest;
+        continue with `after=nextAfter` or `before=nextBefore`. `feed` (`runners.cloud.transcript.feeds.v1`) keeps
+        `main` (the main agent's events) or one subagent's (the id of the `tool.call` that started it); 400
+        `invalid_feed` otherwise. A terminal session has no transcript: an empty page"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+      - name: before
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 100
+      - name: feed
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: '^[A-Za-z0-9_.:-]{1,128}$'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudEventPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/events/stream:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: streamCloudSession
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "Server-sent events of a conversation session's transcript"
+      description: "`runners.cloud.conversation.v1`. Each event is `id: <seq>`, `event: <type>`, `data:` the
+        `CloudEvent` as JSON; resumes after `Last-Event-ID` (or `?after=`). Keep-alive comments every 15 s, `retry:
+        2000`. Ends with `event: end` once the session is terminated, or `event: denied` when the caller lost access
+        (checked again every 15 s). Carries every feed: each event names its own"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+      - name: Last-Event-ID
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Server-sent events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/agents:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listCloudSubagents
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The session's subagents and their state, oldest first, the newest 200"
+      description: "`runners.cloud.transcript.feeds.v1` (TeamCode's `GET /cloud/sessions/{id}/agents`). Kept by the
+        server as events arrive: an agent appears with its `tool.call` (`Agent`, or `Task`), counts its tool uses and
+        ends with that call's result; a live background task keeps it `running`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSubagentList'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/messages:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listCloudInputs
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The session's inputs (messages, interrupts, permission answers, task stops), newest first"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: before
+        in: query
+        required: false
+        description: The `nextBefore` of the previous page
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInputPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
     post:
       operationId: sendCloudMessage
       x-ostrom-status: planned
       tags:
       - runners
-      summary: Send a message to the agent
+      summary: Send a message to the agent of a conversation session
+      description: "`runners.cloud.conversation.v1` (TeamCode's `POST /cloud/sessions/{id}/messages`). The owner, or
+        everyone who may use the session when `githubAccess` is `shared`; the caller is always the author, an agent
+        acting for someone else is refused (400 `on_behalf_unsupported`). Text 1 to 32,000 characters (empty only
+        with `fileIds`), body at most 256 KiB. `Idempotency-Key` or `clientMessageId` (one, not both, 400 otherwise):
+        a retry returns the first input with `Idempotency-Replayed: true`, the same key with another text is 422
+        `idempotency_conflict`. `expectedLastEventSeq` refuses it (409 `stale_view`) when newer events exist. A
+        message to a paused session resumes it (`woke: true`) unless `wake` is false; a terminal session is 409
+        `terminal_session`, a terminated one 409 `session_not_running`. At most 100 pending inputs per session (429
+        `too_many_pending_inputs`). Levels: `queued`, `delivered` (handed to the runner), `consumed` (written to the
+        agent, `eventSeq` points to its `message.user` event), and the final `cancelled` or `rejected` with a
+        `reason`; a delivery not acknowledged within 60 s, or whose execution ended, is offered again, up to 3
+        attempts (`rejected`, `delivery_failed`)"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          maxLength: 200
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendCloudMessageRequest'
+      responses:
+        '202':
+          description: Accepted; the first acknowledgement on a replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInput'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/messages/{input}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getCloudInput
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: One input of the session and its acknowledgement
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: input
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInput'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/interrupt:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: interruptCloudSession
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "Stops the agent's current turn"
+      description: "`runners.cloud.conversation.v1`. Delivered before queued messages; never wakes a session; 409
+        `nothing_to_interrupt` unless the session is running with its runner ready"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInput'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/permissions:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: answerCloudPermission
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Answer a permission request of the agent (a tool use to approve, or a question)
+      description: "`runners.cloud.permissions.v1` (TeamCode's `POST /cloud/sessions/{id}/permissions`). Body at most
+        64 KiB, `Idempotency-Key` accepted. A question is answered by whoever may message the session; a tool use is
+        allowed or denied by the owner or an administrator only (403 `permission_owner_only`). Never wakes a session:
+        409 `nothing_to_answer` unless it runs. 409 `unknown_permission_request`, `permission_request_answered`,
+        `permission_request_expired` or `permission_request_ended`; 400 `invalid_permission_answer` for indexes the
+        request does not have, 400 `permission_input_unseen` for an `allow` of a request whose input was left out of
+        the event. At most 16 pending answers per session"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          maxLength: 200
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerCloudPermissionRequest'
+      responses:
+        '202':
+          description: Accepted (kind `permission`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInput'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/permission-bypass:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: setCloudPermissionBypass
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The owner's standing approval of the session's tool uses (Bypass)"
+      description: "`runners.cloud.permissions.bypass.v1` (TeamCode's `PUT /cloud/sessions/{id}/permission-bypass`).
+        While on, the server allows each tool-use `permission.request` itself, as the owner, in the call that stores
+        it; a question still waits for a person. Idempotent and audited (`cloud.session.permission_bypass_enabled`,
+        `..._disabled`). The owner only, never on their behalf (403 `bypass_owner_only`); 409 `session_not_running`
+        once terminated"
       parameters:
       - name: id
         in: path
@@ -13050,24 +13436,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                text:
-                  type: string
-              required:
-              - text
+              $ref: '#/components/schemas/SetCloudPermissionBypassRequest'
       responses:
-        '202':
+        '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                required:
-                - id
+                $ref: '#/components/schemas/CloudSession'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -13078,28 +13454,596 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-  /api/v1/cloud/sessions/{id}/events:
+  /api/v1/cloud/sessions/{id}/model:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
-    get:
-      operationId: streamCloudSession
+    put:
+      operationId: setCloudSessionModel
       x-ostrom-status: planned
       tags:
       - runners
-      summary: Events of a cloud session
+      summary: "Changes the model of the session's agent, while it runs too"
+      description: "`runners.cloud.model.v1` (TeamCode's `PUT /cloud/sessions/{id}/model`). The owner only. 1 to 120
+        letters, digits and `. _ : / -` (400 `invalid_agent`); the organization's model policy decides (403
+        `model_not_allowed`). Recorded at once (audited `cloud.session.model_changed`, the same model writes
+        nothing), so a paused session starts with it; a running conversation agent also gets a `set_model` input,
+        taken at its next turn. A terminal session's agent gets it at its next start. 409 `session_not_running` once
+        terminated"
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetCloudModelRequest'
       responses:
         '200':
-          description: Server-sent events
+          description: OK
           content:
-            text/event-stream:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/effort:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: setCloudSessionEffort
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "Changes the effort (reasoning level) of the session's agent, while it runs too"
+      description: "`runners.cloud.effort.v1` (TeamCode's `PUT /cloud/sessions/{id}/effort`), as `setCloudSessionModel`
+        for the effort: 1 to 120 letters, digits and `. _ : / -` (400 `invalid_agent`), no policy. Clients suggest
+        `low`, `medium`, `high`, `xhigh` and `max` for Claude Code, `low`, `medium`, `high` and `xhigh` for Codex.
+        Audited `cloud.session.effort_changed`; a running conversation agent gets a `set_effort` input"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetCloudEffortRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/tasks/stop:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: stopCloudTask
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "Stops one of the agent's background tasks (a subagent, a background command, a monitor)"
+      description: "`runners.cloud.tasks.v1` (TeamCode's `POST /cloud/sessions/{id}/tasks/stop`). Whoever may message
+        the session. A `stop_task` input, delivered before queued messages, never waking a session (409
+        `nothing_to_interrupt`); rejected `task_stop_unsupported` for a runner that cannot stop tasks, `unknown_task`
+        when the task ended meanwhile. 400 `invalid_task` for an id outside 1 to 64 of letters, digits, `_` and `-`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StopCloudTaskRequest'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInput'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/files:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: uploadCloudFile
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Upload a file for the next message (an image, a PDF or UTF-8 text)
+      description: "`runners.cloud.files.v1` (TeamCode's `POST /cloud/sessions/{id}/files`). The raw bytes; authorized
+        like a message. The type is recognized from the bytes (PNG, JPEG, GIF, WebP, PDF, else UTF-8 text without NUL),
+        415 `file_type_not_allowed` otherwise, 400 `empty_file`; 413 `file_too_large` above the organization's
+        `fileMaxMebibytes`; 429 `upload_quota` (20 unsent files or 100 MiB per session, 1 GiB and 500 files per member
+        per UTC day); 409 `file_storage_not_configured` without a tested artifact bucket, 503
+        `file_storage_unavailable`. `Idempotency-Key` makes a retry of the same name and bytes return the first file
+        (200). Name it in a message's `fileIds` before `expiresAt`; kept 24 hours at most, deleted once the host has
+        it"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+          maxLength: 1024
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          maxLength: 200
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: The first file of this `Idempotency-Key`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudFile'
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudFile'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '415':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/files/policy:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getCloudFilePolicy
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "Whether the caller's organization can send files to sessions now, and its limits"
+      description: "`runners.cloud.files.v1` (TeamCode's `GET /cloud/files/policy`)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudFilePolicy'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/agent:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: cloudRunnerAgent
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner of a conversation session reads how to start its agent; bearer: the execution's runner token"
+      description: "`runners.cloud.conversation.v1` (TeamCode's `POST /cloud/runner/agent`). Another epoch is 409
+        `execution_fenced`, a terminal session 409 `terminal_session`. The answer's flags say what the server takes:
+        `permissionRelay` (`permission.request` events), `liveText` (`message.agent.delta`), `backgroundTasks`
+        (`tasks` events); a runner never sends an event type the server did not announce, which would refuse the
+        batch. `conversation` is the agent's conversation id to resume, or empty for a fresh one"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                epoch:
+                  type: integer
+                  format: int64
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    description: claude or codex
+                  version:
+                    type: string
+                  model:
+                    type: string
+                  effort:
+                    type: string
+                  conversation:
+                    type: string
+                  permissionRelay:
+                    type: boolean
+                  permissionDeadlineMinutes:
+                    type: integer
+                    description: How long a request waits before the runner denies it; 0 waits without a deadline
+                  liveText:
+                    type: boolean
+                  backgroundTasks:
+                    type: boolean
+                  owner:
+                    type: object
+                    description: The member the execution runs for, as the agent is told; never an email
+                    properties:
+                      username:
+                        type: string
+                      githubLogin:
+                        type: string
+                    required:
+                    - username
+                required:
+                - kind
+                - conversation
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/events:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: cloudRunnerEvents
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner uploads a batch of the agent's normalized transcript events"
+      description: "`runners.cloud.conversation.v1` (TeamCode's `POST /cloud/runner/events`). `sequence` is the runner's
+        own consecutive counter per epoch, from 1: a retried batch is deduplicated. At most 200 events and 2 MB. The
+        server bounds and masks each event again. A `turn` `started` makes the session's agent busy, `completed`,
+        `interrupted` or `failed` idle again; both count as activity. A `status` with `conversation` records the id to
+        resume. 409 `execution_fenced` for another epoch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                epoch:
+                  type: integer
+                  format: int64
+                events:
+                  type: array
+                  maxItems: 200
+                  items:
+                    type: object
+                    properties:
+                      sequence:
+                        type: integer
+                        format: int64
+                      type:
+                        type: string
+                      data:
+                        type: object
+                        additionalProperties: true
+                    required:
+                    - sequence
+                    - type
+                    - data
+              required:
+              - sessionId
+              - epoch
+              - events
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acceptedThrough:
+                    type: integer
+                    format: int64
+                  lastSeq:
+                    type: integer
+                    format: int64
+                required:
+                - acceptedThrough
+                - lastSeq
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/inputs:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: cloudRunnerInputs
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner long-polls the session's queued inputs; they come back `delivered`"
+      description: "`runners.cloud.conversation.v1` (TeamCode's `POST /cloud/runner/inputs`). Waits up to `waitMillis`
+        (at most 20,000). Interrupts, task stops and permission answers come before messages. Nothing is delivered
+        unless the session runs and is desired running. With `desiredStatus` (the one the runner last knew), the poll
+        also ends as soon as the session's differs, so a pause reaches the runner within half a second. An input kind
+        the runner does not announce (`acceptsFiles`, `acceptsTaskStops`, `acceptsModelChanges`,
+        `acceptsEffortChanges`) is rejected for it (`files_unsupported`, `task_stop_unsupported`,
+        `model_change_unsupported`, `effort_change_unsupported`) instead of being delivered"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                epoch:
+                  type: integer
+                  format: int64
+                waitMillis:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                  maximum: 20000
+                desiredStatus:
+                  type: string
+                acceptsFiles:
+                  type: boolean
+                acceptsTaskStops:
+                  type: boolean
+                acceptsModelChanges:
+                  type: boolean
+                acceptsEffortChanges:
+                  type: boolean
+              required:
+              - sessionId
+              - epoch
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inputs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        kind:
+                          type: string
+                          description: message, interrupt, permission, stop_task, set_model or set_effort
+                        text:
+                          type: string
+                          description: "A message's text; a permission answer's JSON; a task's id; a model or effort"
+                        attempt:
+                          type: integer
+                        files:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                              size:
+                                type: integer
+                                format: int64
+                              contentType:
+                                type: string
+                              sha256:
+                                type: string
+                            required:
+                            - id
+                            - name
+                            - size
+                            - contentType
+                            - sha256
+                      required:
+                      - id
+                      - kind
+                  desiredStatus:
+                    type: string
+                required:
+                - inputs
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/inputs/ack:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: cloudRunnerInputsAck
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: The runner acknowledges inputs it handed to the agent (consumed) or refused (rejected)
+      description: "`runners.cloud.conversation.v1` (TeamCode's `POST /cloud/runner/inputs/ack`). A consumed message
+        becomes its `message.user` event; a consumed permission answer an `input` event. A repeat is accepted and
+        changes nothing"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                epoch:
+                  type: integer
+                  format: int64
+                acks:
+                  type: array
+                  maxItems: 200
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                        - consumed
+                        - rejected
+                      reason:
+                        type: string
+                    required:
+                    - id
+                    - status
+              required:
+              - sessionId
+              - epoch
+              - acks
+      responses:
+        '204':
+          description: Recorded
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/files/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: cloudRunnerFile
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The bytes of a file a message delivered to this very execution carries"
+      description: "`runners.cloud.files.v1` (TeamCode's `GET /cloud/runner/files/{id}`), with `X-Ostrom-Sha256`. 404
+        for any other file, 409 `execution_fenced` for another epoch"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: sessionId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: epoch
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: The bytes
+          content:
+            application/octet-stream:
               schema:
                 type: string
+                format: binary
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -20136,7 +21080,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
@@ -20301,6 +21245,25 @@ components:
           minimum: 1
           maximum: 3650
           description: Days transcript events are kept; absent keeps them
+        permissionDeadlineMinutes:
+          type: integer
+          minimum: 0
+          maximum: 1440
+          x-ostrom-status: planned
+          description: "How long a permission request of a conversation session waits before the runner denies it; 0
+            (the default) waits for an answer, an interrupt or a pause (`runners.cloud.permissions.v1`)"
+        fileMaxMebibytes:
+          type: integer
+          minimum: 1
+          maximum: 100
+          x-ostrom-status: planned
+          description: The largest file sent to a session, 20 by default (`runners.cloud.files.v1`)
+        messageFileMebibytes:
+          type: integer
+          minimum: 1
+          maximum: 100
+          x-ostrom-status: planned
+          description: The files of one message together, 25 by default (`runners.cloud.files.v1`)
         memberTransfers:
           type: string
           enum: [offer, disabled]
@@ -20350,6 +21313,21 @@ components:
           type: integer
           minimum: 1
           maximum: 3650
+        permissionDeadlineMinutes:
+          type: integer
+          minimum: 0
+          maximum: 1440
+          x-ostrom-status: planned
+        fileMaxMebibytes:
+          type: integer
+          minimum: 1
+          maximum: 100
+          x-ostrom-status: planned
+        messageFileMebibytes:
+          type: integer
+          minimum: 1
+          maximum: 100
+          x-ostrom-status: planned
         memberTransfers:
           type: string
           enum: [offer, disabled]
@@ -20922,6 +21900,20 @@ components:
           description: "Who may instruct the agent while it holds the owner's GitHub token (`runners.cloud.github.v1`):
             `owner` (the default) the owner only, `shared` everyone who may use the session, `none` no GitHub token at all.
             Absent from a server without the feature"
+        mode:
+          type: string
+          description: "`terminal` (absent: a PTY relayed over the terminal WebSocket) or `conversation`
+            (`runners.cloud.conversation.v1`, claude and codex only): the agent runs headless, talked to through the
+            transcript, messages and permission routes, and the session has no terminal"
+        effort:
+          type: string
+          description: The effort (reasoning level) the agent runs with, if chosen (`runners.cloud.effort.v1`)
+        permissionBypass:
+          type: boolean
+          description: "The owner's standing approval of tool uses is on (`runners.cloud.permissions.bypass.v1`);
+            absent from a server without it"
+        waiting:
+          $ref: '#/components/schemas/CloudSessionWaiting'
         runId:
           type: string
         automationId:
@@ -20977,6 +21969,359 @@ components:
       required:
       - id
       - version
+    CloudEvent:
+      type: object
+      description: "One transcript event of a conversation session (`runners.cloud.conversation.v1`, TeamCode's
+        `CloudEventView`). `type` is open: `message.user`, `message.agent`, `message.agent.delta`, `tool.call`,
+        `tool.result`, `turn`, `status`, `error`, `input`, `permission.request`, `permission.expired`, `tasks`; clients
+        tolerate unknown types and unknown `data` fields"
+      properties:
+        seq:
+          type: integer
+          format: int64
+          description: From 1, increased by one per session
+        type:
+          type: string
+        at:
+          type: string
+          format: date-time
+        epoch:
+          type: integer
+          format: int64
+          description: The execution that produced it; 0 for an event the server wrote
+        data:
+          description: "The event's object, bounded (16 levels, 200 entries, strings of 16,000 characters) and
+            secret-masked; an event above 60,000 bytes becomes `{truncated, originalBytes}` with its identity fields"
+        feed:
+          type: string
+          description: "`runners.cloud.transcript.feeds.v1`: the id of the `tool.call` that started the subagent the
+            event belongs to; absent for the main agent"
+      required:
+      - seq
+      - type
+      - at
+      - epoch
+      - data
+    CloudEventPage:
+      type: object
+      description: "A page of transcript events in ascending order. `firstSeq` is the oldest retained event, `lastSeq`
+        the session's newest when the page was read; a null cursor means nothing more in that direction"
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudEvent'
+        firstSeq:
+          type: integer
+          format: int64
+        lastSeq:
+          type: integer
+          format: int64
+        nextAfter:
+          type: integer
+          format: int64
+        nextBefore:
+          type: integer
+          format: int64
+      required:
+      - events
+    SendCloudMessageRequest:
+      type: object
+      description: "A message to the agent (`sendCloudMessage`). `clientMessageId` is an alias of the `Idempotency-Key`
+        header (one or the other). `wake` false leaves a paused session paused: the message waits for the next
+        resume. `fileIds` (`runners.cloud.files.v1`, at most 5, distinct) names files the caller uploaded to this
+        session and did not send yet; with files the text may be empty"
+      properties:
+        text:
+          type: string
+          maxLength: 32000
+        wake:
+          type: boolean
+          default: true
+        clientMessageId:
+          type: string
+          maxLength: 200
+        expectedLastEventSeq:
+          type: integer
+          format: int64
+        fileIds:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+      required:
+      - text
+    CloudInput:
+      type: object
+      description: "A message, an interrupt, a permission answer, a task stop or a model or effort change, and its
+        acknowledgement (TeamCode's `CloudInputView`)"
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          description: message, interrupt, permission, stop_task, set_model or set_effort
+        status:
+          type: string
+          description: queued, delivered, consumed, cancelled or rejected
+        authorId:
+          type: string
+        text:
+          type: string
+        wake:
+          type: boolean
+          default: true
+        woke:
+          type: boolean
+          default: false
+          description: Accepting it resumed a paused session
+        clientMessageId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        deliveredAt:
+          type: string
+          format: date-time
+        deliveredEpoch:
+          type: integer
+          format: int64
+        consumedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          description: "Why it was cancelled or rejected: a stable code (delivery_failed, session_terminated,
+            files_unsupported, task_stop_unsupported, unknown_permission_request, execution_ended...)"
+        eventSeq:
+          type: integer
+          format: int64
+          description: The `message.user` event recording a consumed message
+        fileIds:
+          type: array
+          items:
+            type: string
+      required:
+      - id
+      - kind
+      - status
+      - authorId
+      - createdAt
+    CloudInputPage:
+      type: object
+      description: "The session's inputs, newest first; `nextBefore` is the cursor of the following page"
+      properties:
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudInput'
+        nextBefore:
+          type: string
+      required:
+      - inputs
+    AnswerCloudPermissionRequest:
+      type: object
+      description: "The answer to the `permission.request` event `requestId` (`answerCloudPermission`). `deny` passes
+        `message` to the agent. `allow` with `answers` answers a question (`AskUserQuestion`): one entry per question,
+        by index, at most 16"
+      properties:
+        requestId:
+          type: string
+          maxLength: 128
+        behavior:
+          type: string
+          description: allow or deny
+        message:
+          type: string
+          maxLength: 4000
+        answers:
+          type: array
+          maxItems: 16
+          items:
+            $ref: '#/components/schemas/CloudQuestionAnswer'
+      required:
+      - requestId
+      - behavior
+    CloudQuestionAnswer:
+      type: object
+      description: "The answer to the question at index `question` (from 0, in the request's `input.questions`): the
+        chosen `options` by index (several only for a `multiSelect` question), or a free `text`; one or the other"
+      properties:
+        question:
+          type: integer
+          minimum: 0
+        options:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+        text:
+          type: string
+          maxLength: 4000
+      required:
+      - question
+    CloudSubagent:
+      type: object
+      description: "A subagent of a session (`runners.cloud.transcript.feeds.v1`). `id` is the `tool.call` that started
+        it and the `feed` of its events; `parentId` the feed it was started from (absent: the main agent); `taskId`
+        the id to stop it with while it is a live background task"
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+          default: ''
+        state:
+          type: string
+          description: running, completed or failed
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        steps:
+          type: integer
+          default: 0
+        parentId:
+          type: string
+        taskId:
+          type: string
+      required:
+      - id
+      - state
+      - startedAt
+    CloudSubagentList:
+      type: object
+      description: The session's subagents, oldest first, the newest 200
+      properties:
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudSubagent'
+      required:
+      - agents
+    StopCloudTaskRequest:
+      type: object
+      description: The background task of the session's agent to stop (`stopCloudTask`)
+      properties:
+        taskId:
+          type: string
+          maxLength: 64
+      required:
+      - taskId
+    SetCloudPermissionBypassRequest:
+      type: object
+      description: "The owner's standing approval of tool uses (`setCloudPermissionBypass`)"
+      properties:
+        enabled:
+          type: boolean
+      required:
+      - enabled
+    SetCloudModelRequest:
+      type: object
+      description: The model of the session's agent (`setCloudSessionModel`)
+      properties:
+        model:
+          type: string
+          maxLength: 120
+      required:
+      - model
+    SetCloudEffortRequest:
+      type: object
+      description: The effort of the session's agent (`setCloudSessionEffort`)
+      properties:
+        effort:
+          type: string
+          maxLength: 120
+      required:
+      - effort
+    CloudSessionWaiting:
+      type: object
+      description: "Why the session's agent waits for a person (`runners.cloud.permissions.v1`, TeamCode's
+        `waiting`): set when a `permission.request` is stored, gone when it stops being answerable"
+      properties:
+        reason:
+          type: string
+          description: permission (a tool use to approve) or question (a question to answer)
+        requestId:
+          type: string
+          description: What `answerCloudPermission` takes
+        since:
+          type: string
+          format: date-time
+        eventSeq:
+          type: integer
+          format: int64
+          description: The `permission.request` event
+      required:
+      - reason
+    CloudFile:
+      type: object
+      description: "A file uploaded to a session (`runners.cloud.files.v1`). `name` is the cleaned name the host writes
+        it under, `contentType` the type recognized from its bytes. Name its `id` in a message's `fileIds` before
+        `expiresAt`"
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        name:
+          type: string
+        size:
+          type: integer
+          format: int64
+        contentType:
+          type: string
+        sha256:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - sessionId
+      - name
+      - size
+      - contentType
+      - sha256
+      - createdAt
+      - expiresAt
+    CloudFilePolicy:
+      type: object
+      description: "Whether the caller's organization can send files now (`available`; `reason`
+        `file_storage_not_configured` without a tested artifact bucket), and its limits"
+      properties:
+        available:
+          type: boolean
+        reason:
+          type: string
+        maxFileBytes:
+          type: integer
+          format: int64
+        maxMessageBytes:
+          type: integer
+          format: int64
+        maxFilesPerMessage:
+          type: integer
+        types:
+          type: array
+          items:
+            type: string
+      required:
+      - available
+      - maxFileBytes
+      - maxMessageBytes
+      - maxFilesPerMessage
+      - types
     CloudSessionPage:
       type: object
       description: "A page of the caller's cloud sessions, newest first; `next` is the cursor of the following page"
@@ -21025,6 +22370,15 @@ components:
             checks both again at each later start, where they become the session's `failure.code` (a first
             start fails, a resume is blocked). Ignored by a server whose sessions run on Docker or on
             registered runners"
+        mode:
+          type: string
+          description: "`terminal` (absent) or `conversation` (`runners.cloud.conversation.v1`): 400 `invalid_mode` for
+            another value or for an agent other than claude and codex. In conversation mode `prompt` is the first
+            message of the transcript"
+        effort:
+          type: string
+          maxLength: 120
+          description: "The agent's effort (reasoning level), 1 to 120 letters, digits and `. _ : / -`"
         image:
           type: string
           description: "The session image instead of the profile's: the profile's image, or one matching

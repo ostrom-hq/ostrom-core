@@ -24,6 +24,10 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  * @property expiresAt When a paused session is terminated with its workspace (`runners.cloud.retention.v1`).
  * @property terminatedReason `deleted` or `expired`, on a terminated session.
  * @property workspaceDeletion The proof its workspace is gone, on Kubernetes.
+ * @property mode `terminal` (null: a PTY) or `conversation` (`runners.cloud.conversation.v1`), see [CloudSessionModes].
+ * @property effort The agent's effort (reasoning level), if chosen (`runners.cloud.effort.v1`).
+ * @property permissionBypass The owner's standing approval of tool uses is on (`runners.cloud.permissions.bypass.v1`).
+ * @property waiting Why the agent waits for a person (`runners.cloud.permissions.v1`); null when it does not.
  */
 @Serializable
 public data class CloudSession(
@@ -52,6 +56,10 @@ public data class CloudSession(
     val profile: CloudSessionProfile? = null,
     val image: String? = null,
     val githubAccess: String? = null,
+    val mode: String? = null,
+    val effort: String? = null,
+    val permissionBypass: Boolean? = null,
+    val waiting: CloudSessionWaiting? = null,
     val runId: String? = null,
     val automationId: String? = null,
     val createdAt: String,
@@ -186,6 +194,8 @@ public enum class CloudAgentKind(
  * @property prompt The agent's first message, up to 20,000 characters; an interactive agent when null.
  * @property profileId The organization's cloud profile (`runners.cloud.profiles.v1`, planned).
  * @property image An image instead of the profile's (planned).
+ * @property mode `terminal` (null) or `conversation` (`runners.cloud.conversation.v1`, claude and codex only).
+ * @property effort The agent's effort (reasoning level).
  */
 @Serializable
 public data class CreateCloudSessionRequest(
@@ -197,6 +207,8 @@ public data class CreateCloudSessionRequest(
     val name: String? = null,
     val environment: CloudEnvironment? = null,
     val profileId: String? = null,
+    val mode: String? = null,
+    val effort: String? = null,
     val image: String? = null,
 )
 

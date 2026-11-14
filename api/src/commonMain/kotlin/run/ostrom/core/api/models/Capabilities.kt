@@ -167,6 +167,42 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_AGENT: String = "runners.cloud.agent.v1"
 
     /**
+     * Conversation sessions (`mode: conversation`, claude and codex): the agent runs headless in the pod, its
+     * normalized transcript is paged and streamed (`/api/v1/cloud/sessions/{id}/events`), members send messages and
+     * interrupts, and the runner speaks the agent channel (`/api/v1/cloud/runner/agent|events|inputs|inputs/ack`).
+     * TeamCode's cloud.transcript.v1 and cloud.messages.v1. Only with cloud runners.
+     */
+    public const val RUNNERS_CLOUD_CONVERSATION: String = "runners.cloud.conversation.v1"
+
+    /**
+     * Permission requests of a conversation session are relayed to members and answered through
+     * `POST /api/v1/cloud/sessions/{id}/permissions`; the session view carries `waiting` (TeamCode's
+     * cloud.permissions.v1 and cloud.sessions.waiting.v1).
+     */
+    public const val RUNNERS_CLOUD_PERMISSIONS: String = "runners.cloud.permissions.v1"
+
+    /** The owner's standing approval of a session's tool uses, `PUT .../permission-bypass` (TeamCode's Bypass). */
+    public const val RUNNERS_CLOUD_PERMISSIONS_BYPASS: String = "runners.cloud.permissions.bypass.v1"
+
+    /** Files sent with a message: `POST .../files`, `fileIds`, `GET /api/v1/cloud/files/policy`. */
+    public const val RUNNERS_CLOUD_FILES: String = "runners.cloud.files.v1"
+
+    /** The agent's background tasks as `tasks` events, and `POST .../tasks/stop`. */
+    public const val RUNNERS_CLOUD_TASKS: String = "runners.cloud.tasks.v1"
+
+    /** Live agent text: `message.agent.delta` events, replaced by their final `message.agent`. */
+    public const val RUNNERS_CLOUD_TRANSCRIPT_LIVE: String = "runners.cloud.transcript.live.v1"
+
+    /** Per-agent feeds: events carry their `feed`, `events?feed=` pages one, `GET .../agents` lists the subagents. */
+    public const val RUNNERS_CLOUD_TRANSCRIPT_FEEDS: String = "runners.cloud.transcript.feeds.v1"
+
+    /** The owner changes the agent's model while it runs, `PUT .../model`. */
+    public const val RUNNERS_CLOUD_MODEL: String = "runners.cloud.model.v1"
+
+    /** The owner changes the agent's effort while it runs, `PUT .../effort`. */
+    public const val RUNNERS_CLOUD_EFFORT: String = "runners.cloud.effort.v1"
+
+    /**
      * Cloud sessions use their owner's GitHub link: the runner's `POST /api/v1/cloud/runner/github`, the session's
      * `githubAccess` and `PUT /api/v1/cloud/sessions/{id}/github`. Only with cloud runners and [GITHUB_LINK].
      */
@@ -347,8 +383,10 @@ public object ServerFeatures {
         CAPACITY_POOL_SIZE, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST, PACKAGES, RECEIPTS, REPORTS,
-        RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
-        RUNNERS_CLOUD_HOOKS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SKILLS,
+        RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_CONVERSATION, RUNNERS_CLOUD_EFFORT,
+        RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_FILES, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS, RUNNERS_CLOUD_MODEL,
+        RUNNERS_CLOUD_PERMISSIONS, RUNNERS_CLOUD_PERMISSIONS_BYPASS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_RETENTION,
+        RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS, RUNNERS_CLOUD_TRANSCRIPT_FEEDS, RUNNERS_CLOUD_TRANSCRIPT_LIVE,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS, LAUNCHES_LIMITS,
         SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,

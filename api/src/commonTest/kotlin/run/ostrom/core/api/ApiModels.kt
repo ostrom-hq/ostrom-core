@@ -224,6 +224,22 @@ import run.ostrom.core.api.models.CloudSession
 import run.ostrom.core.api.models.CloudSessionFailure
 import run.ostrom.core.api.models.CloudSessionLimits
 import run.ostrom.core.api.models.CloudSessionPage
+import run.ostrom.core.api.models.AnswerCloudPermissionRequest
+import run.ostrom.core.api.models.CloudEvent
+import run.ostrom.core.api.models.CloudEventPage
+import run.ostrom.core.api.models.CloudFile
+import run.ostrom.core.api.models.CloudFilePolicy
+import run.ostrom.core.api.models.CloudInput
+import run.ostrom.core.api.models.CloudInputPage
+import run.ostrom.core.api.models.CloudQuestionAnswer
+import run.ostrom.core.api.models.CloudSessionWaiting
+import run.ostrom.core.api.models.CloudSubagent
+import run.ostrom.core.api.models.CloudSubagentList
+import run.ostrom.core.api.models.SendCloudMessageRequest
+import run.ostrom.core.api.models.SetCloudEffortRequest
+import run.ostrom.core.api.models.SetCloudModelRequest
+import run.ostrom.core.api.models.SetCloudPermissionBypassRequest
+import run.ostrom.core.api.models.StopCloudTaskRequest
 import run.ostrom.core.api.models.CloudSessionProfile
 import run.ostrom.core.api.models.CloudSetup
 import run.ostrom.core.api.models.CloudWorkspaceDeletion
@@ -464,6 +480,22 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     CloudSessionFailure.serializer(),
     CloudSessionLimits.serializer(),
     CloudSessionPage.serializer(),
+    AnswerCloudPermissionRequest.serializer(),
+    CloudEvent.serializer(),
+    CloudEventPage.serializer(),
+    CloudFile.serializer(),
+    CloudFilePolicy.serializer(),
+    CloudInput.serializer(),
+    CloudInputPage.serializer(),
+    CloudQuestionAnswer.serializer(),
+    CloudSessionWaiting.serializer(),
+    CloudSubagent.serializer(),
+    CloudSubagentList.serializer(),
+    SendCloudMessageRequest.serializer(),
+    SetCloudEffortRequest.serializer(),
+    SetCloudModelRequest.serializer(),
+    SetCloudPermissionBypassRequest.serializer(),
+    StopCloudTaskRequest.serializer(),
     CloudSessionProfile.serializer(),
     CloudSetup.serializer(),
     CreateCloudSessionRequest.serializer(),

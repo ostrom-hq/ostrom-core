@@ -77,6 +77,10 @@ client.close()
 | `environment` | `names()` (names and unavailable names only, values dropped), `listMine()`, `createMine(variant)`, `updateMine(id, update)`, `deleteMine(id)` | `GET /api/v1/environment`, `GET` and `POST /api/v1/me/environment/variants`, `PATCH` and `DELETE /api/v1/me/environment/variants/{id}` |
 | `myMcpServers` | `list()`, `create(server)`, `save(name, server)`, `delete(name)` | `GET` and `POST /api/v1/me/mcp/servers`, `PUT` and `DELETE /api/v1/me/mcp/servers/{name}` |
 | `cloudSessions` | `list(status, before, limit)`, `get(id)`, `create(request)`, `pause(id)`, `resume(id)`, `stop(id)` | `GET` and `POST /api/v1/cloud/sessions`, `GET` and `DELETE /api/v1/cloud/sessions/{id}`, `POST /api/v1/cloud/sessions/{id}/pause`, `POST /api/v1/cloud/sessions/{id}/resume` |
+| `cloudSessions` (conversation, planned) | `setPermissionBypass(id, enabled)`, `setModel(id, model)`, `setEffort(id, effort)` | `PUT /api/v1/cloud/sessions/{id}/permission-bypass`, `.../model`, `.../effort` |
+| `cloudTranscripts` (planned, `runners.cloud.conversation.v1`) | `events(id, after, before, limit, feed)`, `followEvents(id, after)`, `agents(id)` | `GET /api/v1/cloud/sessions/{id}/events`, `.../events/stream`, `.../agents` |
+| `cloudMessages` (planned) | `send(id, request, idempotencyKey)`, `inputs(id, before, limit)`, `input(id, input)`, `interrupt(id)`, `answerPermission(id, request, idempotencyKey)`, `stopTask(id, taskId)` | `/api/v1/cloud/sessions/{id}/messages`, `.../messages/{input}`, `.../interrupt`, `.../permissions`, `.../tasks/stop` |
+| `cloudFiles` (planned, `runners.cloud.files.v1`) | `upload(id, name, bytes, idempotencyKey)`, `policy()` | `POST /api/v1/cloud/sessions/{id}/files`, `GET /api/v1/cloud/files/policy` |
 | `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
 
 Every parameter left null is not sent, so the server's default applies. The models are those of
