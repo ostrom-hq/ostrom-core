@@ -125,6 +125,7 @@ GET /api/v1/inference/v1/models
 GET /api/v1/instance
 GET /api/v1/instance/keys
 GET /api/v1/mcp/calls
+GET /api/v1/mcp/hosted
 GET /api/v1/mcp/servers
 GET /api/v1/mcp/servers/{}/assignments
 GET /api/v1/mcp/servers/{}/policies
@@ -274,6 +275,7 @@ POST /api/v1/invitations/accept
 POST /api/v1/invitations/preview
 POST /api/v1/launches
 POST /api/v1/launches/{}/hooks-missing
+POST /api/v1/mcp/hosted/restart
 POST /api/v1/mcp/servers
 POST /api/v1/mcp/servers/{}/policies
 POST /api/v1/mcp/{}
