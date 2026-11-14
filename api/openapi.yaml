@@ -8464,6 +8464,15 @@ paths:
           with upstream URLs and secret names, is for an admin with `mcp:read` or a browser session
         schema:
           type: boolean
+      - name: personal
+        in: query
+        required: false
+        x-ostrom-status: planned
+        description: "The members' personal MCP servers (`mcp.personal.v1`), by owner, with `owner` and their definition
+          (name, URL, transport, the secret names they use: none of these is secret) for review; never a credential.
+          An admin with `mcp:read`, in owner order, at most 500. Without it, the list is the team's servers only"
+        schema:
+          type: boolean
       responses:
         '200':
           description: OK
@@ -8589,6 +8598,45 @@ paths:
         '403':
           description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
             again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/mcp/servers/{name}/promote:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: promoteMcpServer
+      x-ostrom-status: planned
+      tags:
+      - mcp
+      summary: "Makes a member's personal MCP server a team server (`mcp.personal.v1`): its owner is cleared and keeps
+        their assignment, everyone else reaches it only by assignment. A team server is returned as it is; refused with
+        409 when it would exceed the team's 64. An admin from the console (scope `mcp:admin`, step-up). Journaled `mcp.server.promoted`"
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpServer'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), hosted_not_allowed, or forbidden (the key is `error.type`)
           content:
             application/json:
               schema:
@@ -8816,6 +8864,159 @@ paths:
         '403':
           description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
             again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/mcp/servers:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMyMcpServers
+      x-ostrom-status: planned
+      tags:
+      - mcp
+      summary: "The caller's personal MCP servers (`mcp.personal.v1`), with the personal secret names they use. A
+        person only: a browser session or a token with `mcp:read`; a service key, an agent or a device token, 403"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/McpServer'
+                required:
+                - items
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createMyMcpServer
+      x-ostrom-status: planned
+      tags:
+      - mcp
+      summary: "Declares a personal MCP server (TeamCode #269), relayed to the caller alone: it is assigned to them in
+        the same transaction, with every tool, and nobody else reaches it (an administrator cannot assign it: 409
+        `mcp_server_personal`). The body is a team server's. `secretNames` name the caller's own personal secrets. Its
+        name shares the organization's namespace: a team server or another member's personal one of the same name is
+        409. A remote HTTPS server is allowed under the same upstream address checks as a team server. A hosted stdio
+        command runs package code on the server's MCP host: refused with 403 `hosted_not_allowed` unless an
+        administrator turned `memberHostedMcp` on (`putMcpSettings`, off by default); then the launcher and exact-version
+        rules are a team command's, and its process is always the member's own (`per-member`). At most 20 per member
+        (409 `mcp_server_limit`); they do not count in the team's 64. From the console (step-up). Journaled
+        `mcp.server.personal.created`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpServer'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpServer'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), hosted_not_allowed, or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/me/mcp/servers/{name}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: saveMyMcpServer
+      x-ostrom-status: planned
+      tags:
+      - mcp
+      summary: "Changes one of the caller's personal MCP servers, with the rules of `createMyMcpServer`; another
+        member's, or a team server, is 404. Journaled `mcp.server.personal.updated`"
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpServer'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpServer'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), hosted_not_allowed, or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteMyMcpServer
+      x-ostrom-status: planned
+      tags:
+      - mcp
+      summary: "Deletes one of the caller's personal MCP servers with its assignment; another member's, or a team
+        server, is 404 (an administrator deletes a personal one with `deleteMcpServer`). Journaled
+        `mcp.server.personal.deleted`"
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), hosted_not_allowed, or forbidden (the key is `error.type`)
           content:
             application/json:
               schema:
@@ -18569,7 +18770,7 @@ components:
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
-        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`,
+        `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
@@ -21447,6 +21648,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        owner:
+          type: string
+          readOnly: true
+          description: The member a personal server belongs to (`mcp.personal.v1`); absent for a team server
       required:
       - name
       - transport
@@ -21583,6 +21788,10 @@ components:
           type: string
           pattern: ^[a-z0-9][a-z0-9_-]{0,31}$
           description: 'Tools are `mcp__<agentPrefix>-<server>__<tool>`; 1 to 32 characters of a-z 0-9 _ -, default `ostrom`'
+        memberHostedMcp:
+          type: boolean
+          description: Whether members may declare a hosted stdio MCP server of their own (`mcp.personal.v1`); false by
+            default. Absent in a change keeps the stored value. Turning it off keeps the servers already declared
       required:
       - agentPrefix
       x-ostrom-kotlin: pending

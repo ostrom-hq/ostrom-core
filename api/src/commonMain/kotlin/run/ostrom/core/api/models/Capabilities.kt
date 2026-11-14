@@ -117,6 +117,12 @@ public object ServerFeatures {
     /** The MCP relay (servers, assignments, policies). */
     public const val MCP: String = "mcp.v1"
 
+    /**
+     * The members' personal MCP servers (`/api/v1/me/mcp/servers`), relayed to their owner alone, and the team's
+     * `memberHostedMcp` setting (TeamCode #269).
+     */
+    public const val MCP_PERSONAL: String = "mcp.personal.v1"
+
     /** Notifications. */
     public const val NOTIFICATIONS: String = "notifications.v1"
 
@@ -251,8 +257,9 @@ public object ServerFeatures {
     public val ALL: List<String> = listOf(
         ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
-        MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
-        RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SERVICE_KEY_SCOPES,
+        MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS,
+        RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
+        SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
         WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )
