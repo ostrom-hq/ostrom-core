@@ -20531,7 +20531,7 @@ components:
         `self_approval_refused`: the server
         names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`;
         `github_link_required`: a yes under a never-self-approve policy, on a pull request whose author linked no Ostrom
-        person, from an answerer who linked no GitHub account; `hosted_not_allowed`: a member's own stdio MCP server
+        person, from an answerer who linked no GitHub account; `hosted_not_allowed`: a member''s own stdio MCP server
         while the organization does not let members host theirs)'
       properties:
         error:
