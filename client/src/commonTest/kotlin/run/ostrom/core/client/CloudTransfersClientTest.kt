@@ -18,7 +18,8 @@ class CloudTransfersClientTest {
     private fun HttpRequestData.call(): String = "${method.value} ${url.encodedPath}" +
         if (url.parameters.isEmpty()) "" else "?" + url.encodedQuery
 
-    private val transfer = """{"id":"tr_1","sessionId":"cs_1","fromMemberId":"ada","toMemberId":"bob","state":"offered",""" +
+    private val transfer = """{"id":"tr_1","sessionId":"cs_1","fromMemberId":"ada","toMemberId":"bob",""" +
+        """"state":"offered",""" +
         """"initiatedBy":"ada","resume":false,"createdAt":"t","updatedAt":"t","expiresAt":"u","later":1}"""
 
     @Test
@@ -49,7 +50,8 @@ class CloudTransfersClientTest {
             listOf(
                 "GET /api/v1/cloud/transfer-recipients",
                 "POST /api/v1/cloud/sessions/cs%201/transfer",
-                "GET /api/v1/cloud/transfers?direction=incoming&session=cs_1&before=tr_9&limit=10&state=offered&state=accepted",
+                "GET /api/v1/cloud/transfers?direction=incoming&session=cs_1&before=tr_9&limit=10" +
+                    "&state=offered&state=accepted",
                 "GET /api/v1/cloud/transfers/tr_1",
                 "POST /api/v1/cloud/transfers/tr_1/accept",
                 "POST /api/v1/cloud/transfers/tr_1/accept",
