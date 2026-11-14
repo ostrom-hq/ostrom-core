@@ -184,6 +184,37 @@ class ResourceClientsTest {
     }
 
     @Test
+    fun devicesAreListedRenamedAndRemoved() = runTest {
+        val device = """{"id":"d 1","name":"Laptop","platform":"macos","osVersion":"26.1",""" +
+            """"createdAt":"t","lastLoginAt":"t","activeSessions":2,"current":true}"""
+        val server = ScriptedServer { request ->
+            when (request.method) {
+                HttpMethod.Delete -> json("", HttpStatusCode.NoContent)
+                HttpMethod.Patch -> json(device.replace("Laptop", "Support laptop"))
+                else -> json("""{"items":[$device]}""")
+            }
+        }
+        server.client().use { client ->
+            val mine = client.devices.list().items.single()
+            assertEquals(2, mine.activeSessions)
+            assertEquals(true, mine.current)
+            assertEquals("Laptop", client.devices.listForMember("m1").items.single().name)
+            assertEquals("Support laptop", client.devices.rename("d 1", "Support laptop").name)
+            client.devices.delete("d 1")
+        }
+        assertEquals(
+            listOf(
+                "GET /api/v1/devices",
+                "GET /api/v1/members/m1/devices",
+                "PATCH /api/v1/devices/d%201",
+                "DELETE /api/v1/devices/d%201",
+            ),
+            server.requests.map { it.call() },
+        )
+        assertJson("""{"name":"Support laptop"}""", server.requests[2].bodyText())
+    }
+
+    @Test
     fun aPhoneIsRegisteredListedThenDeleted() = runTest {
         val server = ScriptedServer { request ->
             if (request.method == HttpMethod.Delete) {

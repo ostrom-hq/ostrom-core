@@ -1855,27 +1855,22 @@ paths:
       tags:
       - auth
       summary: Workstations where the caller is signed in
-      description: "A browser session only. The caller's CLI tokens (`kind: cli`), then, when `Ostrom-Org` names an
+      description: "A browser session only (with `devices.v1`, also the CLI's own sign-in, see below). Not paged:
+        `next` is always absent. The caller's CLI tokens (`kind: cli`), then, when `Ostrom-Org` names an
         organization, its live tokens of `ostrom login --admin` (`kind: admin`, with `orgId`, `scopes` and `expiresAt`):
         the caller's own for a member, every member's for an owner or an admin. Such a token is bound to its organization
         and only listed when the request names it; the console asks once per organization. A member of another
-        organization gets 404."
+        organization gets 404. With `devices.v1` (planned): the caller's registered devices (one per installation of
+        the CLI, with `createdAt`, `lastLoginAt`, `activeSessions`, `current` and `osVersion`), then the tokens of
+        CLIs older than that, each on its own; the CLI's own sign-in may read it too (`ostrom devices list`), an
+        agent's token or a service key may not (403)."
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Device'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/DevicePage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -1889,16 +1884,56 @@ paths:
   /api/v1/devices/{id}:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
+    patch:
+      operationId: renameDevice
+      x-ostrom-status: planned
+      tags:
+      - auth
+      summary: Rename a device
+      description: "With `devices.v1`. The caller's own registered device, from a browser session or the CLI's sign-in;
+        an owner or an admin also renames a member's (`Ostrom-Org` naming their organization), audited there.
+        1 to 120 characters, no control character (400 `invalid_device_name`). Another member's device, a token listed
+        on its own or an unknown id: 404 `device_not_found`."
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameDeviceRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
     delete:
       operationId: deleteDevice
       x-ostrom-status: served
       tags:
       - auth
       summary: Sign a workstation out
-      description: "A browser session only. Revokes one of the caller's CLI tokens, or a token of `ostrom login --admin`
+      description: "A browser session only (with `devices.v1`, also the CLI's own sign-in, see below). Revokes one of the caller's CLI tokens, or a token of `ostrom login --admin`
         of the organization `Ostrom-Org` names: a member their own, an owner or an admin any member's (a leaked token, a
         member who left). Audited in that organization, naming the actor and the token's owner. Another member's for a
-        member, a token of another organization, a personal token or a service key: 404."
+        member, a token of another organization, a personal token or a service key: 404. With `devices.v1` (planned):
+        a registered device's id removes the device and signs every one of its sign-ins out at once (a copied
+        configuration included); the CLI's own sign-in may call it too, and removing the device it runs on signs it
+        out (`ostrom login` again). Its next sign-in registers the installation again, under a new id."
       parameters:
       - name: id
         in: path
@@ -1917,6 +1952,37 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{memberId}/devices:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listMemberDevices
+      x-ostrom-status: planned
+      tags:
+      - auth
+      summary: A member's devices (owner or admin)
+      description: "With `devices.v1`. An owner or an admin of the organization `Ostrom-Org` names reads the devices of
+        one of its members, as `GET /api/v1/devices` answers them to that member (`current` always false). A member
+        gets 403; a member of another organization or an unknown id 404."
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevicePage'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
   /api/v1/push-devices:
     parameters:
@@ -21537,7 +21603,7 @@ components:
       type: object
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
-        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
+        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `devices.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
@@ -23149,6 +23215,8 @@ components:
           type: string
         platform:
           type: string
+          description: "`macos`, `windows`, `linux`, `ios` or `android`, as reported at the latest sign-in; absent until
+            one did"
         cliVersion:
           type: string
         lastSeenAt:
@@ -23168,10 +23236,46 @@ components:
             type: string
         expiresAt:
           type: string
+        osVersion:
+          type: string
+          description: "With `devices.v1`: the system's version reported with `platform`"
+        createdAt:
+          type: string
+          description: "With `devices.v1`: when the installation was registered"
+        lastLoginAt:
+          type: string
+          description: "With `devices.v1`: its latest sign-in"
+        activeSessions:
+          type: integer
+          description: "With `devices.v1`: how many live sign-ins the device holds"
+        current:
+          type: boolean
+          description: "With `devices.v1`: the call came from this device"
       required:
       - id
       - name
-      x-ostrom-kotlin: pending
+    DevicePage:
+      type: object
+      description: A page of devices
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+        next:
+          type: string
+      required:
+      - items
+    RenameDeviceRequest:
+      type: object
+      description: A device's new name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+      required:
+      - name
     DeviceAnswer:
       type: object
       description: "The answer to an `ostrom login`"
@@ -23198,6 +23302,32 @@ components:
           items:
             type: string
             enum: ['policy:write', 'harness:write', 'gates:policy', 'budgets:write']
+        installationId:
+          type: string
+          description: "With `devices.v1`: the CLI's installation, a random lowercase UUID kept in its configuration
+            directory, which survives a sign-out and a change of server (otherwise 400 `invalid_installation`). Ignored with
+            `scopes`: a token of `ostrom login --admin` never registers nor joins a device. When the
+            sign-in is approved, the server registers the installation as a device of the approving member, keyed by
+            member and installation, or signs it in again on the device it already is: repeated sign-ins are
+            independent sessions of one device, which keeps its id and its name. A member holds at most 50 devices
+            (409 `device_limit` when the approval would register a 51st). Never returned. Absent: the token is listed on
+            its own, as before"
+        deviceName:
+          type: string
+          maxLength: 120
+          description: "With `installationId`: the name of a device this sign-in registers (1 to 120 characters, no
+            control character, otherwise 400 `invalid_device_name`); a device already registered keeps its name. The
+            client's name when absent"
+        platform:
+          type: string
+          enum: [macos, windows, linux, ios, android]
+          description: "With `installationId`: the system, recorded on the device (400 `invalid_platform` otherwise). A
+            sign-in without it keeps what was recorded before"
+        osVersion:
+          type: string
+          maxLength: 64
+          description: "With `platform` only: the system's version, 1 to 64 printable characters (400
+            `invalid_os_version` otherwise)"
     DeviceAuthorization:
       type: object
       description: "A pending `ostrom login`, as the console shows it"

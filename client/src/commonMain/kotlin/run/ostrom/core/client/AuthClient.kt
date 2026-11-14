@@ -78,9 +78,23 @@ public class AuthClient internal constructor(private val transport: Transport) {
      * [DeviceCode.verificationUri], then [pollDeviceLogin] every [DeviceCode.interval] seconds.
      *
      * @param scopes Empty for the ordinary sign-in; the governance write scopes for an administrator's sign-in.
+     * @param installationId This installation of the CLI; pass it (and the three below) only to a server that
+     *   announces `devices.v1`.
+     * @param deviceName The name of a device this sign-in registers.
+     * @param platform `macos`, `windows`, `linux`, `ios` or `android`.
+     * @param osVersion The system's version, with [platform].
      */
-    public suspend fun startDeviceLogin(scopes: List<String> = emptyList()): DeviceCode =
-        transport.jsonBody(HttpMethod.Post, "/api/v1/auth/device", DeviceLoginStart(scopes))
+    public suspend fun startDeviceLogin(
+        scopes: List<String> = emptyList(),
+        installationId: String? = null,
+        deviceName: String? = null,
+        platform: String? = null,
+        osVersion: String? = null,
+    ): DeviceCode = transport.jsonBody(
+        HttpMethod.Post,
+        "/api/v1/auth/device",
+        DeviceLoginStart(scopes, installationId, deviceName, platform, osVersion),
+    )
 
     /**
      * The token of a device sign-in once approved (`POST /api/v1/auth/device/token`). Until then it throws

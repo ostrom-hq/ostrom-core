@@ -51,7 +51,9 @@ import run.ostrom.core.api.models.DeliverRequest
 import run.ostrom.core.api.models.DeliverSessionRequest
 import run.ostrom.core.api.models.Deliverable
 import run.ostrom.core.api.models.Dev
+import run.ostrom.core.api.models.Device
 import run.ostrom.core.api.models.DeviceCode
+import run.ostrom.core.api.models.DevicePage
 import run.ostrom.core.api.models.DeviceLoginStart
 import run.ostrom.core.api.models.DeviceTokenRequest
 import run.ostrom.core.api.models.DiffStats
@@ -125,6 +127,7 @@ import run.ostrom.core.api.models.ReceiptPage
 import run.ostrom.core.api.models.ReceiptRule
 import run.ostrom.core.api.models.ReceiptSubject
 import run.ostrom.core.api.models.RegisterPushDeviceRequest
+import run.ostrom.core.api.models.RenameDeviceRequest
 import run.ostrom.core.api.models.ReportCheckRequest
 import run.ostrom.core.api.models.ResetTodoRequest
 import run.ostrom.core.api.models.Rule
@@ -307,7 +310,9 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     DeliverSessionRequest.serializer(),
     Deliverable.serializer(),
     Dev.serializer(),
+    Device.serializer(),
     DeviceCode.serializer(),
+    DevicePage.serializer(),
     DeviceLoginStart.serializer(),
     DeviceTokenRequest.serializer(),
     DiffStats.serializer(),
@@ -380,6 +385,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ReceiptRule.serializer(),
     ReceiptSubject.serializer(),
     RegisterPushDeviceRequest.serializer(),
+    RenameDeviceRequest.serializer(),
     ReportCheckRequest.serializer(),
     ResetTodoRequest.serializer(),
     Rule.serializer(),

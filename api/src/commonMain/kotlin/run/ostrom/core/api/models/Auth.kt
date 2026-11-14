@@ -38,12 +38,26 @@ public data class AuthToken(
  * What a device sign-in asks for (`POST /api/v1/auth/device`): nothing for the ordinary sign-in, the governance write
  * scopes for `ostrom login --admin`.
  *
+ * With `devices.v1` the CLI also names its installation, so that the server registers the workstation once and every
+ * later sign-in from it lands on the same device (TeamCode's installation identity, docs/devices.md). A server without
+ * it ignores the four fields.
+ *
  * @property scopes Exactly `policy:write`, `harness:write` and `gates:policy`, or those three and `budgets:write`;
  *   empty for the ordinary sign-in.
+ * @property installationId The CLI's installation, a random lowercase UUID kept in its configuration directory; it
+ *   survives a sign-out and a change of server. Never shown and never returned.
+ * @property deviceName The name of a device registered by this sign-in ([DeviceLimits.MAX_NAME] characters, no control
+ *   character); a device already registered keeps its name.
+ * @property platform `macos`, `windows`, `linux`, `ios` or `android` ([DevicePlatforms]).
+ * @property osVersion The system's version, only with [platform] ([DeviceLimits.MAX_OS_VERSION] printable characters).
  */
 @Serializable
 public data class DeviceLoginStart(
     val scopes: List<String> = emptyList(),
+    val installationId: String? = null,
+    val deviceName: String? = null,
+    val platform: String? = null,
+    val osVersion: String? = null,
 )
 
 /**

@@ -2833,6 +2833,82 @@
       }
     }
   },
+  "Device": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "platform": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "cliVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "lastSeenAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "orgId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "scopes": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "osVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "lastLoginAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "activeSessions": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "current": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "DeviceCode": {
     "properties": {
       "deviceCode": {
@@ -2873,6 +2949,44 @@
         "type": {
           "array": "string"
         },
+        "required": false,
+        "nullable": false
+      },
+      "installationId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "deviceName": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "platform": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "osVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DevicePage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "Device"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
         "required": false,
         "nullable": false
       }
@@ -5793,6 +5907,15 @@
       "publicKey": {
         "type": "string",
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "RenameDeviceRequest": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
         "nullable": false
       }
     }
