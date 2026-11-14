@@ -107,6 +107,13 @@ public object ServerFeatures {
      */
     public const val INFERENCE_CANCEL: String = "inference.cancel.v1"
 
+    /**
+     * The agent memory (`/api/v1/memory`, TeamCode's docs/memory.md): the organization's entries and each member's
+     * personal ones, an index and a search, read on demand, the `memory:use` scope, agents' team entries as proposals
+     * their session's owner answers, and the curation an administrator turns on.
+     */
+    public const val MEMORY: String = "memory.v1"
+
     /** The MCP relay (servers, assignments, policies). */
     public const val MCP: String = "mcp.v1"
 
@@ -244,7 +251,7 @@ public object ServerFeatures {
     public val ALL: List<String> = listOf(
         ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
-        NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
+        MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD,
         RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
         WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
