@@ -742,9 +742,9 @@ paths:
       - auth
       summary: Start the device flow (CLI sign-in)
       description: "Without a body, the ordinary sign-in of `ostrom login`. With `scopes`, `ostrom login --admin`: the
-        governance write scopes no other token holds (S2-52, decision of 02/11/2026). The browser's page shows them
-        (`DeviceAuthorization.scopes`), only an owner or admin of the organisation may approve them, and the token
-        that comes out is bound to that organisation, expires in 8 hours at most and is never refreshed. Each
+        governance write scopes no other token holds (S2-52, decision of 02/11/2026). The browser's page shows every
+        scope its token will hold (`DeviceAuthorization.scopes`), only an owner or admin of the organisation may
+        approve them, and the token that comes out is bound to that organisation, expires in 8 hours at most and is never refreshed. Each
         governance write it makes is recorded in the organisation's audit log before it happens. A server older than
         this answers an ordinary token, whose `AuthToken.scopes` tell the CLI."
       security: []
@@ -20068,9 +20068,10 @@ components:
           type: string
         scopes:
           type: array
-          description: "The governance write scopes an `ostrom login --admin` asks for, shown before the yes; only an
-            owner or admin may approve them (`answerDeviceLogin` answers 403 otherwise). Absent for the ordinary
-            sign-in"
+          description: "Every scope the token of an `ostrom login --admin` will hold (its governance writes, the CLI's,
+            their reads and the handover of shared accounts), shown before the yes so that no power is approved
+            unseen; only an owner or admin may approve them (`answerDeviceLogin` answers 403 otherwise). Absent for
+            the ordinary sign-in"
           items:
             type: string
         expiresAt:
