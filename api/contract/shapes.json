@@ -5283,6 +5283,24 @@
       }
     }
   },
+  "SessionPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "Session"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "SessionResponse": {
     "properties": {
       "session": {
@@ -7350,6 +7368,24 @@
       "workflow"
     ]
   },
+  "WorkflowPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "Workflow"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "WorkflowPendingDeliverable": {
     "properties": {
       "type": {
@@ -7477,6 +7513,24 @@
         "nullable": false
       },
       "endedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "WorkflowRunPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "WorkflowRun"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
         "type": "string",
         "required": false,
         "nullable": false

@@ -361,3 +361,15 @@ public data class WaitWakeRequest(val waitMillis: Long? = null)
  */
 @Serializable
 public data class WaitWake(val open: Boolean, val messages: List<String>)
+
+/**
+ * A page of workflow runs, newest first (`GET /api/v1/workflows/{id}/runs`, `GET /api/v1/runs`).
+ *
+ * @property items The runs of the page.
+ * @property next The cursor of the following page, absent on the last one.
+ */
+@Serializable
+public data class WorkflowRunPage(
+    val items: List<WorkflowRun>,
+    val next: String? = null,
+)

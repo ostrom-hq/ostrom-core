@@ -3751,16 +3751,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Session'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/SessionPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -5998,16 +5989,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Workflow'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/WorkflowPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -6248,16 +6230,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/WorkflowRun'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/WorkflowRunPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -6307,16 +6280,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/WorkflowRun'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/WorkflowRunPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -25386,6 +25350,18 @@ components:
       - mcp
       - context
       - files
+    SessionPage:
+      type: object
+      description: "A page of session segments, newest first; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Session'
+        next:
+          type: string
+      required:
+      - items
     SessionResponse:
       type: object
       description: A session with the receipt the server signed for it
@@ -27420,6 +27396,18 @@ components:
             $ref: '#/components/schemas/WebhookDelivery'
       required:
       - items
+    WorkflowPage:
+      type: object
+      description: "The workflows; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
+        next:
+          type: string
+      required:
+      - items
     Workflow:
       type: object
       description: A workflow
@@ -27623,6 +27611,18 @@ components:
           type: string
       required:
       - type
+    WorkflowRunPage:
+      type: object
+      description: "A page of workflow runs, newest first; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowRun'
+        next:
+          type: string
+      required:
+      - items
     WorkflowRun:
       type: object
       description: A workflow run
