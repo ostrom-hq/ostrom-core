@@ -970,7 +970,7 @@ paths:
         never launches. The person and the organization come from the credential. 403 when the organization's policy
         refuses the agent or the model, or the credential may not launch; 404 when it is no member of an organization
         the request can act in. The agent token acts for the person who launched it on its launch's sessions, the
-        workflow step it plays (`workflow:session`), the memory (`memory:use`) and, planned, the artifacts
+        workflow step it plays (`workflow:session`), the memory (`memory:use`) and the artifacts
         (`artifacts:write`: publish and share as that person, never change an access nor delete)."
       tags:
       - auth
@@ -13007,11 +13007,12 @@ paths:
       - artifacts
       summary: "The artifacts MCP server (Streamable HTTP, JSON answers); 202 for a notification"
       description: "A member credential with `artifacts:read` (list, read) or `artifacts:write` (publish, share). An
-        agent token (planned) holds `artifacts:write` and acts as the member who launched it, as a plain member
-        whatever their role: `ostrom <agent>` and the cloud runner connect it to the agent as `ostrom-artifacts`
-        (`ostrom mcp --server ostrom-artifacts`, a stdio bridge to the launch's local relay, which forwards here
-        with the agent token) when `getArtifactPolicy` answers `canPublish`. Its tools never make an artifact public
-        nor delete one (both need a person, `setArtifactAccess`, `deleteArtifact`)."
+        agent token holds `artifacts:write` and acts as the member who launched it (their role counts only where
+        administrators alone publish; it is never a person): `ostrom <agent>` connects it to the agent as
+        `ostrom-artifacts` (`ostrom mcp --server ostrom-artifacts`, a stdio bridge to the launch's local relay, which
+        forwards here with the agent token), and the cloud runner will (planned), when `getArtifactPolicy` answers
+        `canPublish`. Its tools never make an artifact public nor delete one (both need a person,
+        `setArtifactAccess`, `deleteArtifact`)."
       requestBody:
         required: true
         content:
@@ -13253,7 +13254,7 @@ paths:
         inactive: `reason` is then `artifact_storage_missing`, `artifact_storage_unverified` or `artifacts_disabled`;
         `artifact_publish_forbidden` when only administrators publish and the caller is not one; `credential_scope`
         for a credential without `artifacts:write`. `ostrom <agent>` and the cloud runner ask it with the launch''s
-        agent token (planned: the agent token holds `artifacts:write` and is the member who launched it) and connect
+        agent token (which holds `artifacts:write` and is the member who launched it) and connect
         the artifacts MCP server only when `canPublish` is true'
       responses:
         '200':
