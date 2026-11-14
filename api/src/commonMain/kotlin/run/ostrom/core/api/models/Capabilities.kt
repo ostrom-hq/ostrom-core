@@ -200,7 +200,7 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_HOOKS: String = "runners.cloud.hooks.v1"
 
     /**
-     * A cloud session runs on an organization's cloud profile (planned): `profileId` and `image` on
+     * A cloud session runs on an organization's cloud profile: `profileId` and `image` on
      * `POST /api/v1/cloud/sessions`, `profile` and `image` on the session, and the profile's cluster and namespace
      * checked again at each start. Only with cloud runners and [CLOUD_ADMIN].
      */
