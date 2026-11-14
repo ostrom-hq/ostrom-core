@@ -1210,6 +1210,11 @@
         "type": "integer",
         "required": false,
         "nullable": false
+      },
+      "profileId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -3976,6 +3981,11 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "profileId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -6273,6 +6283,11 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "profileId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -8172,6 +8187,11 @@
         "nullable": false
       },
       "repository": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "profileId": {
         "type": "string",
         "required": false,
         "nullable": false

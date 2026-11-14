@@ -55,6 +55,7 @@ public data class AutomationTrigger(
  * @property model Model.
  * @property effort Effort.
  * @property maxRuntimeMinutes Runtime limit.
+ * @property profileId The cloud profile the session runs on, or a workflow run's agent nodes that name none.
  */
 @Serializable
 public data class AutomationAction(
@@ -66,6 +67,7 @@ public data class AutomationAction(
     val model: String? = null,
     val effort: String? = null,
     val maxRuntimeMinutes: Int = 60,
+    val profileId: String? = null,
 )
 
 /**
@@ -176,6 +178,7 @@ public enum class RunStatus(
  * @property parentRunId Parent run.
  * @property sessionId Agent session of the run.
  * @property repository The repository of the agent nodes that name none.
+ * @property profileId The cloud profile of the agent nodes that name none: given at start, or its automation's.
  * @property visits Visits, in order.
  * @property failure Why it failed.
  * @property failureCode Why it failed, as a stable code (`ended_without_delivery`, `max_visits:<node>`…).
@@ -200,6 +203,7 @@ public data class WorkflowRun(
     val parentRunId: String? = null,
     val sessionId: String? = null,
     val repository: String? = null,
+    val profileId: String? = null,
     val visits: List<NodeVisit> = emptyList(),
     val failure: String? = null,
     val failureCode: String? = null,

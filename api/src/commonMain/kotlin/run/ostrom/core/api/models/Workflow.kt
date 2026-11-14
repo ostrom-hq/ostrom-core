@@ -346,6 +346,7 @@ public data class GateAction(
  * @property model Model of that agent.
  * @property deliverable What the agent must deliver for the run to move on.
  * @property repository Agent: the repository (`owner/name`) its session works in, else the run's.
+ * @property profileId Agent: the cloud profile its session runs on, else the run's.
  */
 @Serializable
 public data class NodeRun(
@@ -361,6 +362,7 @@ public data class NodeRun(
     val model: String? = null,
     val deliverable: Deliverable? = null,
     val repository: String? = null,
+    val profileId: String? = null,
 )
 
 /**
@@ -629,11 +631,13 @@ public data class SaveWorkflowRequest(val workflow: Workflow, val expectedVersio
  *
  * @property inputs The workflow's inputs, by id.
  * @property repository `owner/name`, for the agent nodes that name none (planned: the server ignores it today).
+ * @property profileId The cloud profile of the agent nodes that name none.
  */
 @Serializable
 public data class StartWorkflowRunRequest(
     val inputs: Map<String, String> = emptyMap(),
     val repository: String? = null,
+    val profileId: String? = null,
 )
 
 /**
