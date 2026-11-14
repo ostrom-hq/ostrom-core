@@ -9,11 +9,10 @@ import kotlinx.serialization.Serializable
  *
  * The phone sends its FCM registration token (iOS and Android alike: FCM hands an iOS push to APNs) and the P-256
  * public key every notification is encrypted for ([PushPayload]), at every start of the app and when FCM rotates the
- * token. `expo` is deprecated: the server still takes an Expo push token until the apps register FCM, then refuses it.
+ * token. `expo` is refused: Expo was removed, as TeamCode has none.
  *
- * @property pushToken The push token of the phone: its FCM registration token (`fcm`), or its Expo push token
- *   (`ExponentPushToken[…]`, deprecated).
- * @property provider The push provider: `fcm` (`expo` is deprecated).
+ * @property pushToken The phone's FCM registration token.
+ * @property provider The push provider: `fcm`.
  * @property platform The phone's platform: `ios` or `android`.
  * @property locale The phone's language, for the text of the notifications.
  * @property publicKey The phone's P-256 public key (SubjectPublicKeyInfo, DER, base64), required with `fcm`: each
