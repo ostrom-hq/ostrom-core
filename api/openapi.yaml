@@ -3707,6 +3707,10 @@ paths:
       tags:
       - sessions
       summary: A session segment and its receipt
+      description: 'Read by the session''s person, an agent token of its launch, and the approvers of its gates (read
+        only), who get the segment whole. An owner or an administrator reads another member''s session as its record
+        only, as TeamCode''s run records (#238): `gates`, `gateAnswers` and `receipt` are absent, `receiptId` names the
+        receipt they do not read. Anyone else gets 404.'
       parameters:
       - name: id
         in: path
@@ -24239,6 +24243,9 @@ components:
           type: string
         gates:
           type: array
+          description: On a single read only, by a caller who reads what the session did (its person, its launch's
+            agent token, an approver of its gates); absent from another member's session read by an owner or an
+            administrator, who read its record only.
           items:
             type: string
         gateAnswers:
