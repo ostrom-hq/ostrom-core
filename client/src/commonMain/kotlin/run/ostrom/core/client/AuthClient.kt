@@ -78,7 +78,8 @@ public class AuthClient internal constructor(private val transport: Transport) {
      * [DeviceCode.verificationUri], then [pollDeviceLogin] every [DeviceCode.interval] seconds.
      *
      * @param scopes Empty for the ordinary sign-in; the governance write scopes for an administrator's sign-in.
-     * @param installationId This installation of the CLI, sent only to a server with `devices.v1`.
+     * @param installationId This installation of the CLI; pass it (and the three below) only to a server that
+     *   announces `devices.v1`.
      * @param deviceName The name of a device this sign-in registers.
      * @param platform `macos`, `windows`, `linux`, `ios` or `android`.
      * @param osVersion The system's version, with [platform].

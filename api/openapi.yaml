@@ -1855,7 +1855,8 @@ paths:
       tags:
       - auth
       summary: Workstations where the caller is signed in
-      description: "A browser session only. The caller's CLI tokens (`kind: cli`), then, when `Ostrom-Org` names an
+      description: "A browser session only (with `devices.v1`, also the CLI's own sign-in, see below). Not paged:
+        `next` is always absent. The caller's CLI tokens (`kind: cli`), then, when `Ostrom-Org` names an
         organization, its live tokens of `ostrom login --admin` (`kind: admin`, with `orgId`, `scopes` and `expiresAt`):
         the caller's own for a member, every member's for an owner or an admin. Such a token is bound to its organization
         and only listed when the request names it; the console asks once per organization. A member of another
@@ -1926,7 +1927,7 @@ paths:
       tags:
       - auth
       summary: Sign a workstation out
-      description: "A browser session only. Revokes one of the caller's CLI tokens, or a token of `ostrom login --admin`
+      description: "A browser session only (with `devices.v1`, also the CLI's own sign-in, see below). Revokes one of the caller's CLI tokens, or a token of `ostrom login --admin`
         of the organization `Ostrom-Org` names: a member their own, an owner or an admin any member's (a leaked token, a
         member who left). Audited in that organization, naming the actor and the token's owner. Another member's for a
         member, a token of another organization, a personal token or a service key: 404. With `devices.v1` (planned):
@@ -23304,7 +23305,8 @@ components:
         installationId:
           type: string
           description: "With `devices.v1`: the CLI's installation, a random lowercase UUID kept in its configuration
-            directory, which survives a sign-out and a change of server (otherwise 400 `invalid_installation`). When the
+            directory, which survives a sign-out and a change of server (otherwise 400 `invalid_installation`). Ignored with
+            `scopes`: a token of `ostrom login --admin` never registers nor joins a device. When the
             sign-in is approved, the server registers the installation as a device of the approving member, keyed by
             member and installation, or signs it in again on the device it already is: repeated sign-ins are
             independent sessions of one device, which keeps its id and its name. A member holds at most 50 devices
