@@ -13115,8 +13115,9 @@ paths:
         agent token holds `artifacts:write` and acts as the member who launched it (their role counts only where
         administrators alone publish; it is never a person): `ostrom <agent>` connects it to the agent as
         `ostrom-artifacts` (`ostrom mcp --server ostrom-artifacts`, a stdio bridge to the launch's local relay, which
-        forwards here with the agent token), and the cloud runner will (planned), when `getArtifactPolicy` answers
-        `canPublish`. Its tools never make an artifact public nor delete one (both need a person,
+        forwards here with the agent token), and the cloud runner does, when `getArtifactPolicy` answers
+        `canPublish` (a stdio server of the `ostrom` binary in the agent's container that posts here with the
+        launch's agent token, under the Kubernetes and the Docker drivers alike). Its tools never make an artifact public nor delete one (both need a person,
         `setArtifactAccess`, `deleteArtifact`)."
       requestBody:
         required: true
