@@ -2134,7 +2134,8 @@ paths:
       description: 'A person who administers the instance, signed in as a person (TeamCode''s `PUT /api/v1/github/app`).
         `version` absent or null creates the App (the private key and the client secret are then required); otherwise
         it must be the stored `version`, else 409 `github_app_conflict`. A null or absent secret keeps the stored one;
-        another `clientId` needs its own `clientSecret`. 400 `invalid_github_app` for an App ID outside
+        another `clientId` needs its own `clientSecret`, another `appId` its own private key (GitHub refuses the former
+        App''s, 422) and keeps no webhook secret. 400 `invalid_github_app` for an App ID outside
         1..999999999999, a client ID that is not a GitHub App''s (`Iv` then 2 to 62 of `[0-9A-Za-z._-]`), a client
         secret outside 20..256 characters or with a space or a control character, or a private key over 16384
         characters or not PEM. The App is checked with GitHub (its JWT signed by the key) before it is stored, which
