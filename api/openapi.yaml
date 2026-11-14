@@ -2140,10 +2140,9 @@ paths:
         characters or not PEM. The App is checked with GitHub (its JWT signed by the key) before it is stored, which
         gives its slug and owner: 422 `github_app_rejected` when GitHub does not accept the key for this App ID, 422
         `github_app_mismatch` when the key or the client ID is another App''s, 503 `unavailable` when GitHub does not
-        answer. Changing the App ID leaves the
-        organizations'' installations of the former App unusable until they install the new one; changing the client
-        ID removes the members'' links of the former client and revokes their tokens. Every replica uses the new App
-        within 60 seconds'
+        answer. Changing the App ID leaves the organizations'' installations of the former App unusable until they
+        install the new one; changing the client ID removes the members'' links of the former client and revokes their
+        tokens. Every replica uses the new App within 60 seconds'
       requestBody:
         required: true
         content:
