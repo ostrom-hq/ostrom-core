@@ -80,6 +80,9 @@ public class OstromClient(
     /** The organization's activity feed. */
     public val activity: ActivityClient = ActivityClient(transport)
 
+    /** The workstations where the CLI is signed in (`devices.v1`). */
+    public val devices: DevicesClient = DevicesClient(transport)
+
     /** The caller's phones registered for push notifications. */
     public val pushDevices: PushDevicesClient = PushDevicesClient(transport)
 

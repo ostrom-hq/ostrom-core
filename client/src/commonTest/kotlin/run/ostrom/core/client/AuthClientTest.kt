@@ -141,10 +141,21 @@ class AuthClientTest {
             assertEquals(400 to "slow_down", slow.status to slow.type)
             assertEquals("ost_1", client.auth.pollDeviceLogin("dc").token)
             client.auth.startDeviceLogin(listOf("policy:write", "harness:write", "gates:policy"))
+            client.auth.startDeviceLogin(
+                installationId = "0f8a3c6e-2b1d-4e5f-9a7b-1c2d3e4f5a6b",
+                deviceName = "Ada's laptop",
+                platform = "macos",
+                osVersion = "26.1",
+            )
         }
         assertJson("{}", server.requests[0].bodyText())
         assertJson("""{"deviceCode":"dc"}""", server.requests[1].bodyText())
-        assertJson("""{"scopes":["policy:write","harness:write","gates:policy"]}""", server.requests.last().bodyText())
+        assertJson("""{"scopes":["policy:write","harness:write","gates:policy"]}""", server.requests[4].bodyText())
+        assertJson(
+            """{"installationId":"0f8a3c6e-2b1d-4e5f-9a7b-1c2d3e4f5a6b","deviceName":"Ada's laptop",""" +
+                """"platform":"macos","osVersion":"26.1"}""",
+            server.requests.last().bodyText(),
+        )
     }
 
     @Test
