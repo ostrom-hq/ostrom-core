@@ -15,7 +15,8 @@ import run.ostrom.core.api.models.EnvironmentVariantsPage
 public class EnvironmentClient internal constructor(private val transport: Transport) {
     /**
      * The names of the caller's environment variables (`GET /api/v1/environment`), never their values: the answer's
-     * values are dropped as soon as it is decoded, so they never reach a screen, a cache or a log.
+     * values are dropped as soon as it is decoded and never returned, so a caller cannot show, cache or log them. The
+     * route has no names-only form, so the values still travel in the answer (`Cache-Control: no-store`).
      */
     public suspend fun names(): EnvironmentNames {
         val values: EnvironmentValues = transport.json(HttpMethod.Get, "/api/v1/environment")
