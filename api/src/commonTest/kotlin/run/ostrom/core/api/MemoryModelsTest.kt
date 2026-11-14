@@ -18,7 +18,8 @@ class MemoryModelsTest {
 
     @Test
     fun aChangeNeverPrintsItsText() {
-        val request = UpdateMemoryRequest(expectedVersion = 3, title = "Deploy key", summary = "s", content = "the vault")
+        val request =
+            UpdateMemoryRequest(expectedVersion = 3, title = "Deploy key", summary = "s", content = "the vault")
         assertEquals("UpdateMemoryRequest(expectedVersion=3, title=[REDACTED])", request.toString())
     }
 }
