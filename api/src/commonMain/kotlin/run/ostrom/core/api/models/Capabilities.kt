@@ -227,6 +227,19 @@ public object ServerFeatures {
     public const val SESSIONS_ACTIVITY: String = "sessions.activity.v1"
 
     /**
+     * Labels on a launch (`createLaunch.labels`), copied onto its sessions (`Session.labels`) and filtered by
+     * `listSessions?label=key=value`, as TeamCode's `team.runs.labels.v1`. A CLI refuses `--label` against a server
+     * without it rather than dropping the labels.
+     */
+    public const val SESSIONS_LABELS: String = "sessions.labels.v1"
+
+    /**
+     * Limits of one launch (`GET`/`PUT /api/v1/launches/{launchId}/limits`): a lifetime budget, a concurrency cap and a
+     * pause that bind the model calls of the launch's agent token, as TeamCode's run policy.
+     */
+    public const val LAUNCHES_LIMITS: String = "launches.limits.v1"
+
+    /**
      * The wide catalogue of service-key scopes: a key may hold `inference:use`, `mcp:use`, `usage:read`, `cloud:read`,
      * `cloud:write`, `cloud:admin`, `artifacts:read`, `artifacts:write` and `team:read` besides the CI's
      * `sessions:write` and `rules:read`, and acts as its creator within them.
@@ -307,7 +320,7 @@ public object ServerFeatures {
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST, PACKAGES, RECEIPTS, REPORTS,
         RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
         RUNNERS_CLOUD_HOOKS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
-        SESSIONS_ACTIVITY, SERVICE_KEY_SCOPES,
+        SESSIONS_ACTIVITY, SESSIONS_LABELS, LAUNCHES_LIMITS, SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
         WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )

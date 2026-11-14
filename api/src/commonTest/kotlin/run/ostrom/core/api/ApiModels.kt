@@ -71,6 +71,7 @@ import run.ostrom.core.api.models.GateRequest
 import run.ostrom.core.api.models.GateResponse
 import run.ostrom.core.api.models.GovernanceConfirmationPending
 import run.ostrom.core.api.models.KeyRotation
+import run.ostrom.core.api.models.LaunchLimits
 import run.ostrom.core.api.models.LinkTodoItemRequest
 import run.ostrom.core.api.models.Me
 import run.ostrom.core.api.models.Member
@@ -307,6 +308,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GateRequest.serializer(),
     GateResponse.serializer(),
     KeyRotation.serializer(),
+    LaunchLimits.serializer(),
     LinkTodoItemRequest.serializer(),
     Me.serializer(),
     Member.serializer(),
