@@ -17600,9 +17600,8 @@ components:
         updatedAt:
           type: string
         origin:
-          x-ostrom-status: planned
           description: "Where it was created, when an agent created it: taken from the agent token, never from the
-            call. Absent for a person's publication. Planned: the server does not send it yet"
+            call. Absent for a person's publication"
           $ref: '#/components/schemas/ArtifactOrigin'
       required:
       - id
@@ -18119,9 +18118,8 @@ components:
           type: boolean
           description: The same commit again within 10 minutes, answered with the version it made
         origin:
-          x-ostrom-status: planned
           description: "Where it was committed, when an agent committed it: taken from the agent token, never from
-            the call. Absent for a person's publication. Planned: the server does not send it yet"
+            the call. Absent for a person's publication"
           $ref: '#/components/schemas/ArtifactOrigin'
       required:
       - number
