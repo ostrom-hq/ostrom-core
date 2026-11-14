@@ -12,6 +12,8 @@ public class TodosClient internal constructor(private val transport: Transport) 
      *
      * @param sessionId The session, or one of its segments (`~r<n>`).
      */
-    public suspend fun session(sessionId: String): SessionTodo =
-        transport.json(HttpMethod.Get, "/api/v1/todos/session", query("sessionId" to sessionId))
+    public suspend fun session(sessionId: String): SessionTodo {
+        require(sessionId.isNotBlank()) { "A session id is required." }
+        return transport.json(HttpMethod.Get, "/api/v1/todos/session", query("sessionId" to sessionId))
+    }
 }

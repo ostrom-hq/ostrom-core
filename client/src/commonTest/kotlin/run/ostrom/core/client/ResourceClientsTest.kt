@@ -252,6 +252,7 @@ class ResourceClientsTest {
             assertEquals("Ship it", client.todos.session("s1~r2").todo?.reference)
             answer = """{"todo":null}"""
             assertNull(client.todos.session("s1").todo)
+            assertFailsWith<IllegalArgumentException> { client.todos.session(" ") }
         }
         assertEquals(
             listOf("GET /api/v1/todos/session?sessionId=s1~r2", "GET /api/v1/todos/session?sessionId=s1"),

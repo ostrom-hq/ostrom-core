@@ -38,7 +38,8 @@ public class WorkflowsClient internal constructor(private val transport: Transpo
         )
 
     /**
-     * A page of the runs of every workflow, newest first (`GET /api/v1/runs`).
+     * A page of the caller's runs of every workflow, newest first (`GET /api/v1/runs`). Every member's runs for an
+     * administrator (`all`) is planned, not served yet.
      *
      * @param status Only the runs in this status; every status when null.
      * @param before The [WorkflowRunPage.next] of the previous page; the first page when null.
