@@ -86,6 +86,9 @@ public class OstromClient(
     /** The caller's phones registered for push notifications. */
     public val pushDevices: PushDevicesClient = PushDevicesClient(transport)
 
+    /** The caller's GitHub link, and the members' for owners and admins (`github.link.v1`). */
+    public val githubLink: GitHubLinkClient = GitHubLinkClient(transport)
+
     /** What the caller is notified of. */
     public val notifications: NotificationsClient = NotificationsClient(transport)
 

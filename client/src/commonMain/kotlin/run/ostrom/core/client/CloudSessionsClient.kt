@@ -6,6 +6,7 @@ import run.ostrom.core.api.models.CloudSession
 import run.ostrom.core.api.models.CloudSessionPage
 import run.ostrom.core.api.models.CreateCloudSessionRequest
 import run.ostrom.core.api.models.SetCloudEffortRequest
+import run.ostrom.core.api.models.SetCloudGitHubAccessRequest
 import run.ostrom.core.api.models.SetCloudModelRequest
 import run.ostrom.core.api.models.SetCloudPermissionBypassRequest
 
@@ -14,6 +15,7 @@ import run.ostrom.core.api.models.SetCloudPermissionBypassRequest
  * [OstromClient.cloudSessions]. Pause, resume and stop are accepted at once and carried out by the server's
  * reconciler: read the session again to follow its status.
  */
+@Suppress("TooManyFunctions") // One function per route of /api/v1/cloud/sessions/{id}.
 public class CloudSessionsClient internal constructor(private val transport: Transport) {
     /**
      * A page of the caller's cloud sessions, newest first (`GET /api/v1/cloud/sessions`).
@@ -62,6 +64,13 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
     /** Changes the agent's effort, while it runs too (`PUT .../effort`, `runners.cloud.effort.v1`). */
     public suspend fun setEffort(id: String, effort: String): CloudSession =
         transport.jsonBody(HttpMethod.Put, "${path(id)}/effort", SetCloudEffortRequest(effort))
+
+    /**
+     * Chooses whose instructions the agent follows with the owner's GitHub token (`PUT .../github`,
+     * `runners.cloud.github.v1`): `owner`, `shared` or `none`. The session's owner only.
+     */
+    public suspend fun setGitHubAccess(id: String, access: String): CloudSession =
+        transport.jsonBody(HttpMethod.Put, "${path(id)}/github", SetCloudGitHubAccessRequest(access))
 
     private fun path(id: String) = "/api/v1/cloud/sessions/${segment(id)}"
 }

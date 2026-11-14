@@ -66,7 +66,12 @@ client.close()
 | `receipts` | `list(before, limit)`, `get(id)`, `keys()` | `GET /api/v1/receipts`, `GET /api/v1/receipts/{id}`, `GET /api/v1/receipts/keys` |
 | `spending` | `report(period)` | `GET /api/v1/spending` |
 | `activity` | `page(before, repo)` | `GET /api/v1/activity` |
+<<<<<<< HEAD
 | `pushDevices` | `register(pushToken, provider, platform, locale, publicKey)`, `list()` (planned), `delete(id)` | `POST /api/v1/push-devices`, `GET /api/v1/push-devices` (planned), `DELETE /api/v1/push-devices/{id}` |
+=======
+| `pushDevices` | `register(pushToken, provider, platform, locale, publicKey)`, `delete(id)` | `POST /api/v1/push-devices`, `DELETE /api/v1/push-devices/{id}` |
+| `githubLink` | `get()`, `unlink()`, `startDevice()`, `pollDevice(id)`, `list()`, `member(memberId)`, `unlinkMember(memberId)` | `GET` and `DELETE /api/v1/github/link`, `POST /api/v1/github/link/device`, `POST /api/v1/github/link/device/{id}`, `GET /api/v1/github/links`, `GET` and `DELETE /api/v1/github/links/{memberId}` (`github.link.v1`; a person only, no call returns a token) |
+>>>>>>> d8a5107 (feat(client): the member's GitHub link, its device flow and a cloud session's GitHub access)
 | `notifications` | `preferences()`, `save(preferences)`, `settings()`, `setSetting(channel, kind, enabled)`, `sendTestPush()` | `GET` and `PUT /api/v1/me/notifications`, `GET` and `PUT /api/v1/notifications/settings`, `POST /api/v1/notifications/push/test` |
 | `waits` | `list(status, mine, before, limit, resolver)`, `get(id)`, `answer(id, action, values)` | `GET /api/v1/waits`, `GET /api/v1/waits/{id}`, `POST /api/v1/waits/{id}/answer` |
 | `artifacts` | `list(before, limit)`, `get(id)`, `versions(id)`, `ticket(id, version)` | `GET /api/v1/artifacts`, `GET /api/v1/artifacts/{id}`, `GET /api/v1/artifacts/{id}/versions`, `POST /api/v1/artifacts/{id}/tickets` |
@@ -77,6 +82,7 @@ client.close()
 | `environment` | `names()` (names and unavailable names only, values dropped), `listMine()`, `createMine(variant)`, `updateMine(id, update)`, `deleteMine(id)` | `GET /api/v1/environment`, `GET` and `POST /api/v1/me/environment/variants`, `PATCH` and `DELETE /api/v1/me/environment/variants/{id}` |
 | `myMcpServers` | `list()`, `create(server)`, `save(name, server)`, `delete(name)` | `GET` and `POST /api/v1/me/mcp/servers`, `PUT` and `DELETE /api/v1/me/mcp/servers/{name}` |
 | `cloudSessions` | `list(status, before, limit)`, `get(id)`, `create(request)`, `pause(id)`, `resume(id)`, `stop(id)` | `GET` and `POST /api/v1/cloud/sessions`, `GET` and `DELETE /api/v1/cloud/sessions/{id}`, `POST /api/v1/cloud/sessions/{id}/pause`, `POST /api/v1/cloud/sessions/{id}/resume` |
+| `cloudSessions` (GitHub access) | `setGitHubAccess(id, access)` | `PUT /api/v1/cloud/sessions/{id}/github` (`runners.cloud.github.v1`, `owner`, `shared` or `none`) |
 | `cloudSessions` (conversation, planned) | `setPermissionBypass(id, enabled)`, `setModel(id, model)`, `setEffort(id, effort)` | `PUT /api/v1/cloud/sessions/{id}/permission-bypass`, `.../model`, `.../effort` |
 | `cloudTranscripts` (planned, `runners.cloud.conversation.v1`) | `events(id, after, before, limit, feed)`, `followEvents(id, after)`, `agents(id)` | `GET /api/v1/cloud/sessions/{id}/events`, `.../events/stream`, `.../agents` |
 | `cloudMessages` (planned) | `send(id, request, idempotencyKey)`, `inputs(id, before, limit)`, `input(id, input)`, `interrupt(id)`, `answerPermission(id, request, idempotencyKey)`, `stopTask(id, taskId)` | `/api/v1/cloud/sessions/{id}/messages`, `.../messages/{input}`, `.../interrupt`, `.../permissions`, `.../tasks/stop` |
