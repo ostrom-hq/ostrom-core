@@ -207,6 +207,15 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_PROFILES: String = "runners.cloud.profiles.v1"
 
     /**
+     * Cloud sessions are kept and cleaned up as TeamCode's: a paused session expires after the instance's
+     * `pausedRetentionDays` (the session's `expiresAt`, `terminatedReason` `expired`), its workspace deletion is proven
+     * down to the provider volume (`workspaceDeletion`), a profile whose storage class keeps volumes is refused
+     * (`storage_class_retains_volumes`, `storage_class_missing`), and a garbage collection deletes what no session
+     * accounts for (the cluster's `orphanedVolumes`, `lastGarbageCollectionAt`). Only with cloud runners on Kubernetes.
+     */
+    public const val RUNNERS_CLOUD_RETENTION: String = "runners.cloud.retention.v1"
+
+    /**
      * Team hooks: immutable versions published by an administrator or a CI key (`hooks:publish`), pinned only by an
      * administrator in the console, members' decisions and the audience, and the delivery routes (`hooks:read`);
      * each member approves each version on their computer.
@@ -319,8 +328,9 @@ public object ServerFeatures {
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST, PACKAGES, RECEIPTS, REPORTS,
         RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
-        RUNNERS_CLOUD_HOOKS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
-        SESSIONS_ACTIVITY, SESSIONS_LABELS, LAUNCHES_LIMITS, SERVICE_KEY_SCOPES,
+        RUNNERS_CLOUD_HOOKS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SKILLS,
+        RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS, LAUNCHES_LIMITS,
+        SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
         WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )

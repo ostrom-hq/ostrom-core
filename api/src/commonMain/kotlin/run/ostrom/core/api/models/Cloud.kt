@@ -21,6 +21,9 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  * @property failure Why it failed or paused on its own.
  * @property environment Its preparation recipe, fixed at creation.
  * @property githubAccess `owner`, `shared` or `none` (`runners.cloud.github.v1`).
+ * @property expiresAt When a paused session is terminated with its workspace (`runners.cloud.retention.v1`).
+ * @property terminatedReason `deleted` or `expired`, on a terminated session.
+ * @property workspaceDeletion The proof its workspace is gone, on Kubernetes.
  */
 @Serializable
 public data class CloudSession(
@@ -41,6 +44,9 @@ public data class CloudSession(
     val readyAt: String? = null,
     val lastActivityAt: String? = null,
     val pausedAt: String? = null,
+    val expiresAt: String? = null,
+    val terminatedReason: String? = null,
+    val workspaceDeletion: CloudWorkspaceDeletion? = null,
     val runnerId: String? = null,
     val environment: CloudEnvironment? = null,
     val profile: CloudSessionProfile? = null,
@@ -53,10 +59,27 @@ public data class CloudSession(
 )
 
 /**
+ * The proof that a session's workspace is gone, provider volume included (`runners.cloud.retention.v1`).
+ *
+ * @property state `none`, `pending`, `proven` or `blocked`.
+ * @property volumeHandle The provider's volume handle, kept as evidence.
+ * @property problem Why the deletion is blocked (`volume_retained`, `volume_deletion_stalled`).
+ */
+@Serializable
+public data class CloudWorkspaceDeletion(
+    val state: String,
+    val claimDeletedAt: String? = null,
+    val volumeDeletedAt: String? = null,
+    val volumeHandle: String? = null,
+    val problem: CloudSessionFailure? = null,
+)
+
+/**
  * Why a cloud session failed or paused on its own.
  *
  * @property code `start_failed`, `execution_lost`, `idle_timeout`, `max_duration`, `hours_exhausted`,
- *   `preparation_failed`, `cluster_unavailable` or `namespace_not_allowed`.
+ *   `preparation_failed`, `cluster_unavailable`, `namespace_not_allowed`, `storage_class_missing` or
+ *   `storage_class_retains_volumes`.
  * @property retryable Whether trying again may succeed (a clone or a fetch), for `preparation_failed`: resuming tries
  *   again; otherwise the recipe or the variables must be fixed.
  */
