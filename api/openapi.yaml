@@ -15030,7 +15030,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listHooks
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The organization's team hooks (administrators)"
@@ -15057,7 +15057,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listHookVersions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "A hook's versions with their definitions, newest first (administrators)"
@@ -15088,7 +15088,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: publishHookVersion
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Publish an immutable hook version (CI or an administrator); never pins"
@@ -15136,7 +15136,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: readHookVersion
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Read a version's definition and files, pinned or not, verified against its digest"
@@ -15176,7 +15176,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: pinHook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Pin the delivered version (update or rollback); administrators only"
@@ -15213,7 +15213,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unpinHook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Unpin: stop delivery"
@@ -15247,7 +15247,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: setHookAudience
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Deliver to all members, or only to members set to yes"
@@ -15287,7 +15287,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listHookAssignments
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The members' explicit decisions on a hook"
@@ -15321,7 +15321,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: setHookAssignment
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Set a member's decision: allow (yes) or deny (no)"
@@ -15364,7 +15364,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: clearHookAssignment
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "Clear a member's decision"
@@ -15400,7 +15400,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getHookDelivery
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The hooks the caller receives: pinned versions their decisions or the audience allow"
@@ -15427,7 +15427,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMemberHookDelivery
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The hooks a member receives (administrators)"
@@ -15461,7 +15461,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: downloadHook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - delivery
       summary: "The definition and files of a hook version the caller receives"
@@ -18030,7 +18030,6 @@ components:
       required:
       - id
       - name
-      - pinnedVersion
       - allMembers
       - createdAt
       - updatedAt
