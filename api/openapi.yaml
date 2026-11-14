@@ -12048,6 +12048,28 @@ paths:
                   type: string
                 environment:
                   $ref: '#/components/schemas/CloudEnvironment'
+                profileId:
+                  type: string
+                  format: uuid
+                  x-ostrom-status: planned
+                  description: "The organization's cloud profile the session runs on (`runners.cloud.profiles.v1`,
+                    `GET /api/v1/cloud/profiles`): its cluster, namespace, image, pull secrets, resources and workspace,
+                    at its current version, which the session keeps (TeamCode's `profileId`). 404
+                    `cloud_profile_not_found` when none of the organization's profiles has it, 403 `profile_unassigned`
+                    when it is not assigned to the session's owner (the member the session is created for); members
+                    with the organization role owner or admin use every profile. Absent: the one profile that owner
+                    may use, 422 `profile_required` when they may use none or several. The create also checks the
+                    profile's cluster: 409 `cluster_unavailable` when it is gone or its credentials must be entered
+                    again, 409 `namespace_not_allowed` when it no longer allows the profile's namespace. The reconciler
+                    checks both again at each later start, where they become the session's `failure.code` (a first
+                    start fails, a resume is blocked). Ignored by a server whose sessions run on Docker or on
+                    registered runners. Planned: the server does not read it yet"
+                image:
+                  type: string
+                  x-ostrom-status: planned
+                  description: "The session image instead of the profile's: the profile's image, or one matching
+                    its `allowedImageOverrides` (`*` matches any run of characters), 403 `image_not_allowed`
+                    otherwise. Absent: the profile's image. Planned: the server does not read it yet"
               required:
               - agent
       responses:
@@ -12068,6 +12090,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}:
     parameters:
@@ -19152,7 +19176,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
@@ -19401,6 +19425,14 @@ components:
           $ref: '#/components/schemas/InstanceSecretState'
         serviceAccountToken:
           $ref: '#/components/schemas/InstanceSecretState'
+        inCluster:
+          type: boolean
+          x-ostrom-status: planned
+          description: "Whether the cluster is the server's own, reached with the server pod's mounted service account
+            (`runners.cloud.profiles.v1`): its token and CA are read from the pod's files at each use, as the kubelet
+            rotates them, and nothing is stored. Only the cluster imported once from the former
+            `OSTROM_RUNNERS_KUBERNETES_*` variables is; saving a CA and a token turns it into a stored cluster.
+            TeamCode has no such mode (it never read the cluster from variables). Absent means false. Planned"
         createdAt:
           type: string
           format: date-time
@@ -19817,6 +19849,13 @@ components:
           type: string
         environment:
           $ref: '#/components/schemas/CloudEnvironment'
+        profile:
+          $ref: '#/components/schemas/CloudSessionProfile'
+        image:
+          type: string
+          x-ostrom-status: planned
+          description: "The session image its containers run, the profile's or the override asked at creation
+            (`runners.cloud.profiles.v1`). Absent from a session without a profile. Planned"
         githubAccess:
           type: string
           enum:
@@ -19841,13 +19880,29 @@ components:
       - status
       - createdAt
       x-ostrom-kotlin: pending
+    CloudSessionProfile:
+      type: object
+      x-ostrom-status: planned
+      description: "The cloud profile a session runs on, at the version it was created with (`runners.cloud.profiles.v1`,
+        TeamCode's `profile {id, version}`). Absent from a session without a profile. Planned"
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+      required:
+      - id
+      - version
+      x-ostrom-kotlin: pending
     CloudSessionFailure:
       type: object
       description: Why a cloud session failed or paused on its own
       properties:
         code:
           type: string
-          description: start_failed, execution_lost, idle_timeout, max_duration, hours_exhausted or preparation_failed
+          description: start_failed, execution_lost, idle_timeout, max_duration, hours_exhausted, preparation_failed,
+            cluster_unavailable or namespace_not_allowed (the profile's cluster or namespace at a start, planned)
         message:
           type: string
         retryable:
