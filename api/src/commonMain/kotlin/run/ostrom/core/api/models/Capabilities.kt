@@ -212,6 +212,13 @@ public object ServerFeatures {
     public const val SESSIONS: String = "sessions.v1"
 
     /**
+     * Whether a session's agent works or waits for a person, reported by its hooks (`POST
+     * /api/v1/sessions/{id}/activity`) and shown on the sessions list (`Session.activity`), as TeamCode's
+     * `team.runs.activity.v1`. A launcher reports nothing to a server without it.
+     */
+    public const val SESSIONS_ACTIVITY: String = "sessions.activity.v1"
+
+    /**
      * The wide catalogue of service-key scopes: a key may hold `inference:use`, `mcp:use`, `usage:read`, `cloud:read`,
      * `cloud:write`, `cloud:admin`, `artifacts:read`, `artifacts:write` and `team:read` besides the CI's
      * `sessions:write` and `rules:read`, and acts as its creator within them.
@@ -292,7 +299,7 @@ public object ServerFeatures {
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST, PACKAGES, RECEIPTS, REPORTS,
         RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
         RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
-        SERVICE_KEY_SCOPES,
+        SESSIONS_ACTIVITY, SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
         WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )

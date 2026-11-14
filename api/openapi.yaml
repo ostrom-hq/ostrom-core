@@ -3866,6 +3866,53 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/sessions/{id}/activity:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: reportSessionActivity
+      x-ostrom-status: planned
+      tags:
+      - sessions
+      summary: "Whether the agent works or waits for a person (`sessions.activity.v1`), reported by its hooks"
+      description: "TeamCode's `POST /api/v1/runs/{id}/activity` on Ostrom's session segment: the launch of
+        `ostrom <agent>` reports from the agent's `Stop`, `Notification`, `UserPromptSubmit` and `PostToolUse` hooks,
+        so the sessions list tells a session that needs a person from one that is busy (`Session.activity`). Callers:
+        the session's person or an agent token of its launch, as `sessionAlive`: another person, or another launch's
+        agent token, gets 403; an unknown segment 404. Reports are applied one at a time per segment. A report observed before the stored
+        one changes nothing (`superseded: true`). A repeated state keeps its time (`since`). 409 `session_ended` once
+        the segment ended (a lost one too: its launcher reports to the segment it reopens). 400
+        `invalid_session_activity` for another state or an `observedAt` that is not a date-time. Not audited, like a
+        sign of life. Planned: the server does not serve it yet"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionActivityRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionActivity'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/sessions/{id}/workflow-receipt:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -25029,11 +25076,75 @@ components:
         lost:
           type: boolean
           description: True when closed for lack of a sign of life; its launcher reopens a segment
+        activity:
+          type: string
+          enum:
+          - working
+          - waiting_for_human
+          x-ostrom-status: planned
+          description: "Whether the agent works or waits for a person (`sessions.activity.v1`), as its hooks last
+            reported it (`reportSessionActivity`), as TeamCode's run `activity`. Only while the segment is open: after
+            its end (`ended`, `lost` included) it would be a guess, so it is absent. Absent too before the first report,
+            and once a sign of life that ends a silence of the launcher (60 s without one) cleared a `working` reported
+            before the silence; `waiting_for_human` is kept over a silence, and a segment reopened after it starts with
+            it, since a person still has to answer. Planned: the server does not send it yet"
+        activitySince:
+          type: string
+          format: date-time
+          x-ostrom-status: planned
+          description: "When `activity` began, by the server's clock: a repeated state keeps its time. Present with
+            `activity` only. Planned: the server does not send it yet"
       required:
       - id
       - agent
       - dev
       - startedAt
+    SessionActivityRequest:
+      type: object
+      description: "What an agent's hook reports (`reportSessionActivity`): only the state, never the prompt, the
+        message, the tool or a path."
+      properties:
+        state:
+          type: string
+          enum:
+          - working
+          - waiting_for_human
+          description: "`waiting_for_human`: the turn ended and the agent waits for the next message, or it asks a
+            permission or a question. `working`: a prompt was sent, a tool ran, or the turn ended with background
+            work in flight. Another value is 400 `invalid_session_activity`"
+        observedAt:
+          type: string
+          format: date-time
+          description: "When the hook fired, by the reporting computer's clock, kept across retries. A report that
+            lands after one observed later changes nothing and answers `superseded: true`. A value more than 5 minutes
+            ahead of the server counts as the server's time plus 5 minutes; absent, the stored one is kept; a value
+            that is not a date-time is 400 `invalid_session_activity`"
+      required:
+      - state
+    SessionActivity:
+      type: object
+      description: The segment's activity once a report is applied (`reportSessionActivity`).
+      properties:
+        id:
+          type: string
+          description: The segment.
+        state:
+          type: string
+          enum:
+          - working
+          - waiting_for_human
+          description: The stored state; absent when a silence cleared it and the report was superseded.
+        since:
+          type: string
+          format: date-time
+          description: When the stored state began, by the server's clock; absent with `state`.
+        superseded:
+          type: boolean
+          description: "True when the server already held a report observed later: nothing was written, and `state`
+            is the stored one"
+      required:
+      - id
+      - superseded
     SessionGateAnswer:
       type: object
       description: The answer to a gate a session asked or joined, as the session's thread shows it.
