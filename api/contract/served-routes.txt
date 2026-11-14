@@ -27,6 +27,7 @@ DELETE /api/v1/mcp/servers/{}
 DELETE /api/v1/mcp/servers/{}/assignments/{}
 DELETE /api/v1/mcp/servers/{}/policies/{}
 DELETE /api/v1/me/environment/variants/{}
+DELETE /api/v1/me/mcp/servers/{}
 DELETE /api/v1/me/skills/{}
 DELETE /api/v1/me/skills/{}/pin
 DELETE /api/v1/orgs/{}
@@ -135,6 +136,7 @@ GET /api/v1/mcp/servers/{}/policies
 GET /api/v1/mcp/settings
 GET /api/v1/mcp/usage
 GET /api/v1/me/environment/variants
+GET /api/v1/me/mcp/servers
 GET /api/v1/me/notifications
 GET /api/v1/me/organizations
 GET /api/v1/me/skills
@@ -285,8 +287,10 @@ POST /api/v1/launches/{}/hooks-missing
 POST /api/v1/mcp/hosted/restart
 POST /api/v1/mcp/servers
 POST /api/v1/mcp/servers/{}/policies
+POST /api/v1/mcp/servers/{}/promote
 POST /api/v1/mcp/{}
 POST /api/v1/me/environment/variants
+POST /api/v1/me/mcp/servers
 POST /api/v1/me/skills/{}/restore
 POST /api/v1/me/skills/{}/versions
 POST /api/v1/notifications
@@ -371,6 +375,7 @@ PUT /api/v1/inference/settings
 PUT /api/v1/mcp/servers/{}
 PUT /api/v1/mcp/servers/{}/assignments/{}
 PUT /api/v1/mcp/settings
+PUT /api/v1/me/mcp/servers/{}
 PUT /api/v1/me/notifications
 PUT /api/v1/me/skills/{}/pin
 PUT /api/v1/policy/models

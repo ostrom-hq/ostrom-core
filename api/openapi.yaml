@@ -8771,7 +8771,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: promoteMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: "Makes a member's personal MCP server a team server (`mcp.personal.v1`): its owner is cleared and keeps
@@ -9037,7 +9037,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMyMcpServers
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: "The caller's personal MCP servers (`mcp.personal.v1`), with the personal secret names they use. A
@@ -9068,7 +9068,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createMyMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: "Declares a personal MCP server (TeamCode #269), relayed to the caller alone: it is assigned to them in
@@ -9115,7 +9115,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: saveMyMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: "Changes one of the caller's personal MCP servers, with the rules of `createMyMcpServer`; another
@@ -9156,7 +9156,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteMyMcpServer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: "Deletes one of the caller's personal MCP servers with its assignment; another member's, or a team
