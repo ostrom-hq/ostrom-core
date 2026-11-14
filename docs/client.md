@@ -66,7 +66,7 @@ client.close()
 | `receipts` | `list(before, limit)`, `get(id)`, `keys()` | `GET /api/v1/receipts`, `GET /api/v1/receipts/{id}`, `GET /api/v1/receipts/keys` |
 | `spending` | `report(period)` | `GET /api/v1/spending` |
 | `activity` | `page(before, repo)` | `GET /api/v1/activity` |
-| `pushDevices` | `register(pushToken, provider, platform, locale, publicKey)`, `list()` (planned), `delete(id)` | `POST /api/v1/push-devices`, `GET /api/v1/push-devices` (planned), `DELETE /api/v1/push-devices/{id}` |
+| `pushDevices` | `register(pushToken, provider, platform, locale, publicKey)`, `list()`, `delete(id)` | `POST /api/v1/push-devices`, `GET /api/v1/push-devices`, `DELETE /api/v1/push-devices/{id}` |
 | `githubLink` | `get()`, `unlink()`, `startDevice()`, `pollDevice(id)`, `list()`, `member(memberId)`, `unlinkMember(memberId)` | `GET` and `DELETE /api/v1/github/link`, `POST /api/v1/github/link/device`, `POST /api/v1/github/link/device/{id}`, `GET /api/v1/github/links`, `GET` and `DELETE /api/v1/github/links/{memberId}` (`github.link.v1`; a person only, no call returns a token) |
 | `notifications` | `preferences()`, `save(preferences)`, `settings()`, `setSetting(channel, kind, enabled)`, `sendTestPush()` | `GET` and `PUT /api/v1/me/notifications`, `GET` and `PUT /api/v1/notifications/settings`, `POST /api/v1/notifications/push/test` |
 | `waits` | `list(status, mine, before, limit, resolver)`, `get(id)`, `answer(id, action, values)` | `GET /api/v1/waits`, `GET /api/v1/waits/{id}`, `POST /api/v1/waits/{id}/answer` |
