@@ -30,6 +30,7 @@ DELETE /api/v1/me/environment/variants/{}
 DELETE /api/v1/me/mcp/servers/{}
 DELETE /api/v1/me/skills/{}
 DELETE /api/v1/me/skills/{}/pin
+DELETE /api/v1/memory/{}
 DELETE /api/v1/orgs/{}
 DELETE /api/v1/orgs/{}/invitations/{}
 DELETE /api/v1/orgs/{}/members/{}
@@ -144,6 +145,10 @@ GET /api/v1/me/skills/{}/versions
 GET /api/v1/members/{}/hook-delivery
 GET /api/v1/members/{}/skill-delivery
 GET /api/v1/members/{}/skill-installations
+GET /api/v1/memory/index
+GET /api/v1/memory/proposals
+GET /api/v1/memory/search
+GET /api/v1/memory/{}
 GET /api/v1/notifications
 GET /api/v1/orgs
 GET /api/v1/orgs/{}
@@ -209,6 +214,7 @@ PATCH /api/v1/artifacts/{}
 PATCH /api/v1/environment/variants/{}
 PATCH /api/v1/groups/{}
 PATCH /api/v1/me/environment/variants/{}
+PATCH /api/v1/memory/{}
 PATCH /api/v1/orgs/{}
 PATCH /api/v1/orgs/{}/members/{}
 PATCH /api/v1/rules/{}
@@ -297,6 +303,9 @@ POST /api/v1/me/environment/variants
 POST /api/v1/me/mcp/servers
 POST /api/v1/me/skills/{}/restore
 POST /api/v1/me/skills/{}/versions
+POST /api/v1/memory
+POST /api/v1/memory/proposals/{}/accept
+POST /api/v1/memory/proposals/{}/reject
 POST /api/v1/notifications
 POST /api/v1/orgs
 POST /api/v1/orgs/{}/billing/cancel

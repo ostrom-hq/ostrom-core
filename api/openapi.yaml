@@ -1690,7 +1690,8 @@ paths:
                     `cloud:read` and `cloud:write` (the creator's own cloud sessions; write includes read),
                     `artifacts:read` and `artifacts:write` (the artifacts the creator can read; write includes read),
                     `skills:read` and `hooks:read` (the skills and team hooks delivered to the creator, `skills.v1` and
-                    `hooks.v1`).
+                    `hooks.v1`), `memory:use` (the organization's memory and the creator's personal entries,
+                    `memory.v1`).
                     Reserved to an owner or an admin, and only while its creator still is one, checked at every call:
                     `team:read` (a read-only view of the organization: usage, spending, budgets, accounts, MCP usage and
                     the member directory, no session, transcript or artifact of a member) and `cloud:admin` (cloud:write
@@ -8028,7 +8029,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: createMemory
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Remember something"
@@ -8083,7 +8084,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMemory
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "The memory index"
@@ -8141,7 +8142,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: searchMemory
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Search the memory"
@@ -8193,7 +8194,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMemoryProposals
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Team entries proposed by agents, waiting for an answer"
@@ -8227,7 +8228,7 @@ paths:
         type: string
     post:
       operationId: acceptMemoryProposal
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Accept a proposal"
@@ -8265,7 +8266,7 @@ paths:
         type: string
     post:
       operationId: rejectMemoryProposal
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Reject a proposal"
@@ -8485,7 +8486,7 @@ paths:
         type: string
     get:
       operationId: readMemory
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Read an entry"
@@ -8512,7 +8513,7 @@ paths:
           $ref: '#/components/responses/Error'
     patch:
       operationId: updateMemory
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Change an entry"
@@ -8551,7 +8552,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: forgetMemory
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Forget an entry"
