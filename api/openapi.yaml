@@ -9264,7 +9264,7 @@ paths:
       description: "TeamCode's dashboard \"Hosted commands\": one item per hosted process (a `shared` server once, a
         `perMember` server once per member it is assigned to), read live from the host's `/v1/status`. When the host
         does not answer, `hostReachable` is false and each state is the one the minute sweep last recorded. 409
-        `mcp_host_disabled` without an MCP host; 409 `mcp_hosted_too_many` past 10,000 hosted assignments"
+        `conflict` without an MCP host; 409 `mcp_hosted_too_many` past 10,000 hosted assignments"
       responses:
         '200':
           description: OK
@@ -9293,8 +9293,8 @@ paths:
       summary: Restart a hosted stdio process (scope mcp:admin)
       description: "TeamCode's \"Restart\": the host stops the process and lifts its backoff (`/v1/stop`); the next
         operation starts it again. Journaled before the stop as `mcp.stdio.restarted`. 404 when the server is not a
-        stdio server assigned to that member (or, for a `shared` server, to anyone); 409 `mcp_host_disabled` without
-        an MCP host; 502 `mcp_host_unavailable` when the host does not answer"
+        stdio server assigned to that member (or, for a `shared` server, to anyone); 409 without
+        an MCP host (`conflict`); 503 `mcp_host_unavailable` when the host does not answer"
       requestBody:
         required: true
         content:
@@ -9319,7 +9319,7 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
-        '502':
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/secrets:
     parameters:
