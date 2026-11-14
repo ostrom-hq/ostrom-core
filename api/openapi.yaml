@@ -19424,6 +19424,14 @@ components:
           $ref: '#/components/schemas/InstanceSecretState'
         serviceAccountToken:
           $ref: '#/components/schemas/InstanceSecretState'
+        inCluster:
+          type: boolean
+          x-ostrom-status: planned
+          description: "Whether the cluster is the server's own, reached with the server pod's mounted service account
+            (`runners.cloud.profiles.v1`): its token and CA are read from the pod's files at each use, as the kubelet
+            rotates them, and nothing is stored. Only the cluster imported once from the former
+            `OSTROM_RUNNERS_KUBERNETES_*` variables is; saving a CA and a token turns it into a stored cluster.
+            TeamCode has no such mode (it never read the cluster from variables). Absent means false. Planned"
         createdAt:
           type: string
           format: date-time
