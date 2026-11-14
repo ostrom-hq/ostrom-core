@@ -3,6 +3,7 @@ package run.ostrom.core.client
 
 import io.ktor.http.HttpMethod
 import run.ostrom.core.api.models.PushDevice
+import run.ostrom.core.api.models.PushDeviceList
 import run.ostrom.core.api.models.RegisterPushDeviceRequest
 
 /** The caller's phones registered for push notifications. Reached through [OstromClient.pushDevices]. */
@@ -23,6 +24,12 @@ public class PushDevicesClient internal constructor(private val transport: Trans
         "/api/v1/push-devices",
         RegisterPushDeviceRequest(pushToken, provider, platform, locale, publicKey),
     )
+
+    /**
+     * The caller's phones (`GET /api/v1/push-devices`), the most recently seen first; each [PushDevice.id] goes to
+     * [delete].
+     */
+    public suspend fun list(): PushDeviceList = transport.json(HttpMethod.Get, "/api/v1/push-devices")
 
     /** Stops notifying a phone (`DELETE /api/v1/push-devices/{id}`), before a sign-out for example. */
     public suspend fun delete(id: String) {

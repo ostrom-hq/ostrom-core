@@ -1921,6 +1921,37 @@ paths:
   /api/v1/push-devices:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listPushDevices
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: The caller's phones registered for push notifications
+      description: >-
+        Scope `notifications:write`, as the other phone routes: the phone app's token or a browser session, never a
+        personal or CLI token. The caller's own phones in the organization `Ostrom-Org` names, or their only one, the
+        most recently seen first (at most ten: see `registerPushDevice`). Another member's phones are never listed. A
+        push token and a public key are never answered back. Each phone's `id` is what `deletePushDevice` takes, so a
+        member can see the phones that are notified and stop one they no longer use. TeamCode's Devices page only says
+        whether a device has push on (`push: true`); Ostrom registers a phone as its own resource, so this list is
+        that flag's counterpart.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushDeviceList'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
     post:
       operationId: registerPushDevice
       x-ostrom-status: served
@@ -26754,6 +26785,16 @@ components:
       - provider
       - platform
       - createdAt
+    PushDeviceList:
+      type: object
+      description: The caller's phones registered for push notifications, the most recently seen first
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PushDevice'
+      required:
+      - items
     PushRelayRegisterRequest:
       type: object
       description: 'Ostrom Push relay (`push.v1`), `POST /v1/instances`: an instance introduces its Ed25519 public key.
