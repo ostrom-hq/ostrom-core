@@ -8470,7 +8470,8 @@ paths:
         x-ostrom-status: planned
         description: "The members' personal MCP servers (`mcp.personal.v1`), by owner, with `owner` and their definition
           (name, URL, transport, the secret names they use: none of these is secret) for review; never a credential.
-          An admin with `mcp:read`, in owner order, at most 500. Without it, the list is the team's servers only"
+          An admin with `mcp:read`; the personal servers only, in owner order, the first 500, without
+          `next`. Without it, the list is the team's servers only"
         schema:
           type: boolean
       responses:
@@ -8615,8 +8616,8 @@ paths:
       tags:
       - mcp
       summary: "Makes a member's personal MCP server a team server (`mcp.personal.v1`): its owner is cleared and keeps
-        their assignment, everyone else reaches it only by assignment. A team server is returned as it is; refused with
-        409 when it would exceed the team's 64. An admin from the console (scope `mcp:admin`, step-up). Journaled `mcp.server.promoted`"
+        their assignment, everyone else reaches it only by assignment. A team server is returned as it is; 409
+        `mcp_server_limit` when it would exceed the team's 64. An admin from the console (scope `mcp:admin`, step-up). Journaled `mcp.server.promoted`"
       parameters:
       - name: name
         in: path
@@ -8636,7 +8637,7 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
-            again, then send it again), hosted_not_allowed, or forbidden (the key is `error.type`)
+            again, then send it again) or forbidden (the key is `error.type`)
           content:
             application/json:
               schema:
@@ -8912,10 +8913,11 @@ paths:
       tags:
       - mcp
       summary: "Declares a personal MCP server (TeamCode #269), relayed to the caller alone: it is assigned to them in
-        the same transaction, with every tool, and nobody else reaches it (an administrator cannot assign it: 409
-        `mcp_server_personal`). The body is a team server's. `secretNames` name the caller's own personal secrets. Its
+        the same transaction, with every tool, and nobody else reaches it (an administrator cannot assign or save it: 409
+        `mcp_server_personal`). The body is a team server's; `owner` is set by the server, a value sent is ignored.
+        Reads take `mcp:read`, writes `mcp:admin` on a token (the same scopes as the team's routes). `secretNames` name the caller's own personal secrets. Its
         name shares the organization's namespace: a team server or another member's personal one of the same name is
-        409. A remote HTTPS server is allowed under the same upstream address checks as a team server. A hosted stdio
+        409 (names are not private within an organization, as for team servers). A remote HTTPS server is allowed under the same upstream address checks as a team server. A hosted stdio
         command runs package code on the server's MCP host: refused with 403 `hosted_not_allowed` unless an
         administrator turned `memberHostedMcp` on (`putMcpSettings`, off by default); then the launcher and exact-version
         rules are a team command's, and its process is always the member's own (`per-member`). At most 20 per member
@@ -21651,7 +21653,7 @@ components:
         owner:
           type: string
           readOnly: true
-          description: The member a personal server belongs to (`mcp.personal.v1`); absent for a team server
+          description: The member id a personal server belongs to (`mcp.personal.v1`); absent for a team server
       required:
       - name
       - transport
@@ -21790,8 +21792,10 @@ components:
           description: 'Tools are `mcp__<agentPrefix>-<server>__<tool>`; 1 to 32 characters of a-z 0-9 _ -, default `ostrom`'
         memberHostedMcp:
           type: boolean
+          default: false
           description: Whether members may declare a hosted stdio MCP server of their own (`mcp.personal.v1`); false by
-            default. Absent in a change keeps the stored value. Turning it off keeps the servers already declared
+            default. Absent in a change keeps the stored value. Turning it off refuses new ones and keeps the
+            servers already declared, which go on running
       required:
       - agentPrefix
       x-ostrom-kotlin: pending
