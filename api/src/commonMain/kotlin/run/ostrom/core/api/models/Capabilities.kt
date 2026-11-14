@@ -203,6 +203,15 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_EFFORT: String = "runners.cloud.effort.v1"
 
     /**
+     * A cloud session changes owner (TeamCode's cloud.transfer.v1): `GET /api/v1/cloud/transfer-recipients`,
+     * `POST /api/v1/cloud/sessions/{id}/transfer` (with an `Idempotency-Key`) and the `/api/v1/cloud/transfers` routes.
+     * The session pauses first, the owner changes at the paused boundary, the workspace is marked untrusted
+     * (`untrustedWorkspace` of the runner's environment), and executions, inference and hours that follow belong to the
+     * recipient. Only with cloud runners.
+     */
+    public const val RUNNERS_CLOUD_TRANSFER: String = "runners.cloud.transfer.v1"
+
+    /**
      * Cloud sessions use their owner's GitHub link: the runner's `POST /api/v1/cloud/runner/github`, the session's
      * `githubAccess` and `PUT /api/v1/cloud/sessions/{id}/github`. Only with cloud runners and [GITHUB_LINK].
      */
@@ -420,7 +429,8 @@ public object ServerFeatures {
         RUNNERS_CLOUD_EFFORT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_FILES, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
         RUNNERS_CLOUD_MODEL, RUNNERS_CLOUD_PERMISSIONS, RUNNERS_CLOUD_PERMISSIONS_BYPASS, RUNNERS_CLOUD_PROFILES,
         RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS, RUNNERS_CLOUD_TRANSCRIPT_FEEDS,
-        RUNNERS_CLOUD_TRANSCRIPT_LIVE, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS,
+        RUNNERS_CLOUD_TRANSCRIPT_LIVE, RUNNERS_CLOUD_TRANSFER,
+        RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS,
         LAUNCHES_LIMITS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE,
         WAITS_TIMED, WAITS_SECRETS, WEBHOOKS, WORKFLOWS, WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )

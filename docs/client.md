@@ -82,6 +82,7 @@ client.close()
 | `cloudSessions` (conversation, planned) | `setPermissionBypass(id, enabled)`, `setModel(id, model)`, `setEffort(id, effort)` | `PUT /api/v1/cloud/sessions/{id}/permission-bypass`, `.../model`, `.../effort` |
 | `cloudTranscripts` (planned, `runners.cloud.conversation.v1`) | `events(id, after, before, limit, feed)`, `followEvents(id, after)`, `agents(id)` | `GET /api/v1/cloud/sessions/{id}/events`, `.../events/stream`, `.../agents` |
 | `cloudMessages` (planned) | `send(id, request, idempotencyKey)`, `inputs(id, before, limit)`, `input(id, input)`, `interrupt(id)`, `answerPermission(id, request, idempotencyKey)`, `stopTask(id, taskId)` | `/api/v1/cloud/sessions/{id}/messages`, `.../messages/{input}`, `.../interrupt`, `.../permissions`, `.../tasks/stop` |
+| `cloudTransfers` (planned) | `recipients()`, `request(sessionId, request, idempotencyKey)`, `list(direction, states, session, before, limit)`, `get(id)`, `accept(id, resume)`, `decline(id)`, `cancel(id)` | `/api/v1/cloud/transfer-recipients`, `.../sessions/{id}/transfer`, `/api/v1/cloud/transfers`, `.../transfers/{id}` and `/accept`, `/decline`, `/cancel` |
 | `cloudFiles` (planned, `runners.cloud.files.v1`) | `upload(id, name, bytes, idempotencyKey)`, `policy()` | `POST /api/v1/cloud/sessions/{id}/files`, `GET /api/v1/cloud/files/policy` |
 | `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
 

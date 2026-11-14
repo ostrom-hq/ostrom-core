@@ -128,6 +128,9 @@ public class OstromClient(
     /** Files sent with messages to conversation sessions (`runners.cloud.files.v1`). */
     public val cloudFiles: CloudFilesClient = CloudFilesClient(transport)
 
+    /** Ownership transfers of cloud sessions (`runners.cloud.transfer.v1`). */
+    public val cloudTransfers: CloudTransfersClient = CloudTransfersClient(transport)
+
     /** The organization's live events. */
     public val events: EventsClient = EventsClient(transport)
 

@@ -1,4 +1,13 @@
 {
+  "AcceptCloudTransferRequest": {
+    "properties": {
+      "resume": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "Account": {
     "properties": {
       "id": {
@@ -1958,6 +1967,11 @@
         "required": false,
         "nullable": false
       },
+      "transferId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
       "permissionBypass": {
         "type": "boolean",
         "required": false,
@@ -2159,6 +2173,137 @@
         "type": {
           "array": {
             "ref": "CloudSubagent"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudTransfer": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "fromMemberId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "toMemberId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "state": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "initiatedBy": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "decidedBy": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "resume": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "decidedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "completedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "atEpoch": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "failure": {
+        "type": {
+          "ref": "CloudSessionFailure"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudTransferPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "CloudTransfer"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudTransferRecipient": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "login": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "administrator": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudTransferRecipients": {
+    "properties": {
+      "recipients": {
+        "type": {
+          "array": {
+            "ref": "CloudTransferRecipient"
           }
         },
         "required": true,
@@ -2575,6 +2720,20 @@
       },
       "image": {
         "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CreateCloudTransferRequest": {
+    "properties": {
+      "toMemberId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "resume": {
+        "type": "boolean",
         "required": false,
         "nullable": false
       }

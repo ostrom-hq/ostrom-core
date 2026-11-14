@@ -13,7 +13,8 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  *
  * @property agent `claude`, `codex`, `opencode`, `gemini` or `shell`.
  * @property repo The legacy single repository cloned at the first start (`https://github.com/<owner>/<name>`).
- * @property status `creating`, `running`, `pausing`, `paused`, `resuming`, `terminated` or `failed`.
+ * @property status `creating`, `running`, `pausing`, `paused`, `resuming`, `transferring`, `terminated` or `failed`
+ *   (`transferring`: the owner changes at a paused boundary, `runners.cloud.transfer.v1`).
  * @property desiredStatus What the owner asked for: `running`, `paused` or `terminated`.
  * @property phase An open label of the current step; while preparing, `configuring_git`, `cloning_repositories`,
  *   `fetching_repositories` or `running_setup`.
@@ -26,6 +27,8 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  * @property workspaceDeletion The proof its workspace is gone, on Kubernetes.
  * @property mode `terminal` (null: a PTY) or `conversation` (`runners.cloud.conversation.v1`), see [CloudSessionModes].
  * @property effort The agent's effort (reasoning level), if chosen (`runners.cloud.effort.v1`).
+ * @property transferId The accepted transfer the session is moving toward, from its acceptance until the owner
+ *   changed or the transfer ended (`runners.cloud.transfer.v1`).
  * @property permissionBypass The owner's standing approval of tool uses is on (`runners.cloud.permissions.bypass.v1`).
  * @property waiting Why the agent waits for a person (`runners.cloud.permissions.v1`); null when it does not.
  */
@@ -59,6 +62,7 @@ public data class CloudSession(
     val mode: String? = null,
     val effort: String? = null,
     val permissionBypass: Boolean? = null,
+    val transferId: String? = null,
     val waiting: CloudSessionWaiting? = null,
     val runId: String? = null,
     val automationId: String? = null,
