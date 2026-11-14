@@ -20094,8 +20094,7 @@ components:
         secrets:
           type: object
           additionalProperties:
-            type: string
-            nullable: true
+            type: [string, 'null']
             maxLength: 16384
           description: A value replaces the secret, `null` removes it, an absent or empty one keeps it
       required:
