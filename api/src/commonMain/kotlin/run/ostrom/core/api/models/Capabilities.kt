@@ -158,6 +158,15 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD: String = "runners.cloud.v1"
 
     /**
+     * A cloud session's agent token is bound to its cloud session: the todo (`/api/v1/todos/...`), the waits and their
+     * MCP server, the wake, the team memory's proposals and a workflow step's delivery act on the cloud session the
+     * token's launch runs in, whatever session the call names, and need none. The runner connects the agent to the
+     * waits, the todo and the workflow delivery only when the server announces it, so that a server without it is
+     * never called with a token it cannot place. Only with cloud runners.
+     */
+    public const val RUNNERS_CLOUD_AGENT: String = "runners.cloud.agent.v1"
+
+    /**
      * Cloud sessions use their owner's GitHub link: the runner's `POST /api/v1/cloud/runner/github`, the session's
      * `githubAccess` and `PUT /api/v1/cloud/sessions/{id}/github`. Only with cloud runners and [GITHUB_LINK].
      */
@@ -296,8 +305,8 @@ public object ServerFeatures {
         ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST, PACKAGES, RECEIPTS, REPORTS,
-        RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
-        RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
+        RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,
+        RUNNERS_CLOUD_HOOKS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
         SESSIONS_ACTIVITY, SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
         WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
