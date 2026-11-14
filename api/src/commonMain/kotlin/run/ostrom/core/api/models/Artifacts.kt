@@ -28,7 +28,7 @@ public data class ArtifactPage(
  * @property publicUrl Its public link, for `link` access.
  * @property createdAt ISO creation time.
  * @property updatedAt ISO time of the last change.
- * @property origin Where an agent created it, from its agent token; absent for a person's publication (planned).
+ * @property origin Where an agent created it, from its agent token; absent for a person's publication.
  */
 @Serializable
 public data class Artifact(
@@ -80,7 +80,7 @@ public data class ArtifactVersionPage(
  * @property digest The SHA-256 of its canonical manifest, when known.
  * @property baseVersion The version its publisher started from, when known.
  * @property replayed True when a commit was the same as one made within 10 minutes, answered with that version.
- * @property origin Where an agent committed it, from its agent token; absent for a person's publication (planned).
+ * @property origin Where an agent committed it, from its agent token; absent for a person's publication.
  */
 @Serializable
 public data class ArtifactVersion(
