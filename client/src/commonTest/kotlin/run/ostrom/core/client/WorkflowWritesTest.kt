@@ -56,12 +56,15 @@ class WorkflowWritesTest {
             assertEquals(workflowModel, created.value)
             val saved = assertIs<GovernedWrite.Applied<Workflow>>(client.workflows.save("wf/1", workflowModel, 3))
             assertEquals(WorkflowStatus.ACCEPTED, saved.value.status)
-            client.workflows.save("wf/1", workflowModel)
+            client.workflows.save("wf/1", workflowModel, null)
+            client.workflows.save("wf/1", workflowModel.copy(version = 7))
+            assertFailsWith<IllegalArgumentException> { client.workflows.save("other", workflowModel) }
             assertEquals(GovernedWrite.Applied(Unit), client.workflows.delete("wf/1"))
         }
         assertEquals(
             listOf(
                 "POST /api/v1/workflows",
+                "PUT /api/v1/workflows/wf%2F1",
                 "PUT /api/v1/workflows/wf%2F1",
                 "PUT /api/v1/workflows/wf%2F1",
                 "DELETE /api/v1/workflows/wf%2F1",
@@ -71,7 +74,9 @@ class WorkflowWritesTest {
         assertJson(workflowJson, server.requests[0].bodyText())
         assertJson("""{"workflow":$workflowJson,"expectedVersion":3}""", server.requests[1].bodyText())
         assertJson("""{"workflow":$workflowJson}""", server.requests[2].bodyText())
-        assertEquals("", server.requests[3].bodyText())
+        val versioned = workflowJson.dropLast(1) + ""","version":7}"""
+        assertJson("""{"workflow":$versioned,"expectedVersion":7}""", server.requests[3].bodyText())
+        assertEquals("", server.requests[4].bodyText())
     }
 
     @Test

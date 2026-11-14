@@ -83,15 +83,22 @@ public class WorkflowsClient internal constructor(private val transport: Transpo
      * `workflow_editors_only` (403), `not_found` (404), `workflow_conflict` (409, [expectedVersion] is stale),
      * `workflow_name_taken` (409) or `confirmation_limit` (429).
      *
-     * @param expectedVersion The [Workflow.version] the editor read; no check when null.
+     * @param expectedVersion The version the editor read, by default the [workflow]'s own: a newer stored one is
+     *   refused (`workflow_conflict`); null for no check.
      * @return [GovernedWrite.Applied] with the stored workflow (`200`), or [GovernedWrite.Held] (`202`).
      */
-    public suspend fun save(id: String, workflow: Workflow, expectedVersion: Int? = null): GovernedWrite<Workflow> =
-        transport.write(
+    public suspend fun save(
+        id: String,
+        workflow: Workflow,
+        expectedVersion: Int? = workflow.version,
+    ): GovernedWrite<Workflow> {
+        require(workflow.id == id) { "The workflow's id is not the path's." }
+        return transport.write(
             HttpMethod.Put,
             "/api/v1/workflows/${segment(id)}",
             SaveWorkflowRequest(workflow, expectedVersion),
         ).governed()
+    }
 
     /**
      * Deletes a workflow (`DELETE /api/v1/workflows/{id}`).
