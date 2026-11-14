@@ -113,6 +113,15 @@ public class OstromClient(
     /** The caller's cloud agent sessions. */
     public val cloudSessions: CloudSessionsClient = CloudSessionsClient(transport)
 
+    /** The transcript of conversation sessions (`runners.cloud.conversation.v1`). */
+    public val cloudTranscripts: CloudTranscriptsClient = CloudTranscriptsClient(transport)
+
+    /** Messages, interrupts, permission answers and task stops to conversation sessions. */
+    public val cloudMessages: CloudMessagesClient = CloudMessagesClient(transport)
+
+    /** Files sent with messages to conversation sessions (`runners.cloud.files.v1`). */
+    public val cloudFiles: CloudFilesClient = CloudFilesClient(transport)
+
     /** The organization's live events. */
     public val events: EventsClient = EventsClient(transport)
 

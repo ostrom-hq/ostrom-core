@@ -5,6 +5,9 @@ import io.ktor.http.HttpMethod
 import run.ostrom.core.api.models.CloudSession
 import run.ostrom.core.api.models.CloudSessionPage
 import run.ostrom.core.api.models.CreateCloudSessionRequest
+import run.ostrom.core.api.models.SetCloudEffortRequest
+import run.ostrom.core.api.models.SetCloudModelRequest
+import run.ostrom.core.api.models.SetCloudPermissionBypassRequest
 
 /**
  * The caller's cloud agent sessions (`runners.cloud.v1`, `/api/v1/cloud/sessions`). Reached through
@@ -47,6 +50,18 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
 
     /** Terminates a session; its workspace is deleted (`DELETE /api/v1/cloud/sessions/{id}`). */
     public suspend fun stop(id: String): CloudSession = transport.json(HttpMethod.Delete, path(id))
+
+    /** Turns the owner's standing approval of tool uses on or off (`PUT .../permission-bypass`). */
+    public suspend fun setPermissionBypass(id: String, enabled: Boolean): CloudSession =
+        transport.jsonBody(HttpMethod.Put, "${path(id)}/permission-bypass", SetCloudPermissionBypassRequest(enabled))
+
+    /** Changes the agent's model, while it runs too (`PUT .../model`, `runners.cloud.model.v1`). */
+    public suspend fun setModel(id: String, model: String): CloudSession =
+        transport.jsonBody(HttpMethod.Put, "${path(id)}/model", SetCloudModelRequest(model))
+
+    /** Changes the agent's effort, while it runs too (`PUT .../effort`, `runners.cloud.effort.v1`). */
+    public suspend fun setEffort(id: String, effort: String): CloudSession =
+        transport.jsonBody(HttpMethod.Put, "${path(id)}/effort", SetCloudEffortRequest(effort))
 
     private fun path(id: String) = "/api/v1/cloud/sessions/${segment(id)}"
 }
