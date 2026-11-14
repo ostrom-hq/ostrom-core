@@ -112,6 +112,15 @@ others, and an event without data is skipped. `types` keeps only those types (at
 `?types=a,b`). A `gap` frame (`{"oldestSeq":…}`) calls `onGap` before the events that follow: events after the
 cursor were purged, so the caller reloads what it shows. An event whose data is not JSON throws `malformed_event`.
 
+## Idempotency
+
+`Idempotency` (in `api`) holds what every keyed creation shares: the `Idempotency-Key` request header, the
+`Idempotency-Replayed` response header, the `idempotency_conflict` error key, the key's format (1 to 128 characters of
+`A-Za-z0-9._:-`, `Idempotency.isValid`) and `Idempotency.newKey()`. A caller makes one key per press of Start and reuses
+it for every retry of that press, so an answer that was lost never leads to a second run: `workflows.start(id, inputs,
+idempotencyKey)` sends it, and the server returns the first run (`200` and `Idempotency-Replayed: true`). A malformed
+key is refused before any request.
+
 ## The CLI
 
 The CLI keeps its own untyped `api-client` (`ostrom-cli/api-client`, `OstromApi`) for now; moving it to this client is

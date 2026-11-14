@@ -2,12 +2,14 @@
 package run.ostrom.core.client
 
 import io.ktor.client.call.body
+import io.ktor.client.request.header
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import run.ostrom.core.api.Idempotency
 import run.ostrom.core.api.models.GovernanceConfirmationPending
 import run.ostrom.core.api.models.SaveWorkflowRequest
 import run.ostrom.core.api.models.StartWorkflowRunRequest
@@ -125,10 +127,25 @@ public class WorkflowsClient internal constructor(private val transport: Transpo
      * workflow is not accepted: `workflow_not_accepted` in the message) or `run_limit` (409, twenty unfinished runs).
      *
      * @param inputs The workflow's inputs, by [run.ostrom.core.api.models.WorkflowInput.id].
+     * @param idempotencyKey One [Idempotency.newKey] per press, reused for each retry of it: a start repeated with the
+     *   same key (an answer was lost) returns the first run (`200`, [Idempotency.REPLAYED_HEADER]) instead of starting
+     *   a second one. It must satisfy [Idempotency.isValid], else `invalid_request` (400); checked before any request.
      * @return The run, `queued` or already moving.
      */
-    public suspend fun start(id: String, inputs: Map<String, String> = emptyMap()): WorkflowRun =
-        transport.jsonBody(HttpMethod.Post, "/api/v1/workflows/${segment(id)}/runs", StartWorkflowRunRequest(inputs))
+    public suspend fun start(
+        id: String,
+        inputs: Map<String, String> = emptyMap(),
+        idempotencyKey: String? = null,
+    ): WorkflowRun {
+        require(idempotencyKey == null || Idempotency.isValid(idempotencyKey)) {
+            "An idempotency key is 1 to ${Idempotency.MAX_LENGTH} characters of A-Za-z0-9._:-."
+        }
+        return transport.send(HttpMethod.Post, "/api/v1/workflows/${segment(id)}/runs") {
+            contentType(ContentType.Application.Json)
+            if (idempotencyKey != null) header(Idempotency.KEY_HEADER, idempotencyKey)
+            setBody(StartWorkflowRunRequest(inputs))
+        }.body()
+    }
 
     /**
      * Cancels a run (`POST /api/v1/runs/{id}/cancel`).
