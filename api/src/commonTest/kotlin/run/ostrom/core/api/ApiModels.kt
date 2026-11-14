@@ -97,6 +97,7 @@ import run.ostrom.core.api.models.NotificationPreferences
 import run.ostrom.core.api.models.GitHubDeviceLink
 import run.ostrom.core.api.models.GitHubDeviceLinkPoll
 import run.ostrom.core.api.models.GitHubLink
+import run.ostrom.core.api.models.SlackLink
 import run.ostrom.core.api.models.Organization
 import run.ostrom.core.api.models.PackageEnvelope
 import run.ostrom.core.api.models.PackageFile
@@ -364,6 +365,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GitHubDeviceLink.serializer(),
     GitHubDeviceLinkPoll.serializer(),
     GitHubLink.serializer(),
+    SlackLink.serializer(),
     Organization.serializer(),
     PackageEnvelope.serializer(),
     PackageFile.serializer(),

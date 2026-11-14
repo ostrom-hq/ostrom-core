@@ -316,7 +316,11 @@ public object ServerFeatures {
      */
     public const val SHARING_HANDOVER: String = "sharing.handover.v1"
 
-    /** The Slack integration: only with Slack configured. */
+    /**
+     * The Slack integration is in the server (planned): a member's Slack link (`/api/v1/slack/link`, whose
+     * `configured` says whether an administrator set the `slack` settings section's bot token and signing secret),
+     * the `slack` notification channel, and yes requests with buttons answered at `/webhooks/slack`.
+     */
     public const val SLACK: String = "slack.v1"
 
     /**
