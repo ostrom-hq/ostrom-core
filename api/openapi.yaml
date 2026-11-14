@@ -9175,14 +9175,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/McpServer'
-                required:
-                - items
+                $ref: '#/components/schemas/McpServerList'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -12118,16 +12111,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CloudSession'
-                  next:
-                    type: string
-                required:
-                - items
+                $ref: '#/components/schemas/CloudSessionPage'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -12149,49 +12133,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                agent:
-                  $ref: '#/components/schemas/CloudAgentKind'
-                model:
-                  type: string
-                repo:
-                  type: string
-                  description: https://github.com/<owner>/<name>, cloned through the organization's GitHub App
-                ref:
-                  type: string
-                  description: Branch, tag or commit; the default branch when absent
-                prompt:
-                  type: string
-                  description: The agent's first message, up to 20,000 characters; an interactive agent when absent
-                name:
-                  type: string
-                environment:
-                  $ref: '#/components/schemas/CloudEnvironment'
-                profileId:
-                  type: string
-                  format: uuid
-                  x-ostrom-status: planned
-                  description: "The organization's cloud profile the session runs on (`runners.cloud.profiles.v1`,
-                    `GET /api/v1/cloud/profiles`): its cluster, namespace, image, pull secrets, resources and workspace,
-                    at its current version, which the session keeps (TeamCode's `profileId`). 404
-                    `cloud_profile_not_found` when none of the organization's profiles has it, 403 `profile_unassigned`
-                    when it is not assigned to the session's owner (the member the session is created for); members
-                    with the organization role owner or admin use every profile. Absent: the one profile that owner
-                    may use, 422 `profile_required` when they may use none or several. The create also checks the
-                    profile's cluster: 409 `cluster_unavailable` when it is gone or its credentials must be entered
-                    again, 409 `namespace_not_allowed` when it no longer allows the profile's namespace. The reconciler
-                    checks both again at each later start, where they become the session's `failure.code` (a first
-                    start fails, a resume is blocked). Ignored by a server whose sessions run on Docker or on
-                    registered runners. Planned: the server does not read it yet"
-                image:
-                  type: string
-                  x-ostrom-status: planned
-                  description: "The session image instead of the profile's: the profile's image, or one matching
-                    its `allowedImageOverrides` (`*` matches any run of characters), 403 `image_not_allowed`
-                    otherwise. Absent: the profile's image. Planned: the server does not read it yet"
-              required:
-              - agent
+              $ref: '#/components/schemas/CreateCloudSessionRequest'
       responses:
         '201':
           description: OK
@@ -19944,7 +19886,6 @@ components:
       - opencode
       - gemini
       - shell
-      x-ostrom-kotlin: pending
     CloudEnvironment:
       type: object
       description: "The preparation recipe of a cloud session (`runners.cloud.environment.v1`): what the runner does in the
@@ -19980,7 +19921,6 @@ components:
           type: string
           description: The domain of the Git e-mail address for an owner without a GitHub link
             (`users.noreply.ostrom.invalid` when absent); a linked owner commits as `<id>+<login>@users.noreply.github.com`
-      x-ostrom-kotlin: pending
     CloudRepository:
       type: object
       description: A repository the runner clones into the workspace
@@ -20001,7 +19941,6 @@ components:
           description: A local branch created at `ref` after cloning, for example one branch per task
       required:
       - url
-      x-ostrom-kotlin: pending
     CloudSetup:
       type: object
       description: Commands run with `/bin/sh -c` in the working directory, in the agent's container and under its user,
@@ -20021,7 +19960,6 @@ components:
           description: Run on every execution (first start and every resume), in order, after `create`
           items:
             type: string
-      x-ostrom-kotlin: pending
     CloudSession:
       type: object
       description: 'A cloud agent session: one pod (or local container) per execution, with a workspace kept across pauses'
@@ -20101,7 +20039,6 @@ components:
       - agent
       - status
       - createdAt
-      x-ostrom-kotlin: pending
     CloudSessionProfile:
       type: object
       x-ostrom-status: planned
@@ -20116,7 +20053,63 @@ components:
       required:
       - id
       - version
-      x-ostrom-kotlin: pending
+    CloudSessionPage:
+      type: object
+      description: "A page of the caller's cloud sessions, newest first; `next` is the cursor of the following page"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudSession'
+        next:
+          type: string
+      required:
+      - items
+    CreateCloudSessionRequest:
+      type: object
+      description: The cloud session to start (`createCloudSession`)
+      properties:
+        agent:
+          $ref: '#/components/schemas/CloudAgentKind'
+        model:
+          type: string
+        repo:
+          type: string
+          description: https://github.com/<owner>/<name>, cloned through the organization's GitHub App
+        ref:
+          type: string
+          description: Branch, tag or commit; the default branch when absent
+        prompt:
+          type: string
+          description: The agent's first message, up to 20,000 characters; an interactive agent when absent
+        name:
+          type: string
+        environment:
+          $ref: '#/components/schemas/CloudEnvironment'
+        profileId:
+          type: string
+          format: uuid
+          x-ostrom-status: planned
+          description: "The organization's cloud profile the session runs on (`runners.cloud.profiles.v1`,
+            `GET /api/v1/cloud/profiles`): its cluster, namespace, image, pull secrets, resources and workspace,
+            at its current version, which the session keeps (TeamCode's `profileId`). 404
+            `cloud_profile_not_found` when none of the organization's profiles has it, 403 `profile_unassigned`
+            when it is not assigned to the session's owner (the member the session is created for); members
+            with the organization role owner or admin use every profile. Absent: the one profile that owner
+            may use, 422 `profile_required` when they may use none or several. The create also checks the
+            profile's cluster: 409 `cluster_unavailable` when it is gone or its credentials must be entered
+            again, 409 `namespace_not_allowed` when it no longer allows the profile's namespace. The reconciler
+            checks both again at each later start, where they become the session's `failure.code` (a first
+            start fails, a resume is blocked). Ignored by a server whose sessions run on Docker or on
+            registered runners. Planned: the server does not read it yet"
+        image:
+          type: string
+          x-ostrom-status: planned
+          description: "The session image instead of the profile's: the profile's image, or one matching
+            its `allowedImageOverrides` (`*` matches any run of characters), 403 `image_not_allowed`
+            otherwise. Absent: the profile's image. Planned: the server does not read it yet"
+      required:
+      - agent
     CloudSessionFailure:
       type: object
       description: Why a cloud session failed or paused on its own
@@ -20133,7 +20126,6 @@ components:
       required:
       - code
       - message
-      x-ostrom-kotlin: pending
     CloudSessionLimits:
       type: object
       description: The bounds a cloud session runs under, from its organization's plan
@@ -20150,7 +20142,6 @@ components:
       - idleTimeoutMinutes
       - maxRunMinutes
       - restrictedEgress
-      x-ostrom-kotlin: pending
     CompiledHook:
       type: object
       description: 'A hook rule: when the agent event fires on a matching tool call, run the check, ask the gate or send the
@@ -20703,7 +20694,6 @@ components:
       required:
       - variables
       - unavailable
-      x-ostrom-kotlin: pending
     EnvironmentVariant:
       type: object
       description: "An environment variant (`environment.v1`): a named value for one environment variable, never with its
@@ -20747,7 +20737,6 @@ components:
       - version
       - createdAt
       - updatedAt
-      x-ostrom-kotlin: pending
     EnvironmentVariantCreate:
       type: object
       description: Creates an environment variant; the variable and the binding never change afterwards
@@ -20771,7 +20760,6 @@ components:
       required:
       - variable
       - name
-      x-ostrom-kotlin: pending
     EnvironmentVariantUpdate:
       type: object
       description: Renames a variant or replaces its shared value
@@ -20789,7 +20777,6 @@ components:
             absent keeps the stored one
       required:
       - expectedVersion
-      x-ostrom-kotlin: pending
     EnvironmentVariantsPage:
       type: object
       description: Environment variants, by variable then name; always one page (at most 500)
@@ -20800,7 +20787,6 @@ components:
             $ref: '#/components/schemas/EnvironmentVariant'
       required:
       - items
-      x-ostrom-kotlin: pending
     Evidence:
       type: object
       description: A line of evidence shown with an approval
@@ -22424,7 +22410,6 @@ components:
       - transport
       - enabled
       - scope
-      x-ostrom-kotlin: pending
     McpHostedProcesses:
       type: object
       description: The org's hosted stdio processes (`GET /api/v1/mcp/hosted`)
@@ -22564,6 +22549,16 @@ components:
       required:
       - agentPrefix
       x-ostrom-kotlin: pending
+    McpServerList:
+      type: object
+      description: "The caller's personal MCP servers (`listMyMcpServers`)"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpServer'
+      required:
+      - items
     McpStdioSpec:
       type: object
       description: A server run by the MCP host from a pinned package
@@ -22590,7 +22585,6 @@ components:
       required:
       - launcher
       - packageName
-      x-ostrom-kotlin: pending
     Me:
       type: object
       description: The caller
