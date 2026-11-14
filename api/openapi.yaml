@@ -7298,7 +7298,9 @@ paths:
         runs (403 otherwise). Holds the call up to `waitMillis` (0 to 30 000, 25 000 by default)
         and answers as soon as a wait of the session is answered: each answer is handed over once (`messages`, oldest
         first, each starting with `[Ostrom wait answered]`). `open` says a wait asked by the session is still open, so
-        the hook keeps holding the agent; a session with no open wait answers at once."
+        the hook keeps holding the agent; a session with no open wait answers at once. With `waitMillis` 0 it never
+        holds: a cloud session's runner asks so once an execution has started, and starts the agent with the answers
+        that arrived while the session was paused as its first message."
       parameters:
       - name: session
         in: query
@@ -7370,6 +7372,13 @@ paths:
       tags:
       - waits
       summary: Answer a wait; first answer wins (409 wait_closed)
+      description: "The answer stays on the wait and is handed once to the agent of its session, if any (`POST
+        /api/v1/waits/wake`). Planned: a wait of a cloud session that is paused, not ended, resumes it, on its owner's
+        behalf and within the organization's limits (audited `cloud.session.woken`), and its next execution starts the
+        agent with the answer as its first message; a running one hands it over at the agent's next stop. A session
+        that cannot resume (its organization at its cap or out of hours, its owner gone) stays paused with the answer
+        kept on the wait, and an ended one takes nothing. A wait for a time or an event that resolves by itself
+        (`time_reached`, `event_received`, `timed_out`) wakes its session the same way."
       parameters:
       - name: id
         in: path
@@ -7471,7 +7480,8 @@ paths:
               $ref: '#/components/schemas/WaitEventRequest'
       responses:
         '202':
-          description: The wait is resolved and its session will be woken
+          description: "The wait is resolved and its session will be woken (planned: a paused cloud session
+            resumes, as with `answerWait`)"
           content:
             application/json:
               schema:
