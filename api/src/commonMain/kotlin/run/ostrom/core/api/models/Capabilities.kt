@@ -192,6 +192,13 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_HOOKS: String = "runners.cloud.hooks.v1"
 
     /**
+     * A cloud session runs on an organization's cloud profile (planned): `profileId` and `image` on
+     * `POST /api/v1/cloud/sessions`, `profile` and `image` on the session, and the profile's cluster and namespace
+     * checked again at each start. Only with cloud runners and [CLOUD_ADMIN].
+     */
+    public const val RUNNERS_CLOUD_PROFILES: String = "runners.cloud.profiles.v1"
+
+    /**
      * Team hooks: immutable versions published by an administrator or a CI key (`hooks:publish`), pinned only by an
      * administrator in the console, members' decisions and the audience, and the delivery routes (`hooks:read`);
      * each member approves each version on their computer.
@@ -284,7 +291,7 @@ public object ServerFeatures {
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST, PACKAGES, RECEIPTS, REPORTS,
         RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
-        RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
+        RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
         SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
         WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
