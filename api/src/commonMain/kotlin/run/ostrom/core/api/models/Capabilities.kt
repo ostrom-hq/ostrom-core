@@ -310,12 +310,32 @@ public object ServerFeatures {
     /** The enterprise license (ee build only). */
     public const val LICENSE: String = "license.v1"
 
+    /**
+     * TeamCode's Forecasts page: each shared account's provider windows, their last hour of readings, the learned rate
+     * and when the window reaches the account's ceiling (`GET /api/v1/forecasts`, owners and admins).
+     */
+    public const val CAPACITY_FORECASTS: String = "capacity.forecasts.v1"
+
+    /**
+     * TeamCode's capacity controller: the organization's settings (`/api/v1/policy/pacing`), admissions spaced before
+     * every usable account runs out, and the advice delivered to agents (`/api/v1/directives/...`, the `guidance`
+     * scope).
+     */
+    public const val CAPACITY_PACING: String = "capacity.pacing.v1"
+
+    /**
+     * TeamCode's automatic shared pool size: the organization's daily budget sized from its shared accounts
+     * (`GET /api/v1/pools/size`).
+     */
+    public const val CAPACITY_POOL_SIZE: String = "capacity.poolsize.v1"
+
     /** The instance's cloud runtime and clusters, and the organizations' cloud profiles (TeamCode's cloud admin). */
     public const val CLOUD_ADMIN: String = "cloud.admin.v1"
 
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
-        ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
+        ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CAPACITY_FORECASTS, CAPACITY_PACING,
+        CAPACITY_POOL_SIZE, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST, PACKAGES, RECEIPTS, REPORTS,
         RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB,

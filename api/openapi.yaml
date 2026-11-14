@@ -970,8 +970,9 @@ paths:
         never launches. The person and the organization come from the credential. 403 when the organization's policy
         refuses the agent or the model, or the credential may not launch; 404 when it is no member of an organization
         the request can act in. The agent token acts for the person who launched it on its launch's sessions, the
-        workflow step it plays (`workflow:session`), the memory (`memory:use`) and the artifacts
-        (`artifacts:write`: publish and share as that person, never change an access nor delete)."
+        workflow step it plays (`workflow:session`), the memory (`memory:use`), the capacity advice of its own
+        sessions (`guidance`) and the artifacts (`artifacts:write`: publish and share as that person, never change an
+        access nor delete)."
       tags:
       - auth
       summary: 'Start an agent launch: returns an agent token scoped to the sessions of this launch, expiring at its end.
@@ -1775,10 +1776,10 @@ paths:
                     `artifacts:read` and `artifacts:write` (the artifacts the creator can read; write includes read),
                     `skills:read` and `hooks:read` (the skills and team hooks delivered to the creator, `skills.v1` and
                     `hooks.v1`), `memory:use` (the organization's memory and the creator's personal entries,
-                    `memory.v1`).
+                    `memory.v1`), `guidance` (the capacity advice for the creator's sessions, `capacity.pacing.v1`).
                     Reserved to an owner or an admin, and only while its creator still is one, checked at every call:
-                    `team:read` (a read-only view of the organization: usage, spending, budgets, accounts, MCP usage and
-                    the member directory, no session, transcript or artifact of a member) and `cloud:admin` (cloud:write
+                    `team:read` (a read-only view of the organization: usage, spending, budgets, accounts and the automatic pool
+                    size, MCP usage and the member directory, no session, transcript or artifact of a member) and `cloud:admin` (cloud:write
                     with an administrator's rights over every cloud session of the organization), `skills:publish` (publish skill
                     versions, `publishSkillVersion`), `skills:pin` (with `skills:publish`: pin at publication or with
                     `pinSkill`), `skills:assign` (with `skills:publish`: deliver to all members at publication) and
@@ -14310,6 +14311,314 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/forecasts:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getForecasts
+      x-ostrom-status: planned
+      tags:
+      - sharing
+      summary: Quota forecasts of one shared account (`capacity.forecasts.v1`)
+      description: "TeamCode's Forecasts page. For each current provider window of the account: its latest reading, the
+        readings of the last hour cut into segments (a segment never joins two readings across a reset, a drop in
+        utilization or more than five minutes without a reading), the rate learned from the latest segment (at least
+        three readings over at least a minute, never across a drop) and when, at that rate, the window reaches the
+        account's `utilizationCeiling` (`pressureThreshold`). An unknown state is said, never drawn as 0 %: `unknown`
+        (no reset known, or no rate learned yet), `stale` (the reading is older than five minutes or its reset has
+        passed), `exhausted` (at or above the threshold), `idle` (a rate of zero), `reset_first` or `exhausts_first`.
+        Without `account`, the first account by id. Owners and admins of the organization only, signed in (a browser
+        session or the unlocked app); a member, a key, an agent or a device credential: 403. An account of another
+        organization: 404; `account` given twice: 400 `invalid_account`. Bounded: at most 64 accounts listed, 128
+        windows and 8,192 readings, `truncated` true past a bound. Never names a credential or a provider identity
+        beyond the account's label and e-mail. Answered with `Cache-Control: no-store`. The console reads it again
+        every 15 seconds while the page is open (TeamCode's live updates)"
+      parameters:
+      - name: account
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastSnapshot'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/pools/size:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getPoolSize
+      x-ostrom-status: planned
+      tags:
+      - sharing
+      summary: The organization's automatic daily budget sized from its shared accounts (`capacity.poolsize.v1`)
+      description: "TeamCode's automatic shared pool size (ADR 0002 step 2), computed on demand from the same data as
+        the job that stores it every ten minutes. Each shared window of each account learns its full capacity in
+        API-equivalent (USD millionths at the gateway's prices): a sample pairs two readings of the same window period
+        at least five points and one hour apart and divides the cost the gateway settled on the account between them by
+        the rise; with at least three samples over seven days, the median sizes the budget and the upper quartile is
+        the reported capacity. An account's daily figure is the smaller of its five-hour term (five-hour capacity ×
+        its ceiling × 24 / 5) and its weekly term (weekly points left before its ceiling × weekly capacity / days left
+        before the reset). Accounts that cannot serve count for nothing (`unavailable`); accounts without a fresh
+        reading or an estimate are left out (`no_fresh_observation`, `no_estimate`). With `autoPoolSize` on
+        (`PUT /api/v1/policy/pacing`), the stored value, moving at most 20 % an hour and younger than an hour, replaces
+        the organization's daily budget (`manualDailyMicros`); otherwise, or without an estimate (`reason`), the typed
+        budget applies. Owners and admins (a person signed in, or a key holding `team:read`); anyone else: 403"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolSize'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/policy/pacing:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getPacingSettings
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: The capacity controller's settings (`capacity.pacing.v1`)
+      description: "Any member reads them (`inference:use` on a key). Off by default: `observationOnly` false (the
+        controller spaces admissions and sends its advice to agents) and `autoPoolSize` false (the typed daily budget
+        applies)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PacingSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setPacingSettings
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: Change the capacity controller's settings (owners and admins, a person signed in)
+      description: "A field omitted keeps its stored value. Recorded in the organization's audit log with the names of
+        the fields changed. A key, an agent or a device credential: 403"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PacingSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PacingSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/directives/preview:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: previewDirective
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: The controller's current advice for the caller, also in observation mode (`capacity.pacing.v1`)
+      description: "Informational: the settings and the advice the controller would give the caller now, whether or not
+        it is delivered. Any member (`inference:use` or `guidance` on a key)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PacingPreview'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/directives/current:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getCurrentDirective
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: The caller's current capacity advice, member-wide (`capacity.pacing.v1`)
+      description: "TeamCode's agent guidance: `directive` is absent in observation mode, before the controller's first
+        pass, and once the advice expires (3 minutes after it was made; the controller renews it every minute). The
+        most constrained target the member's recent calls used governs. A person, an agent token, or a key holding
+        `guidance`"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: getSessionDirective
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: The current capacity advice of one of the caller's agent sessions (`capacity.pacing.v1`)
+      description: "As `getCurrentDirective`, scoped to the session named (its own calls' targets); an agent token only
+        names its own session (403 otherwise); a session id of
+        another member reads nothing of theirs. A malformed session id: 400. Answered with `Cache-Control: no-store`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveScope'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/directives/claim:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: claimDirective
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: Claim the delivery of a session's new advice to its agent (`capacity.pacing.v1`)
+      description: "The CLI's hook asks before each prompt and tool call: the advice comes back only when it changed
+        since the last one delivered to that session at that stage, under a claim of 15 seconds (two hooks at once
+        never both deliver it); the hook then confirms with `POST /api/v1/directives/receipt`. Without a new advice,
+        or in observation mode, `directive` is absent. Stages: `received_by_cli`, `emitted_to_hook`. At most 2,000
+        deliveries remembered per member. Deliveries are kept per member: a
+        session id names one of the caller's own sessions (an agent token only its own, 403 otherwise), never another
+        member's. Answered with `Cache-Control: no-store`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveClaimRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveClaim'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/directives/receipt:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: acknowledgeDirective
+      x-ostrom-status: planned
+      tags:
+      - inference
+      summary: Record that an advice reached a stage of its delivery (`capacity.pacing.v1`)
+      description: "A receipt records the emission by the local bridge, never that the agent followed the advice.
+        Idempotent. With `claimId`, it settles that claim; an expired claim, or one of another member or session,
+        changes nothing. Without `sessionId`, the member-wide advice"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveReceipt'
+      responses:
+        '204':
+          description: Recorded
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/groups:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -17850,6 +18159,441 @@ components:
       - version
       - inUse
       x-ostrom-kotlin: pending
+    Directive:
+      type: object
+      description: "The capacity controller's advice (`capacity.pacing.v1`). Pacing never caps parallelism: it only
+        spaces the admission of new calls, and the server enforces it whatever the agent does"
+      properties:
+        id:
+          type: string
+          description: Changes whenever the advice or its context changes
+        pace:
+          type: string
+          enum: [unknown, normal, slow_down, can_increase, pause]
+          description: "`normal`; `slow_down` when, at the team's current rate, every usable account is projected to run
+            out before one resets (admissions spaced by 2, 5 or 10 seconds as the gap is lighter or more severe);
+            `pause` when no usable account is left (30 seconds); `can_increase` when no gap appears even at twice the
+            rate and every usable window is under half used; `unknown` when observations are missing. Clients treat
+            an unknown value as `unknown`"
+        maxConcurrent:
+          type: integer
+          minimum: 0
+          description: The member's, group's or run's concurrency limit that applies, 0 for none
+        minIntervalMillis:
+          type: integer
+          minimum: 0
+          description: The spacing between two admissions of the caller's calls, in milliseconds
+        message:
+          type: string
+          description: The advice in words, for the agent
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - pace
+      - maxConcurrent
+      - minIntervalMillis
+      - message
+      - createdAt
+      - expiresAt
+      x-ostrom-kotlin: pending
+    DirectiveClaim:
+      type: object
+      description: A claimed delivery; both absent when nothing new is to be delivered
+      properties:
+        directive:
+          $ref: '#/components/schemas/Directive'
+        claimId:
+          type: string
+      x-ostrom-kotlin: pending
+    DirectiveClaimRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          maxLength: 128
+        stage:
+          type: string
+          enum: [received_by_cli, emitted_to_hook]
+      required:
+      - sessionId
+      - stage
+      x-ostrom-kotlin: pending
+    DirectiveReceipt:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The advice's id
+        stage:
+          type: string
+          enum: [received_by_cli, emitted_to_hook]
+        sessionId:
+          type: string
+          maxLength: 128
+        claimId:
+          type: string
+      required:
+      - id
+      - stage
+      x-ostrom-kotlin: pending
+    DirectiveResponse:
+      type: object
+      properties:
+        directive:
+          $ref: '#/components/schemas/Directive'
+      x-ostrom-kotlin: pending
+    DirectiveScope:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          maxLength: 128
+      required:
+      - sessionId
+      x-ostrom-kotlin: pending
+    ForecastAccount:
+      type: object
+      description: A shared account as the Forecasts page lists it, never its credentials nor its provider account id
+      properties:
+        id:
+          type: string
+        provider:
+          type: string
+        label:
+          type: string
+        status:
+          type: string
+          description: As `SharedAccount.status`
+        paused:
+          type: boolean
+        email:
+          type: string
+      required:
+      - id
+      - provider
+      - label
+      - status
+      - paused
+      x-ostrom-kotlin: pending
+    ForecastSample:
+      type: object
+      description: One real reading; a missing reading is never written as 0
+      properties:
+        utilization:
+          type: number
+          description: Used share, 0 to 1
+        observedAt:
+          type: string
+          format: date-time
+        resetsAt:
+          type: string
+          format: date-time
+      required:
+      - utilization
+      - observedAt
+      x-ostrom-kotlin: pending
+    ForecastWindow:
+      type: object
+      description: One current provider window of the account and what the controller learned of it
+      properties:
+        window:
+          type: string
+          description: "`five_hour`, `seven_day` or `model:<family>`"
+        utilization:
+          type: number
+          description: Used share, 0 to 1
+        observedAt:
+          type: string
+          format: date-time
+        resetsAt:
+          type: string
+          format: date-time
+        state:
+          type: string
+          enum: [unknown, stale, exhausted, idle, reset_first, exhausts_first]
+          description: Clients treat an unknown value as `unknown`
+        pointsPerHour:
+          type: number
+          description: "The learned rate in percentage points per hour (0 to 100 scale, where `utilization` is 0 to 1);
+            absent while unknown (0 is a known idle rate)"
+        reachesThresholdAt:
+          type: string
+          format: date-time
+          description: When the window reaches `pressureThreshold` at that rate, if known
+        segments:
+          type: array
+          description: The last hour's readings, oldest first, cut at every reset, drop or gap of more than five minutes
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/ForecastSample'
+        learningSamples:
+          type: integer
+          description: Readings in the latest segment (the rate needs three)
+        learningSpanMillis:
+          type: integer
+          description: Time between the first and last readings of the latest segment
+      required:
+      - window
+      - utilization
+      - observedAt
+      - state
+      - segments
+      - learningSamples
+      - learningSpanMillis
+      x-ostrom-kotlin: pending
+    ForecastSnapshot:
+      type: object
+      description: A bounded point-in-time view of one account's windows, never a sum of percentages of different plans
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastAccount'
+        account:
+          $ref: '#/components/schemas/ForecastAccount'
+        windows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastWindow'
+        truncated:
+          type: boolean
+        pressureThreshold:
+          type: number
+          description: The account's `utilizationCeiling`, at which it stops taking requests (0.95 by default)
+      required:
+      - generatedAt
+      - accounts
+      - windows
+      - truncated
+      - pressureThreshold
+      x-ostrom-kotlin: pending
+    PacingPreview:
+      type: object
+      description: Informational advice, never sent to an agent by itself
+      properties:
+        settings:
+          $ref: '#/components/schemas/PacingSettings'
+        directive:
+          $ref: '#/components/schemas/Directive'
+      required:
+      - settings
+      x-ostrom-kotlin: pending
+    PacingSettings:
+      type: object
+      description: "The capacity controller's settings for the organization (`capacity.pacing.v1`). A provider window
+        counts as exhausted at its account's `utilizationCeiling`, as admission does"
+      properties:
+        observationOnly:
+          type: boolean
+          description: "False by default. The controller keeps forecasting but neither spaces admissions nor sends advice to agents.
+            Budgets, concurrency limits and accounts' ceilings stay enforced; advice already sent cannot be recalled"
+        autoPoolSize:
+          type: boolean
+          description: "False by default. Size the organization's daily budget from its shared accounts (`capacity.poolsize.v1`,
+            `GET /api/v1/pools/size`) instead of the typed one"
+      x-ostrom-kotlin: pending
+    PoolSize:
+      type: object
+      description: "The automatic daily budget and the estimate behind it, in USD millionths at the gateway's prices
+        (API-equivalent)"
+      properties:
+        enabled:
+          type: boolean
+          description: "`autoPoolSize`"
+        manualDailyMicros:
+          type: integer
+          description: The organization's typed daily budget, absent when it has none
+        automaticDailyMicros:
+          type: integer
+          description: The value the job stored last, absent before its first estimate
+        automaticComputedAt:
+          type: string
+          format: date-time
+        effectiveDailyMicros:
+          type: integer
+          description: The daily budget admission applies now, absent when there is none
+        source:
+          type: string
+          enum: [automatic, manual]
+        estimatedDailyMicros:
+          type: integer
+          description: What is left of the accounts' capacity today, computed now
+        reason:
+          type: string
+          enum: [no_accounts, no_estimate]
+          description: Why there is no automatic value; then the typed budget applies
+        unpricedModels:
+          type: array
+          description: Models used over seven days without a price, left out of the samples
+          items:
+            type: string
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoolSizeAccount'
+        capacityDailyMicros:
+          type: integer
+          description: The full daily capacity of the accounts that can serve, whatever they used; a floor when `capacityUnknownAccounts` is above 0
+        capacityUnknownAccounts:
+          type: integer
+        capacityDailyTokens:
+          type: integer
+          description: "`capacityDailyMicros` in tokens at the organization's seven-day model mix, absent without priced traffic"
+        tokensPerMicro:
+          type: number
+        outsideWeeklyMicros:
+          type: integer
+          description: What the accounts' current weekly windows used outside Ostrom, absent while unknown; a floor when `outsideUnknownAccounts` is above 0
+        outsideUnknownAccounts:
+          type: integer
+        models:
+          type: array
+          description: The organization's seven days of tokens by model, priced by token type
+          items:
+            $ref: '#/components/schemas/PoolSizeModel'
+      required:
+      - enabled
+      - source
+      - estimatedDailyMicros
+      - unpricedModels
+      - accounts
+      - capacityDailyMicros
+      - capacityUnknownAccounts
+      - outsideUnknownAccounts
+      - models
+      x-ostrom-kotlin: pending
+    PoolSizeAccount:
+      type: object
+      properties:
+        accountId:
+          type: string
+        status:
+          type: string
+          enum: [counted, unavailable, no_fresh_observation, no_estimate]
+          description: Clients treat an unknown value as not counted
+        dailyMicros:
+          type: integer
+          description: What is left of the account's capacity today
+        binding:
+          type: string
+          description: The window that gives the smaller daily figure
+        capacityDailyMicros:
+          type: integer
+          description: The account's full daily capacity, absent while unknown
+        windows:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoolSizeWindowCapacity'
+        usage:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoolSizeWindowUsage'
+      required:
+      - accountId
+      - status
+      - dailyMicros
+      - windows
+      - usage
+      x-ostrom-kotlin: pending
+    PoolSizeModel:
+      type: object
+      description: Seven days of one model's tokens and their API-equivalent by token type; costs absent without a price
+      properties:
+        provider:
+          type: string
+        model:
+          type: string
+        inputTokens:
+          type: integer
+        cacheWriteTokens:
+          type: integer
+        cacheReadTokens:
+          type: integer
+        outputTokens:
+          type: integer
+        inputMicros:
+          type: integer
+        cacheWriteMicros:
+          type: integer
+        cacheReadMicros:
+          type: integer
+        outputMicros:
+          type: integer
+        totalMicros:
+          type: integer
+        unpricedTokens:
+          type: integer
+      required:
+      - provider
+      - model
+      - inputTokens
+      - cacheWriteTokens
+      - cacheReadTokens
+      - outputTokens
+      - unpricedTokens
+      x-ostrom-kotlin: pending
+    PoolSizeWindowCapacity:
+      type: object
+      description: The learned full capacity of one shared window (0 to 100 %); absent below three samples
+      properties:
+        window:
+          type: string
+        fullWindowMicros:
+          type: integer
+          description: The median of the samples, which the budget uses
+        capacityMicros:
+          type: integer
+          description: Their upper quartile, the reported capacity
+        samples:
+          type: integer
+      required:
+      - window
+      - samples
+      x-ostrom-kotlin: pending
+    PoolSizeWindowUsage:
+      type: object
+      description: "One current window split between Ostrom's traffic and use of the subscription outside Ostrom since
+        it opened; the split is absent without a learned capacity"
+      properties:
+        window:
+          type: string
+        since:
+          type: string
+          format: date-time
+        observedAt:
+          type: string
+          format: date-time
+        resetsAt:
+          type: string
+          format: date-time
+        observedUtilization:
+          type: number
+        ostromMicros:
+          type: integer
+        ostromUtilization:
+          type: number
+        outsideUtilization:
+          type: number
+        outsideMicros:
+          type: integer
+        remainingMicros:
+          type: integer
+      required:
+      - window
+      - since
+      - observedAt
+      - resetsAt
+      - observedUtilization
+      x-ostrom-kotlin: pending
     SaveArtifactStorageRequest:
       type: object
       description: '`version` is the one replaced (0 for the first save); an omitted `secretAccessKey` keeps the stored
@@ -19377,7 +20121,7 @@ components:
       type: object
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
-        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
+        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
