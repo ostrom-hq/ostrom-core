@@ -30,6 +30,12 @@ public object SlackChannels {
     /** 409 of `linkSlack`: the `slack` settings section has no bot token. */
     public const val NOT_CONFIGURED: String = "slack_not_configured"
 
+    /** 409 of `linkSlack`: the caller has no proven e-mail address to look up. */
+    public const val EMAIL_UNPROVEN: String = "slack_email_unproven"
+
     /** 404 of `linkSlack`: no active Slack person has the caller's proven e-mail address. */
     public const val USER_NOT_FOUND: String = "slack_user_not_found"
+
+    /** 409 of `linkSlack`: another member of the organization linked that Slack account. */
+    public const val USER_TAKEN: String = "slack_user_taken"
 }

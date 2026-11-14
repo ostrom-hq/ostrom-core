@@ -18,7 +18,16 @@ class SlackModelsTest {
 
     @Test
     fun theChannelAndErrorKeysAreTheContracts() {
-        val keys = listOf(SlackChannels.SLACK, SlackChannels.NOT_CONFIGURED, SlackChannels.USER_NOT_FOUND)
-        assertEquals(listOf("slack", "slack_not_configured", "slack_user_not_found"), keys)
+        val keys = listOf(
+            SlackChannels.SLACK,
+            SlackChannels.NOT_CONFIGURED,
+            SlackChannels.EMAIL_UNPROVEN,
+            SlackChannels.USER_NOT_FOUND,
+            SlackChannels.USER_TAKEN,
+        )
+        val expected = listOf(
+            "slack", "slack_not_configured", "slack_email_unproven", "slack_user_not_found", "slack_user_taken",
+        )
+        assertEquals(expected, keys)
     }
 }

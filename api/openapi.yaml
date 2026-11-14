@@ -2806,7 +2806,8 @@ paths:
         linked that `slackUserId` in the request''s organization, answer channel `slack`), and the message is updated
         with the outcome; anyone else''s click changes nothing. Approve is a link to the console''s page of the request
         (`/yes/{approvalId}`): a yes always needs a fresh proof of who the approver is (S2-54), which a Slack click is
-        not, so no yes is ever given here. Once a request is decided on any channel, the approvers'' messages lose
+        not, so no yes is ever given here; the interaction Slack still sends for that link is acknowledged and changes
+        nothing. Once a request is decided on any channel, the approvers'' messages lose
         their buttons. 200 with an empty body for every signed interaction, handled or ignored (Slack retries anything
         else)'
       security: []
@@ -2851,7 +2852,8 @@ paths:
       summary: "The caller's own Slack link in the organization (`slack.v1`): the Slack account their notifications and
         yes requests go to as direct messages. A person's interactive login only (a browser session, the unlocked app
         or `ostrom login`); a service key, an agent or a device token is 403. Works while Slack is not configured
-        (`configured` false), so a member can still see and remove a link"
+        (`configured` false), so a member can still see and remove a link. 404 and 409 are the organization's
+        resolution (`Ostrom-Org`)"
       responses:
         '200':
           description: OK
@@ -2875,11 +2877,15 @@ paths:
       summary: "Links the caller to the Slack account of their proven e-mail address"
       description: "A person's interactive login only (403 otherwise). The instance's Slack app looks the caller's
         proven e-mail address up in its workspace (`users.lookupByEmail`, which matches only an address Slack itself
-        confirmed): the caller never types a Slack id, so nobody links another person's account. 409
-        `slack_not_configured` while the `slack` settings section has no bot token; 404 `slack_user_not_found` when the
-        caller has no proven address or the workspace has no active person with it (a bot or a deactivated account
-        never matches); 503 `unavailable` when Slack does not answer. Linking again replaces the link. The Slack
-        account is told by a direct message that it now receives this member's notifications"
+        confirmed): the caller never types a Slack id, so nobody links another person's account. The app's bot token
+        needs the scopes `chat:write`, `users:read` and `users:read.email`. 409 `slack_not_configured` while the
+        `slack` settings section has no bot token; 409 `slack_email_unproven` when the caller has no proven address;
+        404 `slack_user_not_found` when the workspace has no active person with it (a bot or a deactivated account
+        never matches); 409 `slack_user_taken` when another member of the organization linked that Slack account (one
+        member per Slack account and organization, so a click in Slack names one member); 503 `unavailable` when Slack
+        does not answer or refuses the token. Linking again replaces the link. Once stored, the Slack account is told
+        by a direct message that it now receives this member's notifications; that message is best effort and never
+        undoes the link"
       responses:
         '200':
           description: Linked
@@ -2903,7 +2909,8 @@ paths:
       tags:
       - notifications
       summary: "Removes the caller's own Slack link; 204 also when not linked. Nothing more is sent to that Slack
-        account, and a Reject from a message sent before changes nothing"
+        account, and a Reject from a message sent before changes nothing. 404 and 409 are the organization's
+        resolution (`Ostrom-Org`)"
       responses:
         '204':
           description: Unlinked, or nothing to unlink
@@ -26429,7 +26436,8 @@ components:
     SlackLink:
       type: object
       description: "A member's Slack link: the Slack account their notifications (channel `slack`) and yes requests go
-        to as direct messages. One per member of an organization"
+        to as direct messages. At most one per member of an organization, and one member per Slack account in an
+        organization"
       properties:
         memberId:
           type: string
