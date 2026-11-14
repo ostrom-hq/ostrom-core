@@ -19499,12 +19499,11 @@ components:
           $ref: '#/components/schemas/InstanceSecretState'
         inCluster:
           type: boolean
-          x-ostrom-status: planned
           description: "Whether the cluster is the server's own, reached with the server pod's mounted service account
             (`runners.cloud.profiles.v1`): its token and CA are read from the pod's files at each use, as the kubelet
             rotates them, and nothing is stored. Only the cluster imported once from the former
             `OSTROM_RUNNERS_KUBERNETES_*` variables is; saving a CA and a token turns it into a stored cluster.
-            TeamCode has no such mode (it never read the cluster from variables). Absent means false. Planned"
+            TeamCode has no such mode (it never read the cluster from variables). Absent means false"
         createdAt:
           type: string
           format: date-time
@@ -19996,9 +19995,8 @@ components:
           $ref: '#/components/schemas/CloudSessionProfile'
         image:
           type: string
-          x-ostrom-status: planned
           description: "The session image its containers run, the profile's or the override asked at creation
-            (`runners.cloud.profiles.v1`). Absent from a session without a profile. Planned"
+            (`runners.cloud.profiles.v1`). Absent from a session without a profile"
         githubAccess:
           type: string
           enum:
@@ -20024,9 +20022,8 @@ components:
       - createdAt
     CloudSessionProfile:
       type: object
-      x-ostrom-status: planned
       description: "The cloud profile a session runs on, at the version it was created with (`runners.cloud.profiles.v1`,
-        TeamCode's `profile {id, version}`). Absent from a session without a profile. Planned"
+        TeamCode's `profile {id, version}`). Absent from a session without a profile"
       properties:
         id:
           type: string
@@ -20072,7 +20069,6 @@ components:
         profileId:
           type: string
           format: uuid
-          x-ostrom-status: planned
           description: "The organization's cloud profile the session runs on (`runners.cloud.profiles.v1`,
             `GET /api/v1/cloud/profiles`): its cluster, namespace, image, pull secrets, resources and workspace,
             at its current version, which the session keeps (TeamCode's `profileId`). 404
@@ -20084,13 +20080,12 @@ components:
             again, 409 `namespace_not_allowed` when it no longer allows the profile's namespace. The reconciler
             checks both again at each later start, where they become the session's `failure.code` (a first
             start fails, a resume is blocked). Ignored by a server whose sessions run on Docker or on
-            registered runners. Planned: the server does not read it yet"
+            registered runners"
         image:
           type: string
-          x-ostrom-status: planned
           description: "The session image instead of the profile's: the profile's image, or one matching
             its `allowedImageOverrides` (`*` matches any run of characters), 403 `image_not_allowed`
-            otherwise. Absent: the profile's image. Planned: the server does not read it yet"
+            otherwise. Absent: the profile's image"
       required:
       - agent
     CloudSessionFailure:
@@ -20099,8 +20094,9 @@ components:
       properties:
         code:
           type: string
-          description: start_failed, execution_lost, idle_timeout, max_duration, hours_exhausted, preparation_failed,
-            cluster_unavailable or namespace_not_allowed (the profile's cluster or namespace at a start, planned)
+          description: "start_failed, execution_lost, idle_timeout, max_duration, hours_exhausted, preparation_failed,
+            cluster_unavailable, namespace_not_allowed or server_url_missing (a session on a cloud profile whose
+            cluster stopped opening, whose namespace is no longer allowed, or whose runner has no server URL)"
         message:
           type: string
         retryable:
