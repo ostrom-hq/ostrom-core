@@ -2138,7 +2138,9 @@ paths:
         1..999999999999, a client ID that is not a GitHub App''s (`Iv` then 2 to 62 of `[0-9A-Za-z._-]`), a client
         secret outside 20..256 characters or with a space or a control character, or a private key over 16384
         characters or not PEM. The App is checked with GitHub (its JWT signed by the key) before it is stored, which
-        gives its slug and owner; 503 `unavailable` when GitHub does not answer. Changing the App ID leaves the
+        gives its slug and owner: 422 `github_app_rejected` when GitHub does not accept the key for this App ID, 422
+        `github_app_mismatch` when the key or the client ID is another App''s, 503 `unavailable` when GitHub does not
+        answer. Changing the App ID leaves the
         organizations'' installations of the former App unusable until they install the new one; changing the client
         ID removes the members'' links of the former client and revokes their tokens. Every replica uses the new App
         within 60 seconds'
@@ -2162,6 +2164,8 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
         '503':
           $ref: '#/components/responses/Error'
