@@ -18761,6 +18761,18 @@ components:
           type: string
         maxRuntimeMinutes:
           type: integer
+        profileId:
+          type: string
+          format: uuid
+          x-ostrom-status: planned
+          description: "The organization's cloud profile the action runs on (`runners.cloud.profiles.v1`, TeamCode's
+            `action.profileId`): the session's, or, for a workflow action, the one of its run's agent nodes that name
+            none. Saving refuses an id none of the organization's profiles has (400 `invalid_automation` naming
+            `action.profileId`). Absent: the owner's only usable profile, as `createCloudSession` chooses it. A run
+            whose session the profile refuses fails with the refusal's key as its `reason`:
+            `cloud_profile_not_found`, `profile_unassigned`, `profile_required`, `image_not_allowed`,
+            `cluster_unavailable` or `namespace_not_allowed`. Ignored by a server whose sessions run on Docker or
+            on registered runners"
     AutomationRun:
       type: object
       description: One trigger of an automation (cron, webhook or test) and the session it started, kept 14 days
@@ -18790,7 +18802,9 @@ components:
         reason:
           type: [string, 'null']
           description: "A stable code when it failed or was cancelled (cloud_session_limit, cloud_hours_exhausted,
-            owner_unavailable, capacity_timeout, cancelled…); for a workflow action also run_limit (the owner has 20
+            owner_unavailable, capacity_timeout, cancelled, and the cloud profile's refusals cloud_profile_not_found,
+            profile_unassigned, profile_required, image_not_allowed, cluster_unavailable, namespace_not_allowed…);
+            for a workflow action also run_limit (the owner has 20
             unfinished workflow runs), workflow_missing, invalid_inputs, workflow_failed and workflow_cancelled"
         problems:
           type: array
@@ -23635,6 +23649,16 @@ components:
         repository:
           type: string
           description: "Agent: the repository (`owner/name`) its session works in, else the run's"
+        profileId:
+          type: string
+          format: uuid
+          x-ostrom-status: planned
+          description: "Agent: the organization's cloud profile its session runs on (`runners.cloud.profiles.v1`,
+            TeamCode's node `profileId`), else the run's `profileId`, else the starter's only usable profile. Saving
+            a workflow the server runs refuses an id none of the organization's profiles has (400, naming the
+            node). A session the profile refuses fails the visit, and the run's `failureCode` is the refusal's key:
+            `cloud_profile_not_found`, `profile_unassigned`, `profile_required`, `image_not_allowed`,
+            `cluster_unavailable` or `namespace_not_allowed`"
     NodeRunOn:
       type: object
       description: What triggers a node
@@ -27469,6 +27493,13 @@ components:
         repository:
           type: string
           description: "`owner/name`, for the agent nodes that name none (planned)"
+        profileId:
+          type: string
+          format: uuid
+          x-ostrom-status: planned
+          description: "The cloud profile of the agent nodes that name none (`runners.cloud.profiles.v1`, TeamCode's
+            `profileId` at start): 400 `invalid_request` when none of the organization's profiles has it. Absent: each
+            such node's session runs on the starter's only usable profile"
     WorkflowPage:
       type: object
       description: "The workflows; `next` is the cursor of the following page"
@@ -27731,6 +27762,12 @@ components:
         repository:
           type: string
           description: The repository of the agent nodes that name none
+        profileId:
+          type: string
+          format: uuid
+          x-ostrom-status: planned
+          description: "The cloud profile of the agent nodes that name none: given at start, or the profile of the
+            automation's workflow action that started the run"
         visits:
           type: array
           items:
@@ -27742,7 +27779,9 @@ components:
           description: "A stable code: `session_failed`, `session_deleted`, `session_missing`, `ended_without_delivery`,
             `repository_missing`, `starter_unavailable`, `wait_cancelled`, `wait_missing`, `max_visits:<node>`,
             `max_total_visits`, `max_depth`, `workflow_missing`, `invalid_arguments`, `sub_workflow_failed`,
-            `sub_workflow_cancelled`, `expired`, `no_transition`, or the code of a refusal that cannot be retried"
+            `sub_workflow_cancelled`, `expired`, `no_transition`, the cloud profile's refusal of an agent node's
+            session (`cloud_profile_not_found`, `profile_unassigned`, `profile_required`, `image_not_allowed`,
+            `cluster_unavailable`, `namespace_not_allowed`), or the code of a refusal that cannot be retried"
         output:
           type: string
         receiptId:
