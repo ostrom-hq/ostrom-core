@@ -11750,6 +11750,58 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/cloud/settings:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getCloudSettings
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: The organization's cloud session settings
+      description: 'A member of the organization, signed in. The defaults while nothing is stored (no `updatedAt`)'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSettings'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveCloudSettings
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Save the organization's cloud session settings
+      description: 'An owner or an admin of the organization, signed in as a person (TeamCode''s team cloud settings).
+        A `PUT` replaces every setting; `updatedAt` is the one of the settings edited (absent while nothing is stored),
+        409 `cloud_settings_conflict` when another save came first. A value out of range is 400
+        `invalid_cloud_settings` naming the field. Running sessions apply it at their next idle check'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCloudSettingsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -19188,6 +19240,39 @@ components:
         updatedAt:
           type: string
           format: date-time
+    CloudSettings:
+      x-ostrom-kotlin: pending
+      type: object
+      description: An organization's cloud session settings
+      required: [backgroundWorkMaxMinutes]
+      properties:
+        backgroundWorkMaxMinutes:
+          type: integer
+          minimum: 0
+          maximum: 1440
+          description: How long an agent's background work (background subagents and commands, monitors, scheduled
+            wake-ups, reported by its runner) holds off the idle pause, from when it was first reported; 0 never holds it
+            off. 240 by default (TeamCode af1a5f7b)
+        updatedAt:
+          type: string
+          format: date-time
+          description: The last save; absent while nothing is stored
+        updatedBy:
+          type: string
+          description: The person who saved last; absent while nothing is stored
+    SaveCloudSettingsRequest:
+      x-ostrom-kotlin: pending
+      type: object
+      required: [backgroundWorkMaxMinutes]
+      properties:
+        backgroundWorkMaxMinutes:
+          type: integer
+          minimum: 0
+          maximum: 1440
+        updatedAt:
+          type: string
+          format: date-time
+          description: The `updatedAt` of the settings edited; absent while nothing is stored
     CloudProfileList:
       x-ostrom-kotlin: pending
       type: object
