@@ -37,6 +37,9 @@ import kotlinx.serialization.Serializable
  * @property runId Workflow run the session belongs to, when a run started it.
  * @property ended True once ended (the answer to a sign of life).
  * @property lost True when closed for lack of a sign of life: its launcher reopens a segment.
+ * @property activity Whether the agent works or waits for a person ([SessionActivityStates]), only while the segment
+ *   is open (`sessions.activity.v1`).
+ * @property activitySince ISO time [activity] began, by the server's clock.
  */
 @Serializable
 public data class Session(
@@ -69,6 +72,50 @@ public data class Session(
     val runId: String? = null,
     val ended: Boolean? = null,
     val lost: Boolean? = null,
+    val activity: String? = null,
+    val activitySince: String? = null,
+)
+
+/** The states of [Session.activity] and [SessionActivityRequest.state] (`sessions.activity.v1`). */
+public object SessionActivityStates {
+    /** A prompt was sent, a tool ran, or the turn ended with background work in flight. */
+    public const val WORKING: String = "working"
+
+    /** The turn ended and the agent waits for the next message, or it asks a permission or a question. */
+    public const val WAITING_FOR_HUMAN: String = "waiting_for_human"
+
+    /** Both, in contract order. */
+    public val ALL: List<String> = listOf(WORKING, WAITING_FOR_HUMAN)
+}
+
+/**
+ * What an agent's hook reports (`POST /api/v1/sessions/{id}/activity`): only the state, never the prompt, the
+ * message, the tool or a path.
+ *
+ * @property state One of [SessionActivityStates].
+ * @property observedAt ISO time the hook fired, by the reporting computer's clock, kept across retries: a report
+ *   observed before the stored one changes nothing.
+ */
+@Serializable
+public data class SessionActivityRequest(
+    val state: String,
+    val observedAt: String? = null,
+)
+
+/**
+ * The segment's activity once a report is applied.
+ *
+ * @property id The segment.
+ * @property state The stored state; absent when a silence cleared it and the report was superseded.
+ * @property since ISO time the stored state began, by the server's clock.
+ * @property superseded True when the server already held a report observed later: nothing was written.
+ */
+@Serializable
+public data class SessionActivity(
+    val id: String,
+    val state: String? = null,
+    val since: String? = null,
+    val superseded: Boolean,
 )
 
 /**
