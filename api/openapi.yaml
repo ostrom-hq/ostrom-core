@@ -3687,6 +3687,8 @@ paths:
       tags:
       - sessions
       summary: Start a session or a segment (hook SessionStart); a resumed session opens a chained segment
+      description: "A session never takes the id of another person's cloud session: 403 `forbidden` (\"This session
+        is not yours.\")"
       requestBody:
         required: true
         content:
@@ -7260,7 +7262,7 @@ paths:
         in: query
         required: false
         description: "The session the agent runs in; a cloud session's agent token is confined to its cloud session
-          whatever it names, and needs none (planned)"
+          whatever it names, and needs none"
         schema:
           type: string
       - name: run
@@ -7303,18 +7305,19 @@ paths:
       tags:
       - waits
       summary: "What the waits of an agent's session have to say, for the Stop hook of its launch"
-      description: "An agent token only, through its launch's local relay (the hooks' capability), in one of its
-        launch's sessions (`?session=`, any segment). Planned: a cloud session's agent token is confined to its cloud
-        session whatever it names, and needs no `session`. Holds the call up to `waitMillis` (0 to 30 000, 25 000 by
-        default) and answers as soon as a wait of the session is answered: each answer is handed over once
-        (`messages`, oldest first, each starting with `[Ostrom wait answered]`). `open` says a wait asked by the
-        session is still open, so the hook keeps holding the agent; a session with no open wait answers at once."
+      description: "An agent token only: a launch on a machine through its local relay (the hooks' capability), in
+        one of its launch's sessions (`?session=`, any segment; 400 `invalid_request` without it); a cloud session's
+        agent token, from its runner, is confined to its cloud session whatever it names, and needs no `session`. Like
+        every route a cloud session's agent token calls, it answers only while the execution its launch was opened in
+        runs (403 otherwise). Holds the call up to `waitMillis` (0 to 30 000, 25 000 by default)
+        and answers as soon as a wait of the session is answered: each answer is handed over once (`messages`, oldest
+        first, each starting with `[Ostrom wait answered]`). `open` says a wait asked by the session is still open, so
+        the hook keeps holding the agent; a session with no open wait answers at once."
       parameters:
       - name: session
         in: query
-        required: true
-        description: "The session the agent runs in: any of its segments (planned: a cloud session's agent token needs
-          none)"
+        required: false
+        description: "The session the agent runs in: any of its segments; a cloud session's agent token needs none"
         schema:
           type: string
       requestBody:
@@ -7509,15 +7512,16 @@ paths:
         for every open drop request): yes drops the item, no or a cancelled wait puts it back to `todo`. Callers: the
         session's agent token (the token of its launch), confined to its own session, which it names in `sessionId`
         (400 `invalid_request` without it; a cloud session's agent token acts on its cloud session whatever it names,
-        and needs none: planned); the session's owner, a person, who names `sessionId` (400 `invalid_request` without
-        it); an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never
-        writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a
-        session of another organization or an unknown one answers 404 `not_found`."
+        and needs none); the session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an
+        owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes
+        (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
+        of another organization or an unknown one answers 404 `not_found`."
       parameters:
       - name: sessionId
         in: query
         required: false
-        description: "The session (its id, or one of its segments `~r<n>`), as its owner or its agent token names it"
+        description: "The session (its id, or one of its segments `~r<n>`), as its owner or its agent token names it;
+          a cloud session's agent token needs none"
         schema:
           type: string
       responses:
@@ -7553,10 +7557,10 @@ paths:
         `todo_exists` when the session already has one (`resetTodo` clears a closed one). Callers: the session's agent
         token (the token of its launch), confined to its own session, which it names in `sessionId` (400
         `invalid_request` without it; a cloud session's agent token acts on its cloud session whatever it names, and
-        needs none: planned); the session's owner, a person, who names `sessionId` (400 `invalid_request` without it);
-        an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes
-        (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
-        of another organization or an unknown one answers 404 `not_found`."
+        needs none); the session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner
+        or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes (403
+        `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session of
+        another organization or an unknown one answers 404 `not_found`."
       requestBody:
         required: true
         content:
@@ -7593,8 +7597,8 @@ paths:
         dependencies. The same 400 keys as the creation; 404 `todo_not_found` without a list; 409 `todo_closed` when
         the list is done or abandoned. Callers: the session's agent token (the token of its launch), confined to its
         own session, which it names in `sessionId` (400 `invalid_request` without it; a cloud session's agent token
-        acts on its cloud session whatever it names, and needs none: planned); the session's owner, a person, who
-        names `sessionId` (400 `invalid_request` without it); an owner or an administrator of the organization reads
+        acts on its cloud session whatever it names, and needs none); the session's owner, a person, who names
+        `sessionId` (400 `invalid_request` without it); an owner or an administrator of the organization reads
         (`getSessionTodo`, `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets
         403 `forbidden`. Another person's session, a session of another organization or an unknown one answers 404
         `not_found`."
@@ -7637,10 +7641,10 @@ paths:
         dropped), `item_closed` (done or dropped), `drop_pending` (a drop waits for the owner). Callers: the session's
         agent token (the token of its launch), confined to its own session, which it names in `sessionId` (400
         `invalid_request` without it; a cloud session's agent token acts on its cloud session whatever it names, and
-        needs none: planned); the session's owner, a person, who names `sessionId` (400 `invalid_request` without it);
-        an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes
-        (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
-        of another organization or an unknown one answers 404 `not_found`."
+        needs none); the session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner
+        or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes (403
+        `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session of
+        another organization or an unknown one answers 404 `not_found`."
       parameters:
       - name: item
         in: path
@@ -7685,10 +7689,10 @@ paths:
         100 per item (400 `too_many_notes`). 404 `todo_not_found`, `unknown_item`; 409 `todo_closed`. Callers: the
         session's agent token (the token of its launch), confined to its own session, which it names in `sessionId`
         (400 `invalid_request` without it; a cloud session's agent token acts on its cloud session whatever it names,
-        and needs none: planned); the session's owner, a person, who names `sessionId` (400 `invalid_request` without
-        it); an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never
-        writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a
-        session of another organization or an unknown one answers 404 `not_found`."
+        and needs none); the session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an
+        owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes
+        (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
+        of another organization or an unknown one answers 404 `not_found`."
       parameters:
       - name: item
         in: path
@@ -7738,10 +7742,10 @@ paths:
         `unknown_item`; 409 `item_closed` (drop requested or dropped), `todo_closed`. Callers: the session's agent
         token (the token of its launch), confined to its own session, which it names in `sessionId` (400
         `invalid_request` without it; a cloud session's agent token acts on its cloud session whatever it names, and
-        needs none: planned); the session's owner, a person, who names `sessionId` (400 `invalid_request` without it);
-        an owner or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes
-        (403 `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session
-        of another organization or an unknown one answers 404 `not_found`."
+        needs none); the session's owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner
+        or an administrator of the organization reads (`getSessionTodo`, `readTodoContext`) but never writes (403
+        `forbidden`). A service key or a runner token gets 403 `forbidden`. Another person's session, a session of
+        another organization or an unknown one answers 404 `not_found`."
       parameters:
       - name: item
         in: path
@@ -7788,11 +7792,10 @@ paths:
         (`replaceClosed`), which a note records. 400 `invalid_link`; 404 `todo_not_found`, `unknown_item`; 409
         `todo_closed`. Callers: the session's agent token (the token of its launch), confined to its own session,
         which it names in `sessionId` (400 `invalid_request` without it; a cloud session's agent token acts on its
-        cloud session whatever it names, and needs none: planned); the session's owner, a person, who names
-        `sessionId` (400 `invalid_request` without it); an owner or an administrator of the organization reads
-        (`getSessionTodo`, `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets
-        403 `forbidden`. Another person's session, a session of another organization or an unknown one answers 404
-        `not_found`."
+        cloud session whatever it names, and needs none); the session's owner, a person, who names `sessionId` (400
+        `invalid_request` without it); an owner or an administrator of the organization reads (`getSessionTodo`,
+        `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`.
+        Another person's session, a session of another organization or an unknown one answers 404 `not_found`."
       parameters:
       - name: item
         in: path
@@ -7838,8 +7841,8 @@ paths:
         deleted. 404 `todo_not_found`, `unknown_item`; 409 `item_closed` (done or dropped), `drop_pending` (a drop
         already waits), `todo_closed`. Callers: the session's agent token (the token of its launch), confined to its
         own session, which it names in `sessionId` (400 `invalid_request` without it; a cloud session's agent token
-        acts on its cloud session whatever it names, and needs none: planned); the session's owner, a person, who
-        names `sessionId` (400 `invalid_request` without it); an owner or an administrator of the organization reads
+        acts on its cloud session whatever it names, and needs none); the session's owner, a person, who names
+        `sessionId` (400 `invalid_request` without it); an owner or an administrator of the organization reads
         (`getSessionTodo`, `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets
         403 `forbidden`. Another person's session, a session of another organization or an unknown one answers 404
         `not_found`."
@@ -7888,7 +7891,7 @@ paths:
         todo-context`, matcher `compact|resume`) after a compaction and on resume; `text` is null without an active
         list. Callers: the session's agent token (the token of its launch), confined to its own session, which it
         names in `sessionId` (400 `invalid_request` without it; a cloud session's agent token acts on its cloud
-        session whatever it names, and needs none: planned); the session's owner, a person, who names `sessionId` (400
+        session whatever it names, and needs none); the session's owner, a person, who names `sessionId` (400
         `invalid_request` without it); an owner or an administrator of the organization reads (`getSessionTodo`,
         `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`.
         Another person's session, a session of another organization or an unknown one answers 404 `not_found`."
@@ -7896,7 +7899,8 @@ paths:
       - name: sessionId
         in: query
         required: false
-        description: "The session (its id, or one of its segments `~r<n>`), as its owner or its agent token names it"
+        description: "The session (its id, or one of its segments `~r<n>`), as its owner or its agent token names it;
+          a cloud session's agent token needs none"
         schema:
           type: string
       responses:
@@ -7943,11 +7947,10 @@ paths:
         `invalid_stop` (an unknown phase, an item reported twice, more than 500 items or 5 orphans),
         `invalid_proof`. Callers: the session's agent token (the token of its launch), confined to its own session,
         which it names in `sessionId` (400 `invalid_request` without it; a cloud session's agent token acts on its
-        cloud session whatever it names, and needs none: planned); the session's owner, a person, who names
-        `sessionId` (400 `invalid_request` without it); an owner or an administrator of the organization reads
-        (`getSessionTodo`, `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets
-        403 `forbidden`. Another person's session, a session of another organization or an unknown one answers 404
-        `not_found`."
+        cloud session whatever it names, and needs none); the session's owner, a person, who names `sessionId` (400
+        `invalid_request` without it); an owner or an administrator of the organization reads (`getSessionTodo`,
+        `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`.
+        Another person's session, a session of another organization or an unknown one answers 404 `not_found`."
       requestBody:
         required: true
         content:
@@ -7984,11 +7987,10 @@ paths:
         `hook_error`, its text kept to 500 characters, joins `hookEvents` (the newest 20). 404 `todo_not_found`
         without a list. Callers: the session's agent token (the token of its launch), confined to its own session,
         which it names in `sessionId` (400 `invalid_request` without it; a cloud session's agent token acts on its
-        cloud session whatever it names, and needs none: planned); the session's owner, a person, who names
-        `sessionId` (400 `invalid_request` without it); an owner or an administrator of the organization reads
-        (`getSessionTodo`, `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets
-        403 `forbidden`. Another person's session, a session of another organization or an unknown one answers 404
-        `not_found`."
+        cloud session whatever it names, and needs none); the session's owner, a person, who names `sessionId` (400
+        `invalid_request` without it); an owner or an administrator of the organization reads (`getSessionTodo`,
+        `readTodoContext`) but never writes (403 `forbidden`). A service key or a runner token gets 403 `forbidden`.
+        Another person's session, a session of another organization or an unknown one answers 404 `not_found`."
       requestBody:
         required: true
         content:
@@ -8027,8 +8029,8 @@ paths:
         of items, not its content). 409 `todo_active` while the list is active: a reset is no way to skip an
         unfinished item. 404 `todo_not_found` without a list. Callers: the session's agent token (the token of its
         launch), confined to its own session, which it names in `sessionId` (400 `invalid_request` without it; a cloud
-        session's agent token acts on its cloud session whatever it names, and needs none: planned); the session's
-        owner, a person, who names `sessionId` (400 `invalid_request` without it); an owner or an administrator of the
+        session's agent token acts on its cloud session whatever it names, and needs none); the session's owner, a
+        person, who names `sessionId` (400 `invalid_request` without it); an owner or an administrator of the
         organization gets 403 `forbidden`. A service key or a runner token gets 403 `forbidden`. Another person's
         session, a session of another organization or an unknown one answers 404 `not_found`."
       requestBody:
@@ -8139,12 +8141,12 @@ paths:
         a person's `human`). A `team` entry written by a person is direct. One written by an agent (an agent token, or
         a call the CLI's local relay forwards with `x-ostrom-origin: agent`, whoever's sign-in it carries) is stored
         `proposed` and the owner of the session it names (`sessionId`, or the agent token's own; a cloud session's
-        agent token proposes from its cloud session whatever it names: planned) is asked through a wait: the answer is
-        the entry with status `proposed`, which joins the organization's memory only once accepted, within about ten
+        agent token proposes from its cloud session whatever it names) is asked through a wait: the answer is the
+        entry with status `proposed`, which joins the organization's memory only once accepted, within about ten
         seconds of the answer. 400 `memory_proposal_session` without a session (a cloud session's agent token needs
-        none: planned), 404 for a session that is not the caller's; a key that is no agent's session cannot propose
-        (403 `memory_team_forbidden`). 400 `invalid_memory` for a field out of bounds: a title of 1 to 160 characters
-        and a summary of 1 to 300 on one line, content of 1 to 16,000 characters, at most 8 distinct tags
+        none), 404 for a session that is not the caller's; a key that is no agent's session cannot propose (403
+        `memory_team_forbidden`). 400 `invalid_memory` for a field out of bounds: a title of 1 to 160 characters and a
+        summary of 1 to 300 on one line, content of 1 to 16,000 characters, at most 8 distinct tags
         `[a-z0-9][a-z0-9._-]*` of at most 40 characters, at most 10 references of 1 to 300 characters, an expiry in
         the future. 422 `memory_secret` when the title, summary, content or a reference looks like a credential
         (provider and Ostrom token prefixes, private keys, bearer headers, `password=value`): nothing is stored. 409
@@ -12249,6 +12251,8 @@ paths:
       tags:
       - runners
       summary: Terminate a cloud session; its workspace is deleted
+      description: "Once terminated, the waits its agent asked in it that are still open are cancelled, as when a
+        session on a machine ends"
       parameters:
       - name: id
         in: path
