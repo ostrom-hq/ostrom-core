@@ -12697,7 +12697,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: fetchRunnerSkills
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner of a cloud session reads the skills the session's owner receives (`runners.cloud.skills.v1`), at every start of the agent, to install them in the agent's personal skills folder under the agent's own UID: the same manifest as `getSkillDelivery` for that member (team skills their decisions or the audience allow, and their own personal skills), resolved at every call. Only the runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`), with the execution's runner token checked before the body is read: 409 `execution_fenced` for another execution, 409 `delivery_unavailable` otherwise. A disabled owner receives none. `Cache-Control: no-store`"
@@ -12729,7 +12729,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: downloadRunnerSkill
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The files of a skill version the session's owner receives (`runners.cloud.skills.v1`), as `downloadSkill`: only the currently effective pinned version is served (404 otherwise), its digest recomputed from the stored files (500 `skill_integrity` on a mismatch). The runner verifies it again before installing. Only the runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`), with the execution's runner token checked before the body is read: 409 `execution_fenced` for another execution, 409 `delivery_unavailable` otherwise."
@@ -12761,7 +12761,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: fetchRunnerHooks
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner of a cloud session reads the team hooks the session's owner receives (`runners.cloud.hooks.v1`), at every start of a Claude Code agent: the same manifest as `getHookDelivery` for that member, resolved at every call. There is no member approval in a pod: the administrator's pin and the owner's decision are the approval, as in TeamCode. Codex sessions run no team hook. Only the runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`), with the execution's runner token checked before the body is read: 409 `execution_fenced` for another execution, 409 `delivery_unavailable` otherwise. A disabled owner receives none. `Cache-Control: no-store`"
@@ -12793,7 +12793,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: downloadRunnerHook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The files and definition of a hook version the session's owner receives (`runners.cloud.hooks.v1`), as `downloadHook`: only the currently effective pinned version is served (404 otherwise), its digest recomputed (500 `hook_integrity` on a mismatch). The runner verifies it again before installing. Only the runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`), with the execution's runner token checked before the body is read: 409 `execution_fenced` for another execution, 409 `delivery_unavailable` otherwise."
