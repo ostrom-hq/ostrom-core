@@ -13104,7 +13104,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getArtifactUsage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - artifacts
       summary: What the organization stores against its artifact quota, per member, largest first

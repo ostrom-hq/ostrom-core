@@ -59,6 +59,7 @@ GET /api/v1/artifacts
 GET /api/v1/artifacts/policy
 GET /api/v1/artifacts/settings
 GET /api/v1/artifacts/storage
+GET /api/v1/artifacts/usage
 GET /api/v1/artifacts/{}
 GET /api/v1/artifacts/{}/members
 GET /api/v1/artifacts/{}/versions
