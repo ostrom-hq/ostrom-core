@@ -1989,7 +1989,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listPushDevices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: The caller's phones registered for push notifications
