@@ -146,9 +146,12 @@ GET /api/v1/me/skills/{}/versions
 GET /api/v1/members/{}/hook-delivery
 GET /api/v1/members/{}/skill-delivery
 GET /api/v1/members/{}/skill-installations
+GET /api/v1/memory/curation
 GET /api/v1/memory/index
 GET /api/v1/memory/proposals
+GET /api/v1/memory/reviews
 GET /api/v1/memory/search
+GET /api/v1/memory/superseded
 GET /api/v1/memory/{}
 GET /api/v1/notifications
 GET /api/v1/notifications/settings
@@ -311,6 +314,9 @@ POST /api/v1/me/skills/{}/versions
 POST /api/v1/memory
 POST /api/v1/memory/proposals/{}/accept
 POST /api/v1/memory/proposals/{}/reject
+POST /api/v1/memory/reviews/{}/apply
+POST /api/v1/memory/reviews/{}/dismiss
+POST /api/v1/memory/{}/restore
 POST /api/v1/notifications
 POST /api/v1/notifications/push/test
 POST /api/v1/orgs
@@ -398,6 +404,7 @@ PUT /api/v1/mcp/settings
 PUT /api/v1/me/mcp/servers/{}
 PUT /api/v1/me/notifications
 PUT /api/v1/me/skills/{}/pin
+PUT /api/v1/memory/curation
 PUT /api/v1/notifications/settings
 PUT /api/v1/packages/settings
 PUT /api/v1/policy/models

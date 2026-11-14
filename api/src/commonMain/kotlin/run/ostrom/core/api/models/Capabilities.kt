@@ -110,9 +110,8 @@ public object ServerFeatures {
     /**
      * The agent memory (`/api/v1/memory`, TeamCode's docs/memory.md): the organization's entries and each member's
      * personal ones, an index and a search, read on demand, the `memory:use` scope, agents' team entries as proposals
-     * their session's owner answers, and the curation an administrator turns on. A server announcing it serves the
-     * entries and the proposals; the curation, the reviews, the superseded entries and their restore are served only
-     * once their operations are (`x-ostrom-status`), and answer 404 until then.
+     * their session's owner answers, and the curation an administrator turns on, with its review queue and the restore
+     * of the entries it superseded.
      */
     public const val MEMORY: String = "memory.v1"
 

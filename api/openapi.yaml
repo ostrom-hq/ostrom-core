@@ -8365,7 +8365,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getMemoryCuration
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "The memory curation setting"
@@ -8386,7 +8386,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setMemoryCuration
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Turn the memory curation on or off"
@@ -8422,7 +8422,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMemoryReviews
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Pairs of entries for a person to decide"
@@ -8456,7 +8456,7 @@ paths:
         type: string
     post:
       operationId: applyMemoryReview
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Supersede the older entry of a pair"
@@ -8493,7 +8493,7 @@ paths:
         type: string
     post:
       operationId: dismissMemoryReview
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Keep both entries of a pair"
@@ -8523,7 +8523,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listSupersededMemory
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Superseded entries"
@@ -8652,7 +8652,7 @@ paths:
         type: string
     post:
       operationId: restoreMemory
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - memory
       summary: "Restore a superseded entry"
