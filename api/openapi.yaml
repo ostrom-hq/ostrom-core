@@ -9323,7 +9323,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMcpHostedProcesses
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: The org's hosted stdio processes on the MCP host, read live (scope mcp:read)
@@ -9353,7 +9353,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: restartMcpHostedProcess
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - mcp
       summary: Restart a hosted stdio process (scope mcp:admin)
