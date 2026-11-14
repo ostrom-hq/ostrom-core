@@ -19868,11 +19868,10 @@ components:
           description: The PEM private key; null or absent keeps the stored one; required to create the App
         webhookSecret:
           type: [string, 'null']
-          minLength: 1
           maxLength: 256
           description: 'The secret GitHub signs the webhooks with; null or absent keeps the stored one for the same
-            `appId` (another App signs with its own, so none is kept). Optional, as an App may have its webhooks turned
-            off: without it every webhook is refused (`webhookSecretSet` false)'
+            `appId` (another App signs with its own, so none is kept); an empty string clears it. Optional, as an App
+            may have its webhooks turned off: without it every webhook is refused (`webhookSecretSet` false)'
         version:
           type: [integer, 'null']
           description: The stored `version`; null or absent to create the App
