@@ -12534,6 +12534,134 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/skills:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: fetchRunnerSkills
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner of a cloud session reads the skills the session's owner receives (`runners.cloud.skills.v1`), at every start of the agent, to install them in the agent's personal skills folder under the agent's own UID: the same manifest as `getSkillDelivery` for that member (team skills their decisions or the audience allow, and their own personal skills), resolved at every call. Only the runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`), with the execution's runner token checked before the body is read: 409 `execution_fenced` for another execution, 409 `delivery_unavailable` otherwise. A disabled owner receives none. `Cache-Control: no-store`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerExecution'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillManifest'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/skills/artifact:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: downloadRunnerSkill
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The files of a skill version the session's owner receives (`runners.cloud.skills.v1`), as `downloadSkill`: only the currently effective pinned version is served (404 otherwise), its digest recomputed from the stored files (500 `skill_integrity` on a mismatch). The runner verifies it again before installing. Only the runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`), with the execution's runner token checked before the body is read: 409 `execution_fenced` for another execution, 409 `delivery_unavailable` otherwise."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerArtifactRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillArtifact'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/hooks:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: fetchRunnerHooks
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner of a cloud session reads the team hooks the session's owner receives (`runners.cloud.hooks.v1`), at every start of a Claude Code agent: the same manifest as `getHookDelivery` for that member, resolved at every call. There is no member approval in a pod: the administrator's pin and the owner's decision are the approval, as in TeamCode. Codex sessions run no team hook. Only the runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`), with the execution's runner token checked before the body is read: 409 `execution_fenced` for another execution, 409 `delivery_unavailable` otherwise. A disabled owner receives none. `Cache-Control: no-store`"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerExecution'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookManifest'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/runner/hooks/artifact:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: downloadRunnerHook
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The files and definition of a hook version the session's owner receives (`runners.cloud.hooks.v1`), as `downloadHook`: only the currently effective pinned version is served (404 otherwise), its digest recomputed (500 `hook_integrity` on a mismatch). The runner verifies it again before installing. Only the runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`), with the execution's runner token checked before the body is read: 409 `execution_fenced` for another execution, 409 `delivery_unavailable` otherwise."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerArtifactRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookArtifact'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/messages:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -18847,7 +18975,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
@@ -22271,6 +22399,27 @@ components:
       required:
       - sessionId
       - epoch
+      x-ostrom-kotlin: pending
+    RunnerArtifactRequest:
+      type: object
+      description: "The execution a runner call is for, and the version it downloads: a name and a version label of the owner's manifest"
+      properties:
+        sessionId:
+          type: string
+        epoch:
+          type: integer
+          format: int64
+        name:
+          type: string
+          description: "1 to 64 lowercase letters, digits and single hyphens"
+        version:
+          type: string
+          description: "A version label, case-sensitive"
+      required:
+      - sessionId
+      - epoch
+      - name
+      - version
       x-ostrom-kotlin: pending
     RunnerGitIdentity:
       type: object
