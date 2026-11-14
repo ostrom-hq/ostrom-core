@@ -7,6 +7,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import run.ostrom.core.api.Idempotency
 import run.ostrom.core.api.models.RunStatus
 import run.ostrom.core.api.models.Workflow
 import run.ostrom.core.api.models.WorkflowEditors
@@ -146,6 +147,18 @@ class WorkflowWritesTest {
         assertJson("""{"inputs":{"ticket":"OS-1"}}""", server.requests[0].bodyText())
         assertJson("{}", server.requests[1].bodyText())
         assertEquals("", server.requests[2].bodyText())
+    }
+
+    @Test
+    fun aStartCarriesItsIdempotencyKeyAndAReplayReturnsTheFirstRun() = runTest {
+        val server = ScriptedServer { json(runJson, HttpStatusCode.OK, listOf(Idempotency.REPLAYED_HEADER to "true")) }
+        server.client().use { client ->
+            val key = Idempotency.newKey()
+            assertEquals(RunStatus.QUEUED, client.workflows.start("wf/1", idempotencyKey = key).status)
+            assertEquals(key, server.requests.single().headers[Idempotency.KEY_HEADER])
+            assertFailsWith<IllegalArgumentException> { client.workflows.start("wf/1", idempotencyKey = "no spaces") }
+        }
+        assertEquals(1, server.requests.size)
     }
 
     @Test
