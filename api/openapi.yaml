@@ -13117,8 +13117,8 @@ paths:
         `ostrom-artifacts` (`ostrom mcp --server ostrom-artifacts`, a stdio bridge to the launch's local relay, which
         forwards here with the agent token), and the cloud runner does, when `getArtifactPolicy` answers
         `canPublish` (a stdio server of the `ostrom` binary in the agent's container that posts here with the
-        launch's agent token, under the Kubernetes and the Docker drivers alike). Its tools never make an artifact public nor delete one (both need a person,
-        `setArtifactAccess`, `deleteArtifact`)."
+        launch's agent token, under the Kubernetes and the Docker drivers alike). Its tools never make an artifact
+        public nor delete one (both need a person, `setArtifactAccess`, `deleteArtifact`)."
       requestBody:
         required: true
         content:
