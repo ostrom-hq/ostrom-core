@@ -12757,6 +12757,8 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/transfers:
@@ -12863,7 +12865,7 @@ paths:
       tags:
       - runners
       summary: "Accept a session offered to the caller"
-      description: "`runners.cloud.transfer.v1`. Only the recipient. The session pauses, then becomes the recipient's; before it runs again the runner resets the agent's settings and the repositories' Git configuration (`untrustedWorkspace`). Idempotent. 409 `transfer_expired`, `transfer_not_open`, `transfer_pending`; 422 `recipient_ineligible`"
+      description: "`runners.cloud.transfer.v1`. Only the recipient. The session pauses, then becomes the recipient's; before it runs again the runner resets the agent's settings and the repositories' Git configuration (`untrustedWorkspace`). Idempotent. 409 `transfer_expired`, `transfer_not_open`; 422 `recipient_ineligible`"
       parameters:
       - name: id
         in: path
@@ -12890,6 +12892,8 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
