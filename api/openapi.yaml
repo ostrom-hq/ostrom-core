@@ -22327,7 +22327,7 @@ components:
             `stdio:<launcher>:<package>`, and a member's list (`mine=true`) gives the relay path, never the upstream
         transport:
           type: string
-          description: http, sse or stdio
+          description: http or stdio (a request naming another transport, `sse` included, is a 400)
         secretNames:
           type: array
           items:
@@ -22763,9 +22763,8 @@ components:
           description: The organization's sequence, gap-free and increasing
         type:
           type: string
-          description: "The event type, also the SSE `event:` field (`cloud.wait.created`); an open list. Planned, until
-            ostrom-server publishes them: the hosted MCP commands (TeamCode's `mcp.stdio.*`, a hosted stdio server's
-            process, see `GET /api/v1/mcp/hosted`) publish,
+          description: "The event type, also the SSE `event:` field (`cloud.wait.created`); an open list. The hosted MCP
+            commands (TeamCode's `mcp.stdio.*`, a hosted stdio server's process, see `GET /api/v1/mcp/hosted`) publish,
             with the subject `mcp`: `mcp.stdio.failed`, a process starts failing (`failed` or `backoff`), once per
             failure streak (retries, `failed` becoming `backoff` and an expired backoff stay in it until a start
             succeeds), with `data` `{server, memberId?, state, failure}`; `mcp.stdio.recovered`, the process is `ready`
