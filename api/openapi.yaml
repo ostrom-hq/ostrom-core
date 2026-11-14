@@ -4994,8 +4994,9 @@ paths:
       - packages
       summary: Save how the organization compiles its packages
       description: 'An owner or an admin of the organization, signed in as a person (the console). A `PUT` replaces
-        every setting; `updatedAt` is the one of the settings edited (absent while nothing is stored), 409
-        `compiler_settings_conflict` when another save came first. A value the server refuses is 400
+        every setting (an omitted `codePublishers` or `prodApprover` is removed); `updatedAt` is the one of the settings
+        edited, absent while nothing is stored: 409 `compiler_settings_conflict` when another save came first,
+        including a first save when one is stored. A value the server refuses is 400
         `invalid_compiler_settings` naming the field. Audited `compiler.settings.changed`. The next compilation
         applies it'
       requestBody:
@@ -19310,13 +19311,16 @@ components:
           maxItems: 100
           items:
             type: string
+            minLength: 1
             maxLength: 100
-          description: 'The logins whose signed decision lets a workflow run code (its scripts), compared without case;
-            absent for every person who decides'
+          description: 'The member logins (as in a signed decision) whose decision lets a workflow run code (its
+            scripts), compared without case and stored lower case without duplicates; absent for every person who
+            decides, empty for nobody'
         prodApprover:
           type: string
+          minLength: 1
           maxLength: 100
-          description: The login that approves a gate naming no approver; absent for none
+          description: The member login that approves a gate naming no approver; absent for none
         updatedAt:
           type: string
           format: date-time
@@ -19339,13 +19343,16 @@ components:
           maxItems: 100
           items:
             type: string
+            minLength: 1
             maxLength: 100
-          description: 'The logins whose signed decision lets a workflow run code (its scripts), compared without case;
-            absent for every person who decides'
+          description: 'The member logins (as in a signed decision) whose decision lets a workflow run code (its
+            scripts), compared without case and stored lower case without duplicates; absent for every person who
+            decides, empty for nobody'
         prodApprover:
           type: string
+          minLength: 1
           maxLength: 100
-          description: The login that approves a gate naming no approver; absent for none
+          description: The member login that approves a gate naming no approver; absent for none
         updatedAt:
           type: string
           format: date-time
