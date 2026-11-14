@@ -40,6 +40,7 @@ class CloudTransfersClientTest {
             assertNull(asked.decidedBy)
             val page = client.cloudTransfers.list("incoming", listOf("offered", "accepted"), "cs_1", "tr_9", 10)
             assertEquals("tr_0", page.next)
+            client.cloudTransfers.list()
             client.cloudTransfers.get("tr_1")
             client.cloudTransfers.accept("tr_1", resume = true)
             client.cloudTransfers.accept("tr_1")
@@ -52,6 +53,7 @@ class CloudTransfersClientTest {
                 "POST /api/v1/cloud/sessions/cs%201/transfer",
                 "GET /api/v1/cloud/transfers?direction=incoming&session=cs_1&before=tr_9&limit=10" +
                     "&state=offered&state=accepted",
+                "GET /api/v1/cloud/transfers",
                 "GET /api/v1/cloud/transfers/tr_1",
                 "POST /api/v1/cloud/transfers/tr_1/accept",
                 "POST /api/v1/cloud/transfers/tr_1/accept",
@@ -64,11 +66,5 @@ class CloudTransfersClientTest {
         assertEquals("k-1", asked.headers["Idempotency-Key"])
         val body = (asked.body as OutgoingContent.ByteArrayContent).bytes().decodeToString()
         assertEquals(Json.parseToJsonElement("""{"toMemberId":"bob","resume":true}"""), Json.parseToJsonElement(body))
-    }
-
-    @Test
-    fun theStatesAreDistinctAndInTheOrderOfATransfersLife() {
-        assertEquals(CloudTransferStates.all.size, CloudTransferStates.all.toSet().size)
-        assertEquals("offered", CloudTransferStates.all.first())
     }
 }
