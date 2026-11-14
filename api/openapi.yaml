@@ -6452,6 +6452,8 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
     put:
       operationId: saveWorkflowSettings
       x-ostrom-status: served
@@ -6481,6 +6483,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
   /api/v1/automations:
     parameters:
@@ -11825,6 +11829,8 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
     post:
       operationId: createCloudProfile
       x-ostrom-status: served
@@ -11851,6 +11857,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/profiles/{id}:
     parameters:
@@ -11915,6 +11923,8 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
     put:
       operationId: saveCloudSettings
       x-ostrom-status: planned
@@ -11945,6 +11955,8 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions:
     parameters:
