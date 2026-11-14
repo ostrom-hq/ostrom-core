@@ -19776,6 +19776,7 @@ components:
           type: string
           minLength: 4
           maxLength: 64
+          pattern: '^Iv[0-9A-Za-z._-]{2,62}$'
           description: The App's OAuth client ID (`Iv…`)
         clientSecret:
           type: [string, 'null']
@@ -19790,7 +19791,8 @@ components:
           type: [string, 'null']
           minLength: 1
           maxLength: 256
-          description: The secret GitHub signs the webhooks with; null or absent keeps the stored one
+          description: The secret GitHub signs the webhooks with; null or absent keeps the stored one. Optional, as an
+            App may have its webhooks turned off: without it every webhook is refused (`webhookSecretSet` false)
         version:
           type: [integer, 'null']
           description: The stored `version`; null or absent to create the App
