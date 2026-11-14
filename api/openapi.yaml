@@ -19297,14 +19297,6 @@ components:
           type: integer
           minimum: 1
           maximum: 10000
-        maxRunningAutomationsPerMember:
-          type: integer
-          minimum: 1
-          maximum: 100
-          description: How many sessions of one member's automation runs may work at once (TeamCode's
-            `maxRunningAutomationsPerMember`); a run over it stays `queued` (up to 30 minutes, then fails
-            `capacity_timeout`). A run of a workflow action does not count. 2 by default; absent in a request keeps
-            the stored value (2 while nothing is stored)
         transcriptRetentionDays:
           type: integer
           minimum: 1
@@ -19355,14 +19347,6 @@ components:
           type: integer
           minimum: 1
           maximum: 10000
-        maxRunningAutomationsPerMember:
-          type: integer
-          minimum: 1
-          maximum: 100
-          description: How many sessions of one member's automation runs may work at once (TeamCode's
-            `maxRunningAutomationsPerMember`); a run over it stays `queued` (up to 30 minutes, then fails
-            `capacity_timeout`). A run of a workflow action does not count. 2 by default; absent in a request keeps
-            the stored value (2 while nothing is stored)
         transcriptRetentionDays:
           type: integer
           minimum: 1
@@ -19620,6 +19604,13 @@ components:
           description: How long an agent's background work (background subagents and commands, monitors, scheduled
             wake-ups, reported by its runner) holds off the idle pause, from when it was first reported; 0 never holds it
             off. 240 by default (TeamCode af1a5f7b)
+        maxRunningAutomationsPerMember:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: How many sessions of one member's automation runs may work at once (TeamCode's
+            `maxRunningAutomationsPerMember`); a run over it stays `queued` (up to 30 minutes, then fails
+            `capacity_timeout`). A run of a workflow action does not count. 2 by default
         updatedAt:
           type: string
           format: date-time
@@ -19636,6 +19627,11 @@ components:
           type: integer
           minimum: 0
           maximum: 1440
+        maxRunningAutomationsPerMember:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Absent keeps the stored value (2 while nothing is stored)
         updatedAt:
           type: string
           format: date-time
