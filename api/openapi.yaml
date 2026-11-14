@@ -11910,7 +11910,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCloudSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: The organization's cloud session settings
@@ -11930,7 +11930,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveCloudSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Save the organization's cloud session settings
