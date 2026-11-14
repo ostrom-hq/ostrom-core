@@ -11355,18 +11355,26 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Reservations not yet reconciled
+      summary: Unknown usage awaiting review (`capacity.usage-reconciliation.v1`)
+      description: "TeamCode's Usage review. A model call whose final usage never reached the ledger (a stream cut, a
+        replica lost) keeps its conservative charge, the cost it was admitted for, instead of counting as zero: its
+        hold has run out and stays charged to the day it was held. This lists those holds, newest first, 50 at most a
+        page (`next` is the `before` of the following page). `before` is the `id` of the last item of the previous page;
+        `member` keeps one member's. A hold still within its lease is not listed. Owners and admins, a person signed
+        in; a member, a key (an administrator's included) or an agent: 403. Never cached"
       parameters:
       - name: member
         in: query
         required: false
         schema:
           type: string
+        description: Only this member's (`OrgMember.id`)
       - name: before
         in: query
         required: false
         schema:
           type: string
+        description: The `id` of the last item of the previous page
       responses:
         '200':
           description: OK
@@ -11378,8 +11386,9 @@ paths:
                   items:
                     type: array
                     items:
-                      type: object
-                      additionalProperties: {}
+                      $ref: '#/components/schemas/PendingUsage'
+                  next:
+                    type: string
                 required:
                 - items
         '400':
@@ -11400,7 +11409,9 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Reconciliation history
+      summary: Reconciliation history (`capacity.usage-reconciliation.v1`)
+      description: "The corrections made to unknown usage, newest first, 50 at most a page, kept as long as their holds
+        (90 days). Same paging, filters and authority as `listPendingUsage`"
       parameters:
       - name: member
         in: query
@@ -11423,10 +11434,46 @@ paths:
                   items:
                     type: array
                     items:
-                      type: object
-                      additionalProperties: {}
+                      $ref: '#/components/schemas/UsageReconciliation'
+                  next:
+                    type: string
                 required:
                 - items
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/usage/reservations/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getUsageReview
+      x-ostrom-status: planned
+      tags:
+      - budgets
+      summary: One hold under review, or its correction (`capacity.usage-reconciliation.v1`)
+      description: "`pending` while the hold is still unknown, `reconciliation` once an administrator corrected it
+        (the two are never both present). 404 for an id that is neither. The id is a resource identifier, not a
+        capability. Same authority as `listPendingUsage`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageReview'
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -11445,7 +11492,16 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Reconcile a reservation with the provider bill
+      summary: Replace an unknown charge with what the provider billed (`capacity.usage-reconciliation.v1`)
+      description: "An administrator's attestation of provider evidence for that exact call; the server does not fetch
+        or verify the record. Only a hold whose lease has run out and that no ledger line settled can be corrected,
+        once: a final correction, not a refund of known usage. `expectedUsd` must equal the charge displayed
+        (`PendingUsage.usd`) and `expectedProviderRequestId` the displayed provider request id (null when none was
+        captured), else 409 `stale_reconciliation` and the view must be reviewed again. `usd` is the verified total
+        (0 to 100 000 000), the same correction again answers the original record without another delta, a different
+        one 409 `reconciled`. The correction applies to the day the hold was held and to the member, workflow and
+        launch it was attributed to then; it creates nothing on today's ledger. Audited (`usage.reconciled`). Owners
+        and admins, a person signed in (a sign-in less than 5 minutes old)"
       parameters:
       - name: id
         in: path
@@ -11459,31 +11515,50 @@ paths:
             schema:
               type: object
               properties:
+                expectedUsd:
+                  type: number
+                  description: The charge as the reviewer saw it
+                expectedProviderRequestId:
+                  type: string
+                  description: The provider request id as the reviewer saw it, absent when none
                 usd:
                   type: number
+                  description: The verified total, 0 to 100 000 000
+                source:
+                  type: string
+                  enum:
+                  - PROVIDER_RECORD
+                  - PROVIDER_CONFIRMATION
+                reference:
+                  type: string
+                  description: A non-secret pointer to the evidence, 1 to 240 characters, one line
+                reason:
+                  type: string
+                  description: 1 to 240 characters, one line
               required:
+              - expectedUsd
               - usd
+              - source
+              - reference
+              - reason
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  usd:
-                    type: number
-                required:
-                - id
-                - usd
+                $ref: '#/components/schemas/UsageReconciliation'
         '400':
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -11496,13 +11571,22 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Budget overrides of a member
+      summary: Budget overrides of a member (`capacity.budget-overrides.v1`)
+      description: "TeamCode's temporary quota overrides: the member's grants, newest first, 50 at most a page (`next`
+        is the `before` of the following page), revoked and expired ones included, and `activeId`, the one in force
+        now. Owners and admins, a person signed in; a member (their own is in `getMyBudget`), a key or an agent: 403"
       parameters:
       - name: login
         in: path
         required: true
         schema:
           type: string
+      - name: before
+        in: query
+        required: false
+        schema:
+          type: string
+        description: The `id` of the last item of the previous page
       responses:
         '200':
           description: OK
@@ -11517,6 +11601,9 @@ paths:
                       $ref: '#/components/schemas/BudgetOverride'
                   next:
                     type: string
+                  activeId:
+                    type: string
+                    description: The override in force now, absent without one
                 required:
                 - items
         '400':
@@ -11534,7 +11621,17 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Grant a dated exception
+      summary: Grant a temporary daily budget (`capacity.budget-overrides.v1`)
+      description: "While active, `usd` replaces the member's own daily limit that stops the calls (or adds one when
+        they have none): the total the member may spend today (UTC), not an addition, so a member who spent 80 under
+        a day limit of 100 and is granted 300 may spend 220 more, and an override never refunds what was spent. `0`
+        stops the member's calls; it does not mean unlimited. It ends at the earlier of `durationMinutes` and the next
+        midnight UTC, by the database's clock, with no job. The organization's limits, the member's monthly limit,
+        the workflow's, the launch's and the model policy still apply, and so do calls in flight. `replacesId` must be
+        the override in force when there is one, and null when there is none, else 409 `stale_budget_override`: it
+        replaces it, which stays in the history. At most 5 000 grants a member and 100 000 an organization: past
+        them, 400 `invalid_budget_override`. Audited (`budget_override.granted`, `budget_override.superseded`). Owners
+        and admins, a person signed in (a sign-in less than 5 minutes old)"
       parameters:
       - name: login
         in: path
@@ -11550,13 +11647,20 @@ paths:
               properties:
                 usd:
                   type: number
-                expiresAt:
-                  type: string
+                  description: The member's total daily allowance, 0 to 100 000 000
+                durationMinutes:
+                  type: integer
+                  minimum: 1
+                  maximum: 1440
                 reason:
                   type: string
+                  description: One line of 1 to 240 characters, without secrets
+                replacesId:
+                  type: string
+                  description: The override in force, to replace it
               required:
               - usd
-              - expiresAt
+              - durationMinutes
               - reason
       responses:
         '201':
@@ -11570,7 +11674,12 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
-          $ref: '#/components/responses/Error'
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -11583,7 +11692,10 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Revoke an exception
+      summary: Revoke a temporary daily budget (`capacity.budget-overrides.v1`)
+      description: "The member's own limits apply again at once; calls in flight finish. Revoking one already revoked
+        answers it as it is (the first revocation is kept) and never revokes another grant. An expired grant: 409
+        `stale_budget_override`. Audited (`budget_override.revoked`). Same authority as `createBudgetOverride`"
       parameters:
       - name: login
         in: path
@@ -11595,6 +11707,18 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: One line of 1 to 240 characters
+              required:
+              - reason
       responses:
         '200':
           description: OK
@@ -11607,7 +11731,116 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
           $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/policy/api-prices:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getApiPrices
+      x-ostrom-status: planned
+      tags:
+      - budgets
+      summary: The organization's API price table (`capacity.api-prices.v1`)
+      description: "TeamCode's editable price table (ADR 0002 step 1): what the provider's pay-as-you-go API charges, per
+        million tokens, for each model from a date on. It prices the model calls of the organization (their cost in
+        the ledger, the budgets, the automatic pool size). With no row at all the gateway's built-in Anthropic list
+        prices apply (`defaults: true`); with any row, only the rows do, and a model with no row is unpriced (cost 0,
+        flagged). Any member, or a key holding `usage:read`"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPriceTable'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: setApiPrices
+      x-ostrom-status: planned
+      tags:
+      - budgets
+      summary: Replace the organization's API price table (owners and admins, a person signed in)
+      description: "Replaces every row (an empty list goes back to the built-in prices). At most 200 rows; a provider
+        (`anthropic`, `openai`), a lowercase model or family prefix, a date, four prices from 0 to 1 000 000 000 000
+        with input and output above 0; one row a provider, model and date, else 400 `invalid_api_price`. A row prices
+        a call from its date until a later row of the same model; an exact model wins over the longest prefix. Audited
+        (`capacity.api_price_changed`, with the number of rows before and after)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiPriceTable'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPriceTable'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/policy/api-prices/load-defaults:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: loadApiPriceDefaults
+      x-ostrom-status: planned
+      tags:
+      - budgets
+      summary: Add Anthropic's current list prices to the table (owners and admins, a person signed in)
+      description: "Adds the built-in rows (Anthropic's list prices read on 2026-10-21, cache writes at the 5-minute
+        rate) the table lacks, dated that day; a row already present for the same model and date is kept as typed, so
+        loading twice changes nothing. Audited (`capacity.api_prices_defaults_loaded`). The answer is the whole table"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPriceTable'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          description: step_up_required (a write from the console needs a sign-in less than 5 minutes old; sign in
+            again, then send it again), or forbidden (the key is `error.type`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepUpOrForbidden'
         '404':
           $ref: '#/components/responses/Error'
         '409':
@@ -20106,35 +20339,196 @@ components:
       x-ostrom-kotlin: pending
     BudgetOverride:
       type: object
-      description: A dated exception to a daily allocation
+      description: "A temporary daily budget granted to a member (`capacity.budget-overrides.v1`), kept after it ends
+        or is revoked"
       properties:
         id:
           type: string
         member:
           type: string
+          description: The member's `login`
         usd:
           type: number
+          description: The member's total daily allowance while it lasts
+        createdAt:
+          type: string
         expiresAt:
           type: string
+          description: The earlier of the requested duration and the next midnight UTC
         reason:
           type: string
         createdBy:
           type: string
+        replacesId:
+          type: string
+          description: The override this one replaced
         revokedAt:
+          type: string
+        revokedBy:
+          type: string
+        revocationReason:
           type: string
       required:
       - id
       - member
       - usd
+      - createdAt
       - expiresAt
       - reason
       - createdBy
+      x-ostrom-kotlin: pending
+    BudgetOverrideSummary:
+      type: object
+      description: "The override in force, as its member sees it (`getMyBudget`): no reason, no grantor"
+      properties:
+        id:
+          type: string
+        usd:
+          type: number
+        expiresAt:
+          type: string
+      required:
+      - id
+      - usd
+      - expiresAt
+      x-ostrom-kotlin: pending
+    PendingUsage:
+      type: object
+      description: "A model call whose final usage is unknown: the hold it was admitted with stays charged
+        (`capacity.usage-reconciliation.v1`)"
+      properties:
+        id:
+          type: string
+          description: The call's id, the id of the hold
+        member:
+          type: string
+          description: The member's `login`
+        usd:
+          type: number
+          description: The charge kept
+        heldAt:
+          type: string
+        leaseExpiredAt:
+          type: string
+        workflowId:
+          type: string
+        launchId:
+          type: string
+        providerRequestId:
+          type: string
+          description: The provider's request id when the gateway captured one before streaming, bounded and unambiguous
+      required:
+      - id
+      - member
+      - usd
+      - heldAt
+      - leaseExpiredAt
+      x-ostrom-kotlin: pending
+    UsageReconciliation:
+      type: object
+      description: "A final correction of an unknown charge, attested by an administrator, with the attribution the call
+        had when it was held"
+      properties:
+        id:
+          type: string
+        member:
+          type: string
+        workflowId:
+          type: string
+        launchId:
+          type: string
+        providerRequestId:
+          type: string
+        heldAt:
+          type: string
+        previousUsd:
+          type: number
+        usd:
+          type: number
+        source:
+          type: string
+          enum:
+          - PROVIDER_RECORD
+          - PROVIDER_CONFIRMATION
+        reference:
+          type: string
+        reason:
+          type: string
+        reconciledBy:
+          type: string
+        reconciledAt:
+          type: string
+      required:
+      - id
+      - member
+      - heldAt
+      - previousUsd
+      - usd
+      - source
+      - reference
+      - reason
+      - reconciledBy
+      - reconciledAt
+      x-ostrom-kotlin: pending
+    UsageReview:
+      type: object
+      description: One of the two, never both
+      properties:
+        pending:
+          $ref: '#/components/schemas/PendingUsage'
+        reconciliation:
+          $ref: '#/components/schemas/UsageReconciliation'
+      x-ostrom-kotlin: pending
+    ApiPrice:
+      type: object
+      description: "One row of the price table: micro-dollars (USD millionths) per million tokens, so `3000000` is $3
+        a million tokens"
+      properties:
+        provider:
+          type: string
+          description: "`anthropic` or `openai`"
+        model:
+          type: string
+          description: A lowercase model, or a family prefix (`claude-sonnet-4`)
+        effectiveFrom:
+          type: string
+          description: The UTC date (`YYYY-MM-DD`) from which it applies, until a later row of the same model
+        inputMicros:
+          type: integer
+        cacheWriteMicros:
+          type: integer
+        cacheReadMicros:
+          type: integer
+        outputMicros:
+          type: integer
+      required:
+      - provider
+      - model
+      - effectiveFrom
+      - inputMicros
+      - cacheWriteMicros
+      - cacheReadMicros
+      - outputMicros
+      x-ostrom-kotlin: pending
+    ApiPriceTable:
+      type: object
+      properties:
+        prices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiPrice'
+        defaults:
+          type: boolean
+          description: "On a read: true when the table has no row and the gateway's built-in prices apply (`prices` then
+            lists them); ignored on a write"
+      required:
+      - prices
       x-ostrom-kotlin: pending
     Capabilities:
       type: object
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
-        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
+        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.api-prices.v1`, `capacity.budget-overrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usage-reconciliation.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
@@ -24458,6 +24852,14 @@ components:
           enum:
           - org
           - member
+        override:
+          $ref: '#/components/schemas/BudgetOverrideSummary'
+        baseLimitMicros:
+          type: integer
+          x-ostrom-status: planned
+          description: "Planned (`capacity.budget-overrides.v1`, with `override`, the temporary daily budget in force:
+            while it lasts the caller's own daily limit that stops is its `usd`): the daily limit in force without it,
+            absent when the caller had none"
         period:
           type: string
           enum:
