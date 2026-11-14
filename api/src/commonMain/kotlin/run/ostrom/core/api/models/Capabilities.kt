@@ -335,6 +335,12 @@ public object ServerFeatures {
     public const val WAITS_TIMED: String = "waits.timed.v1"
 
     /**
+     * `secret` fields of a wait (an agent's `ask_human`): the value is sealed, never returned, and reaches the agent
+     * as `OSTROM_WAIT_<NAME>` (Claude Code only); `file` fields.
+     */
+    public const val WAITS_SECRETS: String = "waits.secrets.v1"
+
+    /**
      * Outgoing webhooks (`/api/v1/webhooks`): the feed's events POSTed to the organization's services, signed
      * `Ostrom-Signature: v1=` (HMAC-SHA256), retried with backoff, with a delivery log, a test and a secret rotation.
      */
@@ -389,7 +395,7 @@ public object ServerFeatures {
         RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS, RUNNERS_CLOUD_TRANSCRIPT_FEEDS, RUNNERS_CLOUD_TRANSCRIPT_LIVE,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS, LAUNCHES_LIMITS,
         SERVICE_KEY_SCOPES,
-        SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
-        WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
+        SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WAITS_SECRETS, WEBHOOKS,
+        WORKFLOWS, WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )
 }

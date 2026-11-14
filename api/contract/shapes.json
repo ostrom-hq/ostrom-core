@@ -2964,6 +2964,20 @@
         },
         "required": true,
         "nullable": false
+      },
+      "secrets": {
+        "type": {
+          "map": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "oneTime": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -8040,6 +8054,11 @@
       },
       "maxLength": {
         "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "oneTime": {
+        "type": "boolean",
         "required": false,
         "nullable": false
       }

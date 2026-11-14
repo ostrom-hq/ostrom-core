@@ -7248,7 +7248,10 @@ paths:
         (403 `wait_session_owner_only`, an administrator included) and while it runs (409 `session_not_running`).
         A `time` or `event` wait (`resolver`) is asked by an agent in its session only, and resolves by itself: at
         `dueAt`, or when its `eventUrl` is called, or at `timeoutAt`; the session's Stop hook wakes the agent with it
-        (`POST /api/v1/waits/wake`). Nobody answers it (409 `resolves_by_itself`); its asker cancels it."
+        (`POST /api/v1/waits/wake`). Nobody answers it (409 `resolves_by_itself`); its asker cancels it. A `secret` field
+        (`waits.secrets.v1`) is refused in a session whose agent is not Claude Code (422 `secret_unsupported_agent`:
+        only Claude Code reads its environment again before each command, so a value given later could reach no other
+        agent)."
       requestBody:
         required: true
         content:
@@ -7328,6 +7331,9 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+
   /api/v1/waits/mcp:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -7474,7 +7480,10 @@ paths:
         the wait for its next execution (its Stop hook does not hold the agent). A session that cannot resume (its
         organization out of hours or at a cap, its owner gone) stays paused with the answer kept on the wait, and an
         ended one takes nothing. A wait for a time or an event that resolves by itself
-        (`time_reached`, `event_received`, `timed_out`) wakes its session the same way."
+        (`time_reached`, `event_received`, `timed_out`) wakes its session the same way.
+        The value of a `secret` field travels in this request and nowhere else: it is sealed apart in the same
+        transaction (`waits.secrets.v1`, 503 `secrets_unavailable` when the server has no key to seal with), and the
+        stored answer holds `provided` or `not provided` for the field."
       parameters:
       - name: id
         in: path
@@ -7503,6 +7512,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/waits/{id}/cancel:
     parameters:
@@ -21081,7 +21092,7 @@ components:
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
-        `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
+        `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
         ignores a key it does not know."
@@ -22968,6 +22979,19 @@ components:
         unavailable:
           type: array
           description: Assigned variables withheld because their value cannot be read now, by name only
+          items:
+            type: string
+        secrets:
+          type: object
+          additionalProperties:
+            type: string
+          description: "`fetchRunnerVariables` only (`waits.secrets.v1`): the secrets of the session's answered waits,
+            by variable name (`OSTROM_WAIT_<NAME>`), for the member the execution runs for; never in any other
+            answer"
+        oneTime:
+          type: array
+          description: The names in `secrets` the server deleted by serving them, which the runner keeps for the rest
+            of the turn only
           items:
             type: string
       required:
@@ -29555,12 +29579,21 @@ components:
       - answeredAt
     WaitField:
       type: object
-      description: A field of a wait
+      description: "A field of a wait. `file` takes the name of an uploaded file, a string of at most 255 characters
+        without `/`, `\\` or control characters. `secret` asks a person for a value the agent needs and nobody else
+        should read (a password, a token): a string of at most 4 096 bytes without NUL, only in a wait an agent asks in
+        its session (never in a workflow's wait node), without `default`. The value is sealed with the server's
+        credential cipher, bound to the wait's session and kept at most 24 hours; it is never returned, so the stored
+        answer, every view, the wake message, the audit and the feed carry `provided` or `not provided` for the
+        field. It reaches the agent only as the environment variable `OSTROM_WAIT_<FIELD ID UPPER-CASED>` of its
+        commands (Claude Code only, `waits.secrets.v1`): two secret fields of a wait must not give the same name"
       properties:
         id:
           type: string
         type:
           type: string
+          description: "`text`, `choice`, `confirm`, `number`, `date`, `secret`, `file` or `info`; a client shows a type
+            it does not know as text"
         label:
           type: string
         help:
@@ -29578,6 +29611,10 @@ components:
           type: boolean
         maxLength:
           type: integer
+        oneTime:
+          type: boolean
+          description: "`secret` only: the server deletes the value when it serves it to the session's runner, which
+            holds it for the turn (false when absent)"
       required:
       - id
       - type

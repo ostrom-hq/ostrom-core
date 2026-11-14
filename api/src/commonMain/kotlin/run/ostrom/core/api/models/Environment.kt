@@ -70,9 +70,19 @@ public data class EnvironmentVariantsPage(
  *
  * @property variables The values, by name.
  * @property unavailable Assigned variables withheld because their value cannot be read now, by name only.
+ * @property secrets The secrets of the session's answered waits by variable name (`OSTROM_WAIT_<NAME>`), in the
+ *   runner's variables only (`waits.secrets.v1`).
+ * @property oneTime The names in [secrets] the server deleted by serving them.
  */
 @Serializable
 public data class EnvironmentValues(
     val variables: Map<String, String>,
     val unavailable: List<String>,
-)
+    val secrets: Map<String, String> = emptyMap(),
+    val oneTime: List<String> = emptyList(),
+) {
+    /** Names only: the values are secrets, never printed. */
+    override fun toString(): String =
+        "EnvironmentValues(names=${variables.keys.sorted()}, unavailable=$unavailable, " +
+            "secrets=${secrets.keys.sorted()}, oneTime=$oneTime, values=[REDACTED])"
+}

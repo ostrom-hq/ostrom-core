@@ -549,7 +549,7 @@ public data class WaitSpec(
  * A field of a wait.
  *
  * @property id Field id.
- * @property type `text`, `number`, `boolean`, `choice`, `info`…
+ * @property type `text`, `choice`, `confirm`, `number`, `date`, `secret`, `file` or `info`.
  * @property label Label.
  * @property help Help text.
  * @property required Required.
@@ -558,6 +558,7 @@ public data class WaitSpec(
  * @property multiple Several options allowed.
  * @property allowOther Free value allowed.
  * @property maxLength Maximum length.
+ * @property oneTime A `secret` only: deleted once the server has served it to the session's runner.
  */
 @Serializable
 public data class WaitField(
@@ -571,6 +572,7 @@ public data class WaitField(
     val multiple: Boolean = false,
     val allowOther: Boolean = false,
     val maxLength: Int? = null,
+    val oneTime: Boolean = false,
 )
 
 /**
