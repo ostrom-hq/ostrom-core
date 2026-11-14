@@ -4,8 +4,8 @@ package run.ostrom.core.api
 import kotlin.uuid.Uuid
 
 /**
- * The idempotency key of a creating call, shared by every route that takes one (a workflow run's start, a cloud
- * session's creation): the same key returns what the first call created instead of creating it twice, so pressing
+ * The idempotency key of a creating call, shared by every route that takes one (a workflow run's start now, a cloud
+ * session's creation next): the same key returns what the first call created instead of creating it twice, so pressing
  * Start again after a lost answer is safe.
  *
  * The client sends one fresh [newKey] per press and reuses it for every retry of that press. The server scopes a key

@@ -119,7 +119,7 @@ cursor were purged, so the caller reloads what it shows. An event whose data is 
 `A-Za-z0-9._:-`, `Idempotency.isValid`) and `Idempotency.newKey()`. A caller makes one key per press of Start and reuses
 it for every retry of that press, so an answer that was lost never leads to a second run: `workflows.start(id, inputs,
 idempotencyKey)` sends it, and the server returns the first run (`200` and `Idempotency-Replayed: true`). A malformed
-key is refused before any request.
+key throws `IllegalArgumentException` before any request.
 
 ## The CLI
 

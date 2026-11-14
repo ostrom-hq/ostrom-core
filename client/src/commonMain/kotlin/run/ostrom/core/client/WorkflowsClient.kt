@@ -129,7 +129,8 @@ public class WorkflowsClient internal constructor(private val transport: Transpo
      * @param inputs The workflow's inputs, by [run.ostrom.core.api.models.WorkflowInput.id].
      * @param idempotencyKey One [Idempotency.newKey] per press, reused for each retry of it: a start repeated with the
      *   same key (an answer was lost) returns the first run (`200`, [Idempotency.REPLAYED_HEADER]) instead of starting
-     *   a second one. It must satisfy [Idempotency.isValid], else `invalid_request` (400); checked before any request.
+     *   a second one. It must satisfy [Idempotency.isValid], else an [IllegalArgumentException] is thrown before any request (the
+     *   server answers a malformed key `invalid_request`, 400).
      * @return The run, `queued` or already moving.
      */
     public suspend fun start(
