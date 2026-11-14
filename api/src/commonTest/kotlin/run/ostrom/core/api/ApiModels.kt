@@ -245,6 +245,12 @@ import run.ostrom.core.api.models.SetCloudModelRequest
 import run.ostrom.core.api.models.SetCloudPermissionBypassRequest
 import run.ostrom.core.api.models.StopCloudTaskRequest
 import run.ostrom.core.api.models.CloudSessionProfile
+import run.ostrom.core.api.models.AcceptCloudTransferRequest
+import run.ostrom.core.api.models.CloudTransfer
+import run.ostrom.core.api.models.CloudTransferPage
+import run.ostrom.core.api.models.CloudTransferRecipient
+import run.ostrom.core.api.models.CloudTransferRecipients
+import run.ostrom.core.api.models.CreateCloudTransferRequest
 import run.ostrom.core.api.models.CloudSetup
 import run.ostrom.core.api.models.CloudWorkspaceDeletion
 import run.ostrom.core.api.models.CreateCloudSessionRequest
@@ -505,6 +511,12 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     SetCloudPermissionBypassRequest.serializer(),
     StopCloudTaskRequest.serializer(),
     CloudSessionProfile.serializer(),
+    AcceptCloudTransferRequest.serializer(),
+    CloudTransfer.serializer(),
+    CloudTransferPage.serializer(),
+    CloudTransferRecipient.serializer(),
+    CloudTransferRecipients.serializer(),
+    CreateCloudTransferRequest.serializer(),
     CloudSetup.serializer(),
     CreateCloudSessionRequest.serializer(),
     EnvironmentValues.serializer(),
