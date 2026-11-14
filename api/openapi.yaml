@@ -3755,6 +3755,8 @@ paths:
       tags:
       - sessions
       summary: Sign of life of the launcher (every 20 s)
+      description: "With `sessions.activity.v1` (planned), a sign of life that ends a silence of the launcher (60 s
+        without one) clears a `working` activity reported before the silence, and keeps `waiting_for_human`."
       parameters:
       - name: id
         in: path
@@ -3878,8 +3880,8 @@ paths:
       description: "TeamCode's `POST /api/v1/runs/{id}/activity` on Ostrom's session segment: the launch of
         `ostrom <agent>` reports from the agent's `Stop`, `Notification`, `UserPromptSubmit` and `PostToolUse` hooks,
         so the sessions list tells a session that needs a person from one that is busy (`Session.activity`). Callers:
-        the session's person or an agent token of its launch, as `sessionAlive`: another person, or another launch's
-        agent token, gets 403; an unknown segment 404. Reports are applied one at a time per segment. A report observed before the stored
+        the session's person or an agent token of its launch (scope `sessions:write` or the agent token's): another
+        person, or another launch's agent token, gets 403; an unknown segment, or one of another organization, 404. Reports are applied one at a time per segment. A report observed before the stored
         one changes nothing (`superseded: true`). A repeated state keeps its time (`since`). 409 `session_ended` once
         the segment ended (a lost one too: its launcher reports to the segment it reopens). 400
         `invalid_session_activity` for another state or an `observedAt` that is not a date-time. Not audited, like a
@@ -19224,7 +19226,7 @@ components:
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
-        `sessions.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
+        `sessions.v1`, `sessions.activity.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
         ignores a key it does not know."
@@ -25117,8 +25119,10 @@ components:
           format: date-time
           description: "When the hook fired, by the reporting computer's clock, kept across retries. A report that
             lands after one observed later changes nothing and answers `superseded: true`. A value more than 5 minutes
-            ahead of the server counts as the server's time plus 5 minutes; absent, the stored one is kept; a value
-            that is not a date-time is 400 `invalid_session_activity`"
+            ahead of the server counts as the server's time plus 5 minutes. Only a report strictly older than the stored
+            observation is superseded; a report without `observedAt` is never superseded, is applied in arrival order,
+            and leaves the stored observation as it is. A value that is not a date-time is 400
+            `invalid_session_activity`"
       required:
       - state
     SessionActivity:
