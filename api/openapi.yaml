@@ -5493,7 +5493,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: sendTestPush
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Send a test notification to the caller's own phones
@@ -5524,7 +5524,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getNotificationSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: The caller's notification switches, per channel and kind
@@ -5550,7 +5550,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setNotificationSetting
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: Turn one kind on or off on one channel for the caller
