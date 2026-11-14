@@ -323,13 +323,13 @@ public object ServerFeatures {
      * TeamCode's editable API price table (ADR 0002 step 1): the organization's per-model prices
      * (`GET`/`PUT /api/v1/policy/api-prices`, `POST .../load-defaults`).
      */
-    public const val CAPACITY_API_PRICES: String = "capacity.api-prices.v1"
+    public const val CAPACITY_API_PRICES: String = "capacity.apiprices.v1"
 
     /**
      * TeamCode's temporary quota overrides: a dated total daily budget granted to a member by an administrator
      * (`/api/v1/members/{login}/budget-overrides`).
      */
-    public const val CAPACITY_BUDGET_OVERRIDES: String = "capacity.budget-overrides.v1"
+    public const val CAPACITY_BUDGET_OVERRIDES: String = "capacity.budgetoverrides.v1"
 
     /**
      * TeamCode's Forecasts page: each shared account's provider windows, their last hour of readings, the learned rate
@@ -354,7 +354,7 @@ public object ServerFeatures {
      * TeamCode's unknown usage review: the charges kept for calls whose usage never arrived, and an administrator's
      * final correction of them (`/api/v1/usage/pending`, `/reconciliations`, `/reservations/{id}`).
      */
-    public const val CAPACITY_USAGE_RECONCILIATION: String = "capacity.usage-reconciliation.v1"
+    public const val CAPACITY_USAGE_RECONCILIATION: String = "capacity.usagereconciliation.v1"
 
     /** The instance's cloud runtime and clusters, and the organizations' cloud profiles (TeamCode's cloud admin). */
     public const val CLOUD_ADMIN: String = "cloud.admin.v1"

@@ -11355,7 +11355,7 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Unknown usage awaiting review (`capacity.usage-reconciliation.v1`)
+      summary: Unknown usage awaiting review (`capacity.usagereconciliation.v1`)
       description: "TeamCode's Usage review. A model call whose final usage never reached the ledger (a stream cut, a
         replica lost) keeps its conservative charge, the cost it was admitted for, instead of counting as zero: its
         hold has run out and stays charged to the day it was held. This lists those holds, newest first, 50 at most a
@@ -11409,7 +11409,7 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Reconciliation history (`capacity.usage-reconciliation.v1`)
+      summary: Reconciliation history (`capacity.usagereconciliation.v1`)
       description: "The corrections made to unknown usage, newest first, 50 at most a page, kept as long as their holds
         (90 days). Same paging, filters and authority as `listPendingUsage`"
       parameters:
@@ -11457,7 +11457,7 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: One hold under review, or its correction (`capacity.usage-reconciliation.v1`)
+      summary: One hold under review, or its correction (`capacity.usagereconciliation.v1`)
       description: "`pending` while the hold is still unknown, `reconciliation` once an administrator corrected it
         (the two are never both present). 404 for an id that is neither. The id is a resource identifier, not a
         capability. Same authority as `listPendingUsage`"
@@ -11492,7 +11492,7 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Replace an unknown charge with what the provider billed (`capacity.usage-reconciliation.v1`)
+      summary: Replace an unknown charge with what the provider billed (`capacity.usagereconciliation.v1`)
       description: "An administrator's attestation of provider evidence for that exact call; the server does not fetch
         or verify the record. Only a hold whose lease has run out and that no ledger line settled can be corrected,
         once: a final correction, not a refund of known usage. `expectedUsd` must equal the charge displayed
@@ -11571,7 +11571,7 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Budget overrides of a member (`capacity.budget-overrides.v1`)
+      summary: Budget overrides of a member (`capacity.budgetoverrides.v1`)
       description: "TeamCode's temporary quota overrides: the member's grants, newest first, 50 at most a page (`next`
         is the `before` of the following page), revoked and expired ones included, and `activeId`, the one in force
         now. Owners and admins, a person signed in; a member (their own is in `getMyBudget`), a key or an agent: 403"
@@ -11621,7 +11621,7 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Grant a temporary daily budget (`capacity.budget-overrides.v1`)
+      summary: Grant a temporary daily budget (`capacity.budgetoverrides.v1`)
       description: "While active, `usd` replaces the member's own daily limit that stops the calls (or adds one when
         they have none): the total the member may spend today (UTC), not an addition, so a member who spent 80 under
         a day limit of 100 and is granted 300 may spend 220 more, and an override never refunds what was spent. `0`
@@ -11692,7 +11692,7 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: Revoke a temporary daily budget (`capacity.budget-overrides.v1`)
+      summary: Revoke a temporary daily budget (`capacity.budgetoverrides.v1`)
       description: "The member's own limits apply again at once; calls in flight finish. Revoking one already revoked
         answers it as it is (the first revocation is kept) and never revokes another grant. An expired grant: 409
         `stale_budget_override`. Audited (`budget_override.revoked`). Same authority as `createBudgetOverride`"
@@ -11749,7 +11749,7 @@ paths:
       x-ostrom-status: planned
       tags:
       - budgets
-      summary: The organization's API price table (`capacity.api-prices.v1`)
+      summary: The organization's API price table (`capacity.apiprices.v1`)
       description: "TeamCode's editable price table (ADR 0002 step 1): what the provider's pay-as-you-go API charges, per
         million tokens, for each model from a date on. It prices the model calls of the organization (their cost in
         the ledger, the budgets, the automatic pool size). With no row at all the gateway's built-in Anthropic list
@@ -20339,7 +20339,7 @@ components:
       x-ostrom-kotlin: pending
     BudgetOverride:
       type: object
-      description: "A temporary daily budget granted to a member (`capacity.budget-overrides.v1`), kept after it ends
+      description: "A temporary daily budget granted to a member (`capacity.budgetoverrides.v1`), kept after it ends
         or is revoked"
       properties:
         id:
@@ -20395,7 +20395,7 @@ components:
     PendingUsage:
       type: object
       description: "A model call whose final usage is unknown: the hold it was admitted with stays charged
-        (`capacity.usage-reconciliation.v1`)"
+        (`capacity.usagereconciliation.v1`)"
       properties:
         id:
           type: string
@@ -20528,7 +20528,7 @@ components:
       type: object
       description: "What a server speaks and serves (`capabilities`). `apiVersion` changes only when `/api/v1` breaks
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
-        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.api-prices.v1`, `capacity.budget-overrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usage-reconciliation.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
+        `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.environment.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`,
@@ -24857,7 +24857,7 @@ components:
         baseLimitMicros:
           type: integer
           x-ostrom-status: planned
-          description: "Planned (`capacity.budget-overrides.v1`, with `override`, the temporary daily budget in force:
+          description: "Planned (`capacity.budgetoverrides.v1`, with `override`, the temporary daily budget in force:
             while it lasts the caller's own daily limit that stops is its `usd`): the daily limit in force without it,
             absent when the caller had none"
         period:
