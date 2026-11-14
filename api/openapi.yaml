@@ -8751,7 +8751,7 @@ paths:
       - name: personal
         in: query
         required: false
-        x-ostrom-status: planned
+        x-ostrom-status: served
         description: "The members' personal MCP servers (`mcp.personal.v1`), by owner, with `owner` and their definition
           (name, URL, transport, the secret names they use: none of these is secret) for review; never a credential.
           An admin with `mcp:read`; the personal servers only, in owner order, the first 500, without
