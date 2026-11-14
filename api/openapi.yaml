@@ -3811,7 +3811,7 @@ paths:
       tags:
       - sessions
       summary: Sign of life of the launcher (every 20 s)
-      description: "With `sessions.activity.v1` (planned), a sign of life that ends a silence of the launcher (60 s
+      description: "With `sessions.activity.v1`, a sign of life that ends a silence of the launcher (60 s
         without one) clears a `working` activity reported before the silence, and keeps `waiting_for_human`."
       parameters:
       - name: id
@@ -3929,7 +3929,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reportSessionActivity
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: "Whether the agent works or waits for a person (`sessions.activity.v1`), reported by its hooks"
@@ -25236,7 +25236,7 @@ components:
           enum:
           - working
           - waiting_for_human
-          x-ostrom-status: planned
+          x-ostrom-status: served
           description: "Whether the agent works or waits for a person (`sessions.activity.v1`), as its hooks last
             reported it (`reportSessionActivity`), as TeamCode's run `activity`. Only while the segment is open: after
             its end (`ended`, `lost` included) it would be a guess, so it is absent. Absent too before the first report,
@@ -25246,7 +25246,7 @@ components:
         activitySince:
           type: string
           format: date-time
-          x-ostrom-status: planned
+          x-ostrom-status: served
           description: "When `activity` began, by the server's clock: a repeated state keeps its time. Present with
             `activity` only. Planned: the server does not send it yet"
       required:
