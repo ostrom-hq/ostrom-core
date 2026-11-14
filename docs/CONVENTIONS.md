@@ -588,9 +588,10 @@ literally in the test, not recomputed with the code under test.
 | --- | --- |
 | `ostrom-core` | `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (+ `jvm` for tests; `js` only for a module that must run in the browser) |
 | `ostrom-cli` | `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (BRIEF) |
-| `ostrom-server` | `linuxX64`, `linuxArm64` (production), `macosArm64` (development) |
+| `ostrom-server` | `jvm` (production, `ostrom-server:docs/decisions/0001`); its session runner (`runner/`) alone `linuxX64`, `linuxArm64` |
 
-Every module also has `jvm()` for tests and coverage only (section 7.2).
+Every module also has `jvm()` for tests and coverage only (section 7.2), except the server's, where `jvm()` is the
+production target (section 10.5).
 
 ### 10.2 What changes from the JVM, and the choices
 
@@ -676,6 +677,24 @@ so native is the right target; on hot paths:
   are paid runners: tags and manual full validation only (section 11).
 - C dependencies linked through cinterop (`libcurl` for Ktor Curl) are installed on the runner
   (`sudo apt-get install -y libcurl4-openssl-dev`, as `teamcode` does).
+
+### 10.5 The server's exception: JVM-only common code
+
+`ostrom-server` runs on the JVM in production (`ostrom-server:docs/decisions/0001`, on TeamCode's server stack). Its
+server projects declare no native target (`ostrom.nativeTargets` is empty; only `runner/` sets it), so their
+`commonMain` and `commonTest` are compiled for the JVM alone. There, and only there:
+
+- `commonMain` and `commonTest` may import JVM classes (`java.*`, `javax.*`) and JVM-only libraries declared in the
+  source set's dependencies: Exposed, JDBC, HikariCP and Flyway today, then SLF4J/Logback, Netty and `koin-ktor` as
+  the server's later steps land them. The rules of sections 6.1 and 15 against those libraries apply to the code that
+  still compiles for Kotlin/Native: ostrom-core, the CLI and the runner.
+- The modules stay in `commonMain` (no move to `jvmMain` for the sake of it), and new `expect`/`actual` pairs are not
+  written: a declaration with a JVM `actual` alone is folded into plain code when a change touches it.
+- The check is mechanical: the server's `scripts/check-conventions.py` refuses a JVM-only import in a native source
+  set, and in `commonMain` only when the project has a native target. A server project that gains a native target
+  loses the exception at once.
+
+Every other repository keeps `commonMain` free of JVM code: it ships on the native targets of section 10.1.
 
 ---
 
