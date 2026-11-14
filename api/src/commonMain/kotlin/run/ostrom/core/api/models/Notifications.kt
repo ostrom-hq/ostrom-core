@@ -34,9 +34,9 @@ public data class RegisterPushDeviceRequest(
  * `base64(0x01 | ephemeral P-256 public key (65 bytes, uncompressed) | nonce (12 bytes) | AES-256-GCM ciphertext and
  * 16-byte tag)`, with the key `HKDF-SHA256(ECDH(ephemeral private, phone public), salt = ephemeral point | phone point,
  * info = "ostrom-push-v1", 32 bytes)`, both points as 65-byte uncompressed SEC1 points (`0x04 | x | y`, the phone's
- * read from its SubjectPublicKeyInfo), and the plaintext this object's JSON, [v] always written. The app decrypts it in its notification
- * service extension (iOS) or messaging service (Android) and shows [title] and [body]; on iOS a generic alert shows
- * when it cannot.
+ * read from its SubjectPublicKeyInfo), and the plaintext this object's JSON, [v] always written. The app decrypts it
+ * in its notification service extension (iOS) or messaging service (Android) and shows [title] and [body]; on iOS a
+ * generic alert shows when it cannot.
  *
  * @property v The payload's format, 1.
  * @property id The notification's id.
