@@ -254,6 +254,7 @@ POST /api/v1/cloud/runner/checks
 POST /api/v1/cloud/runner/github
 POST /api/v1/cloud/runner/heartbeat
 POST /api/v1/cloud/runner/launch
+POST /api/v1/cloud/runner/variables
 POST /api/v1/cloud/sessions
 POST /api/v1/cloud/sessions/{}/pause
 POST /api/v1/cloud/sessions/{}/resume
