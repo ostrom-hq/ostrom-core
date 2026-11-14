@@ -8181,7 +8181,8 @@ paths:
         reads, administrators included: another member's personal entry answers 404 as an unknown one. Callers: a
         person (a browser session, the unlocked app, the CLI's sign-in), an agent token holding `memory:use`, or a
         personal token or service key holding `memory:use` (the key acts as its creator); any other credential, 403
-        `credential_scope`."
+        `credential_scope`.
+        A caller who is no member of the organization, 404."
       parameters:
       - name: scope
         in: query
@@ -8241,7 +8242,8 @@ paths:
         own personal entries, which nobody else reads, administrators included: another member's personal entry
         answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app, the CLI's sign-in), an
         agent token holding `memory:use`, or a personal token or service key holding `memory:use` (the key acts as its
-        creator); any other credential, 403 `credential_scope`."
+        creator); any other credential, 403 `credential_scope`.
+        A caller who is no member of the organization, 404."
       parameters:
       - name: q
         in: query
@@ -8294,7 +8296,8 @@ paths:
         member reads, and the caller's own personal entries, which nobody else reads, administrators included: another
         member's personal entry answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app,
         the CLI's sign-in), an agent token holding `memory:use`, or a personal token or service key holding
-        `memory:use` (the key acts as its creator); any other credential, 403 `credential_scope`."
+        `memory:use` (the key acts as its creator); any other credential, 403 `credential_scope`.
+        A caller who is no member of the organization, 404."
       responses:
         '200':
           description: OK
@@ -8395,7 +8398,8 @@ paths:
       - memory
       summary: "The memory curation setting"
       description: "Whether the organization's memory is curated and what the last run did. An administrator,
-        as a person only (403 `forbidden` otherwise). Off until an administrator turns it on; it never calls a model."
+        as a person only (403 `forbidden` otherwise). Off until an administrator turns it on; it never calls a model.
+        A caller who is no member of the organization, 404."
       responses:
         '200':
           description: OK
@@ -8406,6 +8410,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
@@ -8420,7 +8426,8 @@ paths:
         scopes a run), supersedes the older of two entries with the same title and text, and queues for a person every
         pair it does not decide alone (different text under one title; a person's entry against a newer agent's; an
         entry tagged `external`). Audited `memory.curation_enabled` or `memory.curation_disabled`. An administrator,
-        as a person only."
+        as a person only.
+        A caller who is no member of the organization, 404."
       requestBody:
         required: true
         content:
@@ -8440,6 +8447,8 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
   /api/v1/memory/reviews:
@@ -8456,7 +8465,8 @@ paths:
         member reads, and the caller's own personal entries, which nobody else reads, administrators included: another
         member's personal entry answers 404 as an unknown one. Callers: a person (a browser session, the unlocked app,
         the CLI's sign-in), an agent token holding `memory:use`, or a personal token or service key holding
-        `memory:use` (the key acts as its creator); any other credential, 403 `credential_scope`."
+        `memory:use` (the key acts as its creator); any other credential, 403 `credential_scope`.
+        A caller who is no member of the organization, 404."
       responses:
         '200':
           description: OK
@@ -8467,6 +8477,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
@@ -8554,7 +8566,8 @@ paths:
       summary: "Superseded entries"
       description: "Entries curation replaced, newest first, at most 100: the caller's own personal ones
         (nobody else sees them), and the organization's for an administrator or their author. Kept 90 days. A person
-        only."
+        only.
+        A caller who is no member of the organization, 404."
       responses:
         '200':
           description: OK
@@ -8565,6 +8578,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
