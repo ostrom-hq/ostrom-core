@@ -12665,7 +12665,7 @@ paths:
         (`runners.cloud.variables.v1`), to start the agent with them and to serve them to its Bash commands while it
         runs (Claude Code's `CLAUDE_ENV_FILE`, asked again when its last answer is older than 30 seconds). Only the
         runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`): 409
-        `execution_fenced` for another execution, 409 `variables_unavailable` otherwise. A disabled owner gets none.
+        `execution_fenced` for another execution, 409 `variables_unavailable` otherwise. A body over the bound answers 413. A disabled owner gets none.
         `Cache-Control: no-store`; never logged or journaled"
       requestBody:
         required: true
@@ -12689,6 +12689,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '413':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/runner/skills:
     parameters:
