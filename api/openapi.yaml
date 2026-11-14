@@ -20531,7 +20531,8 @@ components:
         `self_approval_refused`: the server
         names the other approvers in `message` only, without the `others` of `SelfApprovalRefused`;
         `github_link_required`: a yes under a never-self-approve policy, on a pull request whose author linked no Ostrom
-        person, from an answerer who linked no GitHub account)'
+        person, from an answerer who linked no GitHub account; `hosted_not_allowed`: a member's own stdio MCP server
+        while the organization does not let members host theirs)'
       properties:
         error:
           type: object
@@ -20540,7 +20541,7 @@ components:
             type:
               type: string
               enum: [forbidden, email_link_other_browser, installation_not_yours, probe_not_yours, cutover_owner_required,
-                self_approval_refused, github_link_required, signup_closed, org_creation_closed]
+                self_approval_refused, github_link_required, signup_closed, org_creation_closed, hosted_not_allowed]
             message:
               type: string
           required:
