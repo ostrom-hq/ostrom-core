@@ -3731,6 +3731,119 @@
       "gh-token"
     ]
   },
+  "GitHubDeviceLink": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "userCode": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "verificationUri": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "interval": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "GitHubDeviceLinkPoll": {
+    "properties": {
+      "status": {
+        "type": {
+          "ref": "GitHubDeviceLinkStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "interval": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "link": {
+        "type": {
+          "ref": "GitHubLink"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GitHubDeviceLinkStatus": {
+    "enum": [
+      "pending",
+      "linked",
+      "expired",
+      "denied"
+    ]
+  },
+  "GitHubLink": {
+    "properties": {
+      "memberId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "state": {
+        "type": {
+          "ref": "GitHubLinkState"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "appConfigured": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "login": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "userId": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "linkedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "refreshedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "accessExpiresAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "GitHubLinkState": {
+    "enum": [
+      "not_linked",
+      "linked",
+      "reconnect_required"
+    ]
+  },
   "GovernanceConfirmationPending": {
     "properties": {
       "confirmationId": {

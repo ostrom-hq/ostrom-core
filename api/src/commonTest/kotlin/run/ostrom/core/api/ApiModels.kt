@@ -94,6 +94,9 @@ import run.ostrom.core.api.models.NodeWhen
 import run.ostrom.core.api.models.NoteTodoItemRequest
 import run.ostrom.core.api.models.Notification
 import run.ostrom.core.api.models.NotificationPreferences
+import run.ostrom.core.api.models.GitHubDeviceLink
+import run.ostrom.core.api.models.GitHubDeviceLinkPoll
+import run.ostrom.core.api.models.GitHubLink
 import run.ostrom.core.api.models.Organization
 import run.ostrom.core.api.models.PackageEnvelope
 import run.ostrom.core.api.models.PackageFile
@@ -352,6 +355,9 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     NoteTodoItemRequest.serializer(),
     Notification.serializer(),
     NotificationPreferences.serializer(),
+    GitHubDeviceLink.serializer(),
+    GitHubDeviceLinkPoll.serializer(),
+    GitHubLink.serializer(),
     Organization.serializer(),
     PackageEnvelope.serializer(),
     PackageFile.serializer(),

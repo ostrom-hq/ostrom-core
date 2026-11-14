@@ -15,6 +15,8 @@ import run.ostrom.core.api.models.CheckState
 import run.ostrom.core.api.models.GateMode
 import run.ostrom.core.api.models.GateStatus
 import run.ostrom.core.api.models.GitHubConnection
+import run.ostrom.core.api.models.GitHubDeviceLinkStatus
+import run.ostrom.core.api.models.GitHubLinkState
 import run.ostrom.core.api.models.MemberRole
 import run.ostrom.core.api.models.SignUpPolicy
 import run.ostrom.core.api.models.NodeConditionOp
@@ -88,6 +90,11 @@ class UnknownFallbackEnumTest {
         check(GateMode.entries, GateMode.Serializer, GateMode.UNKNOWN, GateMode::value)
         check(GateStatus.entries, GateStatus.Serializer, GateStatus.UNKNOWN, GateStatus::value)
         check(GitHubConnection.entries, GitHubConnection.Serializer, GitHubConnection.UNKNOWN, GitHubConnection::value)
+        check(
+            GitHubDeviceLinkStatus.entries, GitHubDeviceLinkStatus.Serializer, GitHubDeviceLinkStatus.UNKNOWN,
+            GitHubDeviceLinkStatus::value,
+        )
+        check(GitHubLinkState.entries, GitHubLinkState.Serializer, GitHubLinkState.UNKNOWN, GitHubLinkState::value)
         check(MemberRole.entries, MemberRole.Serializer, MemberRole.UNKNOWN, MemberRole::value)
         check(SignUpPolicy.entries, SignUpPolicy.Serializer, SignUpPolicy.UNKNOWN, SignUpPolicy::value)
         check(NodeConditionOp.entries, NodeConditionOp.Serializer, NodeConditionOp.UNKNOWN, NodeConditionOp::value)
