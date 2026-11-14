@@ -602,3 +602,15 @@ public data class WaitRef(
     val url: String? = null,
     val title: String? = null,
 )
+
+/**
+ * The workflows (`GET /api/v1/workflows`).
+ *
+ * @property items The workflows.
+ * @property next The cursor of the following page, absent on the last one.
+ */
+@Serializable
+public data class WorkflowPage(
+    val items: List<Workflow>,
+    val next: String? = null,
+)

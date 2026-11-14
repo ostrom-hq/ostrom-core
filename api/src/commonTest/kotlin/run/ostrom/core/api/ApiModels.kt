@@ -133,6 +133,7 @@ import run.ostrom.core.api.models.ScriptSuggestion
 import run.ostrom.core.api.models.Session
 import run.ostrom.core.api.models.SessionGateAnswer
 import run.ostrom.core.api.models.SessionPackage
+import run.ostrom.core.api.models.SessionPage
 import run.ostrom.core.api.models.SessionResponse
 import run.ostrom.core.api.models.SessionTodo
 import run.ostrom.core.api.models.SignInMethods
@@ -182,8 +183,10 @@ import run.ostrom.core.api.models.WorkflowEditors
 import run.ostrom.core.api.models.WorkflowInput
 import run.ostrom.core.api.models.WorkflowLimits
 import run.ostrom.core.api.models.WorkflowNode
+import run.ostrom.core.api.models.WorkflowPage
 import run.ostrom.core.api.models.WorkflowPendingDeliverable
 import run.ostrom.core.api.models.WorkflowRun
+import run.ostrom.core.api.models.WorkflowRunPage
 import run.ostrom.core.api.models.WorkflowSessionPending
 import run.ostrom.core.api.models.WorkflowSettings
 import run.ostrom.core.api.models.OrgEvent
@@ -344,6 +347,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     Session.serializer(),
     SessionGateAnswer.serializer(),
     SessionPackage.serializer(),
+    SessionPage.serializer(),
     SessionResponse.serializer(),
     SessionTodo.serializer(),
     SignInMethods.serializer(),
@@ -397,6 +401,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     WebhookDeliveryList.serializer(),
     WaitWakeRequest.serializer(),
     Workflow.serializer(),
+    WorkflowPage.serializer(),
     WorkflowEdge.serializer(),
     WorkflowEditors.serializer(),
     WorkflowInput.serializer(),
@@ -404,6 +409,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     WorkflowNode.serializer(),
     WorkflowPendingDeliverable.serializer(),
     WorkflowRun.serializer(),
+    WorkflowRunPage.serializer(),
     WorkflowSessionPending.serializer(),
     WorkflowSettings.serializer(),
     CreateMemoryRequest.serializer(),

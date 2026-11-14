@@ -70,6 +70,9 @@ client.close()
 | `notifications` | `preferences()`, `save(preferences)` | `GET` and `PUT /api/v1/me/notifications` |
 | `waits` | `list(status, mine, before, limit, resolver)`, `get(id)`, `answer(id, action, values)` | `GET /api/v1/waits`, `GET /api/v1/waits/{id}`, `POST /api/v1/waits/{id}/answer` |
 | `artifacts` | `list(before, limit)`, `get(id)`, `versions(id)`, `ticket(id, version)` | `GET /api/v1/artifacts`, `GET /api/v1/artifacts/{id}`, `GET /api/v1/artifacts/{id}/versions`, `POST /api/v1/artifacts/{id}/tickets` |
+| `sessions` | `list(repo, dev, open, before, limit)`, `get(id)` | `GET /api/v1/sessions`, `GET /api/v1/sessions/{id}` |
+| `todos` | `session(sessionId)` | `GET /api/v1/todos/session` |
+| `workflows` | `list(repo, status)`, `get(id)`, `runs(id, status, before)`, `allRuns(status, before)`, `run(id)` | `GET /api/v1/workflows`, `GET /api/v1/workflows/{id}`, `GET /api/v1/workflows/{id}/runs`, `GET /api/v1/runs`, `GET /api/v1/runs/{id}` |
 | `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
 
 Every parameter left null is not sent, so the server's default applies. The models are those of

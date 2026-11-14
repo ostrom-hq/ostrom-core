@@ -92,6 +92,15 @@ public class OstromClient(
     /** Published artifacts. */
     public val artifacts: ArtifactsClient = ArtifactsClient(transport)
 
+    /** The organization's agent sessions. */
+    public val sessions: SessionsClient = SessionsClient(transport)
+
+    /** The todo lists of agent sessions. */
+    public val todos: TodosClient = TodosClient(transport)
+
+    /** The organization's workflows and their runs. */
+    public val workflows: WorkflowsClient = WorkflowsClient(transport)
+
     /** The organization's live events. */
     public val events: EventsClient = EventsClient(transport)
 

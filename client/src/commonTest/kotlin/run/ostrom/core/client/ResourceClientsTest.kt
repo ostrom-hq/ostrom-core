@@ -10,7 +10,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import run.ostrom.core.api.models.ApprovalAnswer
 import run.ostrom.core.api.models.NotificationPreferences
 import run.ostrom.core.api.models.QuietHours
+import run.ostrom.core.api.models.RunStatus
 import run.ostrom.core.api.models.WaitStatus
+import run.ostrom.core.api.models.WorkflowStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -209,6 +211,94 @@ class ResourceClientsTest {
             server.requests.map { it.call() },
         )
         assertJson(body, server.requests[1].bodyText())
+    }
+
+    @Test
+    fun sessionsAreListedWithTheirFiltersAndReadOneByOne() = runTest {
+        val session = """{"id":"s/1","agent":"claude-code","dev":"ada","startedAt":"2026-11-14T00:00:00Z"}"""
+        val server = ScriptedServer { request ->
+            when (request.url.encodedPath) {
+                "/api/v1/sessions" -> json("""{"items":[$session],"next":"s0"}""")
+                else -> json("""{"session":$session}""")
+            }
+        }
+        server.client().use { client ->
+            val page = client.sessions.list()
+            assertEquals("s0", page.next)
+            assertEquals("ada", page.items.single().dev)
+            client.sessions.list(repo = "acme/api", dev = "ada", open = true, before = "s0", limit = 20)
+            val one = client.sessions.get("s/1")
+            assertEquals("claude-code", one.session.agent)
+            assertNull(one.receipt)
+        }
+        assertEquals(
+            listOf(
+                "GET /api/v1/sessions",
+                "GET /api/v1/sessions?repo=acme%2Fapi&dev=ada&open=true&before=s0&limit=20",
+                "GET /api/v1/sessions/s%2F1",
+            ),
+            server.requests.map { it.call() },
+        )
+    }
+
+    @Test
+    fun aSessionTodoIsReadByItsSessionAndMayBeAbsent() = runTest {
+        val todo = """{"id":"t1","sessionId":"s1","reference":"Ship it","status":"active","items":[""" +
+            """{"id":"a","name":"Write","description":"d","doneWhen":{"text":"merged","checks":[]},""" +
+            """"status":"todo","origin":"plan"}],"createdAt":"t","updatedAt":"t"}"""
+        var answer = """{"todo":$todo}"""
+        val server = ScriptedServer { json(answer) }
+        server.client().use { client ->
+            assertEquals("Ship it", client.todos.session("s1~r2").todo?.reference)
+            answer = """{"todo":null}"""
+            assertNull(client.todos.session("s1").todo)
+        }
+        assertEquals(
+            listOf("GET /api/v1/todos/session?sessionId=s1~r2", "GET /api/v1/todos/session?sessionId=s1"),
+            server.requests.map { it.call() },
+        )
+    }
+
+    @Test
+    fun workflowsAndTheirRunsAreListedAndReadOneByOne() = runTest {
+        val workflow = """{"id":"wf/1","name":"Release","domain":"eng","nodes":[],"edges":[],""" +
+            """"status":"accepted","foundAt":"t"}"""
+        val run = """{"id":"r1","workflowId":"wf/1","workflowName":"Release","workflowVersion":3,""" +
+            """"status":"waiting","startedBy":"ada","source":"manual","startedAt":"t"}"""
+        val server = ScriptedServer { request ->
+            val path = request.url.encodedPath
+            when {
+                path == "/api/v1/workflows" -> json("""{"items":[$workflow]}""")
+                path.endsWith("/runs") -> json("""{"items":[$run],"next":"r0"}""")
+                path.startsWith("/api/v1/runs/") -> json(run)
+                else -> json(workflow)
+            }
+        }
+        server.client().use { client ->
+            assertEquals(WorkflowStatus.ACCEPTED, client.workflows.list().items.single().status)
+            client.workflows.list(repo = "acme/api", status = "accepted")
+            assertEquals("Release", client.workflows.get("wf/1").name)
+            val runs = client.workflows.runs("wf/1")
+            assertEquals("r0", runs.next)
+            assertEquals(RunStatus.WAITING, runs.items.single().status)
+            client.workflows.runs("wf/1", status = "waiting", before = "r0")
+            client.workflows.allRuns()
+            client.workflows.allRuns(status = "running", before = "r0")
+            assertEquals(3, client.workflows.run("r1").workflowVersion)
+        }
+        assertEquals(
+            listOf(
+                "GET /api/v1/workflows",
+                "GET /api/v1/workflows?repo=acme%2Fapi&status=accepted",
+                "GET /api/v1/workflows/wf%2F1",
+                "GET /api/v1/workflows/wf%2F1/runs",
+                "GET /api/v1/workflows/wf%2F1/runs?status=waiting&before=r0",
+                "GET /api/v1/runs",
+                "GET /api/v1/runs?status=running&before=r0",
+                "GET /api/v1/runs/r1",
+            ),
+            server.requests.map { it.call() },
+        )
     }
 
     @Test

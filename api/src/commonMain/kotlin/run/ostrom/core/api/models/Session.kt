@@ -151,3 +151,15 @@ public data class SessionResponse(
     val receipt: Receipt? = null,
     val reopened: Boolean? = null,
 )
+
+/**
+ * A page of session segments, newest first (`GET /api/v1/sessions`).
+ *
+ * @property items The segments of the page.
+ * @property next The cursor of the following page, absent on the last one.
+ */
+@Serializable
+public data class SessionPage(
+    val items: List<Session>,
+    val next: String? = null,
+)
