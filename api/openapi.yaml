@@ -15627,7 +15627,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getForecasts
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: Quota forecasts of one shared account (`capacity.forecasts.v1`)
