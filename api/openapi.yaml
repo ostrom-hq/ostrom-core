@@ -18767,8 +18767,9 @@ components:
           x-ostrom-status: planned
           description: "The organization's cloud profile the action runs on (`runners.cloud.profiles.v1`, TeamCode's
             `action.profileId`): the session's, or, for a workflow action, the one of its run's agent nodes that name
-            none. Saving refuses an id none of the organization's profiles has (400 `invalid_automation` naming
-            `action.profileId`). Absent: the owner's only usable profile, as `createCloudSession` chooses it. A run
+            none. Where sessions run on cloud profiles, saving refuses an id none of the organization's profiles has
+            (400 `invalid_automation` naming `action.profileId`). Absent: the owner's only usable profile, as
+            `createCloudSession` chooses it (`profile_required` when they may use none or several). A run
             whose session the profile refuses fails with the refusal's key as its `reason`:
             `cloud_profile_not_found`, `profile_unassigned`, `profile_required`, `image_not_allowed`,
             `cluster_unavailable` or `namespace_not_allowed`. Ignored by a server whose sessions run on Docker or
@@ -23654,9 +23655,10 @@ components:
           format: uuid
           x-ostrom-status: planned
           description: "Agent: the organization's cloud profile its session runs on (`runners.cloud.profiles.v1`,
-            TeamCode's node `profileId`), else the run's `profileId`, else the starter's only usable profile. Saving
-            a workflow the server runs refuses an id none of the organization's profiles has (400, naming the
-            node). A session the profile refuses fails the visit, and the run's `failureCode` is the refusal's key:
+            TeamCode's node `profileId`), else the run's `profileId`, else the only profile the run's starter (an
+            automation's owner for its runs) may use. Where sessions run on cloud profiles, saving a workflow the
+            server runs refuses an id none of the organization's profiles has (400 `invalid_workflow`, naming the
+            node). Ignored by a server whose sessions run on Docker or on registered runners. A session the profile refuses fails the visit, and the run's `failureCode` is the refusal's key:
             `cloud_profile_not_found`, `profile_unassigned`, `profile_required`, `image_not_allowed`,
             `cluster_unavailable` or `namespace_not_allowed`"
     NodeRunOn:
@@ -27766,8 +27768,9 @@ components:
           type: string
           format: uuid
           x-ostrom-status: planned
-          description: "The cloud profile of the agent nodes that name none: given at start, or the profile of the
-            automation's workflow action that started the run"
+          description: "The cloud profile of the agent nodes that name none: the one given at a manual start, or,
+            for a run an automation started, its workflow action's. Absent when none was named (the profile is then
+            chosen at each session's creation, never written back here)"
         visits:
           type: array
           items:
