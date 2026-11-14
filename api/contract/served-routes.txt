@@ -262,11 +262,13 @@ POST /api/v1/checks
 POST /api/v1/cloud/clusters
 POST /api/v1/cloud/profiles
 POST /api/v1/cloud/runner/checks
+POST /api/v1/cloud/runner/environment
 POST /api/v1/cloud/runner/github
 POST /api/v1/cloud/runner/heartbeat
 POST /api/v1/cloud/runner/hooks
 POST /api/v1/cloud/runner/hooks/artifact
 POST /api/v1/cloud/runner/launch
+POST /api/v1/cloud/runner/preparation
 POST /api/v1/cloud/runner/skills
 POST /api/v1/cloud/runner/skills/artifact
 POST /api/v1/cloud/runner/variables
