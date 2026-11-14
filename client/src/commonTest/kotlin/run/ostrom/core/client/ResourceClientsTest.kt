@@ -184,10 +184,12 @@ class ResourceClientsTest {
     }
 
     @Test
-    fun aPhoneIsRegisteredThenDeleted() = runTest {
+    fun aPhoneIsRegisteredListedThenDeleted() = runTest {
         val server = ScriptedServer { request ->
             if (request.method == HttpMethod.Delete) {
                 json("", HttpStatusCode.NoContent)
+            } else if (request.method == HttpMethod.Get) {
+                json("""{"items":[{"id":"pd_1","provider":"fcm","platform":"android","createdAt":"t"}]}""")
             } else {
                 json("""{"id":"pd_1","provider":"fcm","platform":"android","createdAt":"t"}""", HttpStatusCode.Created)
             }
@@ -195,6 +197,7 @@ class ResourceClientsTest {
         server.client().use { client ->
             assertEquals("pd_1", client.pushDevices.register("tok", "fcm", "android").id)
             client.pushDevices.register("tok", "fcm", "ios", locale = "fr", publicKey = "MFkw")
+            assertEquals("pd_1", client.pushDevices.list().items.single().id)
             client.pushDevices.delete("pd_1")
         }
         assertJson("""{"pushToken":"tok","provider":"fcm","platform":"android"}""", server.requests[0].bodyText())
@@ -202,7 +205,8 @@ class ResourceClientsTest {
             """{"pushToken":"tok","provider":"fcm","platform":"ios","locale":"fr","publicKey":"MFkw"}""",
             server.requests[1].bodyText(),
         )
-        assertEquals("DELETE /api/v1/push-devices/pd_1", server.requests[2].call())
+        assertEquals("GET /api/v1/push-devices", server.requests[2].call())
+        assertEquals("DELETE /api/v1/push-devices/pd_1", server.requests[3].call())
     }
 
     @Test

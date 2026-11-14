@@ -103,6 +103,7 @@ import run.ostrom.core.api.models.PackageWorkflow
 import run.ostrom.core.api.models.Produced
 import run.ostrom.core.api.models.PublicKey
 import run.ostrom.core.api.models.PushDevice
+import run.ostrom.core.api.models.PushDeviceList
 import run.ostrom.core.api.models.PushPayload
 import run.ostrom.core.api.models.NotificationSetting
 import run.ostrom.core.api.models.NotificationSettings
@@ -341,6 +342,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     Produced.serializer(),
     PublicKey.serializer(),
     PushDevice.serializer(),
+    PushDeviceList.serializer(),
     PushPayload.serializer(),
     NotificationSetting.serializer(),
     NotificationSettings.serializer(),

@@ -87,6 +87,14 @@ public data class PushDevice(
 )
 
 /**
+ * The caller's phones registered for push notifications, the most recently seen first (`GET /api/v1/push-devices`).
+ *
+ * @property items The phones (at most ten).
+ */
+@Serializable
+public data class PushDeviceList(val items: List<PushDevice>)
+
+/**
  * What the caller is notified of on their phone (`/api/v1/me/notifications`).
  *
  * @property requests Approvals waiting for them.

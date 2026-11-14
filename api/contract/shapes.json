@@ -4805,6 +4805,19 @@
       }
     }
   },
+  "PushDeviceList": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "PushDevice"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "PushPayload": {
     "properties": {
       "v": {
