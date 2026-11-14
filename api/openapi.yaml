@@ -2106,7 +2106,7 @@ paths:
   /api/v1/github/app/configuration:
     get:
       operationId: getGithubAppConfiguration
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: The instance's GitHub App, as an administrator entered it or the manifest flow created it
@@ -2127,7 +2127,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: saveGithubAppConfiguration
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - github
       summary: Enter the instance's GitHub App by hand, or change it
@@ -19834,8 +19834,9 @@ components:
           type: [string, 'null']
           minLength: 1
           maxLength: 256
-          description: 'The secret GitHub signs the webhooks with; null or absent keeps the stored one. Optional, as an
-            App may have its webhooks turned off: without it every webhook is refused (`webhookSecretSet` false)'
+          description: 'The secret GitHub signs the webhooks with; null or absent keeps the stored one for the same
+            `appId` (another App signs with its own, so none is kept). Optional, as an App may have its webhooks turned
+            off: without it every webhook is refused (`webhookSecretSet` false)'
         version:
           type: [integer, 'null']
           description: The stored `version`; null or absent to create the App

@@ -106,6 +106,7 @@ GET /api/v1/gates/catalog/signed
 GET /api/v1/gates/policy
 GET /api/v1/gates/{}
 GET /api/v1/github/app
+GET /api/v1/github/app/configuration
 GET /api/v1/github/app/install/callback
 GET /api/v1/github/app/install/start
 GET /api/v1/github/app/manifest/callback
@@ -393,6 +394,7 @@ PUT /api/v1/cloud/settings
 PUT /api/v1/environment/assignments/{}/{}
 PUT /api/v1/environment/exclusions/{}/{}
 PUT /api/v1/gates/policy
+PUT /api/v1/github/app/configuration
 PUT /api/v1/groups/{}/members/{}
 PUT /api/v1/hooks/{}/assignments/{}
 PUT /api/v1/hooks/{}/audience
