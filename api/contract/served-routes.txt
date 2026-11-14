@@ -91,6 +91,7 @@ GET /api/v1/cloud/runtime
 GET /api/v1/cloud/sessions
 GET /api/v1/cloud/sessions/{}
 GET /api/v1/cloud/sessions/{}/terminal
+GET /api/v1/cloud/settings
 GET /api/v1/confirmations/{}
 GET /api/v1/decisions
 GET /api/v1/devices
@@ -377,6 +378,7 @@ PUT /api/v1/cloud/clusters/{}
 PUT /api/v1/cloud/profiles/{}
 PUT /api/v1/cloud/runtime
 PUT /api/v1/cloud/sessions/{}/github
+PUT /api/v1/cloud/settings
 PUT /api/v1/environment/assignments/{}/{}
 PUT /api/v1/environment/exclusions/{}/{}
 PUT /api/v1/gates/policy
