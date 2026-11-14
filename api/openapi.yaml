@@ -22527,8 +22527,9 @@ components:
           description: The organization's sequence, gap-free and increasing
         type:
           type: string
-          description: "The event type, also the SSE `event:` field (`cloud.wait.created`); an open list. The hosted MCP
-            commands (TeamCode's `mcp.stdio.*`, a hosted stdio server's process, see `GET /api/v1/mcp/hosted`) publish,
+          description: "The event type, also the SSE `event:` field (`cloud.wait.created`); an open list. Planned, until
+            ostrom-server publishes them: the hosted MCP commands (TeamCode's `mcp.stdio.*`, a hosted stdio server's
+            process, see `GET /api/v1/mcp/hosted`) publish,
             with the subject `mcp`: `mcp.stdio.failed`, a process starts failing (`failed` or `backoff`), once per
             failure streak (retries, `failed` becoming `backoff` and an expired backoff stay in it until a start
             succeeds), with `data` `{server, memberId?, state, failure}`; `mcp.stdio.recovered`, the process is `ready`
@@ -22537,8 +22538,9 @@ components:
             organization has hosted servers, at most one every ten minutes, with `data` `{reason}` (`unreachable`, no
             answer, or `refused`, another token or protocol version). `subjectId` is the server's name, followed by `/`
             and the member's id for a per-member process, and empty for `mcp.unreachable`. A per-member process's events
-            belong to its member (`memberId`); a shared process's and `mcp.unreachable` belong to nobody, so only owners
-            and administrators see them (a webhook receives all of them). None carries a secret, an argument or an
+            belong to its member (`memberId`); a shared process's and `mcp.unreachable` belong to nobody (the event's `memberId` is
+            absent, and so is `data.memberId`), so only owners and administrators see them (a webhook receives all of
+            them). None carries a secret, an argument or an
             output. They follow the transition by up to a minute (the sweep runs once a minute): a failure that
             recovers between two sweeps is not seen"
         subject:
