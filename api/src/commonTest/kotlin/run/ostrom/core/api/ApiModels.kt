@@ -69,6 +69,7 @@ import run.ostrom.core.api.models.GatePushRef
 import run.ostrom.core.api.models.GateRef
 import run.ostrom.core.api.models.GateRequest
 import run.ostrom.core.api.models.GateResponse
+import run.ostrom.core.api.models.GovernanceConfirmationPending
 import run.ostrom.core.api.models.KeyRotation
 import run.ostrom.core.api.models.LinkTodoItemRequest
 import run.ostrom.core.api.models.Me
@@ -128,6 +129,7 @@ import run.ostrom.core.api.models.Rule
 import run.ostrom.core.api.models.RuleGate
 import run.ostrom.core.api.models.RuleGateCheck
 import run.ostrom.core.api.models.RuleSource
+import run.ostrom.core.api.models.SaveWorkflowRequest
 import run.ostrom.core.api.models.ScriptApproval
 import run.ostrom.core.api.models.ScriptSuggestion
 import run.ostrom.core.api.models.Session
@@ -145,6 +147,7 @@ import run.ostrom.core.api.models.SpendingLine
 import run.ostrom.core.api.models.StartSessionRequest
 import run.ostrom.core.api.models.StartTodoItemRequest
 import run.ostrom.core.api.models.StartTodoItemResponse
+import run.ostrom.core.api.models.StartWorkflowRunRequest
 import run.ostrom.core.api.models.StringListSuggestion
 import run.ostrom.core.api.models.StringSuggestion
 import run.ostrom.core.api.models.SuggestedChannel
@@ -423,6 +426,9 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     WebhookDeliveryList.serializer(),
     WaitWakeRequest.serializer(),
     Workflow.serializer(),
+    SaveWorkflowRequest.serializer(),
+    StartWorkflowRunRequest.serializer(),
+    GovernanceConfirmationPending.serializer(),
     WorkflowPage.serializer(),
     WorkflowEdge.serializer(),
     WorkflowEditors.serializer(),

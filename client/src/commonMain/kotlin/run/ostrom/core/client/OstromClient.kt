@@ -101,6 +101,9 @@ public class OstromClient(
     /** The organization's workflows and their runs. */
     public val workflows: WorkflowsClient = WorkflowsClient(transport)
 
+    /** Who may decide the organization's workflows. */
+    public val workflowSettings: WorkflowSettingsClient = WorkflowSettingsClient(transport)
+
     /** The caller's environment variables and personal variants. */
     public val environment: EnvironmentClient = EnvironmentClient(transport)
 

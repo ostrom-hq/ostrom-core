@@ -1,15 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
 package run.ostrom.core.client
 
+import io.ktor.client.call.body
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import run.ostrom.core.api.models.GovernanceConfirmationPending
+import run.ostrom.core.api.models.SaveWorkflowRequest
+import run.ostrom.core.api.models.StartWorkflowRunRequest
 import run.ostrom.core.api.models.Workflow
 import run.ostrom.core.api.models.WorkflowPage
 import run.ostrom.core.api.models.WorkflowRun
 import run.ostrom.core.api.models.WorkflowRunPage
 
 /**
- * The organization's workflows and their runs (`/api/v1/workflows`, `/api/v1/runs`), read only. Reached through
- * [OstromClient.workflows].
+ * The organization's workflows and their runs (`/api/v1/workflows`, `/api/v1/runs`): read, written (an owner, an admin
+ * or an editor), started and cancelled (an owner or an admin). Reached through [OstromClient.workflows].
+ *
+ * A refusal throws [OstromException] with the server's `error.type`: `forbidden` or `workflow_editors_only` (403, not
+ * an editor, or the workflow holds a gate node), `invalid_workflow`, `invalid_request` or `invalid_run` (400),
+ * `not_found` (404), `conflict` (409), plus the keys named on each method.
  */
 public class WorkflowsClient internal constructor(private val transport: Transport) {
     /**
@@ -49,4 +62,89 @@ public class WorkflowsClient internal constructor(private val transport: Transpo
 
     /** One run with its visits (`GET /api/v1/runs/{id}`). */
     public suspend fun run(id: String): WorkflowRun = transport.json(HttpMethod.Get, "/api/v1/runs/${segment(id)}")
+
+    /**
+     * Creates a workflow (`POST /api/v1/workflows`).
+     *
+     * Throws [OstromException] with `invalid_workflow` (400, malformed), `workflow_editors_only` (403, the caller may
+     * not decide it), `conflict` (409, this id exists), `workflow_name_taken` (409), `workflow_limit` (409, the
+     * organization's cap) or `confirmation_limit` (429, ten confirmations already wait).
+     *
+     * @return [GovernedWrite.Applied] with the stored workflow (`201`), or [GovernedWrite.Held] when a person's API
+     *   token only opened a confirmation (`202`).
+     */
+    public suspend fun create(workflow: Workflow): GovernedWrite<Workflow> =
+        transport.write(HttpMethod.Post, "/api/v1/workflows", workflow).governed()
+
+    /**
+     * Saves a workflow (`PUT /api/v1/workflows/{id}`); its id must be [id].
+     *
+     * Throws [OstromException] with `invalid_request` (400, the workflow's id is not [id]), `invalid_workflow` (400),
+     * `workflow_editors_only` (403), `not_found` (404), `workflow_conflict` (409, [expectedVersion] is stale),
+     * `workflow_name_taken` (409) or `confirmation_limit` (429).
+     *
+     * @param expectedVersion The [Workflow.version] the editor read; no check when null.
+     * @return [GovernedWrite.Applied] with the stored workflow (`200`), or [GovernedWrite.Held] (`202`).
+     */
+    public suspend fun save(id: String, workflow: Workflow, expectedVersion: Int? = null): GovernedWrite<Workflow> =
+        transport.write(
+            HttpMethod.Put,
+            "/api/v1/workflows/${segment(id)}",
+            SaveWorkflowRequest(workflow, expectedVersion),
+        ).governed()
+
+    /**
+     * Deletes a workflow (`DELETE /api/v1/workflows/{id}`).
+     *
+     * Throws [OstromException] with `workflow_editors_only` (403), `not_found` (404), `workflow_in_use` (409, another
+     * workflow or an automation uses it) or `confirmation_limit` (429).
+     *
+     * @return [GovernedWrite.Applied] once deleted (`204`), or [GovernedWrite.Held] (`202`).
+     */
+    public suspend fun delete(id: String): GovernedWrite<Unit> {
+        val response = transport.send(HttpMethod.Delete, "/api/v1/workflows/${segment(id)}")
+        return if (response.status == HttpStatusCode.Accepted) {
+            GovernedWrite.Held(response.body<GovernanceConfirmationPending>())
+        } else {
+            GovernedWrite.Applied(Unit)
+        }
+    }
+
+    /**
+     * Starts a run of an accepted workflow as the caller (`POST /api/v1/workflows/{id}/runs`).
+     *
+     * Throws [OstromException] with `invalid_request` (400, an undeclared input, a missing required one or one too
+     * long), `forbidden` (403, not an owner or an admin, or an agent token), `not_found` (404), `conflict` (409, the
+     * workflow is not accepted: `workflow_not_accepted` in the message) or `run_limit` (409, twenty unfinished runs).
+     *
+     * @param inputs The workflow's inputs, by [run.ostrom.core.api.models.WorkflowInput.id].
+     * @return The run, `queued` or already moving.
+     */
+    public suspend fun start(id: String, inputs: Map<String, String> = emptyMap()): WorkflowRun =
+        transport.jsonBody(HttpMethod.Post, "/api/v1/workflows/${segment(id)}/runs", StartWorkflowRunRequest(inputs))
+
+    /**
+     * Cancels a run (`POST /api/v1/runs/{id}/cancel`).
+     *
+     * Throws [OstromException] with `forbidden` (403, not an owner or an admin), `not_found` (404), `conflict` (409,
+     * `run_ended` in the message when it already succeeded, failed or was cancelled, `run_busy` when the engine played
+     * it meanwhile: try again).
+     *
+     * @return The run as cancelled.
+     */
+    public suspend fun cancel(runId: String): WorkflowRun =
+        transport.json(HttpMethod.Post, "/api/v1/runs/${segment(runId)}/cancel")
 }
+
+private suspend inline fun <reified B> Transport.write(method: HttpMethod, path: String, body: B): HttpResponse =
+    send(method, path) {
+        contentType(ContentType.Application.Json)
+        setBody(body)
+    }
+
+private suspend inline fun <reified R> HttpResponse.governed(): GovernedWrite<R> =
+    if (status == HttpStatusCode.Accepted) {
+        GovernedWrite.Held(body<GovernanceConfirmationPending>())
+    } else {
+        GovernedWrite.Applied(body<R>())
+    }
