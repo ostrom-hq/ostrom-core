@@ -614,3 +614,39 @@ public data class WorkflowPage(
     val items: List<Workflow>,
     val next: String? = null,
 )
+
+/**
+ * The body of `saveWorkflow`.
+ *
+ * @property workflow The workflow, whose id is the path's.
+ * @property expectedVersion The version the editor read; a newer stored one answers 409 `workflow_conflict`.
+ */
+@Serializable
+public data class SaveWorkflowRequest(val workflow: Workflow, val expectedVersion: Int? = null)
+
+/**
+ * The body of `startWorkflowRun`.
+ *
+ * @property inputs The workflow's inputs, by id.
+ * @property repository `owner/name`, for the agent nodes that name none (planned: the server ignores it today).
+ */
+@Serializable
+public data class StartWorkflowRunRequest(
+    val inputs: Map<String, String> = emptyMap(),
+    val repository: String? = null,
+)
+
+/**
+ * The 202 of a governance write made with a person's API token: nothing was written, an owner or an admin confirms
+ * it on the console.
+ *
+ * @property confirmationId The confirmation (`getGovernanceConfirmation`).
+ * @property confirmUrl The absolute URL of the console page that confirms it.
+ * @property expiresAt When it lapses (15 minutes after the request).
+ */
+@Serializable
+public data class GovernanceConfirmationPending(
+    val confirmationId: String,
+    val confirmUrl: String,
+    val expiresAt: String,
+)
