@@ -19791,8 +19791,8 @@ components:
           type: [string, 'null']
           minLength: 1
           maxLength: 256
-          description: The secret GitHub signs the webhooks with; null or absent keeps the stored one. Optional, as an
-            App may have its webhooks turned off: without it every webhook is refused (`webhookSecretSet` false)
+          description: 'The secret GitHub signs the webhooks with; null or absent keeps the stored one. Optional, as an
+            App may have its webhooks turned off: without it every webhook is refused (`webhookSecretSet` false)'
         version:
           type: [integer, 'null']
           description: The stored `version`; null or absent to create the App
