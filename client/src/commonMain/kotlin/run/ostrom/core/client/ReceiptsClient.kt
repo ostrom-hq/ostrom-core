@@ -32,7 +32,8 @@ public class ReceiptsClient internal constructor(private val transport: Transpor
         transport.json(HttpMethod.Get, "/api/v1/receipts", query("before" to before, "limit" to limit?.toString()))
 
     /** One receipt as the server wrote it (`GET /api/v1/receipts/{id}`), for the same check as [listRaw]. */
-    public suspend fun getRaw(id: String): JsonObject = transport.json(HttpMethod.Get, "/api/v1/receipts/${segment(id)}")
+    public suspend fun getRaw(id: String): JsonObject =
+        transport.json(HttpMethod.Get, "/api/v1/receipts/${segment(id)}")
 
     /** One receipt (`GET /api/v1/receipts/{id}`). */
     public suspend fun get(id: String): Receipt = transport.json(HttpMethod.Get, "/api/v1/receipts/${segment(id)}")
