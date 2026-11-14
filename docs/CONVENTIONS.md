@@ -685,8 +685,9 @@ server projects declare no native target (`ostrom.nativeTargets` is empty; only 
 `commonMain` and `commonTest` are compiled for the JVM alone. There, and only there:
 
 - `commonMain` and `commonTest` may import JVM classes (`java.*`, `javax.*`) and JVM-only libraries declared in the
-  source set's dependencies: Exposed, JDBC, HikariCP and Flyway today, then SLF4J/Logback, Netty and `koin-ktor` as
-  the server's later steps land them. The rules of sections 6.1 and 15 against those libraries apply to the code that
+  source set's dependencies: Exposed, JDBC, HikariCP and Flyway, then SLF4J/Logback and Netty with the server's
+  step 3 (ostrom-server#520). Koin stays `koin-core` in the composition root, as TeamCode's app: the `koin-ktor` plugin
+  remains refused (section 1.5). The rules of sections 6.1 and 15 against those libraries apply to the code that
   still compiles for Kotlin/Native: ostrom-core, the CLI and the runner.
 - The modules stay in `commonMain` (no move to `jvmMain` for the sake of it), and new `expect`/`actual` pairs are not
   written: a declaration with a JVM `actual` alone is folded into plain code when a change touches it.
