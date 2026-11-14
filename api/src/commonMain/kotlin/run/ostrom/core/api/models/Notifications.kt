@@ -33,7 +33,8 @@ public data class RegisterPushDeviceRequest(
  * `PushPayload`). The FCM data is `{"p": <encrypted payload>, "v": "1"}`, the encrypted payload being
  * `base64(0x01 | ephemeral P-256 public key (65 bytes, uncompressed) | nonce (12 bytes) | AES-256-GCM ciphertext and
  * 16-byte tag)`, with the key `HKDF-SHA256(ECDH(ephemeral private, phone public), salt = ephemeral point | phone point,
- * info = "ostrom-push-v1", 32 bytes)`, and the plaintext this object's JSON. The app decrypts it in its notification
+ * info = "ostrom-push-v1", 32 bytes)`, both points as 65-byte uncompressed SEC1 points (`0x04 | x | y`, the phone's
+ * read from its SubjectPublicKeyInfo), and the plaintext this object's JSON, [v] always written. The app decrypts it in its notification
  * service extension (iOS) or messaging service (Android) and shows [title] and [body]; on iOS a generic alert shows
  * when it cannot.
  *

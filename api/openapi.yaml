@@ -1851,10 +1851,11 @@ paths:
         (`publicKey`, SubjectPublicKeyInfo DER in base64), at every start of the app and when FCM rotates the token:
         each push is encrypted for that key (`PushPayload`), so the provider sees a token and an opaque blob only.
         Who sends the pushes is the instance's `push` settings section (Admin → Settings: `provider` `off` or
-        `firebase`, the Firebase service account sealed); while it is `off`, phones register and nothing is sent. A
-        token that is not an FCM registration token, a missing or invalid public key, a provider other than `fcm`
-        or a platform other than `ios` and `android` is a 400. Deprecated: `provider: expo` with an Expo push token
-        (`ExponentPushToken[…]`) and no public key is still taken until the apps register FCM, then refused.
+        `firebase`, the Firebase service account sealed); while it is `off`, phones register and nothing is sent. With
+        `fcm`, a token that is not an FCM registration token or a missing or invalid public key is a 400; a platform
+        other than `ios` and `android`, or a provider other than `fcm` and `expo`, is a 400. Deprecated: `provider:
+        expo` with an Expo push token (`ExponentPushToken[…]`) and no public key is still taken until the apps
+        register FCM, then refused with a 400 like any other provider.
       requestBody:
         required: true
         content:
@@ -23546,7 +23547,8 @@ components:
         `{"p": <encrypted payload>, "v": "1"}`; the encrypted payload is `base64(0x01 | ephemeral P-256 public key
         (65 bytes, uncompressed) | nonce (12 bytes) | AES-256-GCM ciphertext and 16-byte tag)`, its key
         `HKDF-SHA256(ECDH(ephemeral private, phone public), salt = ephemeral point | phone point, info =
-        "ostrom-push-v1", 32 bytes)`, its plaintext this object's JSON. On iOS a generic alert shows when the
+        "ostrom-push-v1", 32 bytes)`, both points as 65-byte uncompressed SEC1 points (`0x04 | x | y`, the phone's
+        read from its SubjectPublicKeyInfo), its plaintext this object's JSON, `v` always written. On iOS a generic alert shows when the
         notification service extension cannot decrypt it.
       properties:
         v:
