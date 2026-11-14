@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Mobile targets of a module the companion app uses (api, client, receipts): Android
 // (com.android.kotlin.multiplatform.library, minSdk 26) and iOS (iosArm64, iosSimulatorArm64), published with the
-// other targets. Same setup as teamcode's api and client (teamcode:client/build.gradle.kts). A module applies `id("ostrom.mobile")` next to `id("ostrom.kmp")`.
+// other targets. Same setup as teamcode's api and client (teamcode:client/build.gradle.kts). A module applies
+// `id("ostrom.mobile")` next to `id("ostrom.kmp")`.
 //
 // Gated by the Gradle property `ostrom.mobileTargets` (default off). This repository turns it on in its
 // gradle.properties; ostrom-server and ostrom-cli include this build in their CI (`ostrom.core.local=true`) and only
