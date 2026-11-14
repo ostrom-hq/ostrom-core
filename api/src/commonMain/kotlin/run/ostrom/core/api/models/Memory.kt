@@ -117,7 +117,8 @@ public data class MemoryEntry(
  * @property tags At most 8 distinct tags `[a-z0-9][a-z0-9._-]*`, at most 40 characters each.
  * @property refs At most 10 references of 1 to 300 characters.
  * @property expiresAt ISO time in the future; absent for no expiry.
- * @property sessionId The session an agent proposes a team entry from; an agent token names its own.
+ * @property sessionId The session an agent proposes a team entry from; an agent token on a machine names its own, a
+ *   cloud session's agent token needs none (its cloud session, whatever it names).
  */
 @Serializable
 public data class CreateMemoryRequest(

@@ -3687,6 +3687,8 @@ paths:
       tags:
       - sessions
       summary: Start a session or a segment (hook SessionStart); a resumed session opens a chained segment
+      description: "A session never takes the id of another person's cloud session: 403 `forbidden` (\"This session
+        is not yours.\")"
       requestBody:
         required: true
         content:
@@ -7303,9 +7305,11 @@ paths:
       tags:
       - waits
       summary: "What the waits of an agent's session have to say, for the Stop hook of its launch"
-      description: "An agent token only, through its launch's local relay (the hooks' capability), in one of its
-        launch's sessions (`?session=`, any segment). A cloud session's agent token is confined to its cloud session
-        whatever it names, and needs no `session`. Holds the call up to `waitMillis` (0 to 30 000, 25 000 by default)
+      description: "An agent token only: a launch on a machine through its local relay (the hooks' capability), in
+        one of its launch's sessions (`?session=`, any segment; 400 `invalid_request` without it); a cloud session's
+        agent token, from its runner, is confined to its cloud session whatever it names, and needs no `session`. Like
+        every route a cloud session's agent token calls, it answers only while the execution its launch was opened in
+        runs (403 otherwise). Holds the call up to `waitMillis` (0 to 30 000, 25 000 by default)
         and answers as soon as a wait of the session is answered: each answer is handed over once (`messages`, oldest
         first, each starting with `[Ostrom wait answered]`). `open` says a wait asked by the session is still open, so
         the hook keeps holding the agent; a session with no open wait answers at once."
@@ -7516,7 +7520,8 @@ paths:
       - name: sessionId
         in: query
         required: false
-        description: "The session (its id, or one of its segments `~r<n>`), as its owner or its agent token names it"
+        description: "The session (its id, or one of its segments `~r<n>`), as its owner or its agent token names it;
+          a cloud session's agent token needs none"
         schema:
           type: string
       responses:
@@ -7894,7 +7899,8 @@ paths:
       - name: sessionId
         in: query
         required: false
-        description: "The session (its id, or one of its segments `~r<n>`), as its owner or its agent token names it"
+        description: "The session (its id, or one of its segments `~r<n>`), as its owner or its agent token names it;
+          a cloud session's agent token needs none"
         schema:
           type: string
       responses:
@@ -12245,6 +12251,8 @@ paths:
       tags:
       - runners
       summary: Terminate a cloud session; its workspace is deleted
+      description: "Once terminated, the waits its agent asked in it that are still open are cancelled, as when a
+        session on a machine ends"
       parameters:
       - name: id
         in: path
