@@ -15859,6 +15859,9 @@ paths:
         description: 1 to 200, 50 by default.
         schema:
           type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
       responses:
         '200':
           description: OK
