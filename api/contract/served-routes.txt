@@ -1,4 +1,4 @@
-# The routes ostrom-server main serves (ostrom-server@bacd6a96), read from its sources by scripts/served-routes.py.
+# The routes ostrom-server main serves (ostrom-server@59a4c5af), read from its sources by scripts/served-routes.py.
 # api-types/scripts/check-served.mjs (run by `npm run contract` in CI) fails when an operation's x-ostrom-status
 # disagrees: served when a line below has its method and path (path parameters written {}), planned otherwise.
 # A "!" line, kept by hand when regenerating, is a route main serves in another shape than the contract's: its
@@ -255,7 +255,11 @@ POST /api/v1/cloud/profiles
 POST /api/v1/cloud/runner/checks
 POST /api/v1/cloud/runner/github
 POST /api/v1/cloud/runner/heartbeat
+POST /api/v1/cloud/runner/hooks
+POST /api/v1/cloud/runner/hooks/artifact
 POST /api/v1/cloud/runner/launch
+POST /api/v1/cloud/runner/skills
+POST /api/v1/cloud/runner/skills/artifact
 POST /api/v1/cloud/runner/variables
 POST /api/v1/cloud/sessions
 POST /api/v1/cloud/sessions/{}/pause
