@@ -1696,8 +1696,8 @@ paths:
                     `hooks.v1`), `memory:use` (the organization's memory and the creator's personal entries,
                     `memory.v1`), `guidance` (the capacity advice for the creator's sessions, `capacity.pacing.v1`).
                     Reserved to an owner or an admin, and only while its creator still is one, checked at every call:
-                    `team:read` (a read-only view of the organization: usage, spending, budgets, accounts, MCP usage and
-                    the member directory, no session, transcript or artifact of a member) and `cloud:admin` (cloud:write
+                    `team:read` (a read-only view of the organization: usage, spending, budgets, accounts and the automatic pool
+                    size, MCP usage and the member directory, no session, transcript or artifact of a member) and `cloud:admin` (cloud:write
                     with an administrator's rights over every cloud session of the organization), `skills:publish` (publish skill
                     versions, `publishSkillVersion`), `skills:pin` (with `skills:publish`: pin at publication or with
                     `pinSkill`), `skills:assign` (with `skills:publish`: deliver to all members at publication) and
@@ -14430,7 +14430,8 @@ paths:
       - inference
       summary: The current capacity advice of one of the caller's agent sessions (`capacity.pacing.v1`)
       description: "As `getCurrentDirective`, scoped to the session named (its own calls' targets); an agent token only
-        names its own session (403 otherwise). A malformed session id: 400"
+        names its own session (403 otherwise); a session id of
+        another member reads nothing of theirs. A malformed session id: 400. Answered with `Cache-Control: no-store`"
       requestBody:
         required: true
         content:
@@ -14467,7 +14468,9 @@ paths:
         since the last one delivered to that session at that stage, under a claim of 15 seconds (two hooks at once
         never both deliver it); the hook then confirms with `POST /api/v1/directives/receipt`. Without a new advice,
         or in observation mode, `directive` is absent. Stages: `received_by_cli`, `emitted_to_hook`. At most 2,000
-        deliveries remembered per member"
+        deliveries remembered per member. Deliveries are kept per member: a
+        session id names one of the caller's own sessions (an agent token only its own, 403 otherwise), never another
+        member's. Answered with `Cache-Control: no-store`"
       requestBody:
         required: true
         content:
@@ -14501,7 +14504,8 @@ paths:
       - inference
       summary: Record that an advice reached a stage of its delivery (`capacity.pacing.v1`)
       description: "A receipt records the emission by the local bridge, never that the agent followed the advice.
-        Idempotent. With `claimId`, it settles that claim; an expired or foreign claim changes nothing"
+        Idempotent. With `claimId`, it settles that claim; an expired claim, or one of another member or session,
+        changes nothing. Without `sessionId`, the member-wide advice"
       requestBody:
         required: true
         content:
@@ -18208,6 +18212,7 @@ components:
           description: "`five_hour`, `seven_day` or `model:<family>`"
         utilization:
           type: number
+          description: Used share, 0 to 1
         observedAt:
           type: string
           format: date-time
@@ -18220,7 +18225,8 @@ components:
           description: Clients treat an unknown value as `unknown`
         pointsPerHour:
           type: number
-          description: The learned rate in percentage points per hour; absent while unknown (0 is a known idle rate)
+          description: "The learned rate in percentage points per hour (0 to 100 scale, where `utilization` is 0 to 1);
+            absent while unknown (0 is a known idle rate)"
         reachesThresholdAt:
           type: string
           format: date-time
@@ -18294,13 +18300,11 @@ components:
       properties:
         observationOnly:
           type: boolean
-          default: false
-          description: "The controller keeps forecasting but neither spaces admissions nor sends advice to agents.
+          description: "False by default. The controller keeps forecasting but neither spaces admissions nor sends advice to agents.
             Budgets, concurrency limits and accounts' ceilings stay enforced; advice already sent cannot be recalled"
         autoPoolSize:
           type: boolean
-          default: false
-          description: "Size the organization's daily budget from its shared accounts (`capacity.poolsize.v1`,
+          description: "False by default. Size the organization's daily budget from its shared accounts (`capacity.poolsize.v1`,
             `GET /api/v1/pools/size`) instead of the typed one"
       x-ostrom-kotlin: pending
     PoolSize:
