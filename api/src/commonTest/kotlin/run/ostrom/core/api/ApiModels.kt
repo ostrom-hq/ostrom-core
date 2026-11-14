@@ -226,6 +226,7 @@ import run.ostrom.core.api.models.CloudSessionLimits
 import run.ostrom.core.api.models.CloudSessionPage
 import run.ostrom.core.api.models.CloudSessionProfile
 import run.ostrom.core.api.models.CloudSetup
+import run.ostrom.core.api.models.CloudWorkspaceDeletion
 import run.ostrom.core.api.models.CreateCloudSessionRequest
 import run.ostrom.core.api.models.EnvironmentValues
 import run.ostrom.core.api.models.EnvironmentVariant
@@ -459,6 +460,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     CloudEnvironment.serializer(),
     CloudRepository.serializer(),
     CloudSession.serializer(),
+    CloudWorkspaceDeletion.serializer(),
     CloudSessionFailure.serializer(),
     CloudSessionLimits.serializer(),
     CloudSessionPage.serializer(),

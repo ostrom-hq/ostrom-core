@@ -19644,12 +19644,14 @@ components:
           type: integer
           description: "PersistentVolumes of this cluster's session workspaces whose claim is gone and that their
             provisioner will not delete (reclaimPolicy other than Delete, or phase Failed), counted by the last garbage
-            collection: an administrator deletes the provider volumes (`runners.cloud.retention.v1`)"
+            collection: an administrator deletes the provider volumes (`runners.cloud.retention.v1`). Absent before
+            the first collection"
         lastGarbageCollectionAt:
           type: string
           format: date-time
           description: "When the last garbage collection of the cluster ran: every 10 minutes, it deletes the session
-            pods and workspace claims no session accounts for (`runners.cloud.retention.v1`)"
+            pods and workspace claims no session accounts for (`runners.cloud.retention.v1`). Absent before the
+            first collection"
         inCluster:
           type: boolean
           description: "Whether the cluster is the server's own, reached with the server pod's mounted service account
@@ -20147,7 +20149,8 @@ components:
             from the instance's `pausedRetentionDays` in force when it paused: a later change of the setting applies
             to sessions paused afterwards, so shortening it never deletes existing work by surprise. Resuming clears
             it. Absent while the session is not paused, or when paused sessions are kept indefinitely
-            (`runners.cloud.retention.v1`, TeamCode's `expiresAt`)"
+            (`runners.cloud.retention.v1`, TeamCode's `expiresAt`). A session paused before the server announced
+            the feature gets its `expiresAt` from the setting at its next reconciliation"
         terminatedReason:
           type: string
           description: "Why a terminated session ended: `deleted` (its owner or an administrator) or `expired`
@@ -20211,6 +20214,9 @@ components:
           description: The provider's volume handle (CSI `volumeHandle`), kept as evidence
         problem:
           $ref: '#/components/schemas/CloudSessionFailure'
+          description: "Why the deletion is blocked: `volume_retained` (the volume's reclaimPolicy is not Delete;
+            `retryable` false) or `volume_deletion_stalled` (phase Failed, or still there an hour after its claim was
+            deleted; `retryable` true). Absent unless `state` is `blocked`"
       required:
       - state
     CloudSessionProfile:
