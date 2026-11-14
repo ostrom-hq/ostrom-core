@@ -3944,7 +3944,7 @@ paths:
         one changes nothing (`superseded: true`). A repeated state keeps its time (`since`). 409 `session_ended` once
         the segment ended (a lost one too: its launcher reports to the segment it reopens). 400
         `invalid_session_activity` for another state or an `observedAt` that is not a date-time. Not audited, like a
-        sign of life. Planned: the server does not serve it yet"
+        sign of life."
       parameters:
       - name: id
         in: path
@@ -25282,13 +25282,13 @@ components:
             its end (`ended`, `lost` included) it would be a guess, so it is absent. Absent too before the first report,
             and once a sign of life that ends a silence of the launcher (60 s without one) cleared a `working` reported
             before the silence; `waiting_for_human` is kept over a silence, and a segment reopened after it starts with
-            it, since a person still has to answer. Planned: the server does not send it yet"
+            it, since a person still has to answer."
         activitySince:
           type: string
           format: date-time
           x-ostrom-status: served
           description: "When `activity` began, by the server's clock: a repeated state keeps its time. Present with
-            `activity` only. Planned: the server does not send it yet"
+            `activity` only."
       required:
       - id
       - agent
