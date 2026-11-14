@@ -6342,7 +6342,7 @@ paths:
       summary: Start a run
       description: "Planned with `workflows.deliver.v1` (docs/decisions/workflows-one-system.md in ostrom-server): any
         member starts an accepted workflow as themselves; at most 20 unfinished runs per member (409 `run_limit`); the
-        same `Idempotency-Key` returns the first run (200, `Idempotency-Replayed: true`); `repository` is the repository
+        same `Idempotency-Key` returns the first run (200, `Idempotency-Replayed: true`; a malformed key is 400 `invalid_request`); `repository` is the repository
         of the agent nodes that name none (400 `repository_required` when one needs it)"
       parameters:
       - name: id
@@ -6353,7 +6353,7 @@ paths:
       - name: Idempotency-Key
         in: header
         required: false
-        description: 1 to 128 characters of `A-Za-z0-9._:-` (planned)
+        description: '1 to 128 characters of `A-Za-z0-9._:-`; one fresh key per press of Start, reused for each retry of it'
         schema:
           type: string
       requestBody:
@@ -6364,7 +6364,7 @@ paths:
               $ref: '#/components/schemas/StartWorkflowRunRequest'
       responses:
         '200':
-          description: "The first run of this `Idempotency-Key` (planned)"
+          description: "The first run of this `Idempotency-Key`, with `Idempotency-Replayed: true`"
           content:
             application/json:
               schema:
