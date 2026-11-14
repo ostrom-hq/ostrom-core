@@ -101,6 +101,7 @@ import run.ostrom.core.api.models.PackageWorkflow
 import run.ostrom.core.api.models.Produced
 import run.ostrom.core.api.models.PublicKey
 import run.ostrom.core.api.models.PushDevice
+import run.ostrom.core.api.models.PushPayload
 import run.ostrom.core.api.models.QuietHours
 import run.ostrom.core.api.models.Receipt
 import run.ostrom.core.api.models.ReceiptDecision
@@ -302,6 +303,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     Produced.serializer(),
     PublicKey.serializer(),
     PushDevice.serializer(),
+    PushPayload.serializer(),
     QuietHours.serializer(),
     Receipt.serializer(),
     ReceiptDecision.serializer(),

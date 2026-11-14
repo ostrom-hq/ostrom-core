@@ -66,7 +66,7 @@ client.close()
 | `receipts` | `list(before, limit)`, `get(id)`, `keys()` | `GET /api/v1/receipts`, `GET /api/v1/receipts/{id}`, `GET /api/v1/receipts/keys` |
 | `spending` | `report(period)` | `GET /api/v1/spending` |
 | `activity` | `page(before, repo)` | `GET /api/v1/activity` |
-| `pushDevices` | `register(pushToken, provider, platform, locale)`, `delete(id)` | `POST /api/v1/push-devices`, `DELETE /api/v1/push-devices/{id}` |
+| `pushDevices` | `register(pushToken, provider, platform, locale, publicKey)`, `delete(id)` | `POST /api/v1/push-devices`, `DELETE /api/v1/push-devices/{id}` |
 | `notifications` | `preferences()`, `save(preferences)` | `GET` and `PUT /api/v1/me/notifications` |
 | `waits` | `list(status, mine, before, limit, resolver)`, `get(id)`, `answer(id, action, values)` | `GET /api/v1/waits`, `GET /api/v1/waits/{id}`, `POST /api/v1/waits/{id}/answer` |
 | `artifacts` | `list(before, limit)`, `get(id)`, `versions(id)`, `ticket(id, version)` | `GET /api/v1/artifacts`, `GET /api/v1/artifacts/{id}`, `GET /api/v1/artifacts/{id}/versions`, `POST /api/v1/artifacts/{id}/tickets` |

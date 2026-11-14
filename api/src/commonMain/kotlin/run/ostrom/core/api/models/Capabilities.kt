@@ -126,7 +126,11 @@ public object ServerFeatures {
     /** Notifications. */
     public const val NOTIFICATIONS: String = "notifications.v1"
 
-    /** Push notifications to the mobile app: only with a push sender configured. */
+    /**
+     * Push notifications to the mobile app: the server takes a phone's FCM registration token with its P-256 public
+     * key (`POST /api/v1/push-devices`, `provider: fcm`) and encrypts every push for that key (`PushPayload`), sent
+     * through the provider an administrator chose in the instance's `push` settings (nothing while it is `off`).
+     */
     public const val NOTIFICATIONS_PUSH: String = "notifications.push.v1"
 
     /** Session packages and their compilation. */
