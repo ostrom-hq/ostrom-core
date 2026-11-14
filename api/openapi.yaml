@@ -15684,7 +15684,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listWebhooks
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - webhooks
       summary: The organization's outgoing webhooks
@@ -15712,7 +15712,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createWebhook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - webhooks
       summary: Add an outgoing webhook; its signing secret is returned once
@@ -15760,7 +15760,7 @@ paths:
         type: string
     get:
       operationId: getWebhook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - webhooks
       summary: One outgoing webhook
@@ -15783,7 +15783,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: updateWebhook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - webhooks
       summary: Change an outgoing webhook
@@ -15817,7 +15817,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteWebhook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - webhooks
       summary: Remove an outgoing webhook and its delivery log
@@ -15844,7 +15844,7 @@ paths:
         type: string
     get:
       operationId: listWebhookDeliveries
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - webhooks
       summary: The delivery log of a webhook, newest first
@@ -15886,7 +15886,7 @@ paths:
         type: string
     post:
       operationId: testWebhook
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - webhooks
       summary: Queue one signed `webhook.test` delivery
@@ -15921,7 +15921,7 @@ paths:
         type: string
     post:
       operationId: rotateWebhookSecret
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - webhooks
       summary: A new signing secret, shown once
@@ -16020,7 +16020,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: streamEvents
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - events
       summary: The organization's live event feed (SSE)

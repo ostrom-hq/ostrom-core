@@ -42,6 +42,7 @@ DELETE /api/v1/skills/{}/assignments/{}
 DELETE /api/v1/skills/{}/pin
 DELETE /api/v1/skills/{}/versions/{}
 DELETE /api/v1/tokens/{}
+DELETE /api/v1/webhooks/{}
 DELETE /api/v1/workflows/{}
 GET /a/{}/{}/{}
 GET /api/v1/accounts
@@ -95,6 +96,7 @@ GET /api/v1/environment
 GET /api/v1/environment/assignments
 GET /api/v1/environment/variants
 GET /api/v1/environment/variants/personal
+GET /api/v1/events
 GET /api/v1/gates/approvers
 GET /api/v1/gates/catalog
 GET /api/v1/gates/catalog/signed
@@ -189,6 +191,9 @@ GET /api/v1/usage/live
 GET /api/v1/usage/summary
 GET /api/v1/waits
 GET /api/v1/waits/{}
+GET /api/v1/webhooks
+GET /api/v1/webhooks/{}
+GET /api/v1/webhooks/{}/deliveries
 GET /api/v1/workflows
 GET /api/v1/workflows/settings
 GET /api/v1/workflows/session/pending
@@ -334,6 +339,9 @@ POST /api/v1/waits/wake
 POST /api/v1/waits/{}/answer
 POST /api/v1/waits/{}/cancel
 POST /api/v1/waits/{}/event
+POST /api/v1/webhooks
+POST /api/v1/webhooks/{}/rotate-secret
+POST /api/v1/webhooks/{}/test
 POST /api/v1/workflows
 POST /api/v1/workflows/mcp
 POST /api/v1/workflows/session/deliver
@@ -371,5 +379,6 @@ PUT /api/v1/skills/{}/assignments/{}
 PUT /api/v1/skills/{}/audience
 PUT /api/v1/skills/{}/pin
 PUT /api/v1/todos/stop-hook/members/{}
+PUT /api/v1/webhooks/{}
 PUT /api/v1/workflows/settings
 PUT /api/v1/workflows/{}
