@@ -213,6 +213,24 @@ import run.ostrom.core.api.models.SetMemoryCurationRequest
 import run.ostrom.core.api.models.SupersededMemories
 import run.ostrom.core.api.models.SupersededMemory
 import run.ostrom.core.api.models.UpdateMemoryRequest
+import run.ostrom.core.api.models.CloudAgentKind
+import run.ostrom.core.api.models.CloudEnvironment
+import run.ostrom.core.api.models.CloudRepository
+import run.ostrom.core.api.models.CloudSession
+import run.ostrom.core.api.models.CloudSessionFailure
+import run.ostrom.core.api.models.CloudSessionLimits
+import run.ostrom.core.api.models.CloudSessionPage
+import run.ostrom.core.api.models.CloudSessionProfile
+import run.ostrom.core.api.models.CloudSetup
+import run.ostrom.core.api.models.CreateCloudSessionRequest
+import run.ostrom.core.api.models.EnvironmentValues
+import run.ostrom.core.api.models.EnvironmentVariant
+import run.ostrom.core.api.models.EnvironmentVariantCreate
+import run.ostrom.core.api.models.EnvironmentVariantUpdate
+import run.ostrom.core.api.models.EnvironmentVariantsPage
+import run.ostrom.core.api.models.McpServer
+import run.ostrom.core.api.models.McpServerList
+import run.ostrom.core.api.models.McpStdioSpec
 import kotlinx.serialization.KSerializer
 
 /** Every model of the API contract: the schemas of `api/openapi.yaml` that have a Kotlin model. */
@@ -429,4 +447,22 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     SupersededMemories.serializer(),
     SupersededMemory.serializer(),
     UpdateMemoryRequest.serializer(),
+    CloudAgentKind.serializer(),
+    CloudEnvironment.serializer(),
+    CloudRepository.serializer(),
+    CloudSession.serializer(),
+    CloudSessionFailure.serializer(),
+    CloudSessionLimits.serializer(),
+    CloudSessionPage.serializer(),
+    CloudSessionProfile.serializer(),
+    CloudSetup.serializer(),
+    CreateCloudSessionRequest.serializer(),
+    EnvironmentValues.serializer(),
+    EnvironmentVariant.serializer(),
+    EnvironmentVariantCreate.serializer(),
+    EnvironmentVariantUpdate.serializer(),
+    EnvironmentVariantsPage.serializer(),
+    McpServer.serializer(),
+    McpServerList.serializer(),
+    McpStdioSpec.serializer(),
 )

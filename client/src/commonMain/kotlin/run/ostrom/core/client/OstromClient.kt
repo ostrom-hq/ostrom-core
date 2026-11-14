@@ -101,6 +101,15 @@ public class OstromClient(
     /** The organization's workflows and their runs. */
     public val workflows: WorkflowsClient = WorkflowsClient(transport)
 
+    /** The caller's environment variables and personal variants. */
+    public val environment: EnvironmentClient = EnvironmentClient(transport)
+
+    /** The caller's personal MCP servers. */
+    public val myMcpServers: MyMcpServersClient = MyMcpServersClient(transport)
+
+    /** The caller's cloud agent sessions. */
+    public val cloudSessions: CloudSessionsClient = CloudSessionsClient(transport)
+
     /** The organization's live events. */
     public val events: EventsClient = EventsClient(transport)
 

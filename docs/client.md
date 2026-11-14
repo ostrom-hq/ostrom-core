@@ -73,6 +73,9 @@ client.close()
 | `sessions` | `list(repo, dev, open, before, limit)`, `get(id)` | `GET /api/v1/sessions`, `GET /api/v1/sessions/{id}` |
 | `todos` | `session(sessionId)` | `GET /api/v1/todos/session` |
 | `workflows` | `list(repo, status)`, `get(id)`, `runs(id, status, before)`, `allRuns(status, before)` (the caller's), `run(id)` | `GET /api/v1/workflows`, `GET /api/v1/workflows/{id}`, `GET /api/v1/workflows/{id}/runs`, `GET /api/v1/runs`, `GET /api/v1/runs/{id}` |
+| `environment` | `names()` (names and unavailable names only, values dropped), `listMine()`, `createMine(variant)`, `updateMine(id, update)`, `deleteMine(id)` | `GET /api/v1/environment`, `GET` and `POST /api/v1/me/environment/variants`, `PATCH` and `DELETE /api/v1/me/environment/variants/{id}` |
+| `myMcpServers` | `list()`, `create(server)`, `save(name, server)`, `delete(name)` | `GET` and `POST /api/v1/me/mcp/servers`, `PUT` and `DELETE /api/v1/me/mcp/servers/{name}` |
+| `cloudSessions` | `list(status, before, limit)`, `get(id)`, `create(request)`, `pause(id)`, `resume(id)`, `stop(id)` | `GET` and `POST /api/v1/cloud/sessions`, `GET` and `DELETE /api/v1/cloud/sessions/{id}`, `POST /api/v1/cloud/sessions/{id}/pause`, `POST /api/v1/cloud/sessions/{id}/resume` |
 | `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
 
 Every parameter left null is not sent, so the server's default applies. The models are those of

@@ -1431,6 +1431,311 @@
       "skipped"
     ]
   },
+  "CloudAgentKind": {
+    "enum": [
+      "claude",
+      "codex",
+      "opencode",
+      "gemini",
+      "shell"
+    ]
+  },
+  "CloudEnvironment": {
+    "properties": {
+      "repositories": {
+        "type": {
+          "array": {
+            "ref": "CloudRepository"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "workingDirectory": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "setup": {
+        "type": {
+          "ref": "CloudSetup"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "requiredVariables": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "requireGitHub": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "gitEmailDomain": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudRepository": {
+    "properties": {
+      "url": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "path": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "branch": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSession": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "owner": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "status": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "desiredStatus": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "phase": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "epoch": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "failure": {
+        "type": {
+          "ref": "CloudSessionFailure"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "limits": {
+        "type": {
+          "ref": "CloudSessionLimits"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "readyAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "lastActivityAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "pausedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "runnerId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "environment": {
+        "type": {
+          "ref": "CloudEnvironment"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "profile": {
+        "type": {
+          "ref": "CloudSessionProfile"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "image": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "githubAccess": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "runId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "automationId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "endedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSessionFailure": {
+    "properties": {
+      "code": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "message": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "retryable": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSessionLimits": {
+    "properties": {
+      "idleTimeoutMinutes": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "maxRunMinutes": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "restrictedEgress": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSessionPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "CloudSession"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSessionProfile": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSetup": {
+    "properties": {
+      "create": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "start": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "CompiledHook": {
     "properties": {
       "id": {
@@ -1747,6 +2052,59 @@
           }
         },
         "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "CreateCloudSessionRequest": {
+    "properties": {
+      "agent": {
+        "type": {
+          "ref": "CloudAgentKind"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "repo": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "ref": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "prompt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "environment": {
+        "type": {
+          "ref": "CloudEnvironment"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "profileId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "image": {
+        "type": "string",
+        "required": false,
         "nullable": false
       }
     }
@@ -2116,6 +2474,129 @@
       "exitCode": {
         "type": "integer",
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "EnvironmentValues": {
+    "properties": {
+      "variables": {
+        "type": {
+          "map": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "unavailable": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "EnvironmentVariant": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "variable": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "binding": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "owner": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "hasValue": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "updatedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "EnvironmentVariantCreate": {
+    "properties": {
+      "variable": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "binding": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "value": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "EnvironmentVariantUpdate": {
+    "properties": {
+      "expectedVersion": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "value": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "EnvironmentVariantsPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "EnvironmentVariant"
+          }
+        },
+        "required": true,
         "nullable": false
       }
     }
@@ -2701,6 +3182,144 @@
       },
       "replaceClosed": {
         "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "McpServer": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "url": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "transport": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "secretNames": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "tools": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "scope": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "agentName": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "state": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "failure": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "path": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "credentialHeader": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "stdio": {
+        "type": {
+          "ref": "McpStdioSpec"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "version": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "owner": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "McpServerList": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "McpServer"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "McpStdioSpec": {
+    "properties": {
+      "launcher": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "packageName": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "args": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "env": {
+        "type": {
+          "map": "string"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "secretEnv": {
+        "type": {
+          "map": "string"
+        },
         "required": false,
         "nullable": false
       }

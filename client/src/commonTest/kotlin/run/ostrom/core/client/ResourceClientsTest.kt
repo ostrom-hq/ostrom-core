@@ -8,7 +8,16 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
+import run.ostrom.core.api.OstromJson
 import run.ostrom.core.api.models.ApprovalAnswer
+import run.ostrom.core.api.models.CloudAgentKind
+import run.ostrom.core.api.models.CloudEnvironment
+import run.ostrom.core.api.models.CloudRepository
+import run.ostrom.core.api.models.CloudSetup
+import run.ostrom.core.api.models.CreateCloudSessionRequest
+import run.ostrom.core.api.models.EnvironmentVariantCreate
+import run.ostrom.core.api.models.EnvironmentVariantUpdate
+import run.ostrom.core.api.models.McpServer
 import run.ostrom.core.api.models.NotificationPreferences
 import run.ostrom.core.api.models.QuietHours
 import run.ostrom.core.api.models.RunStatus
@@ -429,5 +438,176 @@ class ResourceClientsTest {
             assertFailsWith<IllegalArgumentException> { client.pushDevices.delete("") }
         }
         assertEquals(emptyList(), server.requests.map { it.call() })
+    }
+
+    @Test
+    fun theEnvironmentGivesNamesOnlyAndThePersonalVariantsAreManaged() = runTest {
+        val variant = """{"id":"v 1","variable":"API_KEY","name":"Mine","binding":"shared","owner":"m1",""" +
+            """"hasValue":true,"version":2,"createdAt":"t","updatedAt":"t"}"""
+        val server = ScriptedServer { request ->
+            when {
+                request.url.encodedPath == "/api/v1/environment" ->
+                    json("""{"variables":{"ZED":"secret-z","API_KEY":"secret-a"},"unavailable":["TOKEN","BROKEN"]}""")
+                request.method == HttpMethod.Get -> json("""{"items":[$variant]}""")
+                request.method == HttpMethod.Delete -> json("", HttpStatusCode.NoContent)
+                else -> json(variant, HttpStatusCode.Created)
+            }
+        }
+        server.client().use { client ->
+            val names = client.environment.names()
+            assertEquals(EnvironmentNames(listOf("API_KEY", "ZED"), listOf("BROKEN", "TOKEN")), names)
+            assertEquals(false, names.toString().contains("secret"))
+            assertEquals("m1", client.environment.listMine().items.single().owner)
+            val created = client.environment.createMine(EnvironmentVariantCreate("API_KEY", "Mine", value = "s3cret"))
+            assertEquals(2, created.version)
+            client.environment.updateMine("v 1", EnvironmentVariantUpdate(expectedVersion = 2, name = "Renamed"))
+            client.environment.deleteMine("v 1")
+        }
+        assertEquals(
+            listOf(
+                "GET /api/v1/environment",
+                "GET /api/v1/me/environment/variants",
+                "POST /api/v1/me/environment/variants",
+                "PATCH /api/v1/me/environment/variants/v%201",
+                "DELETE /api/v1/me/environment/variants/v%201",
+            ),
+            server.requests.map { it.call() },
+        )
+        assertJson("""{"variable":"API_KEY","name":"Mine","value":"s3cret"}""", server.requests[2].bodyText())
+        assertJson("""{"expectedVersion":2,"name":"Renamed"}""", server.requests[3].bodyText())
+    }
+
+    @Test
+    fun personalMcpServersAreListedCreatedSavedAndDeleted() = runTest {
+        val hosted = """{"name":"docs","transport":"stdio","enabled":true,"scope":"org","owner":"m1",""" +
+            """"state":"ready","stdio":{"launcher":"npm","packageName":"docs-mcp@1.2.3","args":["--fast"],""" +
+            """"env":{"MODE":"ro"},"secretEnv":{"TOKEN":"docs-token"}}}"""
+        val server = ScriptedServer { request ->
+            when (request.method) {
+                HttpMethod.Get -> json("""{"items":[$hosted]}""")
+                HttpMethod.Delete -> json("", HttpStatusCode.NoContent)
+                else -> json(hosted)
+            }
+        }
+        server.client().use { client ->
+            val listed = client.myMcpServers.list().items.single()
+            assertEquals("docs-mcp@1.2.3", listed.stdio?.packageName)
+            assertEquals(mapOf("TOKEN" to "docs-token"), listed.stdio?.secretEnv)
+            val remote = McpServer(
+                name = "remote",
+                url = "https://mcp.example/x",
+                transport = "http",
+                enabled = true,
+                scope = "org",
+            )
+            client.myMcpServers.create(remote)
+            client.myMcpServers.save("a/b", listed)
+            client.myMcpServers.delete("docs")
+        }
+        assertEquals(
+            listOf(
+                "GET /api/v1/me/mcp/servers",
+                "POST /api/v1/me/mcp/servers",
+                "PUT /api/v1/me/mcp/servers/a%2Fb",
+                "DELETE /api/v1/me/mcp/servers/docs",
+            ),
+            server.requests.map { it.call() },
+        )
+        assertJson(
+            """{"name":"remote","url":"https://mcp.example/x","transport":"http","enabled":true,"scope":"org"}""",
+            server.requests[1].bodyText(),
+        )
+    }
+
+    private val cloudSession = """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating",""" +
+        """"phase":"cloning_repositories",""" +
+        """"epoch":1,"failure":{"code":"preparation_failed","message":"Clone failed.","retryable":true},""" +
+        """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +
+        """"profile":{"id":"p1","version":3},"environment":{"repositories":[{"url":"https://github.com/o/r"}],""" +
+        """"setup":{"create":["make"]}},"createdAt":"t"}"""
+
+    @Test
+    fun cloudSessionsAreListedWithTheirPhaseAndFailureAndReadOneByOne() = runTest {
+        val server = ScriptedServer { request ->
+            if (request.url.encodedPath == "/api/v1/cloud/sessions") {
+                json("""{"items":[$cloudSession],"next":"c2"}""")
+            } else {
+                json(cloudSession)
+            }
+        }
+        server.client().use { client ->
+            val page = client.cloudSessions.list(status = "paused", before = "c1", limit = 20)
+            assertEquals("c2", page.next)
+            val read = page.items.single()
+            assertEquals("cloning_repositories", read.phase)
+            assertEquals(true, read.failure?.retryable)
+            assertEquals(listOf("make"), read.environment?.setup?.create)
+            assertEquals(emptyList(), read.environment?.setup?.start)
+            client.cloudSessions.list()
+            assertEquals(1L, client.cloudSessions.get("cs_1").epoch)
+        }
+        assertEquals(
+            listOf(
+                "GET /api/v1/cloud/sessions?status=paused&before=c1&limit=20",
+                "GET /api/v1/cloud/sessions",
+                "GET /api/v1/cloud/sessions/cs_1",
+            ),
+            server.requests.map { it.call() },
+        )
+    }
+
+    @Test
+    fun cloudSessionsAreCreatedWithARecipeOrARepoPausedResumedAndStopped() = runTest {
+        val server = ScriptedServer { json(cloudSession) }
+        server.client().use { client ->
+            client.cloudSessions.create(
+                CreateCloudSessionRequest(
+                    agent = CloudAgentKind.CLAUDE,
+                    prompt = "Fix it",
+                    environment = CloudEnvironment(
+                        repositories = listOf(
+                            CloudRepository("https://github.com/o/r", path = "r", ref = "main", branch = "task"),
+                        ),
+                        workingDirectory = "r",
+                        setup = CloudSetup(create = listOf("npm ci"), start = listOf("npm run dev &")),
+                        requiredVariables = listOf("API_KEY"),
+                        requireGitHub = true,
+                        gitEmailDomain = "example.com",
+                    ),
+                ),
+            )
+            client.cloudSessions.create(
+                CreateCloudSessionRequest(CloudAgentKind.SHELL, repo = "https://github.com/o/r", ref = "dev"),
+            )
+            client.cloudSessions.pause("cs_1")
+            client.cloudSessions.resume("cs_1")
+            client.cloudSessions.stop("cs_1")
+        }
+        assertEquals(
+            listOf(
+                "POST /api/v1/cloud/sessions",
+                "POST /api/v1/cloud/sessions",
+                "POST /api/v1/cloud/sessions/cs_1/pause",
+                "POST /api/v1/cloud/sessions/cs_1/resume",
+                "DELETE /api/v1/cloud/sessions/cs_1",
+            ),
+            server.requests.map { it.call() },
+        )
+        assertJson(
+            """{"agent":"claude","prompt":"Fix it","environment":{"repositories":[{"url":"https://github.com/o/r",""" +
+                """"path":"r","ref":"main","branch":"task"}],"workingDirectory":"r","setup":{"create":["npm ci"],""" +
+                """"start":["npm run dev &"]},"requiredVariables":["API_KEY"],"requireGitHub":true,""" +
+                """"gitEmailDomain":"example.com"}}""",
+            server.requests[0].bodyText(),
+        )
+        assertJson("""{"agent":"shell","repo":"https://github.com/o/r","ref":"dev"}""", server.requests[1].bodyText())
+    }
+
+    @Test
+    fun anAgentKindThisVersionDoesNotKnowReadsAsUnknown() {
+        assertEquals(
+            CloudAgentKind.UNKNOWN,
+            OstromJson.decodeFromString(CloudAgentKind.serializer(), "\"aider\""),
+        )
     }
 }
