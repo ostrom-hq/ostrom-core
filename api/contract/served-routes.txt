@@ -132,6 +132,7 @@ GET /api/v1/inference/settings
 GET /api/v1/inference/v1/models
 GET /api/v1/instance
 GET /api/v1/instance/keys
+GET /api/v1/launches/{}/limits
 GET /api/v1/mcp/calls
 GET /api/v1/mcp/hosted
 GET /api/v1/mcp/servers
@@ -403,6 +404,7 @@ PUT /api/v1/hooks/{}/assignments/{}
 PUT /api/v1/hooks/{}/audience
 PUT /api/v1/hooks/{}/pin
 PUT /api/v1/inference/settings
+PUT /api/v1/launches/{}/limits
 PUT /api/v1/mcp/servers/{}
 PUT /api/v1/mcp/servers/{}/assignments/{}
 PUT /api/v1/mcp/settings

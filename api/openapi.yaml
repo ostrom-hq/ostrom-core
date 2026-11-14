@@ -994,13 +994,12 @@ paths:
                   type: object
                   additionalProperties:
                     type: string
-                  x-ostrom-status: planned
+                  x-ostrom-status: served
                   description: "Up to 16 non-secret key=value pairs attached to the launch (`sessions.labels.v1`), as
                     TeamCode's `--label` (`labels` of `POST /runs`): a key is 1 to 63 characters, lowercase letters or
                     digits then letters, digits, `.`, `_`, `/` or `-`; a value is up to 256 characters without control
                     characters. 400 `invalid_label` otherwise. Fixed at start: they are copied onto every segment of the
-                    launch (`Session.labels`) and filtered by `listSessions`. Never put a secret in a label. Planned: the
-                    server does not read it yet"
+                    launch (`Session.labels`) and filtered by `listSessions`. Never put a secret in a label"
                 workflowId:
                   type: string
                   x-ostrom-status: planned
@@ -1113,14 +1112,14 @@ paths:
         type: string
     get:
       operationId: getLaunchLimits
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: The limits of a launch and what it spent (`launches.limits.v1`)
       description: "An owner or an admin from a signed-in session, a service key with `team:read`, or the launch's own
         person (to read their own launch). 404 for a launch of another organization or one that does not exist. A launch
         that was never given limits answers zeros (`budgetMicros` 0 and `maxConcurrent` 0 add no cap) and
-        `paused: false`. Planned: the server does not serve it yet"
+        `paused: false`"
       responses:
         '200':
           description: OK
@@ -1136,7 +1135,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setLaunchLimits
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sessions
       summary: Set the limits of a launch (`launches.limits.v1`)
@@ -1150,7 +1149,7 @@ paths:
         model call of the launch, on every replica. Past a limit the gateway answers its own refusals, each with
         `x-ostrom-error`: `launch_paused` (403, the launch is paused), `launch_budget_exhausted` (429, the launch spent
         its budget, or what is left does not cover the call), and a call over `maxConcurrent` waits in the admission
-        queue (`inference.queue.v1`) like a member over theirs. Planned: the server does not serve it yet"
+        queue (`inference.queue.v1`) like a member over theirs"
       requestBody:
         required: true
         content:
@@ -3923,11 +3922,11 @@ paths:
       - name: label
         in: query
         required: false
-        x-ostrom-status: planned
+        x-ostrom-status: served
         description: "`key=value`, repeatable (at most 16): only the sessions whose launch carries every label given
           (`sessions.labels.v1`, TeamCode's `GET /runs?label=k=v`). The key is everything before the first `=`. It
           composes with the other filters and never widens what the caller may read. 400 `invalid_label` for a malformed
-          one. Planned: the server does not read it yet"
+          one"
         schema:
           type: array
           items:
@@ -28563,9 +28562,9 @@ components:
           type: object
           additionalProperties:
             type: string
-          x-ostrom-status: planned
+          x-ostrom-status: served
           description: "The labels of its launch (`createLaunch.labels`, `sessions.labels.v1`), as TeamCode returns them
-            on a run; absent when the launch has none. Planned: the server does not send them yet"
+            on a run; absent when the launch has none"
       required:
       - id
       - agent
