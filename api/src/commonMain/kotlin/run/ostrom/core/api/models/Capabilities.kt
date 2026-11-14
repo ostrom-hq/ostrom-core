@@ -362,6 +362,18 @@ public object ServerFeatures {
     public const val LICENSE: String = "license.v1"
 
     /**
+     * TeamCode's editable API price table (ADR 0002 step 1): the organization's per-model prices
+     * (`GET`/`PUT /api/v1/policy/api-prices`, `POST .../load-defaults`).
+     */
+    public const val CAPACITY_API_PRICES: String = "capacity.apiprices.v1"
+
+    /**
+     * TeamCode's temporary quota overrides: a dated total daily budget granted to a member by an administrator
+     * (`/api/v1/members/{login}/budget-overrides`).
+     */
+    public const val CAPACITY_BUDGET_OVERRIDES: String = "capacity.budgetoverrides.v1"
+
+    /**
      * TeamCode's Forecasts page: each shared account's provider windows, their last hour of readings, the learned rate
      * and when the window reaches the account's ceiling (`GET /api/v1/forecasts`, owners and admins).
      */
@@ -380,13 +392,20 @@ public object ServerFeatures {
      */
     public const val CAPACITY_POOL_SIZE: String = "capacity.poolsize.v1"
 
+    /**
+     * TeamCode's unknown usage review: the charges kept for calls whose usage never arrived, and an administrator's
+     * final correction of them (`/api/v1/usage/pending`, `/reconciliations`, `/reservations/{id}`).
+     */
+    public const val CAPACITY_USAGE_RECONCILIATION: String = "capacity.usagereconciliation.v1"
+
     /** The instance's cloud runtime and clusters, and the organizations' cloud profiles (TeamCode's cloud admin). */
     public const val CLOUD_ADMIN: String = "cloud.admin.v1"
 
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
-        ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CAPACITY_FORECASTS, CAPACITY_PACING,
-        CAPACITY_POOL_SIZE, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
+        ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CAPACITY_API_PRICES,
+        CAPACITY_BUDGET_OVERRIDES, CAPACITY_FORECASTS, CAPACITY_PACING, CAPACITY_POOL_SIZE,
+        CAPACITY_USAGE_RECONCILIATION, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST, PACKAGES, RECEIPTS, REPORTS,
         RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_CONVERSATION, RUNNERS_CLOUD_EFFORT,
