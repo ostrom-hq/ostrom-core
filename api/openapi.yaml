@@ -2103,6 +2103,68 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/github/app/configuration:
+    get:
+      operationId: getGithubAppConfiguration
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: The instance's GitHub App, as an administrator entered it or the manifest flow created it
+      description: 'A person who administers the instance, signed in as a person (TeamCode''s `GET /api/v1/github/app`);
+        a key, an agent or a device token is 403 even an administrator''s. The private key, the client secret and the
+        webhook secret are never returned, only whether each is set. `callbackUrls` are the URLs to register as
+        callback URLs of the App (the install''s return, the members'' links, the sign-in with GitHub)'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubAppConfiguration'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveGithubAppConfiguration
+      x-ostrom-status: planned
+      tags:
+      - github
+      summary: Enter the instance's GitHub App by hand, or change it
+      description: 'A person who administers the instance, signed in as a person (TeamCode''s `PUT /api/v1/github/app`).
+        `version` absent or null creates the App (the private key and the client secret are then required); otherwise
+        it must be the stored `version`, else 409 `github_app_conflict`. A null or absent secret keeps the stored one;
+        another `clientId` needs its own `clientSecret`. 400 `invalid_github_app` for an App ID outside
+        1..999999999999, a client ID that is not a GitHub App''s (`Iv` then 2 to 62 of `[0-9A-Za-z._-]`), a client
+        secret outside 20..256 characters or with a space or a control character, or a private key over 16384
+        characters or not PEM. The App is checked with GitHub (its JWT signed by the key) before it is stored, which
+        gives its slug and owner; 503 `unavailable` when GitHub does not answer. Changing the App ID leaves the
+        organizations'' installations of the former App unusable until they install the new one; changing the client
+        ID removes the members'' links of the former client and revokes their tokens. Every replica uses the new App
+        within 60 seconds'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveGitHubAppConfigurationRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubAppConfiguration'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/github/app/manifest/start:
     get:
       operationId: startGithubAppManifest
@@ -19659,6 +19721,79 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CloudProfile'
+    GitHubAppConfiguration:
+      x-ostrom-kotlin: pending
+      type: object
+      description: The instance's GitHub App, without its private key and secrets (TeamCode's `GitHubAppView`)
+      required: [configured, privateKeySet, clientSecretSet, webhookSecretSet, callbackUrls]
+      properties:
+        configured:
+          type: boolean
+          description: Whether an App is stored
+        appId:
+          type: [integer, 'null']
+          description: Its App ID; null while none is stored
+        slug:
+          type: [string, 'null']
+          description: Its slug on GitHub; null while none is stored
+        owner:
+          type: [string, 'null']
+          description: The GitHub account that owns it; null when unknown
+        clientId:
+          type: [string, 'null']
+          description: Its OAuth client ID; null while unknown
+        privateKeySet:
+          type: boolean
+          description: Whether its private key is stored and opens with the instance's secrets key
+        clientSecretSet:
+          type: boolean
+          description: Whether its client secret is stored and opens
+        webhookSecretSet:
+          type: boolean
+          description: Whether its webhook secret is stored and opens; without it every webhook is refused
+        version:
+          type: [integer, 'null']
+          description: The stored version, to send back to change it; null while none is stored
+        updatedAt:
+          type: [string, 'null']
+          format: date-time
+          description: The last save; null while none is stored
+        callbackUrls:
+          type: array
+          items:
+            type: string
+          description: The callback URLs to register on the App
+    SaveGitHubAppConfigurationRequest:
+      x-ostrom-kotlin: pending
+      type: object
+      required: [appId, clientId]
+      properties:
+        appId:
+          type: integer
+          minimum: 1
+          maximum: 999999999999
+        clientId:
+          type: string
+          minLength: 4
+          maxLength: 64
+          description: The App's OAuth client ID (`Iv…`)
+        clientSecret:
+          type: [string, 'null']
+          minLength: 20
+          maxLength: 256
+          description: Null or absent keeps the stored one; required to create the App or to change `clientId`
+        privateKey:
+          type: [string, 'null']
+          maxLength: 16384
+          description: The PEM private key; null or absent keeps the stored one; required to create the App
+        webhookSecret:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 256
+          description: The secret GitHub signs the webhooks with; null or absent keeps the stored one
+        version:
+          type: [integer, 'null']
+          description: The stored `version`; null or absent to create the App
     SaveCloudProfileRequest:
       x-ostrom-kotlin: pending
       type: object
