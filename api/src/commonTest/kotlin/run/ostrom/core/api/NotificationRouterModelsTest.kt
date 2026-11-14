@@ -15,6 +15,9 @@ class NotificationRouterModelsTest {
 
     @Test
     fun aRelayRequestIsSignedOverItsMethodPathTimeAndBodyHash() {
-        assertEquals("POST\n/v1/send\n1761069900\nab12", PushRelay.signingString("post", "/v1/send", 1761069900, "ab12"))
+        assertEquals(
+            "POST\n/v1/send\n1761069900\nab12",
+            PushRelay.signingString("post", "/v1/send", 1761069900, "ab12"),
+        )
     }
 }
