@@ -161,6 +161,7 @@ GET /api/v1/orgs/{}/teams
 GET /api/v1/packages
 GET /api/v1/packages/audit
 GET /api/v1/packages/current
+GET /api/v1/packages/settings
 GET /api/v1/packages/{}
 GET /api/v1/packages/{}/status
 GET /api/v1/policy/agents
@@ -391,6 +392,7 @@ PUT /api/v1/mcp/settings
 PUT /api/v1/me/mcp/servers/{}
 PUT /api/v1/me/notifications
 PUT /api/v1/me/skills/{}/pin
+PUT /api/v1/packages/settings
 PUT /api/v1/policy/models
 PUT /api/v1/secrets/{}
 PUT /api/v1/skill-delivery/installations
