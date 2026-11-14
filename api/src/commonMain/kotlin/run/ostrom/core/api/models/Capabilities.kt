@@ -171,6 +171,20 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_VARIABLES: String = "runners.cloud.variables.v1"
 
     /**
+     * The agent of a cloud session starts with its owner's delivered skills, installed under the agent's UID: the
+     * runner's `POST /api/v1/cloud/runner/skills` and `POST /api/v1/cloud/runner/skills/artifact`. Only with cloud
+     * runners and [SKILLS].
+     */
+    public const val RUNNERS_CLOUD_SKILLS: String = "runners.cloud.skills.v1"
+
+    /**
+     * A Claude Code agent of a cloud session starts with its owner's delivered team hooks, without a member approval
+     * in the pod: the runner's `POST /api/v1/cloud/runner/hooks` and `POST /api/v1/cloud/runner/hooks/artifact`. Only
+     * with cloud runners and [HOOKS].
+     */
+    public const val RUNNERS_CLOUD_HOOKS: String = "runners.cloud.hooks.v1"
+
+    /**
      * Team hooks: immutable versions published by an administrator or a CI key (`hooks:publish`), pinned only by an
      * administrator in the console, members' decisions and the audience, and the delivery routes (`hooks:read`);
      * each member approves each version on their computer.
@@ -262,7 +276,8 @@ public object ServerFeatures {
         ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CLOUD_ADMIN, ENVIRONMENT, EVENTS, GATES,
         GITHUB, GITHUB_LINK, GOVERNANCE, HOOKS, IMPORT_TEAMCODE, INFERENCE, INFERENCE_QUEUE, INFERENCE_CANCEL, MCP,
         MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS,
-        RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
+        RUNNERS_CLOUD, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS, RUNNERS_CLOUD_SKILLS,
+        RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS,
         SERVICE_KEY_SCOPES,
         SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE, WAITS_TIMED, WEBHOOKS, WORKFLOWS,
         WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
