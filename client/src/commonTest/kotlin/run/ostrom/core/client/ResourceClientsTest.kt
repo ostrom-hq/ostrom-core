@@ -519,19 +519,20 @@ class ResourceClientsTest {
         )
     }
 
+    private val cloudSession = """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating",""" +
+        """"phase":"cloning_repositories",""" +
+        """"epoch":1,"failure":{"code":"preparation_failed","message":"Clone failed.","retryable":true},""" +
+        """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +
+        """"profile":{"id":"p1","version":3},"environment":{"repositories":[{"url":"https://github.com/o/r"}],""" +
+        """"setup":{"create":["make"]}},"createdAt":"t"}"""
+
     @Test
-    fun cloudSessionsAreListedCreatedWithARecipePausedResumedAndStopped() = runTest {
-        val session = """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating",""" +
-            """"phase":"cloning_repositories",""" +
-            """"epoch":1,"failure":{"code":"preparation_failed","message":"Clone failed.","retryable":true},""" +
-            """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +
-            """"profile":{"id":"p1","version":3},"environment":{"repositories":[{"url":"https://github.com/o/r"}],""" +
-            """"setup":{"create":["make"]}},"createdAt":"t"}"""
+    fun cloudSessionsAreListedWithTheirPhaseAndFailureAndReadOneByOne() = runTest {
         val server = ScriptedServer { request ->
-            if (request.url.encodedPath == "/api/v1/cloud/sessions" && request.method == HttpMethod.Get) {
-                json("""{"items":[$session],"next":"c2"}""")
+            if (request.url.encodedPath == "/api/v1/cloud/sessions") {
+                json("""{"items":[$cloudSession],"next":"c2"}""")
             } else {
-                json(session)
+                json(cloudSession)
             }
         }
         server.client().use { client ->
@@ -544,6 +545,21 @@ class ResourceClientsTest {
             assertEquals(emptyList(), read.environment?.setup?.start)
             client.cloudSessions.list()
             assertEquals(1L, client.cloudSessions.get("cs_1").epoch)
+        }
+        assertEquals(
+            listOf(
+                "GET /api/v1/cloud/sessions?status=paused&before=c1&limit=20",
+                "GET /api/v1/cloud/sessions",
+                "GET /api/v1/cloud/sessions/cs_1",
+            ),
+            server.requests.map { it.call() },
+        )
+    }
+
+    @Test
+    fun cloudSessionsAreCreatedWithARecipeOrARepoPausedResumedAndStopped() = runTest {
+        val server = ScriptedServer { json(cloudSession) }
+        server.client().use { client ->
             client.cloudSessions.create(
                 CreateCloudSessionRequest(
                     agent = CloudAgentKind.CLAUDE,
@@ -569,9 +585,6 @@ class ResourceClientsTest {
         }
         assertEquals(
             listOf(
-                "GET /api/v1/cloud/sessions?status=paused&before=c1&limit=20",
-                "GET /api/v1/cloud/sessions",
-                "GET /api/v1/cloud/sessions/cs_1",
                 "POST /api/v1/cloud/sessions",
                 "POST /api/v1/cloud/sessions",
                 "POST /api/v1/cloud/sessions/cs_1/pause",
@@ -585,9 +598,9 @@ class ResourceClientsTest {
                 """"path":"r","ref":"main","branch":"task"}],"workingDirectory":"r","setup":{"create":["npm ci"],""" +
                 """"start":["npm run dev &"]},"requiredVariables":["API_KEY"],"requireGitHub":true,""" +
                 """"gitEmailDomain":"example.com"}}""",
-            server.requests[3].bodyText(),
+            server.requests[0].bodyText(),
         )
-        assertJson("""{"agent":"shell","repo":"https://github.com/o/r","ref":"dev"}""", server.requests[4].bodyText())
+        assertJson("""{"agent":"shell","repo":"https://github.com/o/r","ref":"dev"}""", server.requests[1].bodyText())
     }
 
     @Test
