@@ -3,10 +3,12 @@ package run.ostrom.core.api
 
 /**
  * The effective member of a cloud session write (`runners.cloud.onbehalf.v1`, TeamCode's `TeamCode-On-Behalf-Of`):
- * an owner or an admin signed in, or an administrator's `cloud:admin` service key, creates, pauses, resumes or deletes
- * another member's session by naming them in [HEADER], by member id or by login. The header never grants a right of its
- * own; the server answers [FORBIDDEN] for any other caller naming someone else, [INVALID_MEMBER] for a target who is
- * not an active member, and [INVALID] for a malformed or repeated header. A server without the capability ignores the
+ * an owner or an admin signed in, or an administrator's `cloud:admin` service key, creates a session for another
+ * member by naming them in [HEADER], by member id or by login; on any other write (pause, resume, delete, model,
+ * effort, transfers) the session or the transfer stays the caller's own and the named member is only journaled
+ * (TeamCode's `visible()`, ostrom-server#650). The header never grants a right of its own; the server answers
+ * [FORBIDDEN] for any other caller naming someone else, [INVALID_MEMBER] for a target who is not an active member, and
+ * [INVALID] for a malformed or repeated header. A server without the capability ignores the
  * header, so a client checks the capability before sending it.
  */
 public object OnBehalfOf {

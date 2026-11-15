@@ -28,9 +28,9 @@ public class CloudTransfersClient internal constructor(private val transport: Tr
      * Gives a session to another member (`POST /api/v1/cloud/sessions/{id}/transfer`). [idempotencyKey] is required
      * by the server: a retry with the same key and request returns the first transfer.
      *
-     * @param onBehalfOf The member an administrator acts for ([OnBehalfOf.HEADER], `runners.cloud.onbehalf.writes.v1`):
-     *   a server without the capability ignores it, so check it first. It must satisfy [OnBehalfOf.isValid], else an
-     *   [IllegalArgumentException] is thrown before any request.
+     * @param onBehalfOf The member this request on the caller's own session is journaled for ([OnBehalfOf.HEADER],
+     *   `runners.cloud.onbehalf.writes.v1`): a server without the capability ignores it, so check it first. It must
+     *   satisfy [OnBehalfOf.isValid], else an [IllegalArgumentException] is thrown before any request.
      */
     public suspend fun request(
         sessionId: String,
@@ -75,7 +75,7 @@ public class CloudTransfersClient internal constructor(private val transport: Tr
     /**
      * Accepts a session offered to the caller (`POST .../accept`); [resume] null keeps what the offer asked for.
      *
-     * @param onBehalfOf The recipient, for an administrator's call on their behalf (see [request]).
+     * @param onBehalfOf The member this call on the caller's own transfer is journaled for (see [request]).
      */
     public suspend fun accept(id: String, resume: Boolean? = null, onBehalfOf: String? = null): CloudTransfer {
         requireReference(onBehalfOf)
@@ -89,7 +89,7 @@ public class CloudTransfersClient internal constructor(private val transport: Tr
     /**
      * Declines an offered session (`POST .../decline`).
      *
-     * @param onBehalfOf The recipient, for an administrator's call on their behalf (see [request]).
+     * @param onBehalfOf The member this call on the caller's own transfer is journaled for (see [request]).
      */
     public suspend fun decline(id: String, onBehalfOf: String? = null): CloudTransfer =
         decide("${path(id)}/decline", onBehalfOf)
@@ -97,7 +97,7 @@ public class CloudTransfersClient internal constructor(private val transport: Tr
     /**
      * Withdraws an offer, or cancels an accepted transfer before the owner change starts (`POST .../cancel`).
      *
-     * @param onBehalfOf The session's former owner, for an administrator's call on their behalf (see [request]).
+     * @param onBehalfOf The member this call on the caller's own transfer is journaled for (see [request]).
      */
     public suspend fun cancel(id: String, onBehalfOf: String? = null): CloudTransfer =
         decide("${path(id)}/cancel", onBehalfOf)

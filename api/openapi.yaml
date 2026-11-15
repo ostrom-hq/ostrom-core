@@ -13370,7 +13370,7 @@ paths:
       tags:
       - runners
       summary: "Give one of the caller's cloud sessions to another member"
-      description: "`runners.cloud.transfer.v1`. Only the owner asks. An administrator's transfer is `accepted` at once; a member's is `offered` and the recipient accepts within 7 days (403 `transfer_disabled` when the instance's `memberTransfers` is `disabled`). Accepting pauses the session (the agent stops, its pod is gone); the owner changes only then, and the workspace is marked untrusted for the recipient. At most one open transfer per session (409 `transfer_pending`); a session still being created is 409 `session_preparing`, an ended one 409 `session_not_running`, a local one (planned, `runners.cloud.local.v1`) 409 `local_not_transferable`; a recipient who cannot own the session (disabled, not a member, at their cloud session limit) is 422 `recipient_ineligible` naming every reason. `Idempotency-Key` is required (400 `idempotency_key_required`): a retry returns the first transfer (`Idempotency-Replayed: true`), the same key with another request is 422 `idempotency_conflict`. With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential. A transfer write stays a person's, signed in: a service key never names a member here"
+      description: "`runners.cloud.transfer.v1`. Only the owner asks. An administrator's transfer is `accepted` at once; a member's is `offered` and the recipient accepts within 7 days (403 `transfer_disabled` when the instance's `memberTransfers` is `disabled`). Accepting pauses the session (the agent stops, its pod is gone); the owner changes only then, and the workspace is marked untrusted for the recipient. At most one open transfer per session (409 `transfer_pending`); a session still being created is 409 `session_preparing`, an ended one 409 `session_not_running`, a local one (planned, `runners.cloud.local.v1`) 409 `local_not_transferable`; a recipient who cannot own the session (disabled, not a member, at their cloud session limit) is 422 `recipient_ineligible` naming every reason. `Idempotency-Key` is required (400 `idempotency_key_required`): a retry returns the first transfer (`Idempotency-Replayed: true`), the same key with another request is 422 `idempotency_conflict`. With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), the write is attributed to the member it names, journaled with the effective member and the credential, but opens no session or transfer of theirs: the session must be the caller's own (404 otherwise, TeamCode's `visible()`, ostrom-server#650). A transfer write stays a person's, signed in: a service key never names a member here"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -13513,7 +13513,7 @@ paths:
       tags:
       - runners
       summary: "Accept a session offered to the caller"
-      description: "`runners.cloud.transfer.v1`. Only the recipient. The session pauses, then becomes the recipient's; before it runs again the runner resets the agent's settings and the repositories' Git configuration (`untrustedWorkspace`). Idempotent. 409 `transfer_expired`, `transfer_not_open`; 422 `recipient_ineligible`. With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential"
+      description: "`runners.cloud.transfer.v1`. Only the recipient. The session pauses, then becomes the recipient's; before it runs again the runner resets the agent's settings and the repositories' Git configuration (`untrustedWorkspace`). Idempotent. 409 `transfer_expired`, `transfer_not_open`; 422 `recipient_ineligible`. With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), the write is attributed to the member it names, journaled with the effective member and the credential, but opens no session or transfer of theirs: the caller must be the recipient itself (404 otherwise, TeamCode's `visible()`, ostrom-server#650)"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -13555,7 +13555,7 @@ paths:
       tags:
       - runners
       summary: "Decline an offered session"
-      description: "`runners.cloud.transfer.v1`. Only the recipient; only an offered transfer. With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential"
+      description: "`runners.cloud.transfer.v1`. Only the recipient; only an offered transfer. With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), the write is attributed to the member it names, journaled with the effective member and the credential, but opens no session or transfer of theirs: the caller must be the recipient itself (404 otherwise, TeamCode's `visible()`, ostrom-server#650)"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -13591,7 +13591,7 @@ paths:
       tags:
       - runners
       summary: "Withdraw an offer, or cancel an accepted transfer before the owner change starts"
-      description: "`runners.cloud.transfer.v1`. Only the session's former owner; an accepted transfer only by an administrator, and not once the session is `transferring` (409 `transfer_in_progress`). With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential"
+      description: "`runners.cloud.transfer.v1`. Only the session's former owner; an accepted transfer only by an administrator, and not once the session is `transferring` (409 `transfer_in_progress`). With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), the write is attributed to the member it names, journaled with the effective member and the credential, but opens no session or transfer of theirs: the caller must be the former owner itself (404 otherwise, TeamCode's `visible()`, ostrom-server#650)"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -14852,8 +14852,8 @@ paths:
         nothing), so a paused session starts with it; a running conversation agent also gets a `set_model` input,
         taken at its next turn. A terminal session's agent gets it at its next start. 409 `session_not_running` once
         terminated. With `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`,
-        TeamCode's `actor()`),
-        an administrator acts for the member it names, journaled with the effective member and the credential"
+        TeamCode's `actor()`), the write is attributed to the member it names, journaled with the effective member and
+        the credential, but the session must be the caller's own (404 otherwise, TeamCode's `visible()`, ostrom-server#650)"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -14900,8 +14900,8 @@ paths:
         `low`, `medium`, `high`, `xhigh` and `max` for Claude Code, `low`, `medium`, `high` and `xhigh` for Codex.
         Audited `cloud.session.effort_changed`; a running conversation agent gets a `set_effort` input. With
         `Ostrom-On-Behalf-Of` (served since ostrom-server#646, `runners.cloud.onbehalf.writes.v1`, TeamCode's
-        `actor()`), an administrator
-        acts for the member it names, journaled with the effective member and the credential"
+        `actor()`), the write is attributed to the member it names, journaled with the effective member and the
+        credential, but the session must be the caller's own (404 otherwise, TeamCode's `visible()`, ostrom-server#650)"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -19717,8 +19717,10 @@ components:
         administrator's service key with `cloud:admin` may name another member; on any other credential the header must
         be absent or name the caller (403 `on_behalf_forbidden`). The target must be an active member of the
         organization (422 `invalid_effective_member`, also for a login nobody has); several values or a malformed one
-        are 400 `invalid_on_behalf`. The header never grants a right of its own: the call acts on the effective
-        member's sessions with the caller's rights (an administrator's). Each creation, pause, resume and deletion is
+        are 400 `invalid_on_behalf`. The header never grants a right of its own, as TeamCode's `actor()` beside
+        `visible()`: a creation makes the effective member the owner; any other write (pause, resume, deletion, model,
+        effort, transfers) stays on the caller's own sessions and transfers (404 otherwise, whatever the header names)
+        and the effective member is only journaled (ostrom-server#650; a server before it acted on the effective member's sessions). Each creation, pause, resume and deletion is
         journaled (`cloud.session.created`, `.paused`, `.resumed`, `.deleted`) with the caller as the actor, the
         effective member and the credential (`effectiveMemberId`, `credentialId` of `listAudit`). GitHub access and the permission bypass are the owner's alone
         (403 `github_owner_only`, `bypass_owner_only`). A server that does not announce the capability ignores the

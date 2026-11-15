@@ -261,18 +261,20 @@ public object ServerFeatures {
 
     /**
      * A cloud session write takes `Ostrom-On-Behalf-Of` as TeamCode's `TeamCode-On-Behalf-Of`: an owner or an admin
-     * signed in, or an administrator's `cloud:admin` service key, creates, pauses, resumes or deletes a member's
-     * session, named by id or login (403 `on_behalf_forbidden`, 422 `invalid_effective_member`, 400
-     * `invalid_on_behalf`); a session records `createdBy`, and `listAudit` the effective member and the credential of
-     * each `cloud.session.*` entry. A server without it ignores the header. Only with cloud runners.
+     * signed in, or an administrator's `cloud:admin` service key, creates a session for a member, named by id or login
+     * (403 `on_behalf_forbidden`, 422 `invalid_effective_member`, 400 `invalid_on_behalf`); a pause, a resume or a
+     * deletion stays on the caller's own session and is only attributed to that member (TeamCode's `visible()`). A
+     * session records `createdBy`, and `listAudit` the effective member and the credential of each `cloud.session.*`
+     * entry. A server without it ignores the header. Only with cloud runners.
      */
     public const val RUNNERS_CLOUD_ON_BEHALF: String = "runners.cloud.onbehalf.v1"
 
     /**
      * `Ostrom-On-Behalf-Of` is also read on the model, the effort and the transfer writes (`PUT .../model`,
      * `PUT .../effort`, `POST .../transfer`, `POST /api/v1/cloud/transfers/{id}/accept|decline|cancel`), as on every
-     * TeamCode cloud write, and each `cloud.session.*` entry of [RUNNERS_CLOUD_ON_BEHALF] is written in the transaction
-     * of the change it tells. A server without it ignores the header on those writes. Only with cloud runners.
+     * TeamCode cloud write, only to attribute them (the session or the transfer stays the caller's own, TeamCode's
+     * `visible()`), and each `cloud.session.*` entry of [RUNNERS_CLOUD_ON_BEHALF] is written in the transaction of the
+     * change it tells. A server without it ignores the header on those writes. Only with cloud runners.
      */
     public const val RUNNERS_CLOUD_ON_BEHALF_WRITES: String = "runners.cloud.onbehalf.writes.v1"
 
