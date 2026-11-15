@@ -13104,7 +13104,7 @@ paths:
       tags:
       - runners
       summary: The caller's cloud agent sessions, newest first
-      description: "With `runners.cloud.remote.v1` (planned), `kind` (repeatable) chooses the kinds listed, `cloud` or
+      description: "With `runners.cloud.remote.v1`, `kind` (repeatable) chooses the kinds listed, `cloud` or
         `remote` (400 `invalid_kind` otherwise); without it, cloud sessions only, so a client from before remote sessions
         never lists one it cannot show"
       parameters:
