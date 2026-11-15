@@ -13190,8 +13190,7 @@ paths:
         concurrent requests with one key create one session and the others replay. A malformed key is 400
         `invalid_request`. The key is optional until every client sends one; TeamCode requires it.
         With `Ostrom-On-Behalf-Of` (`runners.cloud.onbehalf.v1`, served since ostrom-server#619), the effective member
-        becomes the owner: the
-        profile assignment and the plan resolve for them, the session starts with `githubAccess: none` (its first
+        becomes the owner: the profile assignment and the plan resolve for them, the session starts with `githubAccess: none` (its first
         instructions are the creator's), and a profile whose environment requires GitHub is 422 `github_owner_consent`
         (the owner creates that session themselves). A remote session (`kind: remote`) runs on the caller's own device
         and is never created on behalf of another member (403 `on_behalf_forbidden`). `createdBy` records who created
@@ -19652,8 +19651,7 @@ components:
       in: header
       required: false
       description: "Served since ostrom-server#619 (`runners.cloud.onbehalf.v1`, TeamCode's `TeamCode-On-Behalf-Of`):
-        the effective member of a
-        cloud session write, named by member id or by login (an id wins over a login that spells it), 1 to 64 characters
+        the effective member of a cloud session write, named by member id or by login (an id wins over a login that spells it), 1 to 64 characters
         of `A-Za-z0-9._-`. Only an owner or an admin signed in (browser, app, `ostrom login`, a personal token) or an
         administrator's service key with `cloud:admin` may name another member; on any other credential the header must
         be absent or name the caller (403 `on_behalf_forbidden`). The target must be an active member of the
