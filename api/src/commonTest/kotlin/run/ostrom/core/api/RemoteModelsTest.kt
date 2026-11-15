@@ -94,7 +94,8 @@ class RemoteModelsTest {
         assertEquals("""{"agent":"codex","kind":"local","launchId":"l1"}""", create)
         val session = OstromJson.decodeFromString(
             CloudSession.serializer(),
-            """{"id":"cs_1","owner":"m1","agent":"codex","status":"creating","createdAt":"t","kind":"local","launchId":"l1"}""",
+            """{"id":"cs_1","owner":"m1","agent":"codex","status":"creating","createdAt":"t",""" +
+                """"kind":"local","launchId":"l1"}""",
         )
         assertEquals(CloudSessionKinds.LOCAL, session.kind)
         assertEquals("l1", session.launchId)
