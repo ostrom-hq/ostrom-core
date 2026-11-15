@@ -12701,6 +12701,9 @@ paths:
         description: '1 to 128 characters of `A-Za-z0-9._:-`; one fresh key per press of Start, reused for each retry of it'
         schema:
           type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9._:-]+$'
       requestBody:
         required: true
         content:
@@ -12710,6 +12713,11 @@ paths:
       responses:
         '202':
           description: "The session this `Idempotency-Key` created, as it is now, with `Idempotency-Replayed: true`"
+          headers:
+            Idempotency-Replayed:
+              description: '`true`: the answer replays an earlier creation'
+              schema:
+                type: string
           content:
             application/json:
               schema:
