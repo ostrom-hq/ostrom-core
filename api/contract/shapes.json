@@ -3512,6 +3512,140 @@
       }
     }
   },
+  "Directive": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "pace": {
+        "type": {
+          "ref": "DirectivePace"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "maxConcurrent": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "minIntervalMillis": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "message": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "createdAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "expiresAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "DirectiveClaim": {
+    "properties": {
+      "directive": {
+        "type": {
+          "ref": "Directive"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "claimId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DirectiveClaimRequest": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "stage": {
+        "type": {
+          "ref": "DirectiveStage"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "DirectivePace": {
+    "enum": [
+      "unknown",
+      "normal",
+      "slow_down",
+      "can_increase",
+      "pause"
+    ]
+  },
+  "DirectiveReceipt": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "stage": {
+        "type": {
+          "ref": "DirectiveStage"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "claimId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DirectiveResponse": {
+    "properties": {
+      "directive": {
+        "type": {
+          "ref": "Directive"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DirectiveScope": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "DirectiveStage": {
+    "enum": [
+      "received_by_cli",
+      "emitted_to_hook"
+    ]
+  },
   "DropTodoItemRequest": {
     "properties": {
       "sessionId": {
@@ -5699,6 +5833,38 @@
       },
       "createdAt": {
         "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "PacingPreview": {
+    "properties": {
+      "settings": {
+        "type": {
+          "ref": "PacingSettings"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "directive": {
+        "type": {
+          "ref": "Directive"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "PacingSettings": {
+    "properties": {
+      "observationOnly": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "autoPoolSize": {
+        "type": "boolean",
         "required": false,
         "nullable": false
       }

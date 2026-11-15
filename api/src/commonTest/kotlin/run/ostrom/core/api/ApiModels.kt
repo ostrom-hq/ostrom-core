@@ -115,6 +115,14 @@ import run.ostrom.core.api.models.RefuseDaemonOrderRequest
 import run.ostrom.core.api.models.ResumableSession
 import run.ostrom.core.api.models.ResumableSessionPage
 import run.ostrom.core.api.models.SlackLink
+import run.ostrom.core.api.models.Directive
+import run.ostrom.core.api.models.DirectiveClaim
+import run.ostrom.core.api.models.DirectiveClaimRequest
+import run.ostrom.core.api.models.DirectiveReceipt
+import run.ostrom.core.api.models.DirectiveResponse
+import run.ostrom.core.api.models.DirectiveScope
+import run.ostrom.core.api.models.PacingPreview
+import run.ostrom.core.api.models.PacingSettings
 import run.ostrom.core.api.models.Organization
 import run.ostrom.core.api.models.PackageEnvelope
 import run.ostrom.core.api.models.PackageFile
@@ -396,6 +404,14 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GitHubDeviceLinkPoll.serializer(),
     GitHubLink.serializer(),
     SlackLink.serializer(),
+    Directive.serializer(),
+    DirectiveClaim.serializer(),
+    DirectiveClaimRequest.serializer(),
+    DirectiveReceipt.serializer(),
+    DirectiveResponse.serializer(),
+    DirectiveScope.serializer(),
+    PacingPreview.serializer(),
+    PacingSettings.serializer(),
     Organization.serializer(),
     PackageEnvelope.serializer(),
     PackageFile.serializer(),
