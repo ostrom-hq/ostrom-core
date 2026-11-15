@@ -15185,7 +15185,8 @@ paths:
       - name: access
         in: query
         required: false
-        description: Only the artifacts with this access
+        description: "Only the artifacts with this access. The filters combine (all of them must match): a
+          `cloudSession` or `launch` no artifact of the scope matches gives an empty page, not an error"
         schema:
           $ref: '#/components/schemas/ArtifactAccess'
       - name: cloudSession
@@ -21053,11 +21054,6 @@ components:
           type: array
           items:
             type: string
-        fileDetails:
-          type: array
-          description: "The same files with their size and type (TeamCode's files panel), in the same order"
-          items:
-            $ref: '#/components/schemas/ArtifactVersionFile'
         entry:
           type: string
           description: The page a reader opens first
@@ -21078,6 +21074,11 @@ components:
           description: "Where it was committed, when an agent committed it: taken from the agent token, never from
             the call. Absent for a person's publication"
           $ref: '#/components/schemas/ArtifactOrigin'
+        fileDetails:
+          type: array
+          description: "The same files with their size and type (TeamCode's files panel), in the same order"
+          items:
+            $ref: '#/components/schemas/ArtifactVersionFile'
       required:
       - number
       - files
