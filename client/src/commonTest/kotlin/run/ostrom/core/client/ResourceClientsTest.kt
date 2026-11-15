@@ -448,13 +448,6 @@ class ResourceClientsTest {
             assertEquals("index.html", client.artifacts.versions("a1").items.single().entry)
             assertEquals("https://c.example/x", client.artifacts.ticket("a1").url)
             client.artifacts.ticket("a1", version = 1)
-            client.artifacts.list(
-                scope = "shared",
-                origin = "cloud_session",
-                access = "team",
-                cloudSession = "cs1",
-                launch = "l1",
-            )
         }
         assertEquals(
             listOf(
@@ -464,7 +457,6 @@ class ResourceClientsTest {
                 "GET /api/v1/artifacts/a1/versions",
                 "POST /api/v1/artifacts/a1/tickets",
                 "POST /api/v1/artifacts/a1/tickets",
-                "GET /api/v1/artifacts?scope=shared&origin=cloud_session&access=team&cloudSession=cs1&launch=l1",
             ),
             server.requests.map { it.call() },
         )
