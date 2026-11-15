@@ -13745,8 +13745,7 @@ paths:
         `github_owner_only`, also for an `Ostrom-On-Behalf-Of` naming another member than the caller); anyone else,
         404. Turning access off waits for a pause (409 `session_not_paused`), because a
         running agent keeps a token it already received until it expires; turning it on or sharing applies from the
-        runner's next token renewal. Journaled `cloud.session.github_access_changed`. A local session (planned,
-        `runners.cloud.local.v1`) is 409 `github_access_unsupported`: its agent uses the device's own `gh`"
+        runner's next token renewal. Journaled `cloud.session.github_access_changed`. A local session (`runners.cloud.local.v1`) is 409 `github_access_unsupported`: its agent uses the device's own `gh`"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -14618,8 +14617,7 @@ paths:
         a retry returns the first input with `Idempotency-Replayed: true`, the same key with another text is 422
         `idempotency_conflict`. `expectedLastEventSeq` refuses it (409 `stale_view`) when newer events exist. A
         message to a paused session resumes it (`woke: true`) unless `wake` is false; a terminal session is 409
-        `terminal_session`, a terminated one 409 `session_not_running`, a local one (planned,
-        `runners.cloud.local.v1`) 409 `local_session` (its agent reads the terminal). At most 100 pending inputs per session (429
+        `terminal_session`, a terminated one 409 `session_not_running`, a local one (`runners.cloud.local.v1`) 409 `local_session` (its agent reads the terminal). At most 100 pending inputs per session (429
         `too_many_pending_inputs`). Levels: `queued`, `delivered` (handed to the runner), `consumed` (written to the
         agent, `eventSeq` points to its `message.user` event), and the final `cancelled` or `rejected` with a
         `reason`; a delivery not acknowledged within 60 s, or whose execution ended, is offered again, up to 3
@@ -23647,8 +23645,7 @@ components:
         kind:
           type: string
           description: "`cloud` (absent: a pod the server starts), `remote`, a member's device
-            (`runners.cloud.remote.v1`), or `local`, the terminal of a member's `ostrom <agent>` (planned,
-            `runners.cloud.local.v1`)"
+            (`runners.cloud.remote.v1`), or `local`, the terminal of a member's `ostrom <agent>` (`runners.cloud.local.v1`)"
         host:
           $ref: '#/components/schemas/CloudSessionHost'
         createdBy:
