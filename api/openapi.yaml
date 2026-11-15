@@ -14977,8 +14977,10 @@ paths:
         415 `file_type_not_allowed` otherwise, 400 `empty_file`; 413 `file_too_large` above the organization's
         `fileMaxMebibytes`; 429 `upload_quota` (20 unsent files or 100 MiB per session, 1 GiB and 500 files per member
         per UTC day); 409 `file_storage_not_configured` without a tested artifact bucket, 503
-        `file_storage_unavailable`. `Idempotency-Key` makes a retry of the same name and bytes return the first file
-        (200). Name it in a message's `fileIds` before `expiresAt`; kept 24 hours at most, deleted once the host has
+        `file_storage_unavailable`; 400 `invalid_file_name` or `invalid_idempotency_key`. `Idempotency-Key` makes a
+        retry of the same name and bytes return the first file (200, `Idempotency-Replayed: true`); other bytes under
+        the key are 422 `idempotency_conflict`, and a retry while the first upload still runs 409
+        `file_upload_in_progress` (retry later). Name it in a message's `fileIds` before `expiresAt`; kept 24 hours at most, deleted once the host has
         it"
       parameters:
       - name: id
@@ -15409,7 +15411,7 @@ paths:
       summary: "The bytes of a file a message delivered to this very execution carries"
       description: "`runners.cloud.files.v1` (TeamCode's `GET /cloud/runner/files/{id}`), with `X-Ostrom-Sha256`. 404
         for any other file (only a message delivered to this execution and not yet acknowledged carries it), 409
-        `execution_fenced` for another execution, 410 `file_expired` once its bytes are deleted, 503
+        `execution_fenced` for another execution or `file_unavailable` while its bytes are not all stored, 410 `file_expired` once its bytes are deleted, 503
         `file_storage_unavailable` when the bucket fails"
       parameters:
       - name: id
