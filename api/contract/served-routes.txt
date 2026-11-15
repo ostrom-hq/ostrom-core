@@ -173,6 +173,7 @@ GET /api/v1/packages/settings
 GET /api/v1/packages/{}
 GET /api/v1/packages/{}/status
 GET /api/v1/policy/agents
+GET /api/v1/policy/api-prices
 GET /api/v1/policy/models
 GET /api/v1/push-devices
 GET /api/v1/receipts
@@ -336,6 +337,7 @@ POST /api/v1/orgs/{}/transfer
 POST /api/v1/packages/preview
 POST /api/v1/packages/{}/restore
 POST /api/v1/packages/{}/revoke
+POST /api/v1/policy/api-prices/load-defaults
 POST /api/v1/push-devices
 POST /api/v1/rules
 POST /api/v1/rules/bulk
@@ -414,6 +416,7 @@ PUT /api/v1/me/skills/{}/pin
 PUT /api/v1/memory/curation
 PUT /api/v1/notifications/settings
 PUT /api/v1/packages/settings
+PUT /api/v1/policy/api-prices
 PUT /api/v1/policy/models
 PUT /api/v1/secrets/{}
 PUT /api/v1/skill-delivery/installations
