@@ -1,4 +1,4 @@
-# The routes ostrom-server main serves (ostrom-server@4038322a), read from its sources by scripts/served-routes.py.
+# The routes ostrom-server main serves (ostrom-server@46f50956), read from its sources by scripts/served-routes.py.
 # api-types/scripts/check-served.mjs (run by `npm run contract` in CI) fails when an operation's x-ostrom-status
 # disagrees: served when a line below has its method and path (path parameters written {}), planned otherwise.
 # A "!" line, kept by hand when regenerating, is a route main serves in another shape than the contract's: its
@@ -96,6 +96,8 @@ GET /api/v1/cloud/settings
 GET /api/v1/confirmations/{}
 GET /api/v1/decisions
 GET /api/v1/devices
+GET /api/v1/directives/current
+GET /api/v1/directives/preview
 GET /api/v1/environment
 GET /api/v1/environment/assignments
 GET /api/v1/environment/variants
@@ -178,6 +180,7 @@ GET /api/v1/packages/{}/status
 GET /api/v1/policy/agents
 GET /api/v1/policy/api-prices
 GET /api/v1/policy/models
+GET /api/v1/policy/pacing
 GET /api/v1/push-devices
 GET /api/v1/receipts
 GET /api/v1/receipts/keys
@@ -290,6 +293,9 @@ POST /api/v1/cloud/sessions/{}/pause
 POST /api/v1/cloud/sessions/{}/resume
 POST /api/v1/cloud/sessions/{}/terminal/ticket
 POST /api/v1/confirmations/{}/answer
+POST /api/v1/directives/claim
+POST /api/v1/directives/current
+POST /api/v1/directives/receipt
 POST /api/v1/environment/variants
 POST /api/v1/environment/variants/{}/bulk-assign
 POST /api/v1/environment/variants/{}/promote
@@ -427,6 +433,7 @@ PUT /api/v1/notifications/settings
 PUT /api/v1/packages/settings
 PUT /api/v1/policy/api-prices
 PUT /api/v1/policy/models
+PUT /api/v1/policy/pacing
 PUT /api/v1/secrets/{}
 PUT /api/v1/skill-delivery/installations
 PUT /api/v1/skills/{}/assignments/{}

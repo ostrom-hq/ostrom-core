@@ -16434,7 +16434,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getPacingSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: The capacity controller's settings (`capacity.pacing.v1`)
@@ -16460,7 +16460,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setPacingSettings
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Change the capacity controller's settings (owners and admins, a person signed in)
@@ -16499,7 +16499,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: previewDirective
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: The controller's current advice for the caller, also in observation mode (`capacity.pacing.v1`)
@@ -16527,7 +16527,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCurrentDirective
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: The caller's current capacity advice, member-wide (`capacity.pacing.v1`)
@@ -16554,7 +16554,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: getSessionDirective
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: The current capacity advice of one of the caller's agent sessions (`capacity.pacing.v1`)
@@ -16589,7 +16589,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: claimDirective
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Claim the delivery of a session's new advice to its agent (`capacity.pacing.v1`)
@@ -16628,7 +16628,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: acknowledgeDirective
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - inference
       summary: Record that an advice reached a stage of its delivery (`capacity.pacing.v1`)
