@@ -13142,8 +13142,8 @@ paths:
       tags:
       - runners
       summary: The caller's cloud agent sessions, newest first
-      description: "With `runners.cloud.remote.v1`, `kind` (repeatable) chooses the kinds listed, `cloud` or
-        `remote` (400 `invalid_kind` otherwise); without it, cloud sessions only, so a client from before remote sessions
+      description: "With `runners.cloud.remote.v1`, `kind` (repeatable) chooses the kinds listed, `cloud`,
+        `remote` or (planned, `runners.cloud.local.v1`) `local` (400 `invalid_kind` otherwise); without it, cloud sessions only, so a client from before remote sessions
         never lists one it cannot show. Planned (`runners.cloud.sessions.owner.v1`, TeamCode's `owner`): `owner` is the
         caller's member id, or absent; another member's id, or `all`, is 403 `forbidden`, administrators included,
         since a role opens nobody else's session (TeamCode's rule)"
@@ -13165,6 +13165,7 @@ paths:
             enum:
             - cloud
             - remote
+            - local
       - name: status
         in: query
         required: false
@@ -13367,7 +13368,7 @@ paths:
       tags:
       - runners
       summary: "Give one of the caller's cloud sessions to another member"
-      description: "`runners.cloud.transfer.v1`. Only the owner asks. An administrator's transfer is `accepted` at once; a member's is `offered` and the recipient accepts within 7 days (403 `transfer_disabled` when the instance's `memberTransfers` is `disabled`). Accepting pauses the session (the agent stops, its pod is gone); the owner changes only then, and the workspace is marked untrusted for the recipient. At most one open transfer per session (409 `transfer_pending`); a session still being created is 409 `session_preparing`, an ended one 409 `session_not_running`; a recipient who cannot own the session (disabled, not a member, at their cloud session limit) is 422 `recipient_ineligible` naming every reason. `Idempotency-Key` is required (400 `idempotency_key_required`): a retry returns the first transfer (`Idempotency-Replayed: true`), the same key with another request is 422 `idempotency_conflict`. With `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential. A transfer write stays a person's, signed in: a service key never names a member here"
+      description: "`runners.cloud.transfer.v1`. Only the owner asks. An administrator's transfer is `accepted` at once; a member's is `offered` and the recipient accepts within 7 days (403 `transfer_disabled` when the instance's `memberTransfers` is `disabled`). Accepting pauses the session (the agent stops, its pod is gone); the owner changes only then, and the workspace is marked untrusted for the recipient. At most one open transfer per session (409 `transfer_pending`); a session still being created is 409 `session_preparing`, an ended one 409 `session_not_running`, a local one (planned, `runners.cloud.local.v1`) 409 `local_not_transferable`; a recipient who cannot own the session (disabled, not a member, at their cloud session limit) is 422 `recipient_ineligible` naming every reason. `Idempotency-Key` is required (400 `idempotency_key_required`): a retry returns the first transfer (`Idempotency-Replayed: true`), the same key with another request is 422 `idempotency_conflict`. With `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential. A transfer write stays a person's, signed in: a service key never names a member here"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -13624,6 +13625,8 @@ paths:
       tags:
       - runners
       summary: Pause a cloud session; the workspace is kept
+      description: "A local session (planned, `runners.cloud.local.v1`) is 409 `local_session`: it lives as long as
+        its launch"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -13657,6 +13660,8 @@ paths:
       tags:
       - runners
       summary: Resume a paused cloud session, within the plan's running cap and hours
+      description: "A local session (planned, `runners.cloud.local.v1`) is 409 `local_session`: its own launch takes
+        the next epoch with `POST /cloud/sessions/{id}/host`"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -13697,7 +13702,9 @@ paths:
         `not_remote`; another device: 409 `remote_host_mismatch`; a session whose device was removed: 409
         `remote_host_removed`; a pause in progress: 409 `session_pausing` (retry); a service key or a sign-in without a
         device: 422 `remote_requires_device`. With `runners.cloud.remote.daemon.v1`, a daemon accepts an order here (the
-        session leaves its queue as `starting_host`)"
+        session leaves its queue as `starting_host`). A local session (planned, `runners.cloud.local.v1`): the
+        owner's sign-in from any of the owner's devices (no device is bound), which then heartbeats every 15 s; a paused
+        one (`host_offline`) resumes; a deleted one is 409 `session_not_running`"
       parameters:
       - name: id
         in: path
@@ -13736,7 +13743,8 @@ paths:
         `github_owner_only`, also for an `Ostrom-On-Behalf-Of` naming another member than the caller); anyone else,
         404. Turning access off waits for a pause (409 `session_not_paused`), because a
         running agent keeps a token it already received until it expires; turning it on or sharing applies from the
-        runner's next token renewal. Journaled `cloud.session.github_access_changed`"
+        runner's next token renewal. Journaled `cloud.session.github_access_changed`. A local session (planned,
+        `runners.cloud.local.v1`) is 409 `github_access_unsupported`: its agent uses the device's own `gh`"
       parameters:
       - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
@@ -14608,7 +14616,8 @@ paths:
         a retry returns the first input with `Idempotency-Replayed: true`, the same key with another text is 422
         `idempotency_conflict`. `expectedLastEventSeq` refuses it (409 `stale_view`) when newer events exist. A
         message to a paused session resumes it (`woke: true`) unless `wake` is false; a terminal session is 409
-        `terminal_session`, a terminated one 409 `session_not_running`. At most 100 pending inputs per session (429
+        `terminal_session`, a terminated one 409 `session_not_running`, a local one (planned,
+        `runners.cloud.local.v1`) 409 `local_session` (its agent reads the terminal; answer its wait instead). At most 100 pending inputs per session (429
         `too_many_pending_inputs`). Levels: `queued`, `delivered` (handed to the runner), `consumed` (written to the
         agent, `eventSeq` points to its `message.user` event), and the final `cancelled` or `rejected` with a
         `reason`; a delivery not acknowledged within 60 s, or whose execution ended, is offered again, up to 3
@@ -22758,7 +22767,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `devices.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.inference.v1`, `runners.cloud.model.v1`, `runners.cloud.onbehalf.v1`, `runners.cloud.onbehalf.writes.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.profiles.member.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.sessions.owner.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.inference.v1`, `runners.cloud.local.v1`, `runners.cloud.model.v1`, `runners.cloud.onbehalf.v1`, `runners.cloud.onbehalf.writes.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.profiles.member.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.sessions.owner.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `discord.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
@@ -23628,12 +23637,17 @@ components:
           type: string
         kind:
           type: string
-          description: "`cloud` (absent: a pod the server starts) or `remote`, a member's device
-            (`runners.cloud.remote.v1`)"
+          description: "`cloud` (absent: a pod the server starts), `remote`, a member's device
+            (`runners.cloud.remote.v1`), or `local`, the terminal of a member's `ostrom <agent>` (planned,
+            `runners.cloud.local.v1`)"
         host:
           $ref: '#/components/schemas/CloudSessionHost'
         createdBy:
           $ref: '#/components/schemas/CloudAttribution'
+        launchId:
+          type: string
+          description: "Planned (`runners.cloud.local.v1`): the `ostrom <agent>` launch a local session is attached to;
+            absent for every other kind (`runId` is a workflow run)"
       required:
       - id
       - owner
@@ -24226,7 +24240,17 @@ components:
           enum:
           - cloud
           - remote
-          description: "`remote` (`runners.cloud.remote.v1`): a session on the caller's own device, claude or codex,
+          - local
+          description: "`local` (planned, `runners.cloud.local.v1`, TeamCode's local sessions): the session of the
+            caller's own running `ostrom <agent>` launch (`launchId`), claude or codex, with no profile, image,
+            repository, environment, directory, device, permission mode or prompt (400 `invalid_session`); no pod,
+            no workspace and no cap. It starts `creating` with phase `waiting_host`; the launch hosts it with
+            `POST /cloud/sessions/{id}/host` from any of the owner's devices, heartbeats on the runner channel, and
+            deletes it when the agent exits. After 90 s without a heartbeat the reconciler pauses it (`failure.code`
+            `host_offline`) and the launch takes the next epoch when it comes back; never hosted within 120 s, it ends
+            (`run_lost`). Nobody else pauses, resumes, transfers or messages it (409 `local_session`,
+            `local_not_transferable`), and its GitHub access cannot change (409 `github_access_unsupported`).
+            `remote` (`runners.cloud.remote.v1`): a session on the caller's own device, claude or codex,
             always `conversation` (400 `invalid_mode` for another mode), refusing `repo`, `ref`, `environment`,
             `profileId` and `image` (400); the host is the device of the caller's sign-in (422
             `remote_requires_device` for a service key or a sign-in without one), and creating on behalf of another
@@ -24261,6 +24285,12 @@ components:
             of that folder the session continues, a lowercase UUID the daemon listed (400 `invalid_resume`; 422
             `resume_unsupported` for codex; 409 `daemon_resume_unsupported` for a daemon without `resume.v1`).
             Absent, the idempotency digest is the same as before"
+        launchId:
+          type: string
+          description: "With `kind: local` (planned, `runners.cloud.local.v1`): the caller's own `ostrom <agent>`
+            launch, still running (404 `launch_not_found` otherwise, 400 `invalid_launch` when absent or malformed),
+            also sent as the `Idempotency-Key`. A second request for the same launch returns the first session
+            (`Idempotency-Replayed: true`). Refused for another kind"
       required:
       - agent
     CloudSessionFailure:

@@ -15,8 +15,15 @@ public object CloudSessionKinds {
     /** A member's own device runs it (`runners.cloud.remote.v1`), always in `conversation` mode. */
     public const val REMOTE: String = "remote"
 
+    /**
+     * The terminal of a member's `ostrom <agent>` (`runners.cloud.local.v1`), attached to its launch: no pod, profile,
+     * workspace or cap; it takes no message and is never paused, resumed or transferred by a person (409
+     * `local_session`, `local_not_transferable`).
+     */
+    public const val LOCAL: String = "local"
+
     /** Every kind, in contract order. */
-    public val ALL: List<String> = listOf(CLOUD, REMOTE)
+    public val ALL: List<String> = listOf(CLOUD, REMOTE, LOCAL)
 }
 
 /** The values of [CreateCloudSessionRequest.permissionMode] and [CloudSessionHost.permissionMode]. */
