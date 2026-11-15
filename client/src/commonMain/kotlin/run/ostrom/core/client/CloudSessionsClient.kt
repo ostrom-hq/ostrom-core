@@ -34,7 +34,8 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
      * @param kinds The kinds listed (`runners.cloud.remote.v1`, [run.ostrom.core.api.models.CloudSessionKinds]); cloud
      *   sessions only when empty.
      * @param owner The owner whose sessions are listed (`runners.cloud.sessions.owner.v1`, TeamCode's `owner`): only
-     *   the caller's own member id is listed, another member's or `all` is refused (403); the caller's when null.
+     *   the caller's own member id is listed, another member's or `all` is refused (403); the caller's when null. A
+     *   server without the capability ignores it and lists the caller's sessions: check the capability first.
      */
     public suspend fun list(
         status: String? = null,
