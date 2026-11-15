@@ -13679,7 +13679,8 @@ paths:
       - runners
       summary: "Changes the session's GitHub access (`runners.cloud.github.v1`): `owner`, `shared` or `none`. Only the
         owner, signed in (console, app) or with the CLI's login, never a service key acting for them (403
-        `github_owner_only`, also for an `Ostrom-On-Behalf-Of` naming another member than the caller); anyone else, 404. Turning access off waits for a pause (409 `session_not_paused`), because a
+        `github_owner_only`, also for an `Ostrom-On-Behalf-Of` naming another member than the caller); anyone else,
+        404. Turning access off waits for a pause (409 `session_not_paused`), because a
         running agent keeps a token it already received until it expires; turning it on or sharing applies from the
         runner's next token renewal. Journaled `cloud.session.github_access_changed`"
       parameters:
