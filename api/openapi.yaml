@@ -3198,7 +3198,7 @@ paths:
   /webhooks/discord:
     post:
       operationId: receiveDiscordInteraction
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: 'Discord interactions (the Reject button of a yes request, and the PING Discord sends when the URL is
@@ -3264,7 +3264,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getDiscordLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: "The caller's own Discord link in the organization (`discord.v1`): the Discord account their notifications
@@ -3289,7 +3289,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: linkDiscord
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: "Starts linking the caller's Discord account: the URL of Discord's authorization (OAuth2, scope
@@ -3320,7 +3320,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unlinkDiscord
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: "Removes the caller's own Discord link; 204 also when not linked. Nothing more is sent to that Discord
@@ -3340,7 +3340,7 @@ paths:
   /api/v1/discord/link/callback:
     get:
       operationId: discordLinkCallback
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: "Discord's return from a link (`<OSTROM_PUBLIC_URL>/api/v1/discord/link/callback`, a redirect of the
@@ -6375,7 +6375,7 @@ paths:
       - notifications
       summary: The caller's notification switches, per channel and kind
       description: 'What the caller is told about (`notifications.v1`): `waiting` (an agent or a wait needs them),
-        `turn_completed`, `turn_failed` and `session_failed`, on each channel the server offers (`push`, `slack`, later
+        `turn_completed`, `turn_failed` and `session_failed`, on each channel the server offers (`push`, `slack`,
         `discord`). Every kind is on until the member turns it off; `channels` is empty while the server offers none.
         A member reads and changes only their own, with an interactive login (a browser session, the unlocked app or
         `ostrom login`); a service key has no person to notify (403).'
@@ -28558,7 +28558,7 @@ components:
       properties:
         channel:
           type: string
-          description: '`push`, `slack` (later `discord`); a client tolerates one it does not know'
+          description: '`push`, `slack`, `discord`; a client tolerates one it does not know'
         kind:
           type: string
           description: '`waiting`, `turn_completed`, `turn_failed` or `session_failed`; a client tolerates one it does not

@@ -148,7 +148,7 @@ public object NotificationKinds {
 /**
  * A member's switch for one kind on one channel.
  *
- * @property channel `push`, `slack` (later `discord`).
+ * @property channel `push`, `slack`, `discord`.
  * @property kind One of [NotificationKinds].
  * @property enabled Whether the member is told.
  */
