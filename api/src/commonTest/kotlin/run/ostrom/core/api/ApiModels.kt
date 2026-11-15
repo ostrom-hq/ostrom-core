@@ -29,6 +29,7 @@ import run.ostrom.core.api.models.ArtifactPage
 import run.ostrom.core.api.models.ArtifactTicket
 import run.ostrom.core.api.models.ArtifactTicketRequest
 import run.ostrom.core.api.models.ArtifactVersion
+import run.ostrom.core.api.models.ArtifactVersionFile
 import run.ostrom.core.api.models.ArtifactVersionPage
 import run.ostrom.core.api.models.AuthToken
 import run.ostrom.core.api.models.AuthUser
@@ -323,6 +324,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ArtifactTicket.serializer(),
     ArtifactTicketRequest.serializer(),
     ArtifactVersion.serializer(),
+    ArtifactVersionFile.serializer(),
     ArtifactVersionPage.serializer(),
     AuthToken.serializer(),
     AuthUser.serializer(),

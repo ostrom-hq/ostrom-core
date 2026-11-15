@@ -81,6 +81,8 @@ public data class ArtifactVersionPage(
  * @property baseVersion The version its publisher started from, when known.
  * @property replayed True when a commit was the same as one made within 10 minutes, answered with that version.
  * @property origin Where an agent committed it, from its agent token; absent for a person's publication.
+ * @property fileDetails The same files with their size and type, in the same order; absent from a server that does
+ *   not tell them.
  */
 @Serializable
 public data class ArtifactVersion(
@@ -93,6 +95,23 @@ public data class ArtifactVersion(
     val baseVersion: Int? = null,
     val replayed: Boolean? = null,
     val origin: ArtifactOrigin? = null,
+    val fileDetails: List<ArtifactVersionFile>? = null,
+)
+
+/**
+ * A file of a published version (TeamCode's files panel: path, size, type).
+ *
+ * @property path Its path in the version.
+ * @property size Its size in bytes.
+ * @property contentType The type it is served with.
+ * @property sha256 The SHA-256 of its bytes, in hex; absent from a server that does not tell it.
+ */
+@Serializable
+public data class ArtifactVersionFile(
+    val path: String,
+    val size: Long,
+    val contentType: String,
+    val sha256: String? = null,
 )
 
 /**
