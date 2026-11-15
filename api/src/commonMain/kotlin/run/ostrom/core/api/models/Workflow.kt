@@ -632,13 +632,11 @@ public data class SaveWorkflowRequest(val workflow: Workflow, val expectedVersio
  * The body of `startWorkflowRun`.
  *
  * @property inputs The workflow's inputs, by id.
- * @property repository `owner/name`, for the agent nodes that name none (planned: the server ignores it today).
  * @property profileId The cloud profile of the agent nodes that name none.
  */
 @Serializable
 public data class StartWorkflowRunRequest(
     val inputs: Map<String, String> = emptyMap(),
-    val repository: String? = null,
     val profileId: String? = null,
 )
 

@@ -17,7 +17,6 @@ import kotlinx.serialization.Serializable
  * @property platform `macos`, `windows`, `linux`, `ios` or `android` as reported at its latest sign-in; null until one
  *   did.
  * @property osVersion The system's version reported with [platform].
- * @property cliVersion The CLI's version at its latest call.
  * @property lastSeenAt Its latest call.
  * @property kind `admin` for the elevated token of `ostrom login --admin`, otherwise `cli`.
  * @property orgId The organization an elevated token is bound to.
@@ -35,7 +34,6 @@ public data class Device(
     val id: String,
     val name: String,
     val platform: String? = null,
-    val cliVersion: String? = null,
     val lastSeenAt: String? = null,
     val kind: String = "cli",
     val orgId: String? = null,
@@ -49,11 +47,10 @@ public data class Device(
     val daemon: DaemonPresence? = null,
 )
 
-/** A page of devices; [next] is the cursor of the following page. */
+/** A page of devices. */
 @Serializable
 public data class DevicePage(
     val items: List<Device>,
-    val next: String? = null,
 )
 
 /** A device's new name (`PATCH /api/v1/devices/{id}`), [DeviceLimits.MAX_NAME] characters, no control character. */

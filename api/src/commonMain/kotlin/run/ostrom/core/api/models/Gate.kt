@@ -257,14 +257,11 @@ public enum class ApprovalStatus(
  * @property id Approval id.
  * @property group Gate request the approvals of every approver share.
  * @property workflowId Workflow.
- * @property taskId Task.
  * @property title Title.
  * @property evidence What is shown.
  * @property repo Repository the yes is bound to.
  * @property sha Commit the yes is bound to.
  * @property commits Commits shown (SHAs, part of what the yes is bound to).
- * @property commitDetails The same commits with their title and author, for the approver's screen.
- * @property checks CI checks of [sha], shown as evidence.
  * @property requestedFrom Approver asked.
  * @property channel Where it is shown (`console`, `slack`, `discord`, `app`, `cli`).
  * @property status Status.
@@ -274,24 +271,17 @@ public enum class ApprovalStatus(
  * @property askedBy Who asked (the session's developer, the pull request author). Nobody among them answers their own
  * request when another approver exists; a sole approver's yes is marked [selfApproved].
  * @property selfApproved True when the yes came from an asker.
- * @property expiresAt ISO expiry.
- * @property action The action the yes lets through (the app titles its button after [ApprovalAction.kind]).
- * @property diffStats The size of the change between [ApprovalAction.baseSha] and [ApprovalAction.headSha].
- * @property diffTruncated True when the approver is not shown the whole diff; the app then refuses a mobile yes.
  */
 @Serializable
 public data class Approval(
     val id: String,
     val group: String? = null,
     val workflowId: String? = null,
-    val taskId: String? = null,
     val title: String,
     val evidence: List<Evidence> = emptyList(),
     val repo: String? = null,
     val sha: String? = null,
     val commits: List<String>? = null,
-    val commitDetails: List<ApprovalCommit>? = null,
-    val checks: List<ApprovalCheck>? = null,
     val requestedFrom: String,
     val channel: String,
     val status: ApprovalStatus,
@@ -300,138 +290,7 @@ public data class Approval(
     val shownDigest: String,
     val askedBy: List<String>? = null,
     val selfApproved: Boolean? = null,
-    val expiresAt: String? = null,
-    val action: ApprovalAction? = null,
-    val diffStats: DiffStats? = null,
-    val diffTruncated: Boolean? = null,
 )
-
-/** The kind of action a yes lets through. */
-@Serializable(with = ApprovalActionKind.Serializer::class)
-public enum class ApprovalActionKind(
-    /** The JSON value. */
-    public val value: String,
-) {
-    PUSH("push"),
-    MERGE("merge"),
-    DEPLOY("deploy"),
-    TOOL("tool"),
-    OTHER("other"),
-
-    /** A value this version does not know, sent by a newer server; never sent. */
-    UNKNOWN(""),
-    ;
-
-    /** Reads a value this version does not know as [UNKNOWN]. */
-    public object Serializer : UnknownFallbackEnumSerializer<ApprovalActionKind>(
-        "run.ostrom.core.api.models.ApprovalActionKind",
-        ApprovalActionKind.entries,
-        ApprovalActionKind.UNKNOWN,
-        ApprovalActionKind::value,
-    )
-}
-
-/** The risk of an action; a `high` one needs biometrics for a mobile yes. */
-@Serializable(with = ApprovalActionRisk.Serializer::class)
-public enum class ApprovalActionRisk(
-    /** The JSON value. */
-    public val value: String,
-) {
-    LOW("low"),
-    HIGH("high"),
-
-    /** A value this version does not know, sent by a newer server; never sent. */
-    UNKNOWN(""),
-    ;
-
-    /** Reads a value this version does not know as [UNKNOWN]. */
-    public object Serializer : UnknownFallbackEnumSerializer<ApprovalActionRisk>(
-        "run.ostrom.core.api.models.ApprovalActionRisk",
-        ApprovalActionRisk.entries,
-        ApprovalActionRisk.UNKNOWN,
-        ApprovalActionRisk::value,
-    )
-}
-
-/**
- * The action a yes lets through.
- *
- * @property kind Push, merge, deploy, tool or other.
- * @property repo Repository (`owner/name`).
- * @property ref Branch or ref the action lands on.
- * @property headSha Commit that lands.
- * @property baseSha Commit it lands on, when known.
- * @property risk Low or high.
- */
-@Serializable
-public data class ApprovalAction(
-    val kind: ApprovalActionKind,
-    val repo: String,
-    val ref: String,
-    val headSha: String,
-    val baseSha: String? = null,
-    val risk: ApprovalActionRisk,
-)
-
-/**
- * The size of a change.
- *
- * @property files Files changed.
- * @property additions Lines added.
- * @property deletions Lines deleted.
- */
-@Serializable
-public data class DiffStats(val files: Int, val additions: Int, val deletions: Int)
-
-/**
- * A commit shown with an approval.
- *
- * @property sha Commit.
- * @property title First line of its message.
- * @property author Author login or name.
- * @property url Link.
- */
-@Serializable
-public data class ApprovalCommit(
-    val sha: String,
-    val title: String,
-    val author: String? = null,
-    val url: String? = null,
-)
-
-/** State of a CI check. */
-@Serializable(with = CheckState.Serializer::class)
-public enum class CheckState(
-    /** The JSON value. */
-    public val value: String,
-) {
-    SUCCESS("success"),
-    FAILURE("failure"),
-    PENDING("pending"),
-    SKIPPED("skipped"),
-
-    /** A value this version does not know, sent by a newer server; never sent. */
-    UNKNOWN(""),
-    ;
-
-    /** Reads a value this version does not know as [UNKNOWN]. */
-    public object Serializer : UnknownFallbackEnumSerializer<CheckState>(
-        "run.ostrom.core.api.models.CheckState",
-        CheckState.entries,
-        CheckState.UNKNOWN,
-        CheckState::value,
-    )
-}
-
-/**
- * A CI check shown with an approval.
- *
- * @property name Check name.
- * @property state State.
- * @property url Link.
- */
-@Serializable
-public data class ApprovalCheck(val name: String, val state: CheckState, val url: String? = null)
 
 /**
  * A line of evidence shown with an approval.

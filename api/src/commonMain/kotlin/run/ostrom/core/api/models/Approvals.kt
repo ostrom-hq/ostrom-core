@@ -24,30 +24,25 @@ public data class ApprovalQueue(
  *
  * @property login Their login.
  * @property via `console`, `app`, `cli` or `operator-account`.
- * @property name Display name.
  */
 @Serializable
 public data class ApprovalViewer(
     val login: String,
     val via: String,
-    val name: String? = null,
 )
 
 /**
- * An approval as the console and the app show it (`GET /api/v1/approvals/{id}/view`): the request, the gate, the
- * rules, the commits and checks (in [approval]), the receipt once answered.
+ * An approval as the console and the app show it (`GET /api/v1/approvals/{id}/view`): the request, the gate,
+ * the pull request, the receipt once answered.
  *
  * @property approval The approval itself.
  * @property who Who asked.
  * @property what What for.
  * @property gate The gate.
- * @property rules The rules behind the gate.
- * @property diff The diff shown to the approver.
  * @property pr The pull request.
  * @property askedVia Where the request was sent.
  * @property note What the approver told the agent with the answer.
  * @property receipt The signed receipt, once answered.
- * @property verification The verification of [receipt].
  * @property you What the caller may do with it.
  */
 @Serializable
@@ -56,13 +51,10 @@ public data class ApprovalView(
     val who: ApprovalWho,
     val what: ApprovalWhat,
     val gate: GateRef? = null,
-    val rules: List<Rule> = emptyList(),
-    val diff: String? = null,
     val pr: GatePullRequest? = null,
     val askedVia: List<String>,
     val note: String? = null,
     val receipt: Receipt? = null,
-    val verification: Verification? = null,
     val you: ApprovalCallerView,
 )
 
@@ -70,15 +62,11 @@ public data class ApprovalView(
  * Who asked for an approval.
  *
  * @property dev The developer.
- * @property agent Their agent.
- * @property model Its model.
  * @property session Its session.
  */
 @Serializable
 public data class ApprovalWho(
     val dev: String? = null,
-    val agent: String? = null,
-    val model: String? = null,
     val session: String? = null,
 )
 
@@ -120,23 +108,4 @@ public data class ApprovalCallerView(
     val reason: String? = null,
     val reasonType: String? = null,
     val selfApproval: Boolean? = null,
-)
-
-/**
- * The result of an offline-equivalent receipt verification.
- *
- * @property ok Whether the signature holds.
- * @property digest The digest of the signed body.
- * @property kid The key that signed it.
- * @property reason Why it does not verify.
- * @property orgBound Whether the signed body names the organization that verifies it; a client that relies on the
- *   receipt being this organization's checks it is true.
- */
-@Serializable
-public data class Verification(
-    val ok: Boolean,
-    val digest: String? = null,
-    val kid: String? = null,
-    val reason: String? = null,
-    val orgBound: Boolean? = null,
 )

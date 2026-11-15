@@ -9,19 +9,15 @@ import kotlinx.serialization.Serializable
  * @property id Organization id (GitHub login of the organization).
  * @property name Display name.
  * @property avatarUrl Logo.
- * @property description Description.
  * @property connectedVia How GitHub is connected; absent when the answer does not say (an organization linked to no
  *   GitHub organization, or a list that does not carry it).
- * @property createdAt ISO creation time.
  */
 @Serializable
 public data class Organization(
     val id: String,
     val name: String,
     val avatarUrl: String,
-    val description: String? = null,
     val connectedVia: GitHubConnection? = null,
-    val createdAt: String? = null,
 )
 
 /** How an organization's GitHub is connected. */
@@ -56,10 +52,7 @@ public enum class GitHubConnection(
  * @property name Display name.
  * @property avatarUrl Avatar.
  * @property email E-mail.
- * @property teams Slugs of the member's teams.
  * @property role Role in Ostrom.
- * @property slackUserId Slack user, once Slack is linked.
- * @property discordUserId Discord user, once Discord is linked.
  */
 @Serializable
 public data class Member(
@@ -68,10 +61,7 @@ public data class Member(
     val name: String,
     val avatarUrl: String,
     val email: String? = null,
-    val teams: List<String> = emptyList(),
     val role: MemberRole,
-    val slackUserId: String? = null,
-    val discordUserId: String? = null,
 )
 
 /** Roles of a member. An admin never answers a gate in an approver's place. */
