@@ -269,11 +269,27 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_ON_BEHALF: String = "runners.cloud.onbehalf.v1"
 
     /**
+     * `Ostrom-On-Behalf-Of` is also read on the model, the effort and the transfer writes (`PUT .../model`,
+     * `PUT .../effort`, `POST .../transfer`, `POST /api/v1/cloud/transfers/{id}/accept|decline|cancel`), as on every
+     * TeamCode cloud write, and each `cloud.session.*` entry of [RUNNERS_CLOUD_ON_BEHALF] is written in the transaction
+     * of the change it tells. A server without it ignores the header on those writes. Only with cloud runners.
+     */
+    public const val RUNNERS_CLOUD_ON_BEHALF_WRITES: String = "runners.cloud.onbehalf.writes.v1"
+
+    /**
      * A cloud session runs on an organization's cloud profile: `profileId` and `image` on
      * `POST /api/v1/cloud/sessions`, `profile` and `image` on the session, and the profile's cluster and namespace
      * checked again at each start. Only with cloud runners and [CLOUD_ADMIN].
      */
     public const val RUNNERS_CLOUD_PROFILES: String = "runners.cloud.profiles.v1"
+
+    /**
+     * `GET /api/v1/cloud/profiles?member=` lists the profiles a member (id or login) can use, every profile for an
+     * owner or an admin, as TeamCode's `cloud.profiles.member.v1`: another member than the caller needs an owner or an
+     * admin (403 `forbidden`), and an inactive member is 422 `invalid_effective_member`. A server without it ignores
+     * the parameter and lists the caller's profiles. Only with [RUNNERS_CLOUD_PROFILES].
+     */
+    public const val RUNNERS_CLOUD_PROFILES_MEMBER: String = "runners.cloud.profiles.member.v1"
 
     /**
      * Cloud sessions are kept and cleaned up as TeamCode's: a paused session expires after the instance's
@@ -283,6 +299,13 @@ public object ServerFeatures {
      * accounts for (the cluster's `orphanedVolumes`, `lastGarbageCollectionAt`). Only with cloud runners on Kubernetes.
      */
     public const val RUNNERS_CLOUD_RETENTION: String = "runners.cloud.retention.v1"
+
+    /**
+     * `GET /api/v1/cloud/sessions?owner=` reads TeamCode's `owner`: the caller's member id lists their sessions,
+     * another member's id or `all` is 403 `forbidden`, administrators included (a role opens nobody else's session).
+     * A server without it ignores the parameter and lists the caller's sessions. Only with cloud runners.
+     */
+    public const val RUNNERS_CLOUD_SESSIONS_OWNER: String = "runners.cloud.sessions.owner.v1"
 
     /**
      * Team hooks: immutable versions published by an administrator or a CI key (`hooks:publish`), pinned only by an
@@ -485,10 +508,11 @@ public object ServerFeatures {
         PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_CONVERSATION,
         RUNNERS_CLOUD_EFFORT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_FILES, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
         RUNNERS_CLOUD_IDEMPOTENCY, RUNNERS_CLOUD_INFERENCE, RUNNERS_CLOUD_MODEL, RUNNERS_CLOUD_ON_BEHALF,
-        RUNNERS_CLOUD_PERMISSIONS,
-        RUNNERS_CLOUD_PERMISSIONS_BYPASS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_REMOTE, RUNNERS_CLOUD_REMOTE_DAEMON,
-        RUNNERS_CLOUD_REMOTE_RESUME,
-        RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS, RUNNERS_CLOUD_TRANSCRIPT_FEEDS,
+        RUNNERS_CLOUD_ON_BEHALF_WRITES, RUNNERS_CLOUD_PERMISSIONS,
+        RUNNERS_CLOUD_PERMISSIONS_BYPASS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_PROFILES_MEMBER, RUNNERS_CLOUD_REMOTE,
+        RUNNERS_CLOUD_REMOTE_DAEMON, RUNNERS_CLOUD_REMOTE_RESUME,
+        RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SESSIONS_OWNER, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS,
+        RUNNERS_CLOUD_TRANSCRIPT_FEEDS,
         RUNNERS_CLOUD_TRANSCRIPT_LIVE, RUNNERS_CLOUD_TRANSFER,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS,
         LAUNCHES_LIMITS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, DISCORD, TODOS, USAGE, WAITS,
