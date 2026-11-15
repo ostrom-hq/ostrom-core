@@ -76,7 +76,7 @@ class ProductAnalyticsTest {
         assertEquals(listOf("local", "cloud"), SessionPlace.entries.map { it.wire })
         assertEquals(listOf("push_main", "merge", "deploy", "custom", "other"), GateKind.entries.map { it.wire })
         assertEquals(listOf("yes", "no"), GateAnswer.entries.map { it.wire })
-        assertEquals(listOf("web", "app", "slack", "cli"), AnswerChannel.entries.map { it.wire })
+        assertEquals(listOf("web", "app", "slack", "cli", "discord"), AnswerChannel.entries.map { it.wire })
         assertEquals(listOf("month", "year"), BillingInterval.entries.map { it.wire })
     }
 

@@ -127,6 +127,9 @@ public enum class AnswerChannel(override val wire: String) : WireName {
 
     /** The CLI. */
     CLI("cli"),
+
+    /** Discord. */
+    DISCORD("discord"),
 }
 
 /** A billing period. */

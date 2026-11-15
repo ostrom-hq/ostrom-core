@@ -339,6 +339,14 @@ public object ServerFeatures {
     public const val SLACK: String = "slack.v1"
 
     /**
+     * The Discord integration is in the server (planned): a member's Discord link (`/api/v1/discord/link`, linked by
+     * Discord's OAuth2 `identify`, whose `configured` says whether an administrator filled the `discord` settings
+     * section), the `discord` notification channel, and yes requests with a Reject button answered at
+     * `/webhooks/discord`.
+     */
+    public const val DISCORD: String = "discord.v1"
+
+    /**
      * A session's todo: the plan reference and its items with typed end conditions, the Stop hook's routes and the
      * per-member Stop hook switch.
      */
@@ -473,7 +481,7 @@ public object ServerFeatures {
         RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS, RUNNERS_CLOUD_TRANSCRIPT_FEEDS,
         RUNNERS_CLOUD_TRANSCRIPT_LIVE, RUNNERS_CLOUD_TRANSFER,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS,
-        LAUNCHES_LIMITS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, TODOS, USAGE, WAITS, WAITS_WAKE,
-        WAITS_TIMED, WAITS_SECRETS, WEBHOOKS, WORKFLOWS, WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
+        LAUNCHES_LIMITS, SERVICE_KEY_SCOPES, SHARING, SHARING_HANDOVER, SKILLS, SLACK, DISCORD, TODOS, USAGE, WAITS,
+        WAITS_WAKE, WAITS_TIMED, WAITS_SECRETS, WEBHOOKS, WORKFLOWS, WORKFLOWS_DELIVER, WORKFLOWS_SETTINGS, LICENSE,
     )
 }
