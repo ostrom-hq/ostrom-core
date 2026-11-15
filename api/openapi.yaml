@@ -6724,6 +6724,21 @@ paths:
         required: false
         schema:
           type: string
+      - name: after
+        in: query
+        required: false
+        description: "The id the previous page ended on, its `next` (planned, TeamCode's `after`; `400 invalid_cursor` for
+          an id the organization has no workflow of)"
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: "1 to 100, 50 by default (planned; every workflow of the organization until the server pages them)"
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
       responses:
         '200':
           description: OK
@@ -6986,8 +7001,8 @@ paths:
       - name: workflow
         in: query
         required: false
-        description: "Only the runs of this workflow (planned; a `limit` of 1 to 100, 50 by default, comes with it once
-          the server bounds the page)"
+        description: "Only the runs of this workflow (planned; `404 not_found` for a workflow the organization does not
+          have)"
         schema:
           type: string
       - name: status
@@ -7000,6 +7015,14 @@ paths:
         required: false
         schema:
           type: string
+      - name: limit
+        in: query
+        required: false
+        description: "1 to 100, 50 by default"
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
       responses:
         '200':
           description: OK
