@@ -8,6 +8,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
 import run.ostrom.core.api.Idempotency
+import run.ostrom.core.api.models.CloudHost
 import run.ostrom.core.api.models.CloudSession
 import run.ostrom.core.api.models.CloudSessionPage
 import run.ostrom.core.api.models.CreateCloudSessionRequest
@@ -29,12 +30,19 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
      * @param status Only the sessions in this status.
      * @param before The [CloudSessionPage.next] of the previous page; the first page when null.
      * @param limit The page size (1 to 50); the server's default when null.
+     * @param kinds The kinds listed (`runners.cloud.remote.v1`, [run.ostrom.core.api.models.CloudSessionKinds]); cloud
+     *   sessions only when empty.
      */
-    public suspend fun list(status: String? = null, before: String? = null, limit: Int? = null): CloudSessionPage =
+    public suspend fun list(
+        status: String? = null,
+        before: String? = null,
+        limit: Int? = null,
+        kinds: List<String> = emptyList(),
+    ): CloudSessionPage =
         transport.json(
             HttpMethod.Get,
             "/api/v1/cloud/sessions",
-            query("status" to status, "before" to before, "limit" to limit?.toString()),
+            kinds.map { "kind" to it } + query("status" to status, "before" to before, "limit" to limit?.toString()),
         )
 
     /** One cloud session (`GET /api/v1/cloud/sessions/{id}`). */
@@ -91,6 +99,12 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
      */
     public suspend fun setGitHubAccess(id: String, access: String): CloudSession =
         transport.jsonBody(HttpMethod.Put, "${path(id)}/github", SetCloudGitHubAccessRequest(access))
+
+    /**
+     * Opens the next execution of a remote session, from its device (`POST /api/v1/cloud/sessions/{id}/host`,
+     * `runners.cloud.remote.v1`): the host then calls the runner channel with [CloudHost.epoch] and the same sign-in.
+     */
+    public suspend fun host(id: String): CloudHost = transport.json(HttpMethod.Post, "${path(id)}/host")
 
     private fun path(id: String) = "/api/v1/cloud/sessions/${segment(id)}"
 }

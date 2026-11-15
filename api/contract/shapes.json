@@ -1671,6 +1671,27 @@
       }
     }
   },
+  "CloudHost": {
+    "properties": {
+      "orgId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "epoch": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "session": {
+        "type": {
+          "ref": "CloudSession"
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "CloudInput": {
     "properties": {
       "id": {
@@ -2003,6 +2024,18 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "host": {
+        "type": {
+          "ref": "CloudSessionHost"
+        },
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -2020,6 +2053,55 @@
       },
       "retryable": {
         "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "CloudSessionHost": {
+    "properties": {
+      "deviceId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "deviceName": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "platform": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "osVersion": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "directoryName": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "online": {
+        "type": "boolean",
+        "required": false,
+        "nullable": false
+      },
+      "lastHeartbeatAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "permissionMode": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "folderId": {
+        "type": "string",
         "required": false,
         "nullable": false
       }
@@ -2722,6 +2804,36 @@
         "type": "string",
         "required": false,
         "nullable": false
+      },
+      "kind": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "directoryName": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "permissionMode": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "deviceId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "folderId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "resumeSessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -2852,6 +2964,176 @@
       "secret": {
         "type": "string",
         "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "DaemonListing": {
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "folderId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "limit": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "before": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DaemonListingAnswer": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "ResumableSession"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "refused": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DaemonOrder": {
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "folderId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "directoryName": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "agent": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "permissionMode": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "requestedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "resumeSessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DaemonPoll": {
+    "properties": {
+      "orders": {
+        "type": {
+          "array": {
+            "ref": "DaemonOrder"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "onlineTtlMillis": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "maxWaitMillis": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "listings": {
+        "type": {
+          "array": {
+            "ref": "DaemonListing"
+          }
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DaemonPollRequest": {
+    "properties": {
+      "waitMillis": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "version": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "features": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DaemonPresence": {
+    "properties": {
+      "online": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "lastSeenAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "version": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "features": {
+        "type": {
+          "array": "string"
+        },
+        "required": false,
         "nullable": false
       }
     }
@@ -3065,6 +3347,13 @@
         "type": "boolean",
         "required": false,
         "nullable": false
+      },
+      "daemon": {
+        "type": {
+          "ref": "DaemonPresence"
+        },
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -3098,6 +3387,50 @@
       "verificationUriComplete": {
         "type": "string",
         "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DeviceFolder": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "label": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DeviceFolders": {
+    "properties": {
+      "deviceId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "daemon": {
+        "type": {
+          "ref": "DaemonPresence"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "folders": {
+        "type": {
+          "array": {
+            "ref": "DeviceFolder"
+          }
+        },
+        "required": true,
         "nullable": false
       }
     }
@@ -4096,6 +4429,56 @@
       },
       "replaceClosed": {
         "type": "boolean",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "LocalKnownFolder": {
+    "properties": {
+      "path": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "lastUsedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "LocalKnownFolders": {
+    "properties": {
+      "folders": {
+        "type": {
+          "array": {
+            "ref": "LocalKnownFolder"
+          }
+        },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "LocalResumableSessions": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "ResumableSession"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
+      "next": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "unavailable": {
+        "type": "string",
         "required": false,
         "nullable": false
       }
@@ -5594,6 +5977,19 @@
       }
     }
   },
+  "PublishDeviceFoldersRequest": {
+    "properties": {
+      "folders": {
+        "type": {
+          "array": {
+            "ref": "DeviceFolder"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "PushDevice": {
     "properties": {
       "id": {
@@ -6154,6 +6550,15 @@
       "policy"
     ]
   },
+  "RefuseDaemonOrderRequest": {
+    "properties": {
+      "reason": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "RegisterPushDeviceRequest": {
     "properties": {
       "pushToken": {
@@ -6261,6 +6666,48 @@
   "ResetTodoRequest": {
     "properties": {
       "sessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ResumableSession": {
+    "properties": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "lastActiveAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "turns": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "ResumableSessionPage": {
+    "properties": {
+      "items": {
+        "type": {
+          "array": {
+            "ref": "ResumableSession"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "next": {
         "type": "string",
         "required": false,
         "nullable": false

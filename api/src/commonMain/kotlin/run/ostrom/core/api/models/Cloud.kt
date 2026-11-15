@@ -31,6 +31,9 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  *   changed or the transfer ended (`runners.cloud.transfer.v1`).
  * @property permissionBypass The owner's standing approval of tool uses is on (`runners.cloud.permissions.bypass.v1`).
  * @property waiting Why the agent waits for a person (`runners.cloud.permissions.v1`); null when it does not.
+ * @property kind `cloud` (null: a pod the server starts) or `remote` (a member's device, `runners.cloud.remote.v1`),
+ *   see [CloudSessionKinds].
+ * @property host Where a remote session runs; null for a cloud session.
  */
 @Serializable
 public data class CloudSession(
@@ -68,6 +71,8 @@ public data class CloudSession(
     val automationId: String? = null,
     val createdAt: String,
     val endedAt: String? = null,
+    val kind: String? = null,
+    val host: CloudSessionHost? = null,
 )
 
 /**
@@ -200,6 +205,17 @@ public enum class CloudAgentKind(
  * @property image An image instead of the profile's (planned).
  * @property mode `terminal` (null) or `conversation` (`runners.cloud.conversation.v1`, claude and codex only).
  * @property effort The agent's effort (reasoning level).
+ * @property kind `remote` (`runners.cloud.remote.v1`) for a session on the caller's own device: claude or codex, always
+ *   `conversation` mode, no repository, environment, profile or image; `cloud` or null for a pod.
+ * @property directoryName With [kind] `remote`: the last segment of the directory the agent works in, never its path
+ *   ([RemoteSessionLimits.isDirectoryName]). Omitted with [folderId], whose name it is.
+ * @property permissionMode With [kind] `remote`: `ask` (null) or `bypass` ([RemotePermissionModes]).
+ * @property deviceId With [kind] `remote` (`runners.cloud.remote.daemon.v1`): one of the caller's own devices, whose
+ *   daemon starts the session in [folderId], one of the folders it published. Without it, the session runs on the
+ *   device of the caller's sign-in.
+ * @property folderId With [deviceId]: the published folder ([DeviceFolder.id]).
+ * @property resumeSessionId With [deviceId] and [folderId] (`runners.cloud.remote.resume.v1`, claude only): the
+ *   conversation of that folder the session continues, one the device's daemon listed.
  */
 @Serializable
 public data class CreateCloudSessionRequest(
@@ -214,6 +230,12 @@ public data class CreateCloudSessionRequest(
     val mode: String? = null,
     val effort: String? = null,
     val image: String? = null,
+    val kind: String? = null,
+    val directoryName: String? = null,
+    val permissionMode: String? = null,
+    val deviceId: String? = null,
+    val folderId: String? = null,
+    val resumeSessionId: String? = null,
 )
 
 /** A page of the caller's cloud sessions, newest first; [next] is the cursor of the following page. */
