@@ -14159,7 +14159,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listCloudEvents
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: A page of a conversation session's transcript, in ascending order
@@ -14224,7 +14224,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: streamCloudSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Server-sent events of a conversation session's transcript"
@@ -14272,7 +14272,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listCloudSubagents
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The session's subagents and their state, oldest first, the newest 200"
@@ -14307,7 +14307,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listCloudInputs
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The session's inputs (messages, interrupts, permission answers, task stops), newest first"
@@ -14350,7 +14350,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: sendCloudMessage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Send a message to the agent of a conversation session
@@ -14412,7 +14412,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCloudInput
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: One input of the session and its acknowledgement
@@ -14449,7 +14449,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: interruptCloudSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Stops the agent's current turn"
@@ -14483,7 +14483,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: answerCloudPermission
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Answer a permission request of the agent (a tool use to approve, or a question)
@@ -14540,7 +14540,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: setCloudPermissionBypass
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The owner's standing approval of the session's tool uses (Bypass)"
@@ -14583,7 +14583,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: setCloudSessionModel
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Changes the model of the session's agent, while it runs too"
@@ -14627,7 +14627,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: setCloudSessionEffort
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Changes the effort (reasoning level) of the session's agent, while it runs too"
@@ -14669,7 +14669,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: stopCloudTask
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Stops one of the agent's background tasks (a subagent, a background command, a monitor)"
@@ -14813,7 +14813,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cloudRunnerAgent
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner of a conversation session reads how to start its agent; bearer: the execution's runner token"
@@ -14821,7 +14821,9 @@ paths:
         `execution_fenced`, a terminal session 409 `terminal_session`. The answer's flags say what the server takes:
         `permissionRelay` (`permission.request` events), `liveText` (`message.agent.delta`), `backgroundTasks`
         (`tasks` events); a runner never sends an event type the server did not announce, which would refuse the
-        batch. `conversation` is the agent's conversation id to resume, or empty for a fresh one"
+        batch. `conversation` says what the last execution left: `resumable` (the agent's own conversation is kept in
+        the workspace: resume it), `transcript_only` (only the transcript is kept: start a fresh one) or `none` (the
+        agent never ran)"
       requestBody:
         required: true
         content:
@@ -14856,6 +14858,10 @@ paths:
                     type: string
                   conversation:
                     type: string
+                    enum:
+                    - resumable
+                    - transcript_only
+                    - none
                   permissionRelay:
                     type: boolean
                   permissionDeadlineMinutes:
@@ -14893,15 +14899,16 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cloudRunnerEvents
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner uploads a batch of the agent's normalized transcript events"
       description: "`runners.cloud.conversation.v1` (TeamCode's `POST /cloud/runner/events`). `sequence` is the runner's
         own consecutive counter per epoch, from 1: a retried batch is deduplicated. At most 200 events and 2 MB. The
         server bounds and masks each event again. A `turn` `started` makes the session's agent busy, `completed`,
-        `interrupted` or `failed` idle again; both count as activity. A `status` with `conversation` records the id to
-        resume. 409 `execution_fenced` for another epoch"
+        `interrupted` or `failed` idle again; both count as activity. A `status` with `conversation` (`resumable`,
+        `transcript_only` or `none`) records whether the next execution can resume the agent's own conversation, as
+        `POST /cloud/runner/agent` then answers. 409 `execution_fenced` for another epoch"
       requestBody:
         required: true
         content:
@@ -14970,7 +14977,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cloudRunnerInputs
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner long-polls the session's queued inputs; they come back `delivered`"
@@ -15078,7 +15085,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cloudRunnerInputsAck
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: The runner acknowledges inputs it handed to the agent (consumed) or refused (rejected)
