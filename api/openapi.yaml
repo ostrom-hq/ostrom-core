@@ -11957,7 +11957,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getApiPrices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: The organization's API price table (`capacity.apiprices.v1`)
@@ -11985,7 +11985,7 @@ paths:
           $ref: '#/components/responses/Error'
     put:
       operationId: setApiPrices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Replace the organization's API price table (owners and admins, a person signed in)
@@ -12027,7 +12027,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: loadApiPriceDefaults
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Add Anthropic's current list prices to the table (owners and admins, a person signed in)
