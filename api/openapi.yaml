@@ -12687,6 +12687,20 @@ paths:
       tags:
       - runners
       summary: Start a cloud agent session
+      description: "With an `Idempotency-Key` (TeamCode's create, `runners.cloud.idempotency.v1`), the key is scoped to
+        the organization, the initiating member and the route, and the server stores a SHA-256 of the canonical request
+        (the decoded body and the effective member) in the transaction that creates the session, for 24 hours. The same
+        key with the same request answers `202` with the session's current view and `Idempotency-Replayed: true`,
+        creating nothing; the same key with another request or another effective member is 422 `idempotency_conflict`;
+        concurrent requests with one key create one session and the others replay. A malformed key is 400
+        `invalid_request`. The key is optional until every client sends one; TeamCode requires it"
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        description: '1 to 128 characters of `A-Za-z0-9._:-`; one fresh key per press of Start, reused for each retry of it'
+        schema:
+          type: string
       requestBody:
         required: true
         content:
@@ -12694,6 +12708,12 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateCloudSessionRequest'
       responses:
+        '202':
+          description: "The session this `Idempotency-Key` created, as it is now, with `Idempotency-Replayed: true`"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
         '201':
           description: OK
           content:
@@ -21972,7 +21992,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `devices.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
