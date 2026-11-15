@@ -1957,7 +1957,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: pollDeviceDaemon
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: The device daemon's long poll for the sessions to host
@@ -1995,7 +1995,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     delete:
       operationId: stopDeviceDaemon
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: The device daemon stops, the device is offline at once
@@ -2020,7 +2020,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: refuseDaemonOrder
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: The device daemon refuses to host a session
@@ -2063,7 +2063,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: answerDaemonListing
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: The device daemon answers a listing of a folder's conversations
@@ -2101,7 +2101,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     put:
       operationId: publishDeviceFolders
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The folders the caller's device offers for sessions started elsewhere"
@@ -2139,7 +2139,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listDeviceFolders
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "A device's daemon and published folders"
