@@ -55,7 +55,7 @@ export function parseArguments(argv) {
         else if (argument.startsWith("--")) throw new Error(`unknown option ${argument}`)
         else options.paths.push(argument)
     }
-    if ((options.routes === null) === (options.openapi === null)) throw new Error("one of --openapi and --routes is required")
+    if ((options.routes === null) === (options.openapi === null)) throw new Error("exactly one of --openapi and --routes is required")
     if (options.paths.length === 0) throw new Error("no page to check")
     return options
 }

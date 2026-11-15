@@ -46,8 +46,8 @@ describe("parseArguments", () => {
     it("refuses a missing value, an unknown option, no routes and no page", () => {
         assert.throws(() => parseArguments(["--routes"]), /--routes needs a value/)
         assert.throws(() => parseArguments(["--nope"]), /unknown option --nope/)
-        assert.throws(() => parseArguments(["p"]), /one of --openapi and --routes is required/)
-        assert.throws(() => parseArguments(["--openapi", "o", "--routes", "r", "p"]), /one of --openapi and --routes is required/)
+        assert.throws(() => parseArguments(["p"]), /exactly one of --openapi and --routes is required/)
+        assert.throws(() => parseArguments(["--openapi", "o", "--routes", "r", "p"]), /exactly one of --openapi and --routes is required/)
         assert.equal(parseArguments(["--openapi", "o", "p"]).openapi, "o")
         assert.throws(() => parseArguments(["--routes", "r"]), /no page to check/)
     })
@@ -77,7 +77,7 @@ describe("main", () => {
     it("prints the usage and exits 64 on a bad command line", () => {
         const {code, err} = run([])
         assert.equal(code, 64)
-        assert.equal(err[0], `docs-truth: one of --openapi and --routes is required\n\n${USAGE}`)
+        assert.equal(err[0], `docs-truth: exactly one of --openapi and --routes is required\n\n${USAGE}`)
     })
 
     it("passes pages that cite only what is shipped", () => {

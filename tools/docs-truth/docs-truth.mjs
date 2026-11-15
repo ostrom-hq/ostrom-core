@@ -52,14 +52,13 @@ export const OUTSIDE_DOCUMENT = ["GET /api/openapi.json", "GET /api/docs", "GET 
  * operation of the document is served, there is nothing planned in it.
  */
 export function parseOpenApiRoutes(text) {
-    const document = JSON.parse(text)
-    const lines = [...OUTSIDE_DOCUMENT]
-    for (const [path, item] of Object.entries(document.paths ?? {})) {
-        for (const method of Object.keys(item)) {
-            if (METHODS.includes(method.toUpperCase())) lines.push(`${method} ${path}`)
+    const routes = parseServedRoutes(OUTSIDE_DOCUMENT.join("\n"))
+    for (const [path, item] of Object.entries(JSON.parse(text).paths ?? {})) {
+        for (const method of Object.keys(item ?? {})) {
+            if (METHODS.includes(method.toUpperCase())) routes.push([method.toUpperCase(), segmentsOf(path)])
         }
     }
-    return parseServedRoutes(lines.join("\n"))
+    return routes
 }
 
 /**

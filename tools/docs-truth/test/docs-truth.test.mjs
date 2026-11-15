@@ -51,6 +51,7 @@ describe("parseOpenApiRoutes", () => {
             paths: {
                 "/api/v1/rules/{id}": {parameters: [], get: {}, delete: {}, summary: "x"},
                 "/webhooks/stripe": {post: {}},
+                "/api/v1/empty": null,
             },
         }
         assert.deepEqual(parseOpenApiRoutes(JSON.stringify(document)), [
