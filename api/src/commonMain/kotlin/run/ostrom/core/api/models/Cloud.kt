@@ -16,8 +16,8 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  * @property status `creating`, `running`, `pausing`, `paused`, `resuming`, `transferring`, `terminated` or `failed`
  *   (`transferring`: the owner changes at a paused boundary, `runners.cloud.transfer.v1`).
  * @property desiredStatus What the owner asked for: `running`, `paused` or `terminated`.
- * @property phase An open label of the current step; while preparing, `configuring_git`, `cloning_repositories`,
- *   `fetching_repositories` or `running_setup`.
+ * @property phase An open label of the current step; while preparing, `securing_workspace` (after a transfer),
+ *   `configuring_git`, `cloning_repositories`, `fetching_repositories` or `running_setup`.
  * @property epoch The execution number, raised at each start or resume.
  * @property failure Why it failed or paused on its own.
  * @property environment Its preparation recipe, fixed at creation.

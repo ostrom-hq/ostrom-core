@@ -93,6 +93,9 @@ GET /api/v1/cloud/sessions
 GET /api/v1/cloud/sessions/{}
 GET /api/v1/cloud/sessions/{}/terminal
 GET /api/v1/cloud/settings
+GET /api/v1/cloud/transfer-recipients
+GET /api/v1/cloud/transfers
+GET /api/v1/cloud/transfers/{}
 GET /api/v1/confirmations/{}
 GET /api/v1/decisions
 GET /api/v1/devices
@@ -295,6 +298,10 @@ POST /api/v1/cloud/sessions
 POST /api/v1/cloud/sessions/{}/pause
 POST /api/v1/cloud/sessions/{}/resume
 POST /api/v1/cloud/sessions/{}/terminal/ticket
+POST /api/v1/cloud/sessions/{}/transfer
+POST /api/v1/cloud/transfers/{}/accept
+POST /api/v1/cloud/transfers/{}/cancel
+POST /api/v1/cloud/transfers/{}/decline
 POST /api/v1/confirmations/{}/answer
 POST /api/v1/directives/claim
 POST /api/v1/directives/current

@@ -13103,7 +13103,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listCloudTransferRecipients
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The members a session can be given to, for a picker"
@@ -13130,7 +13130,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: transferCloudSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Give one of the caller's cloud sessions to another member"
@@ -13177,7 +13177,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listCloudTransfers
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The caller's transfers, incoming and outgoing, newest first"
@@ -13239,7 +13239,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCloudTransfer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "One transfer"
@@ -13272,7 +13272,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: acceptCloudTransfer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Accept a session offered to the caller"
@@ -13313,7 +13313,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: declineCloudTransfer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Decline an offered session"
@@ -13346,7 +13346,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: cancelCloudTransfer
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Withdraw an offer, or cancel an accepted transfer before the owner change starts"
@@ -13959,7 +13959,7 @@ paths:
       tags:
       - runners
       summary: "The runner reports its preparation (`runners.cloud.environment.v1`): a `phase` (`configuring_git`,
-        `cloning_repositories`, `fetching_repositories`, `running_setup`), shown on the session, or a failed step as
+        `cloning_repositories`, `fetching_repositories`, `running_setup`, and `securing_workspace` first after a transfer), shown on the session, or a failed step as
         `{step, index, exitCode}` only. The server writes the session's message itself (no command output or runner text
         reaches the API), sets `failure.code = preparation_failed` (`retryable` for clone, fetch and GitHub failures),
         and stops the execution: a first execution fails the session and deletes its workspace, a resume pauses it and
@@ -27181,6 +27181,7 @@ components:
           - working_directory
           - setup_create
           - setup_start
+          - workspace
           - runner
         index:
           type: integer
@@ -27202,6 +27203,7 @@ components:
         phase:
           type: string
           enum:
+          - securing_workspace
           - configuring_git
           - cloning_repositories
           - fetching_repositories
