@@ -59,7 +59,7 @@ public class CloudFilesClient internal constructor(private val transport: Transp
      *
      * Every attempt sends the same [idempotencyKey], so a retry never stores the file twice. A network failure, `408`,
      * `409 file_upload_in_progress`, `429` other than [CloudFiles.UPLOAD_QUOTA] and `5xx` are retried up to
-     * [attempts] times in all, with backoff (1 s doubling to 15 s, or the server's `Retry-After` up to 30 s);
+     * [attempts] times in all, with backoff (1 s doubling to 15 s, or the server's `Retry-After` capped at 30 s);
      * [onRetry] is told before each wait. Other refusals throw [OstromException] with the server's type at once, a
      * source that cannot be read [CloudFileReadException]. The SHA-256 of the bytes sent is compared to the one the
      * server stored: a difference throws [OstromException] with type [FILE_INTEGRITY_FAILED] (status `0`); upload
@@ -96,7 +96,8 @@ public class CloudFilesClient internal constructor(private val transport: Transp
             }
             onRetry(failure)
             val retryAfter = (failure as? OstromException)?.retryAfterSeconds
-            delay(retryAfter?.takeIf { it in 1..MAX_RETRY_AFTER_SECONDS }?.times(MILLIS) ?: wait)
+            // The server's pause when it gave one, capped so that an upload does not stall for minutes.
+            delay(retryAfter?.takeIf { it > 0 }?.coerceAtMost(MAX_RETRY_AFTER_SECONDS)?.times(MILLIS) ?: wait)
             wait = (wait * 2).coerceAtMost(MAX_WAIT_MILLIS)
             attempt++
         }
