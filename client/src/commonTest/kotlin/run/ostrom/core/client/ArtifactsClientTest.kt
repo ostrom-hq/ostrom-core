@@ -38,7 +38,8 @@ class ArtifactsClientTest {
         val server = ScriptedServer {
             json(
                 """{"items":[{"number":2,"files":["a.png","index.html"],"entry":"index.html","createdAt":"t",""" +
-                    """"createdBy":"ada","fileDetails":[{"path":"a.png","size":5000000000,"contentType":"image/png"},""" +
+                    """"createdBy":"ada","fileDetails":[""" +
+                    """{"path":"a.png","size":5000000000,"contentType":"image/png"},""" +
                     """{"path":"index.html","size":11,"contentType":"text/html","sha256":"ab"}]},""" +
                     """{"number":1,"files":["index.html"],"entry":"index.html","createdAt":"t","createdBy":"ada"}]}""",
             )
