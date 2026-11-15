@@ -129,8 +129,9 @@ same key with another request is `422 idempotency_conflict`.
 
 `OnBehalfOf` (in `api`) names the effective member of a cloud session write (`runners.cloud.onbehalf.v1`, TeamCode's
 `TeamCode-On-Behalf-Of`): `cloudSessions.create`, `pause`, `resume` and `stop` take `onBehalfOf`, a member id or login
-sent in `Ostrom-On-Behalf-Of`, for an owner or an admin (or an administrator's `cloud:admin` key) acting on a member's
-sessions. A malformed reference throws `IllegalArgumentException` before any request; the server's refusals are
+sent in `Ostrom-On-Behalf-Of`, for an owner or an admin (or an administrator's `cloud:admin` key). As TeamCode's,
+`create` makes that member the owner, while the other writes stay on the caller's own sessions and transfers (404
+otherwise) and only attribute them to that member in the audit log. A malformed reference throws `IllegalArgumentException` before any request; the server's refusals are
 `on_behalf_forbidden` (403), `invalid_effective_member` (422) and `invalid_on_behalf` (400). A server without the
 capability ignores the header: check the capability first. `CloudSession.createdBy` says who created a session.
 With `runners.cloud.onbehalf.writes.v1` (served since ostrom-server#646), `cloudSessions.setModel` and `setEffort` and `cloudTransfers.request`,
