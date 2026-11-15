@@ -17,6 +17,7 @@ function write(path, text) {
 }
 
 const routes = write("served-routes.txt", "GET /api/v1/health\n")
+const openapi = write("openapi.json", JSON.stringify({openapi: "3.1.0", paths: {"/api/v1/health": {get: {}}}}))
 write("server/src/commonMain/Config.kt", 'val url = source["OSTROM_URL"]\n')
 write("server/src/commonTest/ConfigTest.kt", 'val t = "OSTROM_TEST_ONLY"\n')
 write("server/node_modules/x.js", "OSTROM_SKIPPED\n")
@@ -37,7 +38,7 @@ describe("parseArguments", () => {
     it("reads every option and the paths", () => {
         const options = parseArguments(["--routes", "r", "--ostrom", "o", "--source", "a", "--source", "b", "--tests", "--warn", "w", "--marker", "soon", "p"])
         assert.deepEqual({...options, marker: options.marker.source}, {
-            routes: "r", ostrom: "o", sources: ["a", "b"], tests: true, warn: ["w"], marker: "soon", paths: ["p"],
+            routes: "r", openapi: null, ostrom: "o", sources: ["a", "b"], tests: true, warn: ["w"], marker: "soon", paths: ["p"],
         })
         assert.equal(options.marker.flags, "i")
     })
@@ -45,7 +46,9 @@ describe("parseArguments", () => {
     it("refuses a missing value, an unknown option, no routes and no page", () => {
         assert.throws(() => parseArguments(["--routes"]), /--routes needs a value/)
         assert.throws(() => parseArguments(["--nope"]), /unknown option --nope/)
-        assert.throws(() => parseArguments(["p"]), /--routes is required/)
+        assert.throws(() => parseArguments(["p"]), /one of --openapi and --routes is required/)
+        assert.throws(() => parseArguments(["--openapi", "o", "--routes", "r", "p"]), /one of --openapi and --routes is required/)
+        assert.equal(parseArguments(["--openapi", "o", "p"]).openapi, "o")
         assert.throws(() => parseArguments(["--routes", "r"]), /no page to check/)
     })
 })
@@ -74,7 +77,7 @@ describe("main", () => {
     it("prints the usage and exits 64 on a bad command line", () => {
         const {code, err} = run([])
         assert.equal(code, 64)
-        assert.equal(err[0], `docs-truth: --routes is required\n\n${USAGE}`)
+        assert.equal(err[0], `docs-truth: one of --openapi and --routes is required\n\n${USAGE}`)
     })
 
     it("passes pages that cite only what is shipped", () => {
@@ -93,6 +96,13 @@ describe("main", () => {
             `${bad}:1: OSTROM_TEST_ONLY is read by none of the sources, and nothing around it says "coming soon"`,
             "docs-truth: 2 files, commands, routes, variables checked: 3 problems, 0 warnings",
         ])
+    })
+
+    it("reads the served routes from the generated OpenAPI document with --openapi", () => {
+        assert.equal(run(["--openapi", openapi, good]).code, 0)
+        const {code, out} = run(["--openapi", openapi, join(root, "docs/nested")])
+        assert.equal(code, 1)
+        assert.match(out[0], /POST \/api\/v1\/launches is not served by ostrom-server main \(its OpenAPI document\)/)
     })
 
     it("counts the sources' tests with --tests, and checks only routes without --ostrom and --source", () => {
