@@ -3,6 +3,7 @@ package run.ostrom.core.client
 
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import run.ostrom.core.api.models.DirectivePace
 import run.ostrom.core.api.models.DirectiveStage
 import run.ostrom.core.api.models.PacingSettings
@@ -13,6 +14,10 @@ import kotlin.test.assertTrue
 
 /** The capacity controller's settings and the advice it gives to agents. */
 class PacingClientTest {
+    private fun assertJson(expected: String, actual: String) {
+        assertEquals(Json.parseToJsonElement(expected), Json.parseToJsonElement(actual), actual)
+    }
+
     private val directive = """{"id":"d1","pace":"slow_down","maxConcurrent":2,"minIntervalMillis":5000,""" +
         """"message":"Space your calls.","createdAt":"2026-01-01T00:00:00Z","expiresAt":"2026-01-01T00:03:00Z"}"""
 
@@ -32,6 +37,8 @@ class PacingClientTest {
             listOf("GET /api/v1/policy/pacing", "PUT /api/v1/policy/pacing"),
             server.requests.map { "${it.method.value} ${it.url.encodedPath}" },
         )
+        // The server keeps a field left out: none is sent as null.
+        assertJson("""{"observationOnly":true}""", server.requests[1].bodyText())
     }
 
     @Test
