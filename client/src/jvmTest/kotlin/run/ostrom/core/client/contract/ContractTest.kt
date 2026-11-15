@@ -22,28 +22,21 @@ import kotlin.test.assertTrue
  */
 class ContractTest {
 
-    private val document = OpenApiDocument.load()
-
     @Test
     fun everyClientCallIsADocumentedOperationWithItsSchemas() {
-        val document = document ?: return
-        val problems = Check(document).calls()
+        val problems = check?.callProblems ?: return
         assertTrue(problems.isEmpty(), "The client disagrees with the server's document:\n" + problems.lines())
     }
 
     @Test
     fun everyModelNamedLikeASchemaHasItsShape() {
-        val document = document ?: return
-        val problems = Check(document).models()
+        val problems = check?.modelProblems ?: return
         assertTrue(problems.isEmpty(), "The models disagree with the server's document:\n" + problems.lines())
     }
 
     @Test
     fun everyKnownServerGapIsStillAGap() {
-        val document = document ?: return
-        val check = Check(document)
-        check.calls()
-        check.models()
+        val check = check ?: return
         val stale = (ServerGaps.properties.keys - check.usedGaps) + (ServerGaps.queryParameters.keys - check.usedGaps)
         assertTrue(
             stale.isEmpty(),
@@ -55,8 +48,12 @@ class ContractTest {
     private class Check(private val document: OpenApiDocument) {
         val usedGaps = mutableSetOf<String>()
 
+        /** Computed once for the three tests: the client calls are made in [calls]. */
+        val callProblems: List<String> = calls()
+        val modelProblems: List<String> = models()
+
         /** The differences of every client call. */
-        fun calls(): List<String> {
+        private fun calls(): List<String> {
             val calls = ClientCalls(document)
             return calls.all().flatMap { call ->
                 val requests = calls.record(call)
@@ -69,7 +66,7 @@ class ContractTest {
         }
 
         /** The differences of every model named like a schema of the document. */
-        fun models(): List<String> = modelSerializers().flatMap { serializer ->
+        private fun models(): List<String> = modelSerializers().flatMap { serializer ->
             val name = serializer.descriptor.serialName.substringAfterLast('.')
             if (name !in document.schemas) return@flatMap emptyList()
             val reference = JsonObject(mapOf("\$ref" to JsonPrimitive("#/components/schemas/$name")))
@@ -108,6 +105,9 @@ class ContractTest {
 
     private companion object {
         const val MODELS_PACKAGE = "run.ostrom.core.api.models"
+
+        /** One run of the check for the whole class, or null without a document. */
+        val check: Check? by lazy { OpenApiDocument.load()?.let(::Check) }
 
         fun List<String>.lines(): String = joinToString("\n")
 
