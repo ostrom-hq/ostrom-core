@@ -22004,7 +22004,6 @@ components:
         profileId:
           type: string
           format: uuid
-          x-ostrom-status: planned
           description: "The organization's cloud profile the action runs on (`runners.cloud.profiles.v1`, TeamCode's
             `action.profileId`): the session's, or, for a workflow action, the one of its run's agent nodes that name
             none. Where sessions run on cloud profiles, saving refuses an id none of the organization's profiles has
@@ -28377,7 +28376,6 @@ components:
         profileId:
           type: string
           format: uuid
-          x-ostrom-status: planned
           description: "Agent: the organization's cloud profile its session runs on (`runners.cloud.profiles.v1`,
             TeamCode's node `profileId`), else the run's `profileId`, else the only profile the run's starter (an
             automation's owner for its runs) may use. Where sessions run on cloud profiles, saving a workflow the
@@ -32310,7 +32308,6 @@ components:
         profileId:
           type: string
           format: uuid
-          x-ostrom-status: planned
           description: "The cloud profile of the agent nodes that name none (`runners.cloud.profiles.v1`, TeamCode's
             `profileId` at start): 400 `invalid_request` when none of the organization's profiles has it. Absent: each
             such node's session runs on the starter's only usable profile"
@@ -32579,7 +32576,6 @@ components:
         profileId:
           type: string
           format: uuid
-          x-ostrom-status: planned
           description: "The cloud profile of the agent nodes that name none: the one given at a manual start, or,
             for a run an automation started, its workflow action's. Absent when none was named (the profile is then
             chosen at each session's creation, never written back here)"
