@@ -23222,8 +23222,8 @@ components:
           type: integer
           minimum: 0
           maximum: 1440
-          description: With `runners.cloud.remote.v1`, how long a remote session may stay idle before it pauses; 0 never
-            pauses one. Read when a remote session is created. 60 by default (TeamCode's `remoteIdleTimeoutMinutes`,
+          description: With `runners.cloud.remote.v1`, how long a remote session may go without a turn, a message or an attached client before it pauses; 0 never
+            pauses one. 60 by default (TeamCode's `remoteIdleTimeoutMinutes`,
             `RemoteSessionLimits`)
         updatedAt:
           type: string
