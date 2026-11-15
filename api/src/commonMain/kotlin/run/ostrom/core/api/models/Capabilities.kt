@@ -499,6 +499,14 @@ public object ServerFeatures {
      */
     public const val RUNNERS_CLOUD_REMOTE_RESUME: String = "runners.cloud.remote.resume.v1"
 
+    /**
+     * Local sessions (TeamCode's cloud.sessions.local.v1): `kind: local` on `POST /api/v1/cloud/sessions` opens the
+     * session of the caller's own running `ostrom <agent>` launch ([CreateCloudSessionRequest.launchId]), hosted by
+     * that launch like a remote session (`POST /api/v1/cloud/sessions/{id}/host` from any of the owner's devices, then
+     * the runner channel) and deleted when the agent exits; `?kind=local` lists them.
+     */
+    public const val RUNNERS_CLOUD_LOCAL: String = "runners.cloud.local.v1"
+
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
         ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CAPACITY_API_PRICES, CAPACITY_BUDGET_OVERRIDES,
@@ -507,7 +515,8 @@ public object ServerFeatures {
         INFERENCE_CANCEL, MCP, MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST,
         PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_CONVERSATION,
         RUNNERS_CLOUD_EFFORT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_FILES, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
-        RUNNERS_CLOUD_IDEMPOTENCY, RUNNERS_CLOUD_INFERENCE, RUNNERS_CLOUD_MODEL, RUNNERS_CLOUD_ON_BEHALF,
+        RUNNERS_CLOUD_IDEMPOTENCY, RUNNERS_CLOUD_INFERENCE, RUNNERS_CLOUD_LOCAL, RUNNERS_CLOUD_MODEL,
+        RUNNERS_CLOUD_ON_BEHALF,
         RUNNERS_CLOUD_ON_BEHALF_WRITES, RUNNERS_CLOUD_PERMISSIONS,
         RUNNERS_CLOUD_PERMISSIONS_BYPASS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_PROFILES_MEMBER, RUNNERS_CLOUD_REMOTE,
         RUNNERS_CLOUD_REMOTE_DAEMON, RUNNERS_CLOUD_REMOTE_RESUME,

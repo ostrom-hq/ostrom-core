@@ -31,9 +31,11 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  *   changed or the transfer ended (`runners.cloud.transfer.v1`).
  * @property permissionBypass The owner's standing approval of tool uses is on (`runners.cloud.permissions.bypass.v1`).
  * @property waiting Why the agent waits for a person (`runners.cloud.permissions.v1`); null when it does not.
- * @property kind `cloud` (null: a pod the server starts) or `remote` (a member's device, `runners.cloud.remote.v1`),
- *   see [CloudSessionKinds].
- * @property host Where a remote session runs; null for a cloud session.
+ * @property kind `cloud` (null: a pod the server starts), `remote` (a member's device, `runners.cloud.remote.v1`) or
+ *   `local` (the terminal of a member's `ostrom <agent>`, `runners.cloud.local.v1`), see [CloudSessionKinds].
+ * @property host Where a remote session runs; null for a cloud or a local session.
+ * @property launchId The `ostrom <agent>` launch a local session is attached to (`runners.cloud.local.v1`); null for
+ *   every other kind ([runId] is a workflow run).
  * @property createdBy Who created it (`runners.cloud.onbehalf.v1`); null for a session created before the feature.
  */
 @Serializable
@@ -75,6 +77,7 @@ public data class CloudSession(
     val kind: String? = null,
     val host: CloudSessionHost? = null,
     val createdBy: CloudAttribution? = null,
+    val launchId: String? = null,
 )
 
 /**
@@ -234,6 +237,9 @@ public enum class CloudAgentKind(
  * @property folderId With [deviceId]: the published folder ([DeviceFolder.id]).
  * @property resumeSessionId With [deviceId] and [folderId] (`runners.cloud.remote.resume.v1`, claude only): the
  *   conversation of that folder the session continues, one the device's daemon listed.
+ * @property launchId With [kind] `local` (`runners.cloud.local.v1`): the caller's own `ostrom <agent>` launch, still
+ *   running, the session is attached to (send it as the `Idempotency-Key` too). A second request for the same launch
+ *   returns the first session. Left out of the body when null.
  */
 @Serializable
 public data class CreateCloudSessionRequest(
@@ -254,6 +260,7 @@ public data class CreateCloudSessionRequest(
     val deviceId: String? = null,
     val folderId: String? = null,
     val resumeSessionId: String? = null,
+    val launchId: String? = null,
 )
 
 /** A page of the caller's cloud sessions, newest first; [next] is the cursor of the following page. */

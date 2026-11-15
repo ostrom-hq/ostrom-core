@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 class RemoteModelsTest {
     @Test
     fun theKindsAndPermissionModesAreTeamCodesInContractOrder() {
-        assertEquals(listOf("cloud", "remote"), CloudSessionKinds.ALL)
+        assertEquals(listOf("cloud", "remote", "local"), CloudSessionKinds.ALL)
         assertEquals(listOf("ask", "bypass"), RemotePermissionModes.ALL)
         assertEquals("resume.v1", DaemonFeatures.RESUME)
         val reasons = listOf(
@@ -85,5 +85,20 @@ class RemoteModelsTest {
         val request = CreateCloudSessionRequest(CloudAgentKind.CLAUDE)
         val create = OstromJson.encodeToString(CreateCloudSessionRequest.serializer(), request)
         assertEquals("""{"agent":"claude"}""", create)
+    }
+
+    @Test
+    fun aLocalSessionCarriesItsLaunch() {
+        val request = CreateCloudSessionRequest(CloudAgentKind.CODEX, kind = CloudSessionKinds.LOCAL, launchId = "l1")
+        val create = OstromJson.encodeToString(CreateCloudSessionRequest.serializer(), request)
+        assertEquals("""{"agent":"codex","kind":"local","launchId":"l1"}""", create)
+        val session = OstromJson.decodeFromString(
+            CloudSession.serializer(),
+            """{"id":"cs_1","owner":"m1","agent":"codex","status":"creating","createdAt":"t",""" +
+                """"kind":"local","launchId":"l1"}""",
+        )
+        assertEquals(CloudSessionKinds.LOCAL, session.kind)
+        assertEquals("l1", session.launchId)
+        assertNull(session.host)
     }
 }

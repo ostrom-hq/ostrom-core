@@ -2095,6 +2095,11 @@
         },
         "required": false,
         "nullable": false
+      },
+      "launchId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
       }
     }
   },
@@ -2890,6 +2895,11 @@
         "nullable": false
       },
       "resumeSessionId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "launchId": {
         "type": "string",
         "required": false,
         "nullable": false
