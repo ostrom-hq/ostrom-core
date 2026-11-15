@@ -11,10 +11,7 @@ import run.ostrom.core.api.models.AnswerApprovalRequest
 import run.ostrom.core.api.models.AnswerWaitRequest
 import run.ostrom.core.api.models.ApiError
 import run.ostrom.core.api.models.Approval
-import run.ostrom.core.api.models.ApprovalAction
 import run.ostrom.core.api.models.ApprovalCallerView
-import run.ostrom.core.api.models.ApprovalCheck
-import run.ostrom.core.api.models.ApprovalCommit
 import run.ostrom.core.api.models.ApprovalQueue
 import run.ostrom.core.api.models.ApprovalView
 import run.ostrom.core.api.models.ApprovalViewer
@@ -67,7 +64,6 @@ import run.ostrom.core.api.models.DeviceFolders
 import run.ostrom.core.api.models.DevicePage
 import run.ostrom.core.api.models.DeviceLoginStart
 import run.ostrom.core.api.models.DeviceTokenRequest
-import run.ostrom.core.api.models.DiffStats
 import run.ostrom.core.api.models.DropTodoItemRequest
 import run.ostrom.core.api.models.EndSessionRequest
 import run.ostrom.core.api.models.ErrorDetail
@@ -212,7 +208,6 @@ import run.ostrom.core.api.models.TodoStopHookRequest
 import run.ostrom.core.api.models.TodoStopHooks
 import run.ostrom.core.api.models.TodoStopItemReport
 import run.ostrom.core.api.models.TodoStopRequest
-import run.ostrom.core.api.models.Verification
 import run.ostrom.core.api.models.Wait
 import run.ostrom.core.api.models.WaitAction
 import run.ostrom.core.api.models.WaitAnswer
@@ -313,10 +308,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     AnswerWaitRequest.serializer(),
     ApiError.serializer(),
     Approval.serializer(),
-    ApprovalAction.serializer(),
     ApprovalCallerView.serializer(),
-    ApprovalCheck.serializer(),
-    ApprovalCommit.serializer(),
     ApprovalQueue.serializer(),
     ApprovalView.serializer(),
     ApprovalViewer.serializer(),
@@ -369,7 +361,6 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     DevicePage.serializer(),
     DeviceLoginStart.serializer(),
     DeviceTokenRequest.serializer(),
-    DiffStats.serializer(),
     DropTodoItemRequest.serializer(),
     EndSessionRequest.serializer(),
     ErrorDetail.serializer(),
@@ -511,7 +502,6 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     TodoStopHooks.serializer(),
     TodoStopItemReport.serializer(),
     TodoStopRequest.serializer(),
-    Verification.serializer(),
     Wait.serializer(),
     WaitAction.serializer(),
     WaitAnswer.serializer(),

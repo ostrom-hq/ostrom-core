@@ -14,7 +14,6 @@ import kotlinx.serialization.Serializable
  * @property byAgent By agent.
  * @property byRepo By repository.
  * @property byPerson By person.
- * @property byWorkflow By workflow (planned on the server).
  * @property daily Day by day.
  * @property exceeded The budgets the reader sees spent past their limit today or this month; empty when none.
  */
@@ -28,13 +27,12 @@ public data class Spending(
     val byAgent: List<SpendingLine>,
     val byRepo: List<SpendingLine>,
     val byPerson: List<SpendingLine>,
-    val byWorkflow: List<SpendingLine> = emptyList(),
     val daily: List<SpendingDay>,
     val exceeded: List<ExceededBudget> = emptyList(),
 )
 
 /**
- * Spending of one agent, repository, person or workflow.
+ * Spending of one agent, repository or person.
  *
  * @property key What it is (its id).
  * @property label Its name for a person.
@@ -66,7 +64,6 @@ public data class SpendingDay(
  *
  * @property scope `organization`, `member`, or `workflow` (planned).
  * @property subject For `member`, the member's id; for `workflow`, the workflow's id.
- * @property label For `member`, the member's login (planned).
  * @property period `day` or `month`.
  * @property usd The limit in US dollars.
  * @property hardStop Whether it stops the calls; false, it only warns.
@@ -76,7 +73,6 @@ public data class SpendingDay(
 public data class ExceededBudget(
     val scope: String,
     val subject: String? = null,
-    val label: String? = null,
     val period: String,
     val usd: Double,
     val hardStop: Boolean,

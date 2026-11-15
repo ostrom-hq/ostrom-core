@@ -2,16 +2,11 @@
 package run.ostrom.core.api
 
 import run.ostrom.core.api.models.AgentEvent
-import run.ostrom.core.api.models.Approval
-import run.ostrom.core.api.models.ApprovalActionKind
-import run.ostrom.core.api.models.ApprovalActionRisk
 import run.ostrom.core.api.models.ApprovalStatus
-import run.ostrom.core.api.models.DiffStats
 import run.ostrom.core.api.models.ArtifactType
 import run.ostrom.core.api.models.AutomationTriggerKind
 import run.ostrom.core.api.models.CheckAttestation
 import run.ostrom.core.api.models.CheckOutcome
-import run.ostrom.core.api.models.CheckState
 import run.ostrom.core.api.models.DirectivePace
 import run.ostrom.core.api.models.GateMode
 import run.ostrom.core.api.models.GateStatus
@@ -96,14 +91,6 @@ class UnknownFallbackEnumTest {
     fun everySharedEnumReadsAnUnknownValueAsUnknownAndNeverWritesIt() {
         check(AgentEvent.entries, AgentEvent.Serializer, AgentEvent.UNKNOWN, AgentEvent::value)
         check(ApprovalStatus.entries, ApprovalStatus.Serializer, ApprovalStatus.UNKNOWN, ApprovalStatus::value)
-        check(
-            ApprovalActionKind.entries, ApprovalActionKind.Serializer, ApprovalActionKind.UNKNOWN,
-            ApprovalActionKind::value,
-        )
-        check(
-            ApprovalActionRisk.entries, ApprovalActionRisk.Serializer, ApprovalActionRisk.UNKNOWN,
-            ApprovalActionRisk::value,
-        )
         check(ArtifactType.entries, ArtifactType.Serializer, ArtifactType.UNKNOWN, ArtifactType::value)
         check(
             AutomationTriggerKind.entries, AutomationTriggerKind.Serializer, AutomationTriggerKind.UNKNOWN,
@@ -111,7 +98,6 @@ class UnknownFallbackEnumTest {
         )
         check(CheckAttestation.entries, CheckAttestation.Serializer, CheckAttestation.UNKNOWN, CheckAttestation::value)
         check(CheckOutcome.entries, CheckOutcome.Serializer, CheckOutcome.UNKNOWN, CheckOutcome::value)
-        check(CheckState.entries, CheckState.Serializer, CheckState.UNKNOWN, CheckState::value)
         check(GateMode.entries, GateMode.Serializer, GateMode.UNKNOWN, GateMode::value)
         check(GateStatus.entries, GateStatus.Serializer, GateStatus.UNKNOWN, GateStatus::value)
         check(GitHubConnection.entries, GitHubConnection.Serializer, GitHubConnection.UNKNOWN, GitHubConnection::value)
@@ -161,21 +147,5 @@ class UnknownFallbackEnumTest {
                 """"question":{"title":"Ship?"},"createdAt":"t"}""",
         )
         assertEquals(WaitStatus.UNKNOWN, wait.status)
-    }
-
-    @Test
-    fun anApprovalCarriesItsActionAndAnUnknownKindStillDecodes() {
-        val approval = OstromJson.decodeFromString(
-            Approval.serializer(),
-            """{"id":"a1","title":"Merge #12","requestedFrom":"ana","channel":"app","status":"pending",""" +
-                """"shownDigest":"d","action":{"kind":"release","repo":"o/r","ref":"main","headSha":"h",""" +
-                """"risk":"high"},"diffStats":{"files":3,"additions":40,"deletions":2},"diffTruncated":true}""",
-        )
-        val action = approval.action ?: error("no action")
-        assertEquals(ApprovalActionKind.UNKNOWN, action.kind)
-        assertEquals(ApprovalActionRisk.HIGH, action.risk)
-        assertEquals(null, action.baseSha)
-        assertEquals(DiffStats(files = 3, additions = 40, deletions = 2), approval.diffStats)
-        assertEquals(true, approval.diffTruncated)
     }
 }

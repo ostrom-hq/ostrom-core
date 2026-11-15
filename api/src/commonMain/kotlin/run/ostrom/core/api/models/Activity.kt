@@ -26,7 +26,6 @@ public data class ActivityPage(
  * @property summary A sentence for a person.
  * @property repo The repository.
  * @property costUsd The cost in US dollars.
- * @property approvalId The approval it is about.
  * @property gateId The gate it is about.
  * @property sessionId The session it is about.
  */
@@ -39,7 +38,6 @@ public data class ActivityItem(
     val summary: String,
     val repo: String? = null,
     val costUsd: Double? = null,
-    val approvalId: String? = null,
     val gateId: String? = null,
     val sessionId: String? = null,
 )
