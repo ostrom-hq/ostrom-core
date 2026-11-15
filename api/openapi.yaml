@@ -2793,7 +2793,7 @@ paths:
   /webhooks/slack:
     post:
       operationId: receiveSlackInteraction
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: 'Slack interactions (the Approve and Reject buttons of a yes request). Called by Slack only, authenticated
@@ -2845,7 +2845,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getSlackLink
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: "The caller's own Slack link in the organization (`slack.v1`): the Slack account their notifications and
@@ -2870,7 +2870,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: linkSlack
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: "Links the caller to the Slack account of their proven e-mail address"
@@ -2904,7 +2904,7 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: unlinkSlack
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - notifications
       summary: "Removes the caller's own Slack link; 204 also when not linked. Nothing more is sent to that Slack
@@ -5922,8 +5922,8 @@ paths:
       - notifications
       summary: The caller's notification switches, per channel and kind
       description: 'What the caller is told about (`notifications.v1`): `waiting` (an agent or a wait needs them),
-        `turn_completed`, `turn_failed` and `session_failed`, on each channel the server offers (`push`, later `slack`
-        and `discord`). Every kind is on until the member turns it off; `channels` is empty while the server offers none.
+        `turn_completed`, `turn_failed` and `session_failed`, on each channel the server offers (`push`, `slack`, later
+        `discord`). Every kind is on until the member turns it off; `channels` is empty while the server offers none.
         A member reads and changes only their own, with an interactive login (a browser session, the unlocked app or
         `ostrom login`); a service key has no person to notify (403).'
       responses:
@@ -27440,7 +27440,7 @@ components:
       properties:
         channel:
           type: string
-          description: '`push` (later `slack`, `discord`); a client tolerates one it does not know'
+          description: '`push`, `slack` (later `discord`); a client tolerates one it does not know'
         kind:
           type: string
           description: '`waiting`, `turn_completed`, `turn_failed` or `session_failed`; a client tolerates one it does not

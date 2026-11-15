@@ -43,6 +43,7 @@ DELETE /api/v1/skills/{}
 DELETE /api/v1/skills/{}/assignments/{}
 DELETE /api/v1/skills/{}/pin
 DELETE /api/v1/skills/{}/versions/{}
+DELETE /api/v1/slack/link
 DELETE /api/v1/tokens/{}
 DELETE /api/v1/webhooks/{}
 DELETE /api/v1/workflows/{}
@@ -198,6 +199,7 @@ GET /api/v1/skill-delivery/{}/{}
 GET /api/v1/skills
 GET /api/v1/skills/{}/assignments
 GET /api/v1/skills/{}/versions
+GET /api/v1/slack/link
 GET /api/v1/spending
 GET /api/v1/todos/session
 GET /api/v1/todos/session/context
@@ -360,6 +362,7 @@ POST /api/v1/sessions/{}/workflow-receipt
 POST /api/v1/skills/{}/promote
 POST /api/v1/skills/{}/restore
 POST /api/v1/skills/{}/versions
+POST /api/v1/slack/link
 POST /api/v1/todos/session
 POST /api/v1/todos/session/hook-error
 POST /api/v1/todos/session/items
@@ -387,6 +390,7 @@ POST /api/v1/workflows/mcp
 POST /api/v1/workflows/session/deliver
 POST /api/v1/workflows/{}/runs
 POST /webhooks/github
+POST /webhooks/slack
 POST /webhooks/stripe
 PUT /api/v1/admin/settings/{}
 PUT /api/v1/artifacts/settings
