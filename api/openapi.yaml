@@ -13165,8 +13165,15 @@ paths:
         key with the same request answers `202` with the session's current view and `Idempotency-Replayed: true`,
         creating nothing; the same key with another request or another effective member is 422 `idempotency_conflict`;
         concurrent requests with one key create one session and the others replay. A malformed key is 400
-        `invalid_request`. The key is optional until every client sends one; TeamCode requires it"
+        `invalid_request`. The key is optional until every client sends one; TeamCode requires it.
+        With `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.v1`), the effective member becomes the owner: the
+        profile assignment and the plan resolve for them, the session starts with `githubAccess: none` (its first
+        instructions are the creator's), and a profile whose environment requires GitHub is 422 `github_owner_consent`
+        (the owner creates that session themselves). A remote session (`kind: remote`) runs on the caller's own device
+        and is never created on behalf of another member (403 `on_behalf_forbidden`). `createdBy` records who created
+        it"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: Idempotency-Key
         in: header
         required: false
@@ -13255,6 +13262,7 @@ paths:
       description: "Once terminated, the waits its agent asked in it that are still open are cancelled, as when a
         session on a machine ends"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -13563,6 +13571,7 @@ paths:
       - runners
       summary: Pause a cloud session; the workspace is kept
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -13595,6 +13604,7 @@ paths:
       - runners
       summary: Resume a paused cloud session, within the plan's running cap and hours
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -13669,10 +13679,11 @@ paths:
       - runners
       summary: "Changes the session's GitHub access (`runners.cloud.github.v1`): `owner`, `shared` or `none`. Only the
         owner, signed in (console, app) or with the CLI's login, never a service key acting for them (403
-        `github_owner_only`); anyone else, 404. Turning access off waits for a pause (409 `session_not_paused`), because a
+        `github_owner_only`, also for an `Ostrom-On-Behalf-Of` naming the owner); anyone else, 404. Turning access off waits for a pause (409 `session_not_paused`), because a
         running agent keeps a token it already received until it expires; turning it on or sharing applies from the
         runner's next token renewal. Journaled `cloud.session.github_access_changed`"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -14729,6 +14740,7 @@ paths:
         `..._disabled`). The owner only, never on their behalf (403 `bypass_owner_only`); 409 `session_not_running`
         once terminated"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -19606,6 +19618,27 @@ components:
         organization (device, agent, runner, service key) acts in its own organization
       schema:
         type: string
+    OstromOnBehalfOf:
+      name: Ostrom-On-Behalf-Of
+      in: header
+      required: false
+      description: "Planned (`runners.cloud.onbehalf.v1`, TeamCode's `TeamCode-On-Behalf-Of`): the effective member of a
+        cloud session write, named by member id or by login (an id wins over a login that spells it), 1 to 64 characters
+        of `A-Za-z0-9._-`. Only an owner or an admin signed in (browser, app, `ostrom login`, a personal token) or an
+        administrator's service key with `cloud:admin` may name another member; on any other credential the header must
+        be absent or name the caller (403 `on_behalf_forbidden`). The target must be an active member of the
+        organization (422 `invalid_effective_member`, also for a login nobody has); several values or a malformed one
+        are 400 `invalid_on_behalf`. The header never grants a right of its own: the call acts on the effective
+        member's sessions with the caller's rights (an administrator's). Each creation, pause, resume and deletion is
+        journaled (`cloud.session.created`, `.paused`, `.resumed`, `.deleted`) with the caller as the actor, the
+        effective member and the credential (`effectiveMemberId`, `credentialId` of `listAudit`). GitHub access and the permission bypass are the owner's alone
+        (403 `github_owner_only`, `bypass_owner_only`). A server that does not announce the capability ignores the
+        header: a client checks the capability before sending it"
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: '^[A-Za-z0-9._-]+$'
   responses:
     GovernanceConfirmationPending:
       description: |-
@@ -21741,6 +21774,19 @@ components:
         keyId:
           type: string
           description: The instance key that signed it, `GET /api/v1/instance/keys` (`listAudit` only)
+        effectiveMemberId:
+          type:
+          - string
+          - 'null'
+          description: "The member the action was done for: the member an `Ostrom-On-Behalf-Of` named, otherwise the
+            actor; the session's owner for an entry of the server (`runners.cloud.onbehalf.v1`, `cloud.session.*`).
+            Absent from the other events"
+        credentialId:
+          type:
+          - string
+          - 'null'
+          description: "The id of the credential the actor used (a browser session, a token, a service key), never the
+            token itself (`runners.cloud.onbehalf.v1`, `cloud.session.*`). Absent from the other events"
         integrity:
           type: string
           enum:
@@ -22633,7 +22679,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `devices.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.inference.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.inference.v1`, `runners.cloud.model.v1`, `runners.cloud.onbehalf.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `discord.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
@@ -23495,12 +23541,35 @@ components:
             (`runners.cloud.remote.v1`)"
         host:
           $ref: '#/components/schemas/CloudSessionHost'
+        createdBy:
+          $ref: '#/components/schemas/CloudAttribution'
       required:
       - id
       - owner
       - agent
       - status
       - createdAt
+    CloudAttribution:
+      type: object
+      description: "Who created a cloud session (`runners.cloud.onbehalf.v1`, TeamCode's attribution): absent from a
+        session created before the feature"
+      properties:
+        initiatorId:
+          type: string
+          description: The member who made the request
+        credentialId:
+          type:
+          - string
+          - 'null'
+          description: "The id of the credential they used (a browser session, a token, a service key), never the token
+            itself; null when the server knows none"
+        effectiveMemberId:
+          type: string
+          description: "The member it was created for, its first owner: the initiator, unless `Ostrom-On-Behalf-Of`
+            named another member"
+      required:
+      - initiatorId
+      - effectiveMemberId
     CloudWorkspaceDeletion:
       type: object
       description: "The proof that a Kubernetes session's workspace is gone, provider volume included

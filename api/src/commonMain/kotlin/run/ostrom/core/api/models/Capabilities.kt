@@ -260,6 +260,15 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_INFERENCE: String = "runners.cloud.inference.v1"
 
     /**
+     * A cloud session write takes `Ostrom-On-Behalf-Of` as TeamCode's `TeamCode-On-Behalf-Of`: an owner or an admin
+     * signed in, or an administrator's `cloud:admin` service key, creates, pauses, resumes or deletes a member's
+     * session, named by id or login (403 `on_behalf_forbidden`, 422 `invalid_effective_member`, 400
+     * `invalid_on_behalf`); a session records `createdBy`, and `listAudit` the effective member and the credential of
+     * each `cloud.session.*` entry. A server without it ignores the header. Only with cloud runners.
+     */
+    public const val RUNNERS_CLOUD_ON_BEHALF: String = "runners.cloud.onbehalf.v1"
+
+    /**
      * A cloud session runs on an organization's cloud profile: `profileId` and `image` on
      * `POST /api/v1/cloud/sessions`, `profile` and `image` on the session, and the profile's cluster and namespace
      * checked again at each start. Only with cloud runners and [CLOUD_ADMIN].
@@ -475,7 +484,8 @@ public object ServerFeatures {
         INFERENCE_CANCEL, MCP, MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST,
         PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_CONVERSATION,
         RUNNERS_CLOUD_EFFORT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_FILES, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
-        RUNNERS_CLOUD_IDEMPOTENCY, RUNNERS_CLOUD_INFERENCE, RUNNERS_CLOUD_MODEL, RUNNERS_CLOUD_PERMISSIONS,
+        RUNNERS_CLOUD_IDEMPOTENCY, RUNNERS_CLOUD_INFERENCE, RUNNERS_CLOUD_MODEL, RUNNERS_CLOUD_ON_BEHALF,
+        RUNNERS_CLOUD_PERMISSIONS,
         RUNNERS_CLOUD_PERMISSIONS_BYPASS, RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_REMOTE, RUNNERS_CLOUD_REMOTE_DAEMON,
         RUNNERS_CLOUD_REMOTE_RESUME,
         RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS, RUNNERS_CLOUD_TRANSCRIPT_FEEDS,

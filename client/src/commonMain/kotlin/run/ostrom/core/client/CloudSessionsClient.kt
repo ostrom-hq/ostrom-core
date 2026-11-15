@@ -8,6 +8,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
 import run.ostrom.core.api.Idempotency
+import run.ostrom.core.api.OnBehalfOf
 import run.ostrom.core.api.models.CloudHost
 import run.ostrom.core.api.models.CloudSession
 import run.ostrom.core.api.models.CloudSessionPage
@@ -57,29 +58,52 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
      *   instead of starting a second one, on a server announcing `runners.cloud.idempotency.v1`; the same key with
      *   another request is [Idempotency.CONFLICT] (422). It must satisfy [Idempotency.isValid], else an
      *   [IllegalArgumentException] is thrown before any request.
+     * @param onBehalfOf The member the session is created for, by id or login ([OnBehalfOf.HEADER],
+     *   `runners.cloud.onbehalf.v1`): its owner. Only an administrator names another member; a server without the
+     *   capability ignores it, so check the capability first. It must satisfy [OnBehalfOf.isValid], else an
+     *   [IllegalArgumentException] is thrown before any request.
      */
-    public suspend fun create(request: CreateCloudSessionRequest, idempotencyKey: String? = null): CloudSession {
+    public suspend fun create(
+        request: CreateCloudSessionRequest,
+        idempotencyKey: String? = null,
+        onBehalfOf: String? = null,
+    ): CloudSession {
         require(idempotencyKey == null || Idempotency.isValid(idempotencyKey)) {
             "An idempotency key is 1 to ${Idempotency.MAX_LENGTH} characters of A-Za-z0-9._:-."
         }
+        requireReference(onBehalfOf)
         return transport.send(HttpMethod.Post, "/api/v1/cloud/sessions") {
             contentType(ContentType.Application.Json)
             if (idempotencyKey != null) header(Idempotency.KEY_HEADER, idempotencyKey)
+            if (onBehalfOf != null) header(OnBehalfOf.HEADER, onBehalfOf)
             setBody(request)
         }.body()
     }
 
-    /** Pauses a session, keeping its workspace (`POST /api/v1/cloud/sessions/{id}/pause`). */
-    public suspend fun pause(id: String): CloudSession = transport.json(HttpMethod.Post, "${path(id)}/pause")
+    /**
+     * Pauses a session, keeping its workspace (`POST /api/v1/cloud/sessions/{id}/pause`).
+     *
+     * @param onBehalfOf The session's owner, for an administrator's call on their behalf (see [create]).
+     */
+    public suspend fun pause(id: String, onBehalfOf: String? = null): CloudSession =
+        onBehalf(HttpMethod.Post, "${path(id)}/pause", onBehalfOf)
 
     /**
      * Resumes a paused session (`POST /api/v1/cloud/sessions/{id}/resume`): a retryable `preparation_failed` is tried
      * again this way.
+     *
+     * @param onBehalfOf The session's owner, for an administrator's call on their behalf (see [create]).
      */
-    public suspend fun resume(id: String): CloudSession = transport.json(HttpMethod.Post, "${path(id)}/resume")
+    public suspend fun resume(id: String, onBehalfOf: String? = null): CloudSession =
+        onBehalf(HttpMethod.Post, "${path(id)}/resume", onBehalfOf)
 
-    /** Terminates a session; its workspace is deleted (`DELETE /api/v1/cloud/sessions/{id}`). */
-    public suspend fun stop(id: String): CloudSession = transport.json(HttpMethod.Delete, path(id))
+    /**
+     * Terminates a session; its workspace is deleted (`DELETE /api/v1/cloud/sessions/{id}`).
+     *
+     * @param onBehalfOf The session's owner, for an administrator's call on their behalf (see [create]).
+     */
+    public suspend fun stop(id: String, onBehalfOf: String? = null): CloudSession =
+        onBehalf(HttpMethod.Delete, path(id), onBehalfOf)
 
     /** Turns the owner's standing approval of tool uses on or off (`PUT .../permission-bypass`). */
     public suspend fun setPermissionBypass(id: String, enabled: Boolean): CloudSession =
@@ -107,4 +131,15 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
     public suspend fun host(id: String): CloudHost = transport.json(HttpMethod.Post, "${path(id)}/host")
 
     private fun path(id: String) = "/api/v1/cloud/sessions/${segment(id)}"
+
+    private suspend fun onBehalf(method: HttpMethod, path: String, onBehalfOf: String?): CloudSession {
+        requireReference(onBehalfOf)
+        return transport.send(method, path) {
+            if (onBehalfOf != null) header(OnBehalfOf.HEADER, onBehalfOf)
+        }.body()
+    }
+
+    private fun requireReference(onBehalfOf: String?) = require(onBehalfOf == null || OnBehalfOf.isValid(onBehalfOf)) {
+        "A member is named by id or login: 1 to ${OnBehalfOf.MAX_LENGTH} characters of A-Za-z0-9._-."
+    }
 }

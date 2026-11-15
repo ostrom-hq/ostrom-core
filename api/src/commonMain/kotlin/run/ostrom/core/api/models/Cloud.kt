@@ -34,6 +34,7 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  * @property kind `cloud` (null: a pod the server starts) or `remote` (a member's device, `runners.cloud.remote.v1`),
  *   see [CloudSessionKinds].
  * @property host Where a remote session runs; null for a cloud session.
+ * @property createdBy Who created it (`runners.cloud.onbehalf.v1`); null for a session created before the feature.
  */
 @Serializable
 public data class CloudSession(
@@ -73,6 +74,23 @@ public data class CloudSession(
     val endedAt: String? = null,
     val kind: String? = null,
     val host: CloudSessionHost? = null,
+    val createdBy: CloudAttribution? = null,
+)
+
+/**
+ * Who created a cloud session (`runners.cloud.onbehalf.v1`, TeamCode's attribution).
+ *
+ * @property initiatorId The member who made the request.
+ * @property credentialId The id of the credential they used (a browser session, a token, a service key), never the
+ *   token itself; null when the server knows none.
+ * @property effectiveMemberId The member it was created for, its first owner: the initiator, unless
+ *   [run.ostrom.core.api.OnBehalfOf.HEADER] named another member.
+ */
+@Serializable
+public data class CloudAttribution(
+    val initiatorId: String,
+    val credentialId: String? = null,
+    val effectiveMemberId: String,
 )
 
 /**

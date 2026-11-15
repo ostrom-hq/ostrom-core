@@ -1515,6 +1515,25 @@
       "shell"
     ]
   },
+  "CloudAttribution": {
+    "properties": {
+      "initiatorId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "credentialId": {
+        "type": "string",
+        "required": false,
+        "nullable": true
+      },
+      "effectiveMemberId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "CloudEnvironment": {
     "properties": {
       "repositories": {
@@ -2066,6 +2085,13 @@
       "host": {
         "type": {
           "ref": "CloudSessionHost"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "createdBy": {
+        "type": {
+          "ref": "CloudAttribution"
         },
         "required": false,
         "nullable": false
