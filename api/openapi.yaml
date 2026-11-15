@@ -24785,8 +24785,11 @@ components:
       properties:
         kind:
           type: string
-          enum: [setting, secret, server, policy, assignment, account, workflow, editors, automation]
-          description: Clients keep an unknown kind as UNKNOWN
+          enum: [setting, secret, server, policy, assignment, account, workflow, editors, automation, skill, hook,
+            variable, decision, exclusion]
+          description: "Clients keep an unknown kind as UNKNOWN. `variable`: an environment variant; `decision`: a
+            member's decision on a skill or a hook; `exclusion`: a member excluded from an environment variable;
+            `assignment` also names a member's environment variable selection"
         name:
           type: string
         action:
@@ -26853,6 +26856,205 @@ components:
             type: string
       required:
       - mode
+      x-ostrom-kotlin: pending
+    TeamCodeArtifactFile:
+      type: object
+      description: One file of a TeamCode skill or hook version
+      properties:
+        path:
+          type: string
+          description: "Relative, unique in its version ignoring case; the catalog refuses an absolute path, `..` or a
+            duplicate as on publication, and the report says the item skipped"
+        mode:
+          type: string
+          enum: [file, executable]
+        content:
+          type: string
+          format: byte
+          description: The file's bytes, base64
+      required:
+      - path
+      - mode
+      - content
+      x-ostrom-kotlin: pending
+    TeamCodeDecision:
+      type: object
+      description: A TeamCode member's explicit decision on a skill or a hook (a cleared one is not sent)
+      properties:
+        memberId:
+          type: string
+        decision:
+          type: string
+          enum: [allow, deny]
+      required:
+      - memberId
+      - decision
+      x-ostrom-kotlin: pending
+    TeamCodeSkill:
+      type: object
+      description: "A TeamCode skill with the versions the CLI read: its pinned version, or its latest one when none is
+        pinned; the server publishes them, pins `pinnedVersion` and sets the audience and the decisions. A personal
+        skill (`ownerId`) is published as its mapped owner's personal skill"
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        ownerId:
+          type: string
+          description: The TeamCode member a personal skill belongs to; absent for a team skill
+        allMembers:
+          type: boolean
+        retired:
+          type: boolean
+          description: Retired in TeamCode; it is not imported
+        pinnedVersion:
+          type: string
+          description: "One of `versions` (the CLI always sends it); absent, the skill stays unpinned as in TeamCode"
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeSkillVersion'
+        omittedVersions:
+          type: integer
+          description: How many of its other versions were not sent (the report says so)
+        decisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeDecision'
+      required:
+      - id
+      - name
+      x-ostrom-kotlin: pending
+    TeamCodeSkillVersion:
+      type: object
+      properties:
+        version:
+          type: string
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeArtifactFile'
+      required:
+      - version
+      - files
+      x-ostrom-kotlin: pending
+    TeamCodeHook:
+      type: object
+      description: "A TeamCode hook with the versions the CLI read (its pinned one, or its latest). TeamCode's hooks are
+        the team's only (no personal hook, no retirement); a hook reaches members only through its pinned version and
+        its audience, as in TeamCode"
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        allMembers:
+          type: boolean
+        pinnedVersion:
+          type: string
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeHookVersion'
+        omittedVersions:
+          type: integer
+        decisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeDecision'
+      required:
+      - id
+      - name
+      x-ostrom-kotlin: pending
+    TeamCodeHookVersion:
+      type: object
+      properties:
+        version:
+          type: string
+        events:
+          type: array
+          description: Claude Code's event names; one Ostrom does not run makes the report skip the hook
+          items:
+            type: string
+        matcher:
+          type: string
+        command:
+          type: string
+        timeoutSeconds:
+          type: integer
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamCodeArtifactFile'
+      required:
+      - version
+      - events
+      - command
+      - timeoutSeconds
+      - files
+      x-ostrom-kotlin: pending
+    TeamCodeVariable:
+      type: object
+      description: "A TeamCode environment variant: one value for one environment variable. A personal one
+        (`ownerId`) becomes its mapped owner's personal variant"
+      properties:
+        id:
+          type: string
+        variable:
+          type: string
+          description: The environment variable it fills (TeamCode's `target`)
+        name:
+          type: string
+        binding:
+          type: string
+          enum: [shared, perMember]
+        ownerId:
+          type: string
+        value:
+          type: string
+          writeOnly: true
+          format: password
+          description: "The shared value, in clear: required for `shared`, refused for `perMember` (the report skips
+            the variant, as the environment module refuses it on creation)"
+      required:
+      - id
+      - variable
+      - name
+      - binding
+      x-ostrom-kotlin: pending
+    TeamCodeVariableAssignment:
+      type: object
+      properties:
+        memberId:
+          type: string
+        variantId:
+          type: string
+        source:
+          type: string
+          enum: [direct, bulk]
+        memberValue:
+          type: string
+          writeOnly: true
+          format: password
+          description: "The member's own value, for a per-member variant, in clear (required there; ignored for a
+            shared variant)"
+      required:
+      - memberId
+      - variantId
+      x-ostrom-kotlin: pending
+    TeamCodeVariableExclusion:
+      type: object
+      description: "A member excluded from an environment variable, by its exact name (as TeamCode keys it); a
+        reserved name is refused as on an exclusion in Ostrom"
+      properties:
+        memberId:
+          type: string
+        variable:
+          type: string
+      required:
+      - memberId
+      - variable
       x-ostrom-kotlin: pending
     TokenScope:
       type: object
@@ -29513,6 +29715,36 @@ components:
           description: The cloud profiles the workflows and automations name (planned)
           items:
             $ref: '#/components/schemas/TeamCodeProfile'
+        skills:
+          type: array
+          description: "TeamCode's skills (the CLI sends the skills and hooks in several requests when they would pass
+            the import's body limit: each run imports what its request holds and removes nothing else). TeamCode's skills (`skills`, `skill_versions`, `skill_files`, `skill_assignments`); the server
+            publishes them through the skill catalog, idempotently (a version already published with the same content
+            is unchanged)"
+          items:
+            $ref: '#/components/schemas/TeamCodeSkill'
+        hooks:
+          type: array
+          description: "TeamCode's hooks (`hooks`, `hook_versions`, `hook_files`, `hook_assignments`), published
+            through the hook catalog"
+          items:
+            $ref: '#/components/schemas/TeamCodeHook'
+        variables:
+          type: array
+          description: "TeamCode's environment variants (`variants` of kind `ENV`), values in clear (sent once, over
+            TLS) and sealed by the server; a reserved variable name is refused as on creation"
+          items:
+            $ref: '#/components/schemas/TeamCodeVariable'
+        variableAssignments:
+          type: array
+          description: "TeamCode's `variant_assignments` of kind `ENV`"
+          items:
+            $ref: '#/components/schemas/TeamCodeVariableAssignment'
+        variableExclusions:
+          type: array
+          description: "TeamCode's `variant_exclusions` of kind `ENV`"
+          items:
+            $ref: '#/components/schemas/TeamCodeVariableExclusion'
         memberMap:
           type: object
           description: TeamCode member id to Ostrom member id (`Member.id`); unmapped members are skipped
