@@ -14968,7 +14968,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: uploadCloudFile
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Upload a file for the next message (an image, a PDF or UTF-8 text)
@@ -15043,7 +15043,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getCloudFilePolicy
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "Whether the caller's organization can send files to sessions now, and its limits"
@@ -15403,12 +15403,14 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: cloudRunnerFile
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The bytes of a file a message delivered to this very execution carries"
       description: "`runners.cloud.files.v1` (TeamCode's `GET /cloud/runner/files/{id}`), with `X-Ostrom-Sha256`. 404
-        for any other file, 409 `execution_fenced` for another epoch"
+        for any other file (only a message delivered to this execution and not yet acknowledged carries it), 409
+        `execution_fenced` for another execution, 410 `file_expired` once its bytes are deleted, 503
+        `file_storage_unavailable` when the bucket fails"
       parameters:
       - name: id
         in: path
@@ -15443,6 +15445,10 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '410':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
   /api/v1/artifacts:
     parameters:
