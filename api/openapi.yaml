@@ -13632,7 +13632,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: hostCloudSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Open the next execution of a remote session, from its device
