@@ -125,6 +125,9 @@ public enum class AnswerChannel(override val wire: String) : WireName {
     /** Slack. */
     SLACK("slack"),
 
+    /** Discord. */
+    DISCORD("discord"),
+
     /** The CLI. */
     CLI("cli"),
 }

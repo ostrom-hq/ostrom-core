@@ -3679,6 +3679,49 @@
       "emitted_to_hook"
     ]
   },
+  "DiscordLink": {
+    "properties": {
+      "memberId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "configured": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "linked": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "discordUserId": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "discordUsername": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "linkedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "DiscordLinkStart": {
+    "properties": {
+      "authorizeUrl": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
   "DropTodoItemRequest": {
     "properties": {
       "sessionId": {

@@ -21,7 +21,7 @@ info:
     console''s, or `OSTROM_ALLOWED_ORIGINS`), or is refused with 403.
 
     Every route is under `/api/v1`, except `/health` and the incoming webhooks (`/webhooks/stripe`, `/webhooks/github`,
-    `/webhooks/slack`), each authenticated by its sender''s signature.
+    `/webhooks/slack`, `/webhooks/discord`), each authenticated by its sender''s signature.
 
     A route without `orgs/{orgId}` in its path acts in the caller''s organization. A person who is a member of several
     organizations names it with the `Ostrom-Org` header (the organization''s id); without it they get 409 with
@@ -3195,6 +3195,183 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /webhooks/discord:
+    post:
+      operationId: receiveDiscordInteraction
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: 'Discord interactions (the Reject button of a yes request, and the PING Discord sends when the URL is
+        saved). Called by Discord only, authenticated by `X-Signature-Ed25519` (Ed25519 of `X-Signature-Timestamp` +
+        the raw body, with the application''s public key) with a timestamp at most 5 minutes old'
+      description: 'The interactions endpoint URL of the instance''s Discord application (`discord.v1`), checked with the
+        public key of the `discord` settings section, exactly as Discord specifies: a bad signature, a timestamp more
+        than 5 minutes away, or Discord not configured is 401, before the interaction is read (a body over 64 KiB is
+        400, unread). A
+        PING (type 1) answers `{"type":1}`. Reject answers no for the approver whose Discord account clicked it (the
+        member who linked that `discordUserId` in the request''s organization, answer channel `discord`), and the
+        response itself updates the message (type 7, UPDATE_MESSAGE) with the outcome; anyone else''s click answers
+        an ephemeral message (type 4) and changes nothing. Approve is a link button to the console''s page of the
+        request (`/yes/{approvalId}`): a yes always needs a fresh proof of who the approver is (S2-54), which a
+        Discord click is not, so no yes is ever given here and Discord sends no interaction for it. Once a request is
+        decided on any channel, the approvers'' messages lose their buttons'
+      security: []
+      parameters:
+      - name: X-Signature-Ed25519
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Signature-Timestamp
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: The interaction, as Discord sends it
+              properties:
+                type:
+                  type: integer
+                  description: 1 PING, 3 MESSAGE_COMPONENT (a button)
+              required:
+              - type
+      responses:
+        '200':
+          description: The interaction response (`type` 1 PONG, 4 a message to the clicker only, or 7 the updated
+            message)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: integer
+                  data:
+                    type: object
+                required:
+                - type
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+  /api/v1/discord/link:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: getDiscordLink
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: "The caller's own Discord link in the organization (`discord.v1`): the Discord account their notifications
+        and yes requests go to as direct messages. A person's interactive login only (a browser session, the unlocked
+        app or `ostrom login`); a service key, an agent or a device token is 403. Works while Discord is not configured
+        (`configured` false), so a member can still see and remove a link. 404 and 409 are the organization's
+        resolution (`Ostrom-Org`)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordLink'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: linkDiscord
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: "Starts linking the caller's Discord account: the URL of Discord's authorization (OAuth2, scope
+        `identify`) to open in the same browser"
+      description: "A browser session only (the console), 403 otherwise: Discord proves which account the person
+        holds by signing them in, and the attempt is bound to the browser session that started it. The answer carries
+        Discord's authorization URL with a single-use `state` whose hash is stored with the caller's organization and
+        member for 10 minutes; Discord then returns to `discordLinkCallback`, which must be registered as a redirect of
+        the instance's Discord application. Nobody types a Discord id, so nobody links another person's account. 409
+        `discord_not_configured` while the `discord` settings section misses the bot token, the application id, the
+        client secret or the server (guild) id. Starting again replaces an unfinished attempt; an existing link stays
+        until the new one is stored"
+      responses:
+        '200':
+          description: Where to send the browser
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordLinkStart'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unlinkDiscord
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: "Removes the caller's own Discord link; 204 also when not linked. Nothing more is sent to that Discord
+        account, and a Reject from a message sent before changes nothing. 404 and 409 are the organization's
+        resolution (`Ostrom-Org`)"
+      responses:
+        '204':
+          description: Unlinked, or nothing to unlink
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/discord/link/callback:
+    get:
+      operationId: discordLinkCallback
+      x-ostrom-status: planned
+      tags:
+      - notifications
+      summary: "Discord's return from a link (`<OSTROM_PUBLIC_URL>/api/v1/discord/link/callback`, a redirect of the
+        instance's Discord application). The single-use state identifies the attempt and its member, and must come
+        back with the browser session that started it: a link opened in another browser binds nothing
+        (`discord_link_browser_mismatch`). The code is exchanged for the Discord account (`identify`), which must be a
+        member of the instance's Discord server, since a bot only writes to a person it shares a server with. Once
+        stored, the account is told by a direct message that it now receives this member's notifications (best
+        effort). The browser is always sent back to the console's `/me/notifications` page with `discord=linked` or
+        `discord=<error.type>` (`discord_link_not_found`, `discord_link_browser_mismatch`, `discord_link_denied`,
+        `discord_user_taken`, `discord_not_in_guild`, `discord_not_configured`, `discord_unreachable`): this route
+        never answers with an error body"
+      parameters:
+      - name: code
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: error
+        in: query
+        required: false
+        schema:
+          type: string
+      security: []
+      responses:
+        '302':
+          description: Redirect to the console
   /api/v1/github/checks:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -22455,7 +22632,7 @@ components:
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `devices.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
         `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.inference.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
-        `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
+        `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `discord.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
         ignores a key it does not know."
@@ -27293,6 +27470,44 @@ components:
       - memberId
       - configured
       - linked
+    DiscordLink:
+      type: object
+      description: "A member's Discord link: the Discord account their notifications (channel `discord`) and yes
+        requests go to as direct messages. At most one per member of an organization, and one member per Discord
+        account in an organization"
+      properties:
+        memberId:
+          type: string
+        configured:
+          type: boolean
+          description: Whether the instance's Discord application is configured (the `discord` settings section's bot
+            token, application id, public key, client secret and server id)
+        linked:
+          type: boolean
+        discordUserId:
+          type: string
+          description: The Discord user (a snowflake)
+        discordUsername:
+          type: string
+          description: The account's Discord username when it was linked
+        linkedAt:
+          type: string
+          description: ISO time the member linked it
+      required:
+      - memberId
+      - configured
+      - linked
+    DiscordLinkStart:
+      type: object
+      description: "The start of a Discord link (`linkDiscord`): Discord's authorization URL, to open in the browser that
+        asked for it"
+      properties:
+        authorizeUrl:
+          type: string
+          description: "`https://discord.com/oauth2/authorize?...` with scope `identify` and a single-use `state`, valid
+            10 minutes"
+      required:
+      - authorizeUrl
     SkillArtifact:
       type: object
       description: "The files of one effective version; the digest is recomputable from their metadata"

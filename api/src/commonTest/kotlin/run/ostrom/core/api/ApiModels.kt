@@ -116,6 +116,8 @@ import run.ostrom.core.api.models.RefuseDaemonOrderRequest
 import run.ostrom.core.api.models.ResumableSession
 import run.ostrom.core.api.models.ResumableSessionPage
 import run.ostrom.core.api.models.SlackLink
+import run.ostrom.core.api.models.DiscordLink
+import run.ostrom.core.api.models.DiscordLinkStart
 import run.ostrom.core.api.models.Directive
 import run.ostrom.core.api.models.DirectiveClaim
 import run.ostrom.core.api.models.DirectiveClaimRequest
@@ -411,6 +413,8 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GitHubDeviceLinkPoll.serializer(),
     GitHubLink.serializer(),
     SlackLink.serializer(),
+    DiscordLink.serializer(),
+    DiscordLinkStart.serializer(),
     Directive.serializer(),
     DirectiveClaim.serializer(),
     DirectiveClaimRequest.serializer(),
