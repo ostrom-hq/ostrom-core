@@ -1,8 +1,8 @@
 # The typed client (`client`)
 
-`run.ostrom:ostrom-client` is the typed Kotlin client of the server API, over the contract of `api`
-(`run.ostrom.core.api.models`; the routes are those of the OpenAPI document ostrom-server generates). The companion app (Kotlin Multiplatform, Compose
-Multiplatform, in `ostrom-app`) uses it on Android, iOS and the desktop; the CLI will move to it later (see
+`run.ostrom:ostrom-client` is the typed Kotlin client of the server API, over the models of `api`
+(`run.ostrom.core.api.models`). Its routes are those of the OpenAPI document ostrom-server generates. The companion
+app (Kotlin Multiplatform, Compose Multiplatform, in `ostrom-app`) uses it on Android, iOS and the desktop; the CLI will move to it later (see
 [The CLI](#the-cli)). Its contract follows teamcode's `TeamCodeClient` (`teamcode:docs/companion.md`, "Client
 contract"), from which the origin check, the failure mapping, the event-stream reader and the network failure classes
 are ported (Apache-2.0).
