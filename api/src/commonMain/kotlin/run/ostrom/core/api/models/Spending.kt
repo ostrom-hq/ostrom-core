@@ -62,7 +62,7 @@ public data class SpendingDay(
 /**
  * A budget spent past its limit in its current day or month.
  *
- * @property scope `organization`, `member`, or `workflow` (planned).
+ * @property scope `organization`, `member` or `workflow`.
  * @property subject For `member`, the member's id; for `workflow`, the workflow's id.
  * @property period `day` or `month`.
  * @property usd The limit in US dollars.
