@@ -2173,7 +2173,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listResumableSessions
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The Claude Code conversations of a device's folder a session can continue"

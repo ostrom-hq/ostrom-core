@@ -107,6 +107,7 @@ GET /api/v1/confirmations/{}
 GET /api/v1/decisions
 GET /api/v1/devices
 GET /api/v1/devices/{}/folders
+GET /api/v1/devices/{}/folders/{}/resumable
 GET /api/v1/directives/current
 GET /api/v1/directives/preview
 GET /api/v1/discord/link
