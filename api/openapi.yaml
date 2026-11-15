@@ -13767,6 +13767,47 @@ paths:
           $ref: '#/components/responses/Error'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /api/v1/cloud/runner/inference:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: issueRunnerInference
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The runner of a cloud session asks for the execution's inference credential (`runners.cloud.inference.v1`,
+        TeamCode's `POST /cloud/runner/inference`): an agent token of the launch the runner opened for this execution,
+        limited to inference, lasting one hour (`expiresInMillis`). The runner keeps it in memory only, renews it after a
+        third of its lifetime and forwards the agent's model calls through its loopback proxy, so the agent only holds
+        the proxy's random local token. The server keeps at most the current credential and the one before it per
+        execution, deletes them in the write that ends the execution and purges expired ones every minute. Only the
+        runner of the current execution of a session that runs (`creating`, `resuming`, `running`, `pausing`) and
+        opened its launch: 409 `execution_fenced` for another execution, 409 `inference_unavailable` otherwise (a shell
+        session, no launch open). A server without the route answers 404: the agent then runs with its own provider
+        configuration. `Cache-Control: no-store`; never logged or journaled"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerExecution'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunnerInferenceCredential'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/runner/checks:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -22325,7 +22366,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `devices.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.inference.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
@@ -26980,6 +27021,26 @@ components:
       required:
       - sessionId
       - epoch
+      x-ostrom-kotlin: pending
+    RunnerInferenceCredential:
+      type: object
+      description: "The execution's inference credential, for the runner's memory only"
+      properties:
+        token:
+          type: string
+          description: The credential, sent as the bearer of the agent's model calls by the runner's proxy
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the server stops accepting it
+        expiresInMillis:
+          type: integer
+          format: int64
+          description: Its lifetime from now, which the runner measures on its own clock (renewed after a third)
+      required:
+      - token
+      - expiresAt
+      - expiresInMillis
       x-ostrom-kotlin: pending
     RunnerArtifactRequest:
       type: object
