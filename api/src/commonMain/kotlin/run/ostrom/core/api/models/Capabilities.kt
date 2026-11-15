@@ -348,7 +348,7 @@ public object ServerFeatures {
     public const val SLACK: String = "slack.v1"
 
     /**
-     * The Discord integration is in the server (planned): a member's Discord link (`/api/v1/discord/link`, linked by
+     * The Discord integration is in the server: a member's Discord link (`/api/v1/discord/link`, linked by
      * Discord's OAuth2 `identify`, whose `configured` says whether an administrator filled the `discord` settings
      * section), the `discord` notification channel, and yes requests with a Reject button answered at
      * `/webhooks/discord`.
