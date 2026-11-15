@@ -22461,6 +22461,7 @@ components:
           description: Where the binary is in `runnerImage`, `/usr/local/bin/ostrom` by default
         sessionImage:
           type: string
+          minLength: 1
           description: "The image the containers of a Docker or registered session run (the agents, git, the
             session's accounts): the stored image, else `docker.io/ostromhq/ostrom-session:latest`. Only Docker and
             registered sessions use it; a Kubernetes session runs its profile's image"
