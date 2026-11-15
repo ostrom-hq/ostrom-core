@@ -213,6 +213,9 @@ GET /api/v1/tokens/scopes
 GET /api/v1/usage
 GET /api/v1/usage/events
 GET /api/v1/usage/live
+GET /api/v1/usage/pending
+GET /api/v1/usage/reconciliations
+GET /api/v1/usage/reservations/{}
 GET /api/v1/usage/summary
 GET /api/v1/waits
 GET /api/v1/waits/{}
@@ -384,6 +387,7 @@ POST /api/v1/todos/session/stop
 POST /api/v1/tokens
 POST /api/v1/tokens/{}/rotate
 POST /api/v1/usage/events
+POST /api/v1/usage/reservations/{}/reconcile
 POST /api/v1/waits
 POST /api/v1/waits/mcp
 POST /api/v1/waits/wake

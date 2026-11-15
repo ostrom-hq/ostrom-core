@@ -11824,7 +11824,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listPendingUsage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Unknown usage awaiting review (`capacity.usagereconciliation.v1`)
@@ -11878,7 +11878,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listUsageReconciliations
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Reconciliation history (`capacity.usagereconciliation.v1`)
@@ -11926,7 +11926,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getUsageReview
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: One hold under review, or its correction (`capacity.usagereconciliation.v1`)
@@ -11961,7 +11961,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: reconcileUsage
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Replace an unknown charge with what the provider billed (`capacity.usagereconciliation.v1`)
