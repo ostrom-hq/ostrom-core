@@ -22,6 +22,17 @@ class DiscordModelsTest {
         val start = DiscordLinkStart("https://discord.com/oauth2/authorize?state=s")
         val text = Json.encodeToString(DiscordLinkStart.serializer(), start)
         assertEquals("""{"authorizeUrl":"https://discord.com/oauth2/authorize?state=s"}""", text)
+        assertEquals(start, Json.decodeFromString(DiscordLinkStart.serializer(), text))
+    }
+
+    @Test
+    fun aLinkedAccountKeepsItsFields() {
+        val link = DiscordLink("m1", true, true, "80351110224678912", "nelly", "2026-11-15T10:00:00Z")
+        val text = Json.encodeToString(DiscordLink.serializer(), link)
+        val expected = """{"memberId":"m1","configured":true,"linked":true,"discordUserId":"80351110224678912",""" +
+            """"discordUsername":"nelly","linkedAt":"2026-11-15T10:00:00Z"}"""
+        assertEquals(expected, text)
+        assertEquals(link, Json.decodeFromString(DiscordLink.serializer(), text))
     }
 
     @Test

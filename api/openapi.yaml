@@ -3205,9 +3205,9 @@ paths:
         saved). Called by Discord only, authenticated by `X-Signature-Ed25519` (Ed25519 of `X-Signature-Timestamp` +
         the raw body, with the application''s public key) with a timestamp at most 5 minutes old'
       description: 'The interactions endpoint URL of the instance''s Discord application (`discord.v1`), checked with the
-        public key of the `discord` settings section, exactly as Discord specifies: a bad signature, a timestamp more
-        than 5 minutes away, or Discord not configured is 401, before the interaction is read (a body over 64 KiB is
-        400, unread). A
+        public key of the `discord` settings section, exactly as Discord specifies. A body over 64 KiB is 400 first,
+        unread and unverified; then a bad signature, a timestamp more than 5 minutes away, or Discord not configured
+        is 401, before the interaction is parsed. A
         PING (type 1) answers `{"type":1}`. Reject answers no for the approver whose Discord account clicked it (the
         member who linked that `discordUserId` in the request''s organization, answer channel `discord`), and the
         response itself updates the message (type 7, UPDATE_MESSAGE) with the outcome; anyone else''s click answers
@@ -3300,8 +3300,9 @@ paths:
         member for 10 minutes; Discord then returns to `discordLinkCallback`, which must be registered as a redirect of
         the instance's Discord application. Nobody types a Discord id, so nobody links another person's account. 409
         `discord_not_configured` while the `discord` settings section misses the bot token, the application id, the
-        client secret or the server (guild) id. Starting again replaces an unfinished attempt; an existing link stays
-        until the new one is stored"
+        client secret or the server (guild) id; 404 and 409 are otherwise the organization's resolution
+        (`Ostrom-Org`). Starting again replaces an unfinished attempt; an existing link stays until the new one is
+        stored"
       responses:
         '200':
           description: Where to send the browser
@@ -3350,8 +3351,9 @@ paths:
         stored, the account is told by a direct message that it now receives this member's notifications (best
         effort). The browser is always sent back to the console's `/me/notifications` page with `discord=linked` or
         `discord=<error.type>` (`discord_link_not_found`, `discord_link_browser_mismatch`, `discord_link_denied`,
-        `discord_user_taken`, `discord_not_in_guild`, `discord_not_configured`, `discord_unreachable`): this route
-        never answers with an error body"
+        `discord_user_taken`, `discord_not_in_guild`, `discord_not_configured`, `discord_unreachable`; a missing or
+        unknown state is `discord_link_not_found`, whatever else comes with it): this route never answers with an
+        error body"
       parameters:
       - name: code
         in: query
