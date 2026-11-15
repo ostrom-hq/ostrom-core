@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 package run.ostrom.core.client
 
+import io.ktor.client.call.body
+import io.ktor.client.request.header
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
+import run.ostrom.core.api.Idempotency
 import run.ostrom.core.api.models.CloudSession
 import run.ostrom.core.api.models.CloudSessionPage
 import run.ostrom.core.api.models.CreateCloudSessionRequest
@@ -37,9 +43,23 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
     /**
      * Starts a cloud session (`POST /api/v1/cloud/sessions`), with the legacy single repository or an environment
      * recipe (`runners.cloud.environment.v1`).
+     *
+     * @param idempotencyKey One [Idempotency.newKey] per press, reused for each retry of it: a create repeated with the
+     *   same key and request (an answer was lost) returns the session it created (`202`, [Idempotency.REPLAYED_HEADER])
+     *   instead of starting a second one, on a server announcing `runners.cloud.idempotency.v1`; the same key with
+     *   another request is [Idempotency.CONFLICT] (422). It must satisfy [Idempotency.isValid], else an
+     *   [IllegalArgumentException] is thrown before any request.
      */
-    public suspend fun create(request: CreateCloudSessionRequest): CloudSession =
-        transport.jsonBody(HttpMethod.Post, "/api/v1/cloud/sessions", request)
+    public suspend fun create(request: CreateCloudSessionRequest, idempotencyKey: String? = null): CloudSession {
+        require(idempotencyKey == null || Idempotency.isValid(idempotencyKey)) {
+            "An idempotency key is 1 to ${Idempotency.MAX_LENGTH} characters of A-Za-z0-9._:-."
+        }
+        return transport.send(HttpMethod.Post, "/api/v1/cloud/sessions") {
+            contentType(ContentType.Application.Json)
+            if (idempotencyKey != null) header(Idempotency.KEY_HEADER, idempotencyKey)
+            setBody(request)
+        }.body()
+    }
 
     /** Pauses a session, keeping its workspace (`POST /api/v1/cloud/sessions/{id}/pause`). */
     public suspend fun pause(id: String): CloudSession = transport.json(HttpMethod.Post, "${path(id)}/pause")

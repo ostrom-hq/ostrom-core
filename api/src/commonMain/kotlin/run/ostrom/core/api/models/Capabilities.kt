@@ -245,6 +245,13 @@ public object ServerFeatures {
     public const val RUNNERS_CLOUD_HOOKS: String = "runners.cloud.hooks.v1"
 
     /**
+     * A cloud session's creation takes an `Idempotency-Key` as TeamCode's: the same key and request replay the session
+     * (`202`, `Idempotency-Replayed: true`), the same key with another request is 422 `idempotency_conflict`; records
+     * are kept 24 hours. Only with cloud runners.
+     */
+    public const val RUNNERS_CLOUD_IDEMPOTENCY: String = "runners.cloud.idempotency.v1"
+
+    /**
      * A cloud session runs on an organization's cloud profile: `profileId` and `image` on
      * `POST /api/v1/cloud/sessions`, `profile` and `image` on the session, and the profile's cluster and namespace
      * checked again at each start. Only with cloud runners and [CLOUD_ADMIN].
@@ -431,7 +438,8 @@ public object ServerFeatures {
         INFERENCE_CANCEL, MCP, MCP_PERSONAL, MEMORY, NOTIFICATIONS, NOTIFICATIONS_PUSH, NOTIFICATIONS_PUSH_TEST,
         PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_CONVERSATION,
         RUNNERS_CLOUD_EFFORT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_FILES, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
-        RUNNERS_CLOUD_MODEL, RUNNERS_CLOUD_PERMISSIONS, RUNNERS_CLOUD_PERMISSIONS_BYPASS, RUNNERS_CLOUD_PROFILES,
+        RUNNERS_CLOUD_IDEMPOTENCY, RUNNERS_CLOUD_MODEL, RUNNERS_CLOUD_PERMISSIONS, RUNNERS_CLOUD_PERMISSIONS_BYPASS,
+        RUNNERS_CLOUD_PROFILES,
         RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS, RUNNERS_CLOUD_TRANSCRIPT_FEEDS,
         RUNNERS_CLOUD_TRANSCRIPT_LIVE, RUNNERS_CLOUD_TRANSFER,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS,
