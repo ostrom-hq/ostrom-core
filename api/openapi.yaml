@@ -1859,7 +1859,7 @@ paths:
         organization, its live tokens of `ostrom login --admin` (`kind: admin`, with `orgId`, `scopes` and `expiresAt`):
         the caller's own for a member, every member's for an owner or an admin. Such a token is bound to its organization
         and only listed when the request names it; the console asks once per organization. A member of another
-        organization gets 404. With `devices.v1` (planned): the caller's registered devices (one per installation of
+        organization gets 404. With `devices.v1`: the caller's registered devices (one per installation of
         the CLI, with `createdAt`, `lastLoginAt`, `activeSessions`, `current` and `osVersion`), then the tokens of
         CLIs older than that, each on its own; the CLI's own sign-in may read it too (`ostrom devices list`), an
         agent's token or a service key may not (403)."
@@ -1885,7 +1885,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     patch:
       operationId: renameDevice
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: Rename a device
@@ -1929,7 +1929,7 @@ paths:
       description: "A browser session only (with `devices.v1`, also the CLI's own sign-in, see below). Revokes one of the caller's CLI tokens, or a token of `ostrom login --admin`
         of the organization `Ostrom-Org` names: a member their own, an owner or an admin any member's (a leaked token, a
         member who left). Audited in that organization, naming the actor and the token's owner. Another member's for a
-        member, a token of another organization, a personal token or a service key: 404. With `devices.v1` (planned):
+        member, a token of another organization, a personal token or a service key: 404. With `devices.v1`:
         a registered device's id removes the device and signs every one of its sign-ins out at once (a copied
         configuration included); the CLI's own sign-in may call it too, and removing the device it runs on signs it
         out (`ostrom login` again). Its next sign-in registers the installation again, under a new id."
@@ -1952,12 +1952,286 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+  /api/v1/devices/current/daemon/poll:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: pollDeviceDaemon
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: The device daemon's long poll for the sessions to host
+      description: "With `runners.cloud.remote.daemon.v1`. The CLI's sign-in, bound to a device (422 `daemon_requires_device`
+        otherwise); marks the device's daemon online with its version and features. Answers the device's sessions that
+        carry a folder, wait for a host and should run (`creating`, `resuming`, `preparing`), oldest first, at most 16,
+        and the listings members wait for; waits up to `waitMillis` (at most 20 s) for one. Poll again at once"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DaemonPollRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaemonPoll'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /api/v1/devices/current/daemon:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    delete:
+      operationId: stopDeviceDaemon
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: The device daemon stops, the device is offline at once
+      description: "With `runners.cloud.remote.daemon.v1`. The CLI's sign-in, bound to a device (422 `daemon_requires_device`)"
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /api/v1/devices/current/daemon/sessions/{id}/refuse:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: refuseDaemonOrder
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: The device daemon refuses to host a session
+      description: "With `runners.cloud.remote.daemon.v1`. The session ends with `failure.code` `host_refused` and the reason code
+        (`[a-z_]{1,64}`) in its message. 409 `not_waiting_host` once it no longer waits, 409 `remote_host_mismatch` from
+        another device"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefuseDaemonOrderRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSession'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /api/v1/devices/current/daemon/listings/{id}:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: answerDaemonListing
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: The device daemon answers a listing of a folder's conversations
+      description: "With `runners.cloud.remote.resume.v1`. The page (at most the listing's limit, titles at most 80 characters) or a
+        refusal code. Titles are never logged. A listing nobody waits for any more (30 s): 404 `listing_not_found`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DaemonListingAnswer'
+      responses:
+        '204':
+          description: Done
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /api/v1/devices/current/folders:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    put:
+      operationId: publishDeviceFolders
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The folders the caller's device offers for sessions started elsewhere"
+      description: "With `runners.cloud.remote.daemon.v1`. Replaces the list, at most 64 folders (ids `[A-Za-z0-9_-]{1,64}`, unique;
+        names a directory's last segment), 400 `invalid_folders` otherwise. The CLI's sign-in, bound to a device"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishDeviceFoldersRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeviceFolder'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /api/v1/devices/{id}/folders:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listDeviceFolders
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "A device's daemon and published folders"
+      description: "With `runners.cloud.remote.daemon.v1`. The caller's own device only, whoever the caller is (404 `device_not_found`
+        otherwise)"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceFolders'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/devices/{id}/folders/{folderId}/resumable:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    get:
+      operationId: listResumableSessions
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: "The Claude Code conversations of a device's folder a session can continue"
+      description: "With `runners.cloud.remote.resume.v1`. The caller's own device; the server asks its daemon and waits up to 10 s
+        (504 `device_no_answer`). The most recent first, `limit` 1 to 50 (20 by default, 400 `invalid_limit`), `before`
+        the `next` of the previous page (400 `invalid_cursor`). A folder the device does not offer: 422
+        `folder_not_published`; a daemon offline: 409 `device_offline`; one that did not announce `resume.v1`: 409
+        `daemon_resume_unsupported`"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: folderId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - name: before
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumableSessionPage'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '504':
+          $ref: '#/components/responses/Error'
   /api/v1/members/{memberId}/devices:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listMemberDevices
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - auth
       summary: A member's devices (owner or admin)
@@ -12646,7 +12920,21 @@ paths:
       tags:
       - runners
       summary: The caller's cloud agent sessions, newest first
+      description: "With `runners.cloud.remote.v1` (planned), `kind` (repeatable) chooses the kinds listed, `cloud` or
+        `remote` (400 `invalid_kind` otherwise); without it, cloud sessions only, so a client from before remote sessions
+        never lists one it cannot show"
       parameters:
+      - name: kind
+        in: query
+        required: false
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - cloud
+            - remote
       - name: status
         in: query
         required: false
@@ -13144,6 +13432,48 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+  /api/v1/cloud/sessions/{id}/host:
+    parameters:
+    - $ref: '#/components/parameters/OstromOrg'
+    post:
+      operationId: hostCloudSession
+      x-ostrom-status: planned
+      tags:
+      - runners
+      summary: Open the next execution of a remote session, from its device
+      description: "With `runners.cloud.remote.v1`. The owner's own sign-in, from the session's device only: opens a new epoch with a pending
+        execution and answers the organization, that epoch and the session; the previous live execution ends as
+        `replaced`. The host then calls the runner channel with that epoch and the same sign-in, which the server
+        accepts for the current epoch only (409 `execution_fenced` for an older one). A cloud session: 409
+        `not_remote`; another device: 409 `remote_host_mismatch`; a session whose device was removed: 409
+        `remote_host_removed`; a pause in progress: 409 `session_pausing` (retry); a service key or a sign-in without a
+        device: 422 `remote_requires_device`. With `runners.cloud.remote.daemon.v1`, a daemon accepts an order here (the
+        session leaves its queue as `starting_host`)"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudHost'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/github:
     parameters:
@@ -22000,7 +22330,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `devices.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.model.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client
@@ -22857,6 +23187,12 @@ components:
           type: string
         endedAt:
           type: string
+        kind:
+          type: string
+          description: "`cloud` (absent: a pod the server starts) or `remote`, a member's device
+            (`runners.cloud.remote.v1`)"
+        host:
+          $ref: '#/components/schemas/CloudSessionHost'
       required:
       - id
       - owner
@@ -23423,6 +23759,46 @@ components:
           description: "The session image instead of the profile's: the profile's image, or one matching
             its `allowedImageOverrides` (`*` matches any run of characters), 403 `image_not_allowed`
             otherwise. Absent: the profile's image"
+        kind:
+          type: string
+          enum:
+          - cloud
+          - remote
+          description: "`remote` (`runners.cloud.remote.v1`): a session on the caller's own device, claude or codex,
+            always `conversation` (400 `invalid_mode` for another mode), refusing `repo`, `ref`, `environment`,
+            `profileId` and `image` (400); the host is the device of the caller's sign-in (422
+            `remote_requires_device` for a service key or a sign-in without one), and creating on behalf of another
+            member is 403 `on_behalf_forbidden`. It starts `creating` with phase `waiting_host` and counts toward no
+            running or retained cap. Absent or `cloud`: a pod"
+        directoryName:
+          type: string
+          maxLength: 255
+          description: "With `kind: remote`: the last segment of the directory, never its path (not `.` or `..`, no `/`, `\\`
+            or control character; 400 `invalid_directory_name`). Omit it with `folderId`, whose name it is; refused
+            for a cloud session"
+        permissionMode:
+          type: string
+          enum:
+          - ask
+          - bypass
+          description: "With `kind: remote`: `ask` (absent) or `bypass`, which sets `permissionBypass` at creation
+            (400 `invalid_permission_mode` otherwise); refused for a cloud session"
+        deviceId:
+          type: string
+          description: "With `kind: remote` (`runners.cloud.remote.daemon.v1`): one of the caller's own devices, whose
+            daemon starts the session in `folderId`. Another member's device, whoever the caller is: 404
+            `device_not_found`; its daemon offline: 409 `device_offline` (nothing is queued); a service key: 422
+            `remote_requires_login`"
+        folderId:
+          type: string
+          description: "With `deviceId`: a folder the device published (422 `folder_not_published`); without
+            `deviceId` or malformed: 400 `invalid_folder`"
+        resumeSessionId:
+          type: string
+          description: "With `deviceId` and `folderId` (`runners.cloud.remote.resume.v1`, claude only): the conversation
+            of that folder the session continues, a lowercase UUID the daemon listed (400 `invalid_resume`; 422
+            `resume_unsupported` for codex; 409 `daemon_resume_unsupported` for a daemon without `resume.v1`).
+            Absent, the idempotency digest is the same as before"
       required:
       - agent
     CloudSessionFailure:
@@ -23765,9 +24141,282 @@ components:
         current:
           type: boolean
           description: "With `devices.v1`: the call came from this device"
+        daemon:
+          $ref: '#/components/schemas/DaemonPresence'
       required:
       - id
       - name
+    CloudSessionHost:
+      type: object
+      description: "The device a remote session runs on (`runners.cloud.remote.v1`)"
+      properties:
+        deviceId:
+          type: string
+          description: Absent once the device was removed
+        deviceName:
+          type: string
+        platform:
+          type: string
+        osVersion:
+          type: string
+        directoryName:
+          type: string
+          description: The last segment of the session's directory, never its path
+        online:
+          type: boolean
+          description: "The host runs the session now: an execution registered and heartbeating (a silent host is
+            noticed within 90 s)"
+        lastHeartbeatAt:
+          type: string
+        permissionMode:
+          type: string
+          description: "`ask` or `bypass`"
+        folderId:
+          type: string
+          description: "The published folder the device's daemon started it in (`runners.cloud.remote.daemon.v1`)"
+    CloudHost:
+      type: object
+      description: The execution a remote session's host just opened (`hostCloudSession`)
+      properties:
+        orgId:
+          type: string
+        epoch:
+          type: integer
+          format: int64
+        session:
+          $ref: '#/components/schemas/CloudSession'
+      required:
+      - orgId
+      - epoch
+      - session
+    DaemonPresence:
+      type: object
+      description: "A device's daemon as the server last saw it (`runners.cloud.remote.daemon.v1`)"
+      properties:
+        online:
+          type: boolean
+          description: It polled less than 60 s ago
+        lastSeenAt:
+          type: string
+        version:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+      required:
+      - online
+      - lastSeenAt
+    DeviceFolder:
+      type: object
+      description: A folder a device's daemon offers, never a full path the server relies on
+      properties:
+        id:
+          type: string
+          pattern: '^[A-Za-z0-9_-]{1,64}$'
+        name:
+          type: string
+          maxLength: 255
+        label:
+          type: string
+      required:
+      - id
+      - name
+    PublishDeviceFoldersRequest:
+      type: object
+      description: The folders the caller's device offers
+      properties:
+        folders:
+          type: array
+          maxItems: 64
+          items:
+            $ref: '#/components/schemas/DeviceFolder'
+      required:
+      - folders
+    DeviceFolders:
+      type: object
+      description: A device's daemon and published folders
+      properties:
+        deviceId:
+          type: string
+        daemon:
+          $ref: '#/components/schemas/DaemonPresence'
+        folders:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceFolder'
+      required:
+      - deviceId
+      - folders
+    DaemonPollRequest:
+      type: object
+      description: A daemon's long poll
+      properties:
+        waitMillis:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 20000
+        version:
+          type: string
+        features:
+          type: array
+          maxItems: 8
+          items:
+            type: string
+    DaemonOrder:
+      type: object
+      description: A session the daemon is asked to host, or refuse
+      properties:
+        sessionId:
+          type: string
+        folderId:
+          type: string
+        directoryName:
+          type: string
+        agent:
+          type: string
+        permissionMode:
+          type: string
+        status:
+          type: string
+          description: "`creating`, `resuming` or `preparing`"
+        requestedAt:
+          type: string
+        resumeSessionId:
+          type: string
+      required:
+      - sessionId
+      - folderId
+      - directoryName
+      - agent
+      - permissionMode
+      - status
+      - requestedAt
+    DaemonPoll:
+      type: object
+      description: A poll's answer
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/DaemonOrder'
+        onlineTtlMillis:
+          type: integer
+          format: int64
+        maxWaitMillis:
+          type: integer
+          format: int64
+        listings:
+          type: array
+          items:
+            $ref: '#/components/schemas/DaemonListing'
+      required:
+      - orders
+      - onlineTtlMillis
+      - maxWaitMillis
+    DaemonListing:
+      type: object
+      description: A member waits for the conversations of a folder
+      properties:
+        requestId:
+          type: string
+        folderId:
+          type: string
+        limit:
+          type: integer
+        before:
+          type: string
+      required:
+      - requestId
+      - folderId
+      - limit
+    ResumableSession:
+      type: object
+      description: "An agent conversation a session can continue (`runners.cloud.remote.resume.v1`); nothing else of it
+        leaves the device"
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          maxLength: 80
+        lastActiveAt:
+          type: string
+        turns:
+          type: integer
+      required:
+      - id
+      - title
+      - lastActiveAt
+      - turns
+    ResumableSessionPage:
+      type: object
+      description: A page of a folder's conversations
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResumableSession'
+        next:
+          type: string
+      required:
+      - items
+    DaemonListingAnswer:
+      type: object
+      description: The daemon's answer to a listing, the page or a refusal code
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ResumableSession'
+        next:
+          type: string
+        refused:
+          type: string
+    RefuseDaemonOrderRequest:
+      type: object
+      description: Why the daemon does not host an order
+      properties:
+        reason:
+          type: string
+          pattern: '^[a-z_]{1,64}$'
+      required:
+      - reason
+    LocalResumableSessions:
+      type: object
+      description: "What `ostrom remote resumable DIRECTORY --json` prints, read on the device and never sent to the
+        server: the directory's conversations, or `unavailable` (`server_unsupported`, `platform_unsupported`,
+        `daemon_offline`, `daemon_too_old`)"
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResumableSession'
+        next:
+          type: string
+        unavailable:
+          type: string
+    LocalKnownFolders:
+      type: object
+      description: "What `ostrom remote folders --json` prints, read from the device's own files and never sent to the
+        server"
+      properties:
+        folders:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalKnownFolder'
+    LocalKnownFolder:
+      type: object
+      description: A folder the device knows; its full path stays on the device
+      properties:
+        path:
+          type: string
+        lastUsedAt:
+          type: string
+      required:
+      - path
     DevicePage:
       type: object
       description: A page of devices

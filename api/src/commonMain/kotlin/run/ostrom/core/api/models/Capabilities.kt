@@ -430,6 +430,27 @@ public object ServerFeatures {
      */
     public const val DEVICES: String = "devices.v1"
 
+    /**
+     * Remote sessions (TeamCode's cloud.sessions.remote.v1): `kind: remote` on `POST /api/v1/cloud/sessions` creates a
+     * conversation session on the caller's own device, hosted by `ostrom remote` (each execution opened with
+     * `POST /api/v1/cloud/sessions/{id}/host`) through the runner channel under the owner's sign-in; `?kind=` lists
+     * them.
+     */
+    public const val RUNNERS_CLOUD_REMOTE: String = "runners.cloud.remote.v1"
+
+    /**
+     * Remote sessions started from any client on one of the caller's devices, hosted by its daemon in a folder it
+     * published (TeamCode's cloud.sessions.remote.daemon.v1): `/api/v1/devices/current/daemon/...`,
+     * `/api/v1/devices/current/folders`, `GET /api/v1/devices/{id}/folders`.
+     */
+    public const val RUNNERS_CLOUD_REMOTE_DAEMON: String = "runners.cloud.remote.daemon.v1"
+
+    /**
+     * A remote session that continues a Claude Code conversation of a device's folder (TeamCode's
+     * cloud.sessions.remote.resume.v1): `GET /api/v1/devices/{id}/folders/{folderId}/resumable` and `resumeSessionId`.
+     */
+    public const val RUNNERS_CLOUD_REMOTE_RESUME: String = "runners.cloud.remote.resume.v1"
+
     /** Every key this ostrom-core knows, in contract order. */
     public val ALL: List<String> = listOf(
         ADMIN_SETTINGS, ARTIFACTS, AUDIT, AUTOMATIONS, BILLING, BUDGETS, CAPACITY_API_PRICES, CAPACITY_BUDGET_OVERRIDES,
@@ -439,7 +460,7 @@ public object ServerFeatures {
         PACKAGES, RECEIPTS, REPORTS, RULES, RUNNERS, RUNNERS_CLOUD, RUNNERS_CLOUD_AGENT, RUNNERS_CLOUD_CONVERSATION,
         RUNNERS_CLOUD_EFFORT, RUNNERS_CLOUD_ENVIRONMENT, RUNNERS_CLOUD_FILES, RUNNERS_CLOUD_GITHUB, RUNNERS_CLOUD_HOOKS,
         RUNNERS_CLOUD_IDEMPOTENCY, RUNNERS_CLOUD_MODEL, RUNNERS_CLOUD_PERMISSIONS, RUNNERS_CLOUD_PERMISSIONS_BYPASS,
-        RUNNERS_CLOUD_PROFILES,
+        RUNNERS_CLOUD_PROFILES, RUNNERS_CLOUD_REMOTE, RUNNERS_CLOUD_REMOTE_DAEMON, RUNNERS_CLOUD_REMOTE_RESUME,
         RUNNERS_CLOUD_RETENTION, RUNNERS_CLOUD_SKILLS, RUNNERS_CLOUD_TASKS, RUNNERS_CLOUD_TRANSCRIPT_FEEDS,
         RUNNERS_CLOUD_TRANSCRIPT_LIVE, RUNNERS_CLOUD_TRANSFER,
         RUNNERS_CLOUD_VARIABLES, SECRETS, SESSIONS, SESSIONS_ACTIVITY, SESSIONS_LABELS,

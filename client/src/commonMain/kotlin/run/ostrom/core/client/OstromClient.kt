@@ -83,6 +83,9 @@ public class OstromClient(
     /** The workstations where the CLI is signed in (`devices.v1`). */
     public val devices: DevicesClient = DevicesClient(transport)
 
+    /** A device's daemon and published folders (`runners.cloud.remote.daemon.v1`). */
+    public val deviceDaemon: DeviceDaemonClient = DeviceDaemonClient(transport)
+
     /** The caller's phones registered for push notifications. */
     public val pushDevices: PushDevicesClient = PushDevicesClient(transport)
 

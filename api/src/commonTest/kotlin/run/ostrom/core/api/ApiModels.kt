@@ -1,6 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 package run.ostrom.core.api
 
+import run.ostrom.core.api.models.ResumableSessionPage
+import run.ostrom.core.api.models.ResumableSession
+import run.ostrom.core.api.models.RefuseDaemonOrderRequest
+import run.ostrom.core.api.models.PublishDeviceFoldersRequest
+import run.ostrom.core.api.models.LocalResumableSessions
+import run.ostrom.core.api.models.LocalKnownFolders
+import run.ostrom.core.api.models.LocalKnownFolder
+import run.ostrom.core.api.models.DeviceFolders
+import run.ostrom.core.api.models.DeviceFolder
+import run.ostrom.core.api.models.DaemonPresence
+import run.ostrom.core.api.models.DaemonPollRequest
+import run.ostrom.core.api.models.DaemonPoll
+import run.ostrom.core.api.models.DaemonOrder
+import run.ostrom.core.api.models.DaemonListingAnswer
+import run.ostrom.core.api.models.DaemonListing
+import run.ostrom.core.api.models.CloudSessionHost
+import run.ostrom.core.api.models.CloudHost
 import run.ostrom.core.api.models.Account
 import run.ostrom.core.api.models.AccountEmail
 import run.ostrom.core.api.models.ActivityActor
@@ -307,6 +324,8 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     AutomationVariable.serializer(),
     Capabilities.serializer(),
     CheckRun.serializer(),
+    CloudHost.serializer(),
+    CloudSessionHost.serializer(),
     CompiledHook.serializer(),
     CompiledNode.serializer(),
     CompiledNotify.serializer(),
@@ -314,6 +333,12 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     CompiledTrigger.serializer(),
     CompleteTodoItemRequest.serializer(),
     CreateTodoRequest.serializer(),
+    DaemonListing.serializer(),
+    DaemonListingAnswer.serializer(),
+    DaemonOrder.serializer(),
+    DaemonPoll.serializer(),
+    DaemonPollRequest.serializer(),
+    DaemonPresence.serializer(),
     Decision.serializer(),
     DecisionSubject.serializer(),
     DeliverRequest.serializer(),
@@ -322,6 +347,8 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     Dev.serializer(),
     Device.serializer(),
     DeviceCode.serializer(),
+    DeviceFolder.serializer(),
+    DeviceFolders.serializer(),
     DevicePage.serializer(),
     DeviceLoginStart.serializer(),
     DeviceTokenRequest.serializer(),
@@ -343,6 +370,9 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     KeyRotation.serializer(),
     LaunchLimits.serializer(),
     LinkTodoItemRequest.serializer(),
+    LocalKnownFolder.serializer(),
+    LocalKnownFolders.serializer(),
+    LocalResumableSessions.serializer(),
     Me.serializer(),
     Member.serializer(),
     MemberInvite.serializer(),
@@ -365,6 +395,10 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GitHubDeviceLink.serializer(),
     GitHubDeviceLinkPoll.serializer(),
     GitHubLink.serializer(),
+    PublishDeviceFoldersRequest.serializer(),
+    RefuseDaemonOrderRequest.serializer(),
+    ResumableSession.serializer(),
+    ResumableSessionPage.serializer(),
     SlackLink.serializer(),
     Organization.serializer(),
     PackageEnvelope.serializer(),

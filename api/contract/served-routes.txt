@@ -147,6 +147,7 @@ GET /api/v1/me/organizations
 GET /api/v1/me/skills
 GET /api/v1/me/skills/{}/versions
 GET /api/v1/members/{}/budget-overrides
+GET /api/v1/members/{}/devices
 GET /api/v1/members/{}/hook-delivery
 GET /api/v1/members/{}/skill-delivery
 GET /api/v1/members/{}/skill-installations
@@ -223,6 +224,7 @@ GET /l/{}/{}
 GET /ready
 PATCH /api/v1/accounts/{}
 PATCH /api/v1/artifacts/{}
+PATCH /api/v1/devices/{}
 PATCH /api/v1/environment/variants/{}
 PATCH /api/v1/groups/{}
 PATCH /api/v1/me/environment/variants/{}
