@@ -24,6 +24,9 @@ import run.ostrom.core.api.models.NodeConditionOp
 import run.ostrom.core.api.models.NotificationStatus
 import run.ostrom.core.api.models.PackageFileMode
 import run.ostrom.core.api.models.PackageMode
+import run.ostrom.core.api.models.PoolSizeAccountStatus
+import run.ostrom.core.api.models.PoolSizeReason
+import run.ostrom.core.api.models.PoolSizeSource
 import run.ostrom.core.api.models.ReceiptSubjectKind
 import run.ostrom.core.api.models.RiskLevel
 import run.ostrom.core.api.models.RuleStatus
@@ -77,6 +80,16 @@ class UnknownFallbackEnumTest {
         }
         val added = JsonPrimitive("added-by-a-newer-server")
         assertEquals(DirectivePace.UNKNOWN, OstromJson.decodeFromJsonElement(DirectivePace.Serializer, added))
+    }
+
+    @Test
+    fun thePoolSizeEnumsReadAnUnknownValueAsUnknownAndNeverWriteIt() {
+        check(
+            PoolSizeAccountStatus.entries, PoolSizeAccountStatus.Serializer, PoolSizeAccountStatus.UNKNOWN,
+            PoolSizeAccountStatus::value,
+        )
+        check(PoolSizeReason.entries, PoolSizeReason.Serializer, PoolSizeReason.UNKNOWN, PoolSizeReason::value)
+        check(PoolSizeSource.entries, PoolSizeSource.Serializer, PoolSizeSource.UNKNOWN, PoolSizeSource::value)
     }
 
     @Test

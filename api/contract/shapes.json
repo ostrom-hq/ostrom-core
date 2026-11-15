@@ -6110,6 +6110,320 @@
       }
     }
   },
+  "PoolSize": {
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "required": true,
+        "nullable": false
+      },
+      "manualDailyMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "automaticDailyMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "automaticComputedAt": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "effectiveDailyMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "source": {
+        "type": {
+          "ref": "PoolSizeSource"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "estimatedDailyMicros": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "reason": {
+        "type": {
+          "ref": "PoolSizeReason"
+        },
+        "required": false,
+        "nullable": false
+      },
+      "unpricedModels": {
+        "type": {
+          "array": "string"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "accounts": {
+        "type": {
+          "array": {
+            "ref": "PoolSizeAccount"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "capacityDailyMicros": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "capacityUnknownAccounts": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "capacityDailyTokens": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "tokensPerMicro": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "outsideWeeklyMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "outsideUnknownAccounts": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "models": {
+        "type": {
+          "array": {
+            "ref": "PoolSizeModel"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PoolSizeAccount": {
+    "properties": {
+      "accountId": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "status": {
+        "type": {
+          "ref": "PoolSizeAccountStatus"
+        },
+        "required": true,
+        "nullable": false
+      },
+      "dailyMicros": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "binding": {
+        "type": "string",
+        "required": false,
+        "nullable": false
+      },
+      "capacityDailyMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "windows": {
+        "type": {
+          "array": {
+            "ref": "PoolSizeWindowCapacity"
+          }
+        },
+        "required": true,
+        "nullable": false
+      },
+      "usage": {
+        "type": {
+          "array": {
+            "ref": "PoolSizeWindowUsage"
+          }
+        },
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PoolSizeAccountStatus": {
+    "enum": [
+      "counted",
+      "unavailable",
+      "no_fresh_observation",
+      "no_estimate"
+    ]
+  },
+  "PoolSizeModel": {
+    "properties": {
+      "provider": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "model": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "inputTokens": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "cacheWriteTokens": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "cacheReadTokens": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "outputTokens": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "inputMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "cacheWriteMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "cacheReadMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "outputMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "totalMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "unpricedTokens": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PoolSizeReason": {
+    "enum": [
+      "no_accounts",
+      "no_estimate"
+    ]
+  },
+  "PoolSizeSource": {
+    "enum": [
+      "automatic",
+      "manual"
+    ]
+  },
+  "PoolSizeWindowCapacity": {
+    "properties": {
+      "window": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "fullWindowMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "capacityMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "samples": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      }
+    }
+  },
+  "PoolSizeWindowUsage": {
+    "properties": {
+      "window": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "since": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "observedAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "resetsAt": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "observedUtilization": {
+        "type": "number",
+        "required": true,
+        "nullable": false
+      },
+      "ostromMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "ostromUtilization": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "outsideUtilization": {
+        "type": "number",
+        "required": false,
+        "nullable": false
+      },
+      "outsideMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      },
+      "remainingMicros": {
+        "type": "integer",
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
   "Produced": {
     "properties": {
       "type": {

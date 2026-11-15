@@ -7,6 +7,8 @@ import kotlinx.serialization.json.Json
 import run.ostrom.core.api.models.DirectivePace
 import run.ostrom.core.api.models.DirectiveStage
 import run.ostrom.core.api.models.PacingSettings
+import run.ostrom.core.api.models.PoolSizeAccountStatus
+import run.ostrom.core.api.models.PoolSizeSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -88,5 +90,37 @@ class PacingClientTest {
         )
         assertTrue(server.requests.map { it.bodyText() }.contains("""{"id":"d1","stage":"emitted_to_hook"}"""))
         assertEquals("/api/v1/directives/receipt", server.requests.last().url.encodedPath)
+    }
+
+    @Test
+    fun theAutomaticPoolSizeIsReadAndAnUnknownStatusReadsAsUnknown() = runTest {
+        val server = ScriptedServer {
+            json(
+                """{"enabled":true,"manualDailyMicros":5000000,"automaticDailyMicros":8000000,""" +
+                    """"automaticComputedAt":"2026-01-01T00:00:00Z","effectiveDailyMicros":8000000,""" +
+                    """"source":"automatic","estimatedDailyMicros":7500000,"unpricedModels":["x"],""" +
+                    """"accounts":[{"accountId":"a1","status":"counted","dailyMicros":7500000,""" +
+                    """"binding":"five_hour","windows":[{"window":"five_hour","fullWindowMicros":1000,""" +
+                    """"capacityMicros":1200,"samples":4}],"usage":[{"window":"five_hour",""" +
+                    """"since":"2026-01-01T00:00:00Z","observedAt":"2026-01-01T01:00:00Z",""" +
+                    """"resetsAt":"2026-01-01T05:00:00Z","observedUtilization":0.4,"ostromMicros":300}]},""" +
+                    """{"accountId":"a2","status":"added-later","dailyMicros":0,"windows":[],"usage":[]}],""" +
+                    """"capacityDailyMicros":9000000,"capacityUnknownAccounts":1,"outsideUnknownAccounts":0,""" +
+                    """"models":[{"provider":"anthropic","model":"m","inputTokens":1,"cacheWriteTokens":2,""" +
+                    """"cacheReadTokens":3,"outputTokens":4,"unpricedTokens":0}]}""",
+            )
+        }
+        server.client().use { client ->
+            val size = client.pacing.poolSize()
+            assertEquals(PoolSizeSource.AUTOMATIC, size.source)
+            assertEquals(8_000_000L, size.effectiveDailyMicros)
+            assertNull(size.reason)
+            assertEquals(PoolSizeAccountStatus.COUNTED, size.accounts[0].status)
+            assertEquals(PoolSizeAccountStatus.UNKNOWN, size.accounts[1].status)
+            assertEquals(300L, size.accounts[0].usage[0].ostromMicros)
+            assertNull(size.accounts[0].usage[0].outsideMicros)
+        }
+        val request = server.requests.single()
+        assertEquals("GET /api/v1/pools/size", "${request.method.value} ${request.url.encodedPath}")
     }
 }
