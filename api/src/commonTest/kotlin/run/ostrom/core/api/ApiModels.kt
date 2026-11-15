@@ -124,6 +124,11 @@ import run.ostrom.core.api.models.DirectiveResponse
 import run.ostrom.core.api.models.DirectiveScope
 import run.ostrom.core.api.models.PacingPreview
 import run.ostrom.core.api.models.PacingSettings
+import run.ostrom.core.api.models.PoolSize
+import run.ostrom.core.api.models.PoolSizeAccount
+import run.ostrom.core.api.models.PoolSizeModel
+import run.ostrom.core.api.models.PoolSizeWindowCapacity
+import run.ostrom.core.api.models.PoolSizeWindowUsage
 import run.ostrom.core.api.models.Organization
 import run.ostrom.core.api.models.PackageEnvelope
 import run.ostrom.core.api.models.PackageFile
@@ -414,6 +419,11 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     DirectiveScope.serializer(),
     PacingPreview.serializer(),
     PacingSettings.serializer(),
+    PoolSize.serializer(),
+    PoolSizeAccount.serializer(),
+    PoolSizeModel.serializer(),
+    PoolSizeWindowCapacity.serializer(),
+    PoolSizeWindowUsage.serializer(),
     Organization.serializer(),
     PackageEnvelope.serializer(),
     PackageFile.serializer(),

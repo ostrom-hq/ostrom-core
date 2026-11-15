@@ -16494,7 +16494,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: getPoolSize
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - sharing
       summary: The organization's automatic daily budget sized from its shared accounts (`capacity.poolsize.v1`)
@@ -20552,15 +20552,12 @@ components:
           type: integer
           description: The daily budget admission applies now, absent when there is none
         source:
-          type: string
-          enum: [automatic, manual]
+          $ref: '#/components/schemas/PoolSizeSource'
         estimatedDailyMicros:
           type: integer
           description: What is left of the accounts' capacity today, computed now
         reason:
-          type: string
-          enum: [no_accounts, no_estimate]
-          description: Why there is no automatic value; then the typed budget applies
+          $ref: '#/components/schemas/PoolSizeReason'
         unpricedModels:
           type: array
           description: Models used over seven days without a price, left out of the samples
@@ -20600,16 +20597,13 @@ components:
       - capacityUnknownAccounts
       - outsideUnknownAccounts
       - models
-      x-ostrom-kotlin: pending
     PoolSizeAccount:
       type: object
       properties:
         accountId:
           type: string
         status:
-          type: string
-          enum: [counted, unavailable, no_fresh_observation, no_estimate]
-          description: Clients treat an unknown value as not counted
+          $ref: '#/components/schemas/PoolSizeAccountStatus'
         dailyMicros:
           type: integer
           description: What is left of the account's capacity today
@@ -20633,7 +20627,6 @@ components:
       - dailyMicros
       - windows
       - usage
-      x-ostrom-kotlin: pending
     PoolSizeModel:
       type: object
       description: Seven days of one model's tokens and their API-equivalent by token type; costs absent without a price
@@ -20670,7 +20663,6 @@ components:
       - cacheReadTokens
       - outputTokens
       - unpricedTokens
-      x-ostrom-kotlin: pending
     PoolSizeWindowCapacity:
       type: object
       description: The learned full capacity of one shared window (0 to 100 %); absent below three samples
@@ -20688,7 +20680,6 @@ components:
       required:
       - window
       - samples
-      x-ostrom-kotlin: pending
     PoolSizeWindowUsage:
       type: object
       description: "One current window split between Ostrom's traffic and use of the subscription outside Ostrom since
@@ -20723,7 +20714,19 @@ components:
       - observedAt
       - resetsAt
       - observedUtilization
-      x-ostrom-kotlin: pending
+    PoolSizeSource:
+      type: string
+      enum: [automatic, manual]
+      description: "Where the daily budget admission applies comes from: the stored automatic value or the typed one.
+        Clients treat an unknown value as `manual`"
+    PoolSizeReason:
+      type: string
+      enum: [no_accounts, no_estimate]
+      description: Why there is no automatic value; then the typed budget applies
+    PoolSizeAccountStatus:
+      type: string
+      enum: [counted, unavailable, no_fresh_observation, no_estimate]
+      description: Clients treat an unknown value as not counted
     SaveArtifactStorageRequest:
       type: object
       description: '`version` is the one replaced (0 for the first save); an omitted `secretAccessKey` keeps the stored

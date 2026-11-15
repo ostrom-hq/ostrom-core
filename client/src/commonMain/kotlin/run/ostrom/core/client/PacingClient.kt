@@ -13,6 +13,7 @@ import run.ostrom.core.api.models.DirectiveScope
 import run.ostrom.core.api.models.DirectiveStage
 import run.ostrom.core.api.models.PacingPreview
 import run.ostrom.core.api.models.PacingSettings
+import run.ostrom.core.api.models.PoolSize
 
 /**
  * The capacity controller's settings and its advice to agents (`capacity.pacing.v1`). Reached through
@@ -47,6 +48,12 @@ public class PacingClient internal constructor(private val transport: Transport)
      */
     public suspend fun claim(sessionId: String, stage: DirectiveStage): DirectiveClaim =
         transport.jsonBody(HttpMethod.Post, "/api/v1/directives/claim", DirectiveClaimRequest(sessionId, stage))
+
+    /**
+     * The automatic daily budget and the estimate behind it (`GET /api/v1/pools/size`, `capacity.poolsize.v1`), owners
+     * and admins.
+     */
+    public suspend fun poolSize(): PoolSize = transport.json(HttpMethod.Get, "/api/v1/pools/size")
 
     /** Records that the advice [id] reached [stage] (`POST /api/v1/directives/receipt`, `204`). Idempotent. */
     public suspend fun receipt(id: String, stage: DirectiveStage, sessionId: String? = null, claimId: String? = null) {
