@@ -1005,6 +1005,15 @@
         "required": true,
         "nullable": false
       },
+      "fileDetails": {
+        "type": {
+          "array": {
+            "ref": "ArtifactVersionFile"
+          }
+        },
+        "required": false,
+        "nullable": false
+      },
       "entry": {
         "type": "string",
         "required": true,
@@ -1039,6 +1048,30 @@
         "type": {
           "ref": "ArtifactOrigin"
         },
+        "required": false,
+        "nullable": false
+      }
+    }
+  },
+  "ArtifactVersionFile": {
+    "properties": {
+      "path": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "size": {
+        "type": "integer",
+        "required": true,
+        "nullable": false
+      },
+      "contentType": {
+        "type": "string",
+        "required": true,
+        "nullable": false
+      },
+      "sha256": {
+        "type": "string",
         "required": false,
         "nullable": false
       }

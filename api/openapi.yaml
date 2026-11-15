@@ -15159,6 +15159,47 @@ paths:
           minimum: 1
           maximum: 100
           default: 20
+      - name: scope
+        in: query
+        required: false
+        description: "As TeamCode's gallery tabs: `team` (everything the caller can read, the default), `mine` (the
+          ones they own) or `shared` (personal artifacts of others, shared with them)"
+        schema:
+          type: string
+          enum:
+          - team
+          - mine
+          - shared
+          default: team
+      - name: origin
+        in: query
+        required: false
+        description: "Where the artifact was created: `local_run` (an agent on a machine), `cloud_session` (an agent of
+          a cloud session) or `api` (a person or a program without an agent token)"
+        schema:
+          type: string
+          enum:
+          - local_run
+          - cloud_session
+          - api
+      - name: access
+        in: query
+        required: false
+        description: Only the artifacts with this access
+        schema:
+          $ref: '#/components/schemas/ArtifactAccess'
+      - name: cloudSession
+        in: query
+        required: false
+        description: Only what the launches of this cloud session published (an id)
+        schema:
+          type: string
+      - name: launch
+        in: query
+        required: false
+        description: Only what this launch published, a run of `ostrom <agent>` or a cloud session's (an id)
+        schema:
+          type: string
       responses:
         '200':
           description: OK
@@ -20981,6 +21022,27 @@ components:
           type: string
       required:
       - items
+    ArtifactVersionFile:
+      type: object
+      description: A file of a published version
+      properties:
+        path:
+          type: string
+          description: Its path in the version
+        size:
+          type: integer
+          format: int64
+          description: Its size in bytes
+        contentType:
+          type: string
+          description: The type it is served with
+        sha256:
+          type: string
+          description: The SHA-256 of its bytes, in hex
+      required:
+      - path
+      - size
+      - contentType
     ArtifactVersion:
       type: object
       description: A version of an artifact
@@ -20991,6 +21053,11 @@ components:
           type: array
           items:
             type: string
+        fileDetails:
+          type: array
+          description: "The same files with their size and type (TeamCode's files panel), in the same order"
+          items:
+            $ref: '#/components/schemas/ArtifactVersionFile'
         entry:
           type: string
           description: The page a reader opens first
