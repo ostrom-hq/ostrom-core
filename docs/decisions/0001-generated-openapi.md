@@ -82,6 +82,8 @@ The steps, in order:
 5. **Consumers switch:** ostrom-web installs the package, deletes `contract/` and `contract:sync`, and a bot bumps the
    version. ostrom-site does the same for its API reference.
 6. **Core deletes** the YAML and its machinery (the list under point 5 above). The server's docs-truth reads the
-   routes from the generated document instead of `served-routes.txt`.
+   routes from the generated document instead of `served-routes.txt`. Done 15/11/2026: ostrom-server#645 (the flip),
+   ostrom-core#303 (docs-truth `--openapi`), ostrom-e2e#131 (the sweep reads the server's document), then this
+   deletion; the repositories that pin docs-truth move their pin and pass the generated document.
 7. **CLI and app** move onto the typed client (CS-06), one command group per PR. Then the CLI's `api-client` module
    and its 83 hard-coded `/api/v1` paths are deleted.

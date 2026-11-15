@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 class SessionActivityStatesTest {
     @Test
     fun theTwoStatesAreTheContractsInItsOrder() {
-        // api/openapi.yaml, SessionActivityRequest.state and Session.activity
+        // SessionActivityRequest.state and Session.activity, as the server's generated document declares them
         assertEquals(listOf("working", "waiting_for_human"), SessionActivityStates.ALL)
     }
 }

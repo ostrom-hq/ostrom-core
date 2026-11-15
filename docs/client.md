@@ -1,7 +1,7 @@
 # The typed client (`client`)
 
 `run.ostrom:ostrom-client` is the typed Kotlin client of the server API, over the contract of `api`
-(`api/openapi.yaml` and `run.ostrom.core.api.models`). The companion app (Kotlin Multiplatform, Compose
+(`run.ostrom.core.api.models`; the routes are those of the OpenAPI document ostrom-server generates). The companion app (Kotlin Multiplatform, Compose
 Multiplatform, in `ostrom-app`) uses it on Android, iOS and the desktop; the CLI will move to it later (see
 [The CLI](#the-cli)). Its contract follows teamcode's `TeamCodeClient` (`teamcode:docs/companion.md`, "Client
 contract"), from which the origin check, the failure mapping, the event-stream reader and the network failure classes
@@ -88,7 +88,7 @@ client.close()
 | `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
 
 Every parameter left null is not sent, so the server's default applies. The models are those of
-`run.ostrom.core.api.models`, named like the schemas of `api/openapi.yaml`; an enum the contract declares inline
+`run.ostrom.core.api.models`, named like the schemas of the server's generated document; an enum the contract declares inline
 (`reasonType`, `relation`, `access`, the spending `period`) stays a `String`, so a new value never breaks a decode.
 A yes from the phone (`approvals.answer` with `ApprovalAnswer.APPROVE`) needs a recent `auth.unlock`; without one it
 throws `403 step_up_required`, with `requestBound` when the unlock is bound to another request.

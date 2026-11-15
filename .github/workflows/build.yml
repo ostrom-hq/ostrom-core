@@ -49,8 +49,6 @@ jobs:
           }
           KTS
       - run: python3 scripts/check-conventions.py
-      # served-routes.py says what the contract may call served: its tests run every line of it.
-      - run: python3 scripts/test_served_routes.py
       # detekt, the jvm() test run with Kover at 100 % of commonMain, the linuxX64 tests; linuxArm64 and mingwX64 tests
       # and the macosArm64 and iOS klibs are cross-compiled. The Android SDK variables are unset: these tasks must
       # configure and run without an SDK, as in the CI of ostrom-server and ostrom-cli, which include this build.
@@ -72,22 +70,11 @@ jobs:
           name: reports
           path: '**/build/reports/**'
           retention-days: 7
-      # api/openapi.yaml is the contract: its TypeScript types must generate, and api/contract/shapes.json (read by the
-      # Kotlin ContractTest) must be the one derived from it.
+      # tools/docs-truth checks the docs of every repository against what main ships (the server's generated OpenAPI
+      # document, the binary's help, the sources' OSTROM_ variables); the repositories run it from a pinned commit.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: api-types/package-lock.json
-      - name: The TypeScript types and api/contract/shapes.json come from api/openapi.yaml
-        working-directory: api-types
-        run: |
-          npm ci --no-audit --no-fund
-          npm run contract
-          git diff --exit-code -- ../api/contract/shapes.json
-          npm run build
-      # tools/docs-truth checks the docs of every repository against what main ships (served-routes.txt, the binary's
-      # help, the sources' OSTROM_ variables); the other repositories run it from a pinned ostrom-core commit.
       - name: docs-truth's tests, 100 % lines, branches and functions
         working-directory: tools/docs-truth
         run: npm test
@@ -143,18 +130,3 @@ jobs:
           ORG_GRADLE_PROJECT_ostromCoreVersion: 0.1.${{ github.run_number }}
         run: ./gradlew --no-daemon publishAllPublicationsToGitHubPackagesRepository
       - run: echo "Published run.ostrom:ostrom-api, ostrom-client, ostrom-receipts, ostrom-telemetry and ostrom-actions 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          registry-url: https://npm.pkg.github.com
-          scope: '@ostrom-hq'
-      - name: Publish @ostrom-hq/api-types 0.1.<run> to GitHub Packages
-        working-directory: api-types
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npm ci --no-audit --no-fund
-          npm run build
-          npm version --no-git-tag-version "0.1.${{ github.run_number }}"
-          npm publish
-      - run: echo "Published @ostrom-hq/api-types 0.1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
