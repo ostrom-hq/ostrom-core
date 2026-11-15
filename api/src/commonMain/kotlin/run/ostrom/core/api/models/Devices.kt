@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
  * @property osVersion The system's version reported with [platform].
  * @property cliVersion The CLI's version at its latest call.
  * @property lastSeenAt Its latest call.
- * @property kind `admin` for the elevated token of `ostrom login --admin`; `cli` when absent.
+ * @property kind `admin` for the elevated token of `ostrom login --admin`, otherwise `cli`.
  * @property orgId The organization an elevated token is bound to.
  * @property scopes What an elevated token may do.
  * @property expiresAt When an elevated token expires.
@@ -37,7 +37,7 @@ public data class Device(
     val platform: String? = null,
     val cliVersion: String? = null,
     val lastSeenAt: String? = null,
-    val kind: String? = null,
+    val kind: String = "cli",
     val orgId: String? = null,
     val scopes: List<String>? = null,
     val expiresAt: String? = null,

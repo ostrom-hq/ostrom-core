@@ -22,5 +22,20 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.ktor.client.mock)
         }
+        // ContractTest calls every public function of the client by reflection.
+        jvmTest.dependencies {
+            implementation(kotlin("reflect"))
+        }
     }
+}
+
+// ContractTest compares the client with the server's generated document, the @ostrom-hq/openapi version of
+// openapi.version, which CI installs and names in OSTROM_OPENAPI_DOCUMENT: another document re-runs the test.
+val openApiDocument = providers.environmentVariable("OSTROM_OPENAPI_DOCUMENT")
+val openApiRequired = providers.environmentVariable("OSTROM_OPENAPI_REQUIRED").orElse("false")
+tasks.withType<AbstractTestTask>().configureEach {
+    inputs.property("openApiRequired", openApiRequired)
+    inputs.property("openApiDocumentSet", openApiDocument.map { it.isNotBlank() }.orElse(false))
+    inputs.files(openApiDocument.map { listOfNotNull(it.takeIf(String::isNotBlank)) }.orElse(emptyList()))
+        .withPathSensitivity(PathSensitivity.NONE)
 }

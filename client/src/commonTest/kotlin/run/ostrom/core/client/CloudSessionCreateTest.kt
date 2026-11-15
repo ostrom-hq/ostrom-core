@@ -19,7 +19,10 @@ class CloudSessionCreateTest {
         assertEquals(Json.parseToJsonElement(expected), Json.parseToJsonElement(actual), actual)
     }
 
-    private val cloudSession = """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating","createdAt":"t"}"""
+    private val cloudSession = """{"id":"cs_1",""" +
+        """"name":"n","desiredStatus":"running","epoch":1,"updatedAt":"t",""" +
+        """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +
+        """"owner":"m1","agent":"claude","status":"creating","createdAt":"t"}"""
 
     @Test
     fun aCreateCarriesItsIdempotencyKeyAndAReplayReturnsTheSession() = runTest {
@@ -81,7 +84,10 @@ class CloudSessionCreateTest {
     @Test
     fun aSessionReadsWhoCreatedIt() {
         val session = Json.decodeFromString<run.ostrom.core.api.models.CloudSession>(
-            """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating","createdAt":"t",""" +
+            """{"id":"cs_1",""" +
+                """"name":"n","desiredStatus":"running","epoch":1,"updatedAt":"t",""" +
+                """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +
+                """"owner":"m1","agent":"claude","status":"creating","createdAt":"t",""" +
                 """"createdBy":{"initiatorId":"m0","credentialId":null,"effectiveMemberId":"m1"}}""",
         )
         assertEquals("m0", session.createdBy?.initiatorId)

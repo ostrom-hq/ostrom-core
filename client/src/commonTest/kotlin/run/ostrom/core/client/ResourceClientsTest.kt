@@ -40,10 +40,11 @@ class ResourceClientsTest {
 
     private val approval = """{"id":"apr_1","title":"Push to main","requestedFrom":"ada","channel":"app",""" +
         """"status":"pending","shownDigest":"sha256:1"}"""
-    private val approvalView = """{"approval":$approval,"you":{"login":"ada","self":false,"canApprove":true}}"""
+    private val approvalView = """{"approval":$approval,"who":{},"what":{"action":"push"},"askedVia":[],""" +
+        """"you":{"login":"ada","self":false,"canApprove":true}}"""
     private val receipt = """{"id":"rcp_1","subject":{"kind":"task","id":"t1","digest":"d"},"initiator":"ada",""" +
         """"rules":[],"decisions":[],"createdAt":"2026-11-13T00:00:00Z","signature":"sig"}"""
-    private val wait = """{"id":"w/1","kind":"question","status":"open","assignee":"ada",""" +
+    private val wait = """{"id":"w/1","kind":"question","status":"open","assignee":"ada","createdBy":"bo",""" +
         """"question":{"title":"Ship?"},"createdAt":"2026-11-13T00:00:00Z"}"""
     private val artifact = """{"id":"a1","title":"Report","owner":"ada","access":"team","latestVersion":2,""" +
         """"url":"https://ostrom.example/artifacts/a1","createdAt":"t","updatedAt":"t"}"""
@@ -77,7 +78,7 @@ class ResourceClientsTest {
         )
         assertJson("""{"answer":"approve","shownDigest":"sha256:1"}""", server.requests[2].bodyText())
         assertJson(
-            """{"answer":"reject","shownDigest":"sha256:1","note":"Not on Friday."}""",
+            """{"answer":"reject","shownDigest":"sha256:1","comment":"Not on Friday."}""",
             server.requests[3].bodyText(),
         )
     }
@@ -549,12 +550,14 @@ class ResourceClientsTest {
             server.requests.map { it.call() },
         )
         assertJson(
-            """{"name":"remote","url":"https://mcp.example/x","transport":"http","enabled":true,"scope":"org"}""",
+            """{"name":"remote","url":"https://mcp.example/x","transport":"http","scope":"org"}""",
             server.requests[1].bodyText(),
         )
     }
 
-    private val cloudSession = """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating",""" +
+    private val cloudSession = """{"id":"cs_1",""" +
+        """"name":"n","desiredStatus":"running","updatedAt":"t",""" +
+        """"owner":"m1","agent":"claude","status":"creating",""" +
         """"phase":"cloning_repositories",""" +
         """"epoch":1,"failure":{"code":"preparation_failed","message":"Clone failed.","retryable":true},""" +
         """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +

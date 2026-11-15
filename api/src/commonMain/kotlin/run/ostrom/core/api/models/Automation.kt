@@ -40,8 +40,8 @@ public data class AutomationTrigger(
     val kind: AutomationTriggerKind,
     val cron: String? = null,
     val timezone: String? = null,
-    val catchup: String? = null,
-    val catchupGraceMinutes: Int? = null,
+    val catchup: String = "once",
+    val catchupGraceMinutes: Int = 360,
 )
 
 /**
@@ -60,10 +60,10 @@ public data class AutomationTrigger(
 @Serializable
 public data class AutomationAction(
     val workflowId: String? = null,
-    val inputs: Map<String, String>? = null,
+    val inputs: Map<String, String> = emptyMap(),
     val repository: String? = null,
-    val prompt: String? = null,
-    val agent: String? = null,
+    val prompt: String,
+    val agent: String = "claude",
     val model: String? = null,
     val effort: String? = null,
     val maxRuntimeMinutes: Int = 60,
@@ -85,9 +85,9 @@ public data class AutomationAction(
 public data class AutomationVariable(
     val name: String,
     val path: String,
-    val type: String,
+    val type: String = "string",
     val values: List<String> = emptyList(),
-    val maxLength: Int? = null,
+    val maxLength: Int = 256,
     val required: Boolean = false,
     val sensitive: Boolean = false,
 )
@@ -300,7 +300,7 @@ public data class Wait(
     val sessionId: String? = null,
     val runId: String? = null,
     val assignee: String,
-    val createdBy: String? = null,
+    val createdBy: String,
     val question: WaitSpec,
     val answer: WaitAnswer? = null,
     val createdAt: String,
@@ -344,7 +344,7 @@ public data class WaitEventReceived(val id: String, val status: WaitStatus)
 @Serializable
 public data class WaitAnswer(
     val action: String,
-    val values: Map<String, JsonElement> = emptyMap(),
+    val values: Map<String, JsonElement>,
     val author: String,
     val answeredAt: String,
 )

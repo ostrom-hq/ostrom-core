@@ -138,7 +138,7 @@ public data class CloudEventPage(
  */
 @Serializable
 public data class SendCloudMessageRequest(
-    val text: String,
+    val text: String? = null,
     val wake: Boolean = true,
     val clientMessageId: String? = null,
     val expectedLastEventSeq: Long? = null,

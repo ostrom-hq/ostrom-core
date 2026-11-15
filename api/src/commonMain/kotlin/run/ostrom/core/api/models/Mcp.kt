@@ -28,12 +28,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 public data class McpServer(
     val name: String,
-    val url: String? = null,
+    val url: String = "",
     val transport: String,
-    val secretNames: List<String>? = null,
+    val secretNames: List<String> = emptyList(),
     val tools: List<String>? = null,
-    val enabled: Boolean,
-    val scope: String,
+    val enabled: Boolean = true,
+    val scope: String = "shared",
     val agentName: String? = null,
     val state: String? = null,
     val failure: String? = null,
@@ -57,13 +57,14 @@ public data class McpServer(
 public data class McpStdioSpec(
     val launcher: String,
     val packageName: String,
-    val args: List<String>? = null,
-    val env: Map<String, String>? = null,
-    val secretEnv: Map<String, String>? = null,
+    val args: List<String> = emptyList(),
+    val env: Map<String, String> = emptyMap(),
+    val secretEnv: Map<String, String> = emptyMap(),
 )
 
 /** The caller's personal MCP servers (`GET /api/v1/me/mcp/servers`). */
 @Serializable
 public data class McpServerList(
     val items: List<McpServer>,
+    val next: String? = null,
 )
