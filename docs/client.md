@@ -1,8 +1,8 @@
 # The typed client (`client`)
 
-`run.ostrom:ostrom-client` is the typed Kotlin client of the server API, over the contract of `api`
-(`api/openapi.yaml` and `run.ostrom.core.api.models`). The companion app (Kotlin Multiplatform, Compose
-Multiplatform, in `ostrom-app`) uses it on Android, iOS and the desktop; the CLI will move to it later (see
+`run.ostrom:ostrom-client` is the typed Kotlin client of the server API, over the models of `api`
+(`run.ostrom.core.api.models`). Its routes are those of the OpenAPI document ostrom-server generates. The companion
+app (Kotlin Multiplatform, Compose Multiplatform, in `ostrom-app`) uses it on Android, iOS and the desktop; the CLI will move to it later (see
 [The CLI](#the-cli)). Its contract follows teamcode's `TeamCodeClient` (`teamcode:docs/companion.md`, "Client
 contract"), from which the origin check, the failure mapping, the event-stream reader and the network failure classes
 are ported (Apache-2.0).
@@ -83,12 +83,12 @@ client.close()
 | `cloudSessions` (conversation) | `setPermissionBypass(id, enabled)`, `setModel(id, model, onBehalfOf)`, `setEffort(id, effort, onBehalfOf)` | `PUT /api/v1/cloud/sessions/{id}/permission-bypass`, `.../model`, `.../effort` |
 | `cloudTranscripts` (`runners.cloud.conversation.v1`) | `events(id, after, before, limit, feed)`, `followEvents(id, after)`, `agents(id)` | `GET /api/v1/cloud/sessions/{id}/events`, `.../events/stream`, `.../agents` |
 | `cloudMessages` (`runners.cloud.conversation.v1`) | `send(id, request, idempotencyKey)`, `inputs(id, before, limit)`, `input(id, input)`, `interrupt(id)`, `answerPermission(id, request, idempotencyKey)`, `stopTask(id, taskId)` | `/api/v1/cloud/sessions/{id}/messages`, `.../messages/{input}`, `.../interrupt`, `.../permissions`, `.../tasks/stop` |
-| `cloudTransfers` (planned) | `recipients()`, `request(sessionId, request, idempotencyKey, onBehalfOf)`, `list(direction, states, session, before, limit)`, `get(id)`, `accept(id, resume, onBehalfOf)`, `decline(id, onBehalfOf)`, `cancel(id, onBehalfOf)` | `/api/v1/cloud/transfer-recipients`, `.../sessions/{id}/transfer`, `/api/v1/cloud/transfers`, `.../transfers/{id}` and `/accept`, `/decline`, `/cancel` |
+| `cloudTransfers` | `recipients()`, `request(sessionId, request, idempotencyKey, onBehalfOf)`, `list(direction, states, session, before, limit)`, `get(id)`, `accept(id, resume, onBehalfOf)`, `decline(id, onBehalfOf)`, `cancel(id, onBehalfOf)` | `/api/v1/cloud/transfer-recipients`, `.../sessions/{id}/transfer`, `/api/v1/cloud/transfers`, `.../transfers/{id}` and `/accept`, `/decline`, `/cancel` |
 | `cloudFiles` (`runners.cloud.files.v1`) | `upload(id, name, bytes, idempotencyKey)`, `upload(id, name, source, idempotencyKey, attempts, onRetry, onProgress)` (streamed in 64 KiB chunks, retried under one key, stored SHA-256 checked), `policy()` | `POST /api/v1/cloud/sessions/{id}/files`, `GET /api/v1/cloud/files/policy` |
-| `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
+| `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` |
 
 Every parameter left null is not sent, so the server's default applies. The models are those of
-`run.ostrom.core.api.models`, named like the schemas of `api/openapi.yaml`; an enum the contract declares inline
+`run.ostrom.core.api.models`, named like the schemas of the server's generated document; an enum the contract declares inline
 (`reasonType`, `relation`, `access`, the spending `period`) stays a `String`, so a new value never breaks a decode.
 A yes from the phone (`approvals.answer` with `ApprovalAnswer.APPROVE`) needs a recent `auth.unlock`; without one it
 throws `403 step_up_required`, with `requestBound` when the unlock is bound to another request.

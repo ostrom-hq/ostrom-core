@@ -14,7 +14,6 @@ import {
     parsePlumbing,
     OUTSIDE_DOCUMENT,
     parseOpenApiRoutes,
-    parseServedRoutes,
     routesIn,
     segmentsOf,
     shellWords,
@@ -23,26 +22,14 @@ import {
 } from "../docs-truth.mjs"
 import {HELP, fakeBinary} from "./fixtures.mjs"
 
-const ROUTES = parseServedRoutes([
-    "# comment",
-    "! GET /api/v1/auth/me  another shape",
-    "",
-    "GET /api/v1/health",
-    "get /api/v1/instance/keys",
-    "DELETE /api/v1/orgs/{}/members/{}",
-    "POST /webhooks/stripe",
-].join("\n"))
-
-describe("parseServedRoutes", () => {
-    it("keeps served lines, upper-cases the method, and drops comments, blanks and other-shape lines", () => {
-        assert.deepEqual(ROUTES, [
-            ["GET", ["api", "v1", "health"]],
-            ["GET", ["api", "v1", "instance", "keys"]],
-            ["DELETE", ["api", "v1", "orgs", "{}", "members", "{}"]],
-            ["POST", ["webhooks", "stripe"]],
-        ])
-    })
-})
+const ROUTES = parseOpenApiRoutes(JSON.stringify({
+    paths: {
+        "/api/v1/health": {get: {}},
+        "/api/v1/instance/keys": {get: {}},
+        "/api/v1/orgs/{org}/members/{login}": {delete: {}},
+        "/webhooks/stripe": {post: {}},
+    },
+}))
 
 describe("parseOpenApiRoutes", () => {
     it("serves every operation of the document, its own two routes and the probes, and nothing else", () => {
@@ -55,7 +42,10 @@ describe("parseOpenApiRoutes", () => {
             },
         }
         assert.deepEqual(parseOpenApiRoutes(JSON.stringify(document)), [
-            ...parseServedRoutes(OUTSIDE_DOCUMENT.join("\n")),
+            ["GET", ["api", "openapi.json"]],
+            ["GET", ["api", "docs"]],
+            ["GET", ["health"]],
+            ["GET", ["ready"]],
             ["GET", ["api", "v1", "rules", "{}"]],
             ["DELETE", ["api", "v1", "rules", "{}"]],
             ["POST", ["webhooks", "stripe"]],
@@ -386,7 +376,7 @@ describe("checkFile", () => {
     it("names every route, command and variable that is not shipped, on its own line", () => {
         const page = "---\nstatus: available\n---\nCall\n`POST /api/v1/launches` and\n`OSTROM_NOPE`.\n\n```sh\nostrom deploy\nostrom harness list\n```\n"
         assert.deepEqual(checkFile(page, facts), [
-            {line: 5, message: 'POST /api/v1/launches is not served by ostrom-server main (served-routes.txt), and nothing around it says "coming soon"'},
+            {line: 5, message: 'POST /api/v1/launches is not served by ostrom-server main (its OpenAPI document), and nothing around it says "coming soon"'},
             {line: 6, message: 'OSTROM_NOPE is read by none of the sources, and nothing around it says "coming soon"'},
             {line: 9, message: '`ostrom deploy` is not a command of ostrom, and nothing around it says "coming soon"'},
             {line: 10, message: '`ostrom harness list` is coming soon in the binary, and nothing around it says "coming soon"'},

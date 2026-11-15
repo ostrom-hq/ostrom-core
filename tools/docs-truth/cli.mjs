@@ -4,9 +4,9 @@
 import {execFileSync} from "node:child_process"
 import {readdirSync, readFileSync, statSync} from "node:fs"
 import {join, relative} from "node:path"
-import {buildTree, checkFile, DEFAULT_MARKER, parseOpenApiRoutes, parseServedRoutes, variablesInSource} from "./docs-truth.mjs"
+import {buildTree, checkFile, DEFAULT_MARKER, parseOpenApiRoutes, variablesInSource} from "./docs-truth.mjs"
 
-export const USAGE = `Usage: docs-truth (--openapi <openapi.json> | --routes <served-routes.txt>) [options] <file or folder>...
+export const USAGE = `Usage: docs-truth --openapi <openapi.json> [options] <file or folder>...
 
 Fails when a page cites an API route, an ostrom command or option, or an OSTROM_ variable that the product does not
 have, unless the page says "Coming soon" around it. A folder is read for its .md and .mdx pages; any other file given
@@ -15,8 +15,7 @@ paragraph, where they ran (the receipt's attestation: declared by the workstatio
 
 Options:
   --openapi <file>    the OpenAPI document ostrom-server generates (its GET /api/openapi.json, the @ostrom-hq/openapi
-                      package): its operations, the document's own two routes and the probes are served
-  --routes <file>     ostrom-core's api/contract/served-routes.txt, until it goes (one of the two is required)
+                      package; required): its operations, the document's own two routes and the probes are served
   --ostrom <binary>   the real ostrom binary: commands and options are checked against its help
   --source <path>     a folder or file whose OSTROM_ variables count as read (repeatable); none: variables unchecked
   --tests             the sources' tests count too (a contributor's page may cite a variable only tests read)
@@ -37,7 +36,7 @@ function walk(path, keep) {
 
 /** Parses [argv]; throws an Error whose message is for the user. */
 export function parseArguments(argv) {
-    const options = {routes: null, openapi: null, ostrom: null, sources: [], tests: false, warn: [], marker: DEFAULT_MARKER, paths: []}
+    const options = {openapi: null, ostrom: null, sources: [], tests: false, warn: [], marker: DEFAULT_MARKER, paths: []}
     for (let index = 0; index < argv.length; index += 1) {
         const argument = argv[index]
         const value = () => {
@@ -45,8 +44,7 @@ export function parseArguments(argv) {
             if (index >= argv.length) throw new Error(`${argument} needs a value`)
             return argv[index]
         }
-        if (argument === "--routes") options.routes = value()
-        else if (argument === "--openapi") options.openapi = value()
+        if (argument === "--openapi") options.openapi = value()
         else if (argument === "--ostrom") options.ostrom = value()
         else if (argument === "--source") options.sources.push(value())
         else if (argument === "--warn") options.warn.push(value())
@@ -55,7 +53,7 @@ export function parseArguments(argv) {
         else if (argument.startsWith("--")) throw new Error(`unknown option ${argument}`)
         else options.paths.push(argument)
     }
-    if ((options.routes === null) === (options.openapi === null)) throw new Error("exactly one of --openapi and --routes is required")
+    if (options.openapi === null) throw new Error("--openapi is required")
     if (options.paths.length === 0) throw new Error("no page to check")
     return options
 }
@@ -75,10 +73,7 @@ export function main(argv, {out, err, env = process.env, runner = binaryRunner})
         return 64
     }
     const facts = {
-        routes: options.openapi === null
-            ? parseServedRoutes(readFileSync(options.routes, "utf8"))
-            : parseOpenApiRoutes(readFileSync(options.openapi, "utf8")),
-        routesSource: options.openapi === null ? "served-routes.txt" : "its OpenAPI document",
+        routes: parseOpenApiRoutes(readFileSync(options.openapi, "utf8")),
         tree: options.ostrom === null ? null : buildTree(runner(options.ostrom)),
         variables: null,
     }

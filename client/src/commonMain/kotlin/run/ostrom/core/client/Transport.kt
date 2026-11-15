@@ -150,8 +150,8 @@ internal class Transport(
     }
 
     /**
-     * The contract's `ApiError`, with the `error.requestBound` of a `step_up_required` (`StepUpRequired` in
-     * api/openapi.yaml), read on its own since `ErrorDetail` does not carry it.
+     * The server's `ApiError`, with the `error.requestBound` of a `step_up_required` (`StepUpRequired`), read on its
+     * own since `ErrorDetail` does not carry it.
      */
     @Serializable
     private class ErrorBody(val error: Detail) {

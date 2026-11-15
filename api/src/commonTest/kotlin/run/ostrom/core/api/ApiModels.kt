@@ -301,7 +301,7 @@ import run.ostrom.core.api.models.McpServerList
 import run.ostrom.core.api.models.McpStdioSpec
 import kotlinx.serialization.KSerializer
 
-/** Every model of the API contract: the schemas of `api/openapi.yaml` that have a Kotlin model. */
+/** Every model of the API: each round-trips through JSON (ModelRoundTripTest). */
 internal val apiModels: List<KSerializer<*>> = listOf(
     Account.serializer(),
     AccountEmail.serializer(),
