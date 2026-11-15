@@ -19718,7 +19718,9 @@ components:
         header is also read on the model, the effort and the transfer writes (`setCloudSessionModel`,
         `setCloudSessionEffort`, `transferCloudSession`, `acceptCloudTransfer`, `declineCloudTransfer`,
         `cancelCloudTransfer`), as on every TeamCode cloud write, and each `cloud.session.*` entry is written in the
-        transaction of the change it tells (TeamCode's `CloudWrite`): a write that cannot be journaled does not happen"
+        transaction of the change it tells (TeamCode's `CloudWrite`): a write that cannot be journaled does not happen.
+        A server without `runners.cloud.onbehalf.writes.v1` ignores the header on those six writes: a client checks it
+        before sending the header there"
       schema:
         type: string
         minLength: 1
