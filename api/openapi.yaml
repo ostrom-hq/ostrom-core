@@ -13104,7 +13104,7 @@ paths:
       tags:
       - runners
       summary: The caller's cloud agent sessions, newest first
-      description: "With `runners.cloud.remote.v1` (planned), `kind` (repeatable) chooses the kinds listed, `cloud` or
+      description: "With `runners.cloud.remote.v1`, `kind` (repeatable) chooses the kinds listed, `cloud` or
         `remote` (400 `invalid_kind` otherwise); without it, cloud sessions only, so a client from before remote sessions
         never lists one it cannot show"
       parameters:
@@ -13632,7 +13632,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: hostCloudSession
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: Open the next execution of a remote session, from its device
@@ -23218,6 +23218,13 @@ components:
           description: How many sessions of one member's automation runs may work at once (TeamCode's
             `maxRunningAutomationsPerMember`); a run over it stays `queued` (up to 30 minutes, then fails
             `capacity_timeout`). A run of a workflow action does not count. 2 by default
+        remoteIdleTimeoutMinutes:
+          type: integer
+          minimum: 0
+          maximum: 1440
+          description: With `runners.cloud.remote.v1`, how long a remote session may go without a turn, a message or an attached client before it pauses; 0 never
+            pauses one. 60 by default (TeamCode's `remoteIdleTimeoutMinutes`,
+            `RemoteSessionLimits`)
         updatedAt:
           type: string
           format: date-time
@@ -23239,6 +23246,11 @@ components:
           minimum: 1
           maximum: 100
           description: Absent keeps the stored value (2 while nothing is stored)
+        remoteIdleTimeoutMinutes:
+          type: integer
+          minimum: 0
+          maximum: 1440
+          description: Absent keeps the stored value (60 while nothing is stored)
         updatedAt:
           type: string
           format: date-time
