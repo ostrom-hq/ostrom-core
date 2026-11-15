@@ -88,7 +88,7 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
     /**
      * Pauses a session, keeping its workspace (`POST /api/v1/cloud/sessions/{id}/pause`).
      *
-     * @param onBehalfOf The session's owner, for an administrator's call on their behalf (see [create]).
+     * @param onBehalfOf The member this call on the caller's own session is journaled for (see [create]).
      */
     public suspend fun pause(id: String, onBehalfOf: String? = null): CloudSession =
         onBehalf(HttpMethod.Post, "${path(id)}/pause", onBehalfOf)
@@ -97,7 +97,7 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
      * Resumes a paused session (`POST /api/v1/cloud/sessions/{id}/resume`): a retryable `preparation_failed` is tried
      * again this way.
      *
-     * @param onBehalfOf The session's owner, for an administrator's call on their behalf (see [create]).
+     * @param onBehalfOf The member this call on the caller's own session is journaled for (see [create]).
      */
     public suspend fun resume(id: String, onBehalfOf: String? = null): CloudSession =
         onBehalf(HttpMethod.Post, "${path(id)}/resume", onBehalfOf)
@@ -105,7 +105,7 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
     /**
      * Terminates a session; its workspace is deleted (`DELETE /api/v1/cloud/sessions/{id}`).
      *
-     * @param onBehalfOf The session's owner, for an administrator's call on their behalf (see [create]).
+     * @param onBehalfOf The member this call on the caller's own session is journaled for (see [create]).
      */
     public suspend fun stop(id: String, onBehalfOf: String? = null): CloudSession =
         onBehalf(HttpMethod.Delete, path(id), onBehalfOf)
@@ -117,7 +117,7 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
     /**
      * Changes the agent's model, while it runs too (`PUT .../model`, `runners.cloud.model.v1`).
      *
-     * @param onBehalfOf The session's owner, for an administrator's call on their behalf
+     * @param onBehalfOf The member this call on the caller's own session is journaled for
      *   (`runners.cloud.onbehalf.writes.v1`, see [create]).
      */
     public suspend fun setModel(id: String, model: String, onBehalfOf: String? = null): CloudSession =
@@ -126,7 +126,7 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
     /**
      * Changes the agent's effort, while it runs too (`PUT .../effort`, `runners.cloud.effort.v1`).
      *
-     * @param onBehalfOf The session's owner, for an administrator's call on their behalf
+     * @param onBehalfOf The member this call on the caller's own session is journaled for
      *   (`runners.cloud.onbehalf.writes.v1`, see [create]).
      */
     public suspend fun setEffort(id: String, effort: String, onBehalfOf: String? = null): CloudSession =

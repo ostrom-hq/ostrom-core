@@ -135,7 +135,8 @@ otherwise) and only attribute them to that member in the audit log. A malformed 
 `on_behalf_forbidden` (403), `invalid_effective_member` (422) and `invalid_on_behalf` (400). A server without the
 capability ignores the header: check the capability first. `CloudSession.createdBy` says who created a session.
 With `runners.cloud.onbehalf.writes.v1` (served since ostrom-server#646), `cloudSessions.setModel` and `setEffort` and `cloudTransfers.request`,
-`accept`, `decline` and `cancel` take `onBehalfOf` too, as every TeamCode cloud write does. `cloudSessions.list(owner)`
+`accept`, `decline` and `cancel` take `onBehalfOf` too, as every TeamCode cloud write does, only to attribute the
+write: the session or the transfer stays the caller's own. `cloudSessions.list(owner)`
 sends TeamCode's `owner` (`runners.cloud.sessions.owner.v1`): only the caller's own member id lists anything.
 
 ## The CLI
