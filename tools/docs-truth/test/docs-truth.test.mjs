@@ -12,6 +12,8 @@ import {
     parseCommands,
     parseOptions,
     parsePlumbing,
+    OUTSIDE_DOCUMENT,
+    parseOpenApiRoutes,
     parseServedRoutes,
     routesIn,
     segmentsOf,
@@ -39,6 +41,27 @@ describe("parseServedRoutes", () => {
             ["DELETE", ["api", "v1", "orgs", "{}", "members", "{}"]],
             ["POST", ["webhooks", "stripe"]],
         ])
+    })
+})
+
+describe("parseOpenApiRoutes", () => {
+    it("serves every operation of the document, its own two routes and the probes, and nothing else", () => {
+        const document = {
+            openapi: "3.1.0",
+            paths: {
+                "/api/v1/rules/{id}": {parameters: [], get: {}, delete: {}, summary: "x"},
+                "/webhooks/stripe": {post: {}},
+                "/api/v1/empty": null,
+            },
+        }
+        assert.deepEqual(parseOpenApiRoutes(JSON.stringify(document)), [
+            ...parseServedRoutes(OUTSIDE_DOCUMENT.join("\n")),
+            ["GET", ["api", "v1", "rules", "{}"]],
+            ["DELETE", ["api", "v1", "rules", "{}"]],
+            ["POST", ["webhooks", "stripe"]],
+        ])
+        assert.deepEqual(parseOpenApiRoutes("{}").length, OUTSIDE_DOCUMENT.length)
+        assert.ok(isServed(parseOpenApiRoutes("{}"), "GET", ["api", "openapi.json"]))
     })
 })
 

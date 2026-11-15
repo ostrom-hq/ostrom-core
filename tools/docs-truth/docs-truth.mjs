@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // docs-truth: a page may cite only what the product does. Every cited API route must be served by ostrom-server main
-// (api/contract/served-routes.txt), every `ostrom …` command and option must be in the help of the real binary, and
-// every OSTROM_ variable must be read by the sources given. A citation of something not shipped is allowed only under
+// (its generated OpenAPI document, or the older api/contract/served-routes.txt), every `ostrom …` command and option
+// must be in the help of the real binary, and every OSTROM_ variable must be read by the sources given. A citation of something not shipped is allowed only under
 // an explicit marker ("Coming soon" by default): in its paragraph, list item, table row or heading, or on a page whose
 // front matter says `status: coming-soon`. A claim that checks are proven must say where they ran (their attestation).
 
@@ -36,6 +36,27 @@ export function parseServedRoutes(text) {
         if (line === "" || line.startsWith("#") || line.startsWith("!")) continue
         const [method, path] = line.split(/\s+/)
         routes.push([method.toUpperCase(), segmentsOf(path)])
+    }
+    return routes
+}
+
+/**
+ * The routes a server serves outside the OpenAPI document it generates: the document itself and its Swagger page (both
+ * hidden from what they describe), and the probes.
+ */
+export const OUTSIDE_DOCUMENT = ["GET /api/openapi.json", "GET /api/docs", "GET /health", "GET /ready"]
+
+/**
+ * The routes of the OpenAPI document ostrom-server generates (`GET /api/openapi.json`, the `openapi-generated` artifact
+ * of its CI, the `@ostrom-hq/openapi` package), as [parseServedRoutes] gives them, with [OUTSIDE_DOCUMENT]: every
+ * operation of the document is served, there is nothing planned in it.
+ */
+export function parseOpenApiRoutes(text) {
+    const routes = parseServedRoutes(OUTSIDE_DOCUMENT.join("\n"))
+    for (const [path, item] of Object.entries(JSON.parse(text).paths ?? {})) {
+        for (const method of Object.keys(item ?? {})) {
+            if (METHODS.includes(method.toUpperCase())) routes.push([method.toUpperCase(), segmentsOf(path)])
+        }
     }
     return routes
 }
@@ -376,7 +397,7 @@ export function checkFile(source, facts, {marker = DEFAULT_MARKER, markdown = tr
         const lineOf = (needle) => chunk.line + newlines(chunk.text.slice(0, chunk.text.indexOf(needle)))
         for (const {method, path} of routesIn(chunk.text)) {
             if (!isServed(facts.routes, method, segmentsOf(path))) {
-                add(lineOf(path), `${method === null ? "" : `${method} `}${path} is not served by ostrom-server main (served-routes.txt)`)
+                add(lineOf(path), `${method === null ? "" : `${method} `}${path} is not served by ostrom-server main (${facts.routesSource ?? "served-routes.txt"})`)
             }
         }
         if (facts.tree !== null && markdown) {
