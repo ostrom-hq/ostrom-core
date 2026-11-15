@@ -157,7 +157,7 @@ class UnknownFallbackEnumTest {
     fun aMessageWithANewStatusStillDecodes() {
         val wait = OstromJson.decodeFromString(
             Wait.serializer(),
-            """{"id":"w1","kind":"question","status":"snoozed","assignee":"ana",""" +
+            """{"id":"w1","kind":"question","status":"snoozed","assignee":"ana","createdBy":"bo",""" +
                 """"question":{"title":"Ship?"},"createdAt":"t"}""",
         )
         assertEquals(WaitStatus.UNKNOWN, wait.status)

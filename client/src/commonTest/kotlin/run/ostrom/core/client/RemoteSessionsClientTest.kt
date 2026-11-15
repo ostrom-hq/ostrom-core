@@ -22,7 +22,9 @@ class RemoteSessionsClientTest {
         assertEquals(Json.parseToJsonElement(expected), Json.parseToJsonElement(actual), actual)
     }
 
-    private val cloudSession = """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating",""" +
+    private val cloudSession = """{"id":"cs_1",""" +
+        """"name":"n","desiredStatus":"running","updatedAt":"t",""" +
+        """"owner":"m1","agent":"claude","status":"creating",""" +
         """"phase":"cloning_repositories",""" +
         """"epoch":1,"failure":{"code":"preparation_failed","message":"Clone failed.","retryable":true},""" +
         """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +

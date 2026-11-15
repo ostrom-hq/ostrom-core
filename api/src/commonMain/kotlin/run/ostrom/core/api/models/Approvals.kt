@@ -53,13 +53,13 @@ public data class ApprovalViewer(
 @Serializable
 public data class ApprovalView(
     val approval: Approval,
-    val who: ApprovalWho? = null,
-    val what: ApprovalWhat? = null,
+    val who: ApprovalWho,
+    val what: ApprovalWhat,
     val gate: GateRef? = null,
     val rules: List<Rule> = emptyList(),
     val diff: String? = null,
     val pr: GatePullRequest? = null,
-    val askedVia: List<String> = emptyList(),
+    val askedVia: List<String>,
     val note: String? = null,
     val receipt: Receipt? = null,
     val verification: Verification? = null,
@@ -93,7 +93,7 @@ public data class ApprovalWho(
  */
 @Serializable
 public data class ApprovalWhat(
-    val action: String? = null,
+    val action: String,
     val command: String? = null,
     val repo: String? = null,
     val sessionRepo: String? = null,

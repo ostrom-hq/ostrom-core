@@ -22,4 +22,5 @@ public data class ApiError(
 public data class ErrorDetail(
     val type: String,
     val message: String,
+    val requestBound: Boolean? = null,
 )

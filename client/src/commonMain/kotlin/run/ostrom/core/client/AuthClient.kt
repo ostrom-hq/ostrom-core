@@ -93,7 +93,13 @@ public class AuthClient internal constructor(private val transport: Transport) {
     ): DeviceCode = transport.jsonBody(
         HttpMethod.Post,
         "/api/v1/auth/device",
-        DeviceLoginStart(scopes, installationId, deviceName, platform, osVersion),
+        DeviceLoginStart(
+            scopes = scopes.ifEmpty { null },
+            installationId = installationId,
+            deviceName = deviceName,
+            platform = platform,
+            osVersion = osVersion,
+        ),
     )
 
     /**

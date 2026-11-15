@@ -18,7 +18,7 @@ class MembersAndApproversTest {
     fun aMemberCarriesTheIdTheArtifactRoutesTake() {
         val member = OstromJson.decodeFromString(
             Member.serializer(),
-            """{"id":"$THEO_ID","login":"theo","avatarUrl":"https://a/theo.png","role":"member"}""",
+            """{"id":"$THEO_ID","login":"theo","name":"Theo","avatarUrl":"https://a/theo.png","role":"member"}""",
         )
 
         assertEquals(THEO_ID, member.id)
@@ -30,7 +30,7 @@ class MembersAndApproversTest {
         assertFailsWith<SerializationException> {
             OstromJson.decodeFromString(
                 Member.serializer(),
-                """{"login":"theo","avatarUrl":"https://a/theo.png","role":"member"}""",
+                """{"login":"theo","name":"Theo","avatarUrl":"https://a/theo.png","role":"member"}""",
             )
         }
     }

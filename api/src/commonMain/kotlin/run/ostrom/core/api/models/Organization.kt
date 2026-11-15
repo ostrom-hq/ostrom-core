@@ -65,7 +65,7 @@ public enum class GitHubConnection(
 public data class Member(
     val id: String,
     val login: String,
-    val name: String? = null,
+    val name: String,
     val avatarUrl: String,
     val email: String? = null,
     val teams: List<String> = emptyList(),

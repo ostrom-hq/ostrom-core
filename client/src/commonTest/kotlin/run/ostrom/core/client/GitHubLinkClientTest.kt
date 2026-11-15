@@ -96,7 +96,10 @@ class GitHubLinkClientTest {
     fun aCloudSessionsGitHubAccessIsSetWithItsBody() = runTest {
         val server = ScriptedServer {
             json(
-                """{"id":"cs_1","owner":"ada","agent":"claude","status":"running","createdAt":"t",""" +
+                """{"id":"cs_1",""" +
+                    """"name":"n","desiredStatus":"running","epoch":1,"updatedAt":"t",""" +
+                    """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +
+                    """"owner":"ada","agent":"claude","status":"running","createdAt":"t",""" +
                     """"githubAccess":"shared"}""",
             )
         }

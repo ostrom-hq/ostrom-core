@@ -90,6 +90,16 @@ client.close()
 Every parameter left null is not sent, so the server's default applies. The models are those of
 `run.ostrom.core.api.models`, named like the schemas of the server's generated document; an enum the contract declares inline
 (`reasonType`, `relation`, `access`, the spending `period`) stays a `String`, so a new value never breaks a decode.
+**The contract check.** `ContractTest` (client `jvmTest`) calls every public function of `OstromClient` and its
+subclients by reflection, with arguments built from their types, against a scripted server, and compares each request
+with the server's generated document (the `@ostrom-hq/openapi` version of `client/openapi.version`, which CI installs
+and names in `OSTROM_OPENAPI_DOCUMENT`): the operation exists for that method and path, each query parameter is
+declared, and the model sent and the model read have the documented schema (each property, its type, whether it is
+required or nullable, the enum values). Every model of `api` named like a schema of the document is compared the same
+way. What core models and the server does not serve yet is listed in `ServerGaps`, each a server port to come; an entry
+the server starts serving fails the check until it goes. A new server version is taken by bumping
+`client/openapi.version` and fixing what the check reports, the server's document winning.
+
 A yes from the phone (`approvals.answer` with `ApprovalAnswer.APPROVE`) needs a recent `auth.unlock`; without one it
 throws `403 step_up_required`, with `requestBound` when the unlock is bound to another request.
 

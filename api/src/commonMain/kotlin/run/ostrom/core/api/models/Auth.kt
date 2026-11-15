@@ -42,8 +42,9 @@ public data class AuthToken(
  * later sign-in from it lands on the same device (TeamCode's installation identity, docs/devices.md). A server without
  * it ignores the four fields.
  *
+ * @property clientName The client's name, shown on the verification page.
  * @property scopes Exactly `policy:write`, `harness:write` and `gates:policy`, or those three and `budgets:write`;
- *   empty for the ordinary sign-in.
+ *   null or empty for the ordinary sign-in.
  * @property installationId The CLI's installation, a random lowercase UUID kept in its configuration directory; it
  *   survives a sign-out and a change of server. Never shown and never returned.
  * @property deviceName The name of a device registered by this sign-in ([DeviceLimits.MAX_NAME] characters, no control
@@ -53,7 +54,8 @@ public data class AuthToken(
  */
 @Serializable
 public data class DeviceLoginStart(
-    val scopes: List<String> = emptyList(),
+    val clientName: String? = null,
+    val scopes: List<String>? = null,
     val installationId: String? = null,
     val deviceName: String? = null,
     val platform: String? = null,
@@ -77,7 +79,7 @@ public data class DeviceCode(
     val verificationUri: String,
     val interval: Int,
     val expiresIn: Int,
-    val verificationUriComplete: String? = null,
+    val verificationUriComplete: String,
 )
 
 /**
@@ -118,7 +120,7 @@ public data class MobileToken(
     val token: String,
     val user: AuthUser,
     val expiresAt: String? = null,
-    val unlockKey: String? = null,
+    val unlockKey: String,
 )
 
 /**
@@ -148,12 +150,12 @@ public data class MobileUnlock(
  * The sign-in methods an instance offers (`GET /api/v1/auth/providers`).
  *
  * @property methods The providers (`github`, `google`, `email`, `oidc:<connection>`…).
- * @property signUp Who may get a new account; absent from an older server, which means [SignUpPolicy.OPEN].
+ * @property signUp Who may get a new account.
  */
 @Serializable
 public data class SignInMethods(
     val methods: List<String>,
-    val signUp: SignUpPolicy? = null,
+    val signUp: SignUpPolicy,
 )
 
 /** Who may get a new account on an instance. */

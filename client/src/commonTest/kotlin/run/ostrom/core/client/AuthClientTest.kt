@@ -121,6 +121,7 @@ class AuthClientTest {
             when (request.url.encodedPath) {
                 "/api/v1/auth/device" -> json(
                     """{"deviceCode":"dc","userCode":"ABCD-EFGH","verificationUri":"https://ostrom.example/device",""" +
+                        """"verificationUriComplete":"https://ostrom.example/device?code=ABCD-EFGH",""" +
                         """"interval":5,"expiresIn":900}""",
                 )
                 else -> when (polls++) {

@@ -29,7 +29,10 @@ class CloudConversationClientTest {
     }
 
     private val input = """{"id":"in_1","kind":"message","status":"queued","authorId":"ada","createdAt":"t"}"""
-    private val session = """{"id":"cs_1","owner":"ada","agent":"claude","status":"running","createdAt":"t",""" +
+    private val session = """{"id":"cs_1",""" +
+        """"name":"n","desiredStatus":"running","epoch":1,"updatedAt":"t",""" +
+        """"limits":{"idleTimeoutMinutes":30,"maxRunMinutes":240,"restrictedEgress":false},""" +
+        """"owner":"ada","agent":"claude","status":"running","createdAt":"t",""" +
         """"mode":"conversation","effort":"high","permissionBypass":true,""" +
         """"waiting":{"reason":"question","requestId":"r1","since":"t","eventSeq":9}}"""
 
