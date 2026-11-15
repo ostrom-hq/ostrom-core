@@ -20203,13 +20203,7 @@ components:
           type: string
           description: Changes whenever the advice or its context changes
         pace:
-          type: string
-          enum: [unknown, normal, slow_down, can_increase, pause]
-          description: "`normal`; `slow_down` when, at the team's current rate, every usable account is projected to run
-            out before one resets (admissions spaced by 2, 5 or 10 seconds as the gap is lighter or more severe);
-            `pause` when no usable account is left (30 seconds); `can_increase` when no gap appears even at twice the
-            rate and every usable window is under half used; `unknown` when observations are missing. Clients treat
-            an unknown value as `unknown`"
+          $ref: '#/components/schemas/DirectivePace'
         maxConcurrent:
           type: integer
           minimum: 0
@@ -20235,7 +20229,17 @@ components:
       - message
       - createdAt
       - expiresAt
-      x-ostrom-kotlin: pending
+    DirectivePace:
+      type: string
+      enum: [unknown, normal, slow_down, can_increase, pause]
+      description: "`normal`; `slow_down` when, at the team's current rate, every usable account is projected to run
+          out before one resets (admissions spaced by 2, 5 or 10 seconds as the gap is lighter or more severe);
+          `pause` when no usable account is left (30 seconds); `can_increase` when no gap appears even at twice the
+          rate and every usable window is under half used; `unknown` when observations are missing. Clients treat
+          an unknown value as `unknown`"
+    DirectiveStage:
+      type: string
+      enum: [received_by_cli, emitted_to_hook]
     DirectiveClaim:
       type: object
       description: A claimed delivery; both absent when nothing new is to be delivered
@@ -20244,7 +20248,6 @@ components:
           $ref: '#/components/schemas/Directive'
         claimId:
           type: string
-      x-ostrom-kotlin: pending
     DirectiveClaimRequest:
       type: object
       properties:
@@ -20252,12 +20255,10 @@ components:
           type: string
           maxLength: 128
         stage:
-          type: string
-          enum: [received_by_cli, emitted_to_hook]
+          $ref: '#/components/schemas/DirectiveStage'
       required:
       - sessionId
       - stage
-      x-ostrom-kotlin: pending
     DirectiveReceipt:
       type: object
       properties:
@@ -20265,8 +20266,7 @@ components:
           type: string
           description: The advice's id
         stage:
-          type: string
-          enum: [received_by_cli, emitted_to_hook]
+          $ref: '#/components/schemas/DirectiveStage'
         sessionId:
           type: string
           maxLength: 128
@@ -20275,13 +20275,11 @@ components:
       required:
       - id
       - stage
-      x-ostrom-kotlin: pending
     DirectiveResponse:
       type: object
       properties:
         directive:
           $ref: '#/components/schemas/Directive'
-      x-ostrom-kotlin: pending
     DirectiveScope:
       type: object
       properties:
@@ -20290,7 +20288,6 @@ components:
           maxLength: 128
       required:
       - sessionId
-      x-ostrom-kotlin: pending
     ForecastAccount:
       type: object
       description: A shared account as the Forecasts page lists it, never its credentials nor its provider account id
@@ -20421,7 +20418,6 @@ components:
           $ref: '#/components/schemas/Directive'
       required:
       - settings
-      x-ostrom-kotlin: pending
     PacingSettings:
       type: object
       description: "The capacity controller's settings for the organization (`capacity.pacing.v1`). A provider window
@@ -20435,7 +20431,6 @@ components:
           type: boolean
           description: "False by default. Size the organization's daily budget from its shared accounts (`capacity.poolsize.v1`,
             `GET /api/v1/pools/size`) instead of the typed one"
-      x-ostrom-kotlin: pending
     PoolSize:
       type: object
       description: "The automatic daily budget and the estimate behind it, in USD millionths at the gateway's prices

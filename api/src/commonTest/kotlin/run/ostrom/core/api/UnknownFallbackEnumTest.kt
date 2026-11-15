@@ -12,6 +12,7 @@ import run.ostrom.core.api.models.AutomationTriggerKind
 import run.ostrom.core.api.models.CheckAttestation
 import run.ostrom.core.api.models.CheckOutcome
 import run.ostrom.core.api.models.CheckState
+import run.ostrom.core.api.models.DirectivePace
 import run.ostrom.core.api.models.GateMode
 import run.ostrom.core.api.models.GateStatus
 import run.ostrom.core.api.models.GitHubConnection
@@ -65,6 +66,17 @@ class UnknownFallbackEnumTest {
         val descriptor = serializer.descriptor
         val values = (0 until descriptor.elementsCount).map(descriptor::getElementName)
         assertEquals(entries.filter { it != unknown }.map(valueOf), values)
+    }
+
+    @Test
+    fun anUnknownPaceReadsAsUnknownWhileUnknownIsAlsoAValueOfTheContract() {
+        for (entry in DirectivePace.entries) {
+            val encoded = OstromJson.encodeToJsonElement(DirectivePace.Serializer, entry)
+            assertEquals(JsonPrimitive(entry.value), encoded)
+            assertEquals(entry, OstromJson.decodeFromJsonElement(DirectivePace.Serializer, encoded))
+        }
+        val added = JsonPrimitive("added-by-a-newer-server")
+        assertEquals(DirectivePace.UNKNOWN, OstromJson.decodeFromJsonElement(DirectivePace.Serializer, added))
     }
 
     @Test

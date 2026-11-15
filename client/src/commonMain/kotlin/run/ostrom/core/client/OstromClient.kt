@@ -92,6 +92,9 @@ public class OstromClient(
     /** The caller's GitHub link, and the members' for owners and admins (`github.link.v1`). */
     public val githubLink: GitHubLinkClient = GitHubLinkClient(transport)
 
+    /** The capacity controller's settings and its advice to agents (`capacity.pacing.v1`). */
+    public val pacing: PacingClient = PacingClient(transport)
+
     /** What the caller is notified of. */
     public val notifications: NotificationsClient = NotificationsClient(transport)
 
