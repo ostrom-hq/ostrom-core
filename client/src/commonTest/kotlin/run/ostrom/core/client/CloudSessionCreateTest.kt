@@ -58,6 +58,27 @@ class CloudSessionCreateTest {
     }
 
     @Test
+    fun theModelAndTheEffortAreSetOnBehalfOfAMemberAndTheListNamesItsOwner() = runTest {
+        val server = ScriptedServer { request ->
+            if (request.method.value == "GET") json("""{"items":[],"next":null}""") else json(cloudSession)
+        }
+        server.client().use { client ->
+            client.cloudSessions.setModel("cs_1", "opus", onBehalfOf = "ada")
+            client.cloudSessions.setEffort("cs_1", "high", onBehalfOf = "ada")
+            client.cloudSessions.setModel("cs_1", "opus")
+            client.cloudSessions.list(owner = "m1")
+            assertFailsWith<IllegalArgumentException> {
+                client.cloudSessions.setEffort("cs_1", "high", onBehalfOf = "a b")
+            }
+        }
+        assertEquals(4, server.requests.size)
+        assertEquals(listOf("ada", "ada", null), server.requests.take(3).map { it.headers[OnBehalfOf.HEADER] })
+        assertJson("""{"model":"opus"}""", server.requests[0].bodyText())
+        assertJson("""{"effort":"high"}""", server.requests[1].bodyText())
+        assertEquals("m1", server.requests[3].url.parameters["owner"])
+    }
+
+    @Test
     fun aSessionReadsWhoCreatedIt() {
         val session = Json.decodeFromString<run.ostrom.core.api.models.CloudSession>(
             """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating","createdAt":"t",""" +

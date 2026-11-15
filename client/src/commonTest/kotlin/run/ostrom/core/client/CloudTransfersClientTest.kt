@@ -5,10 +5,12 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.content.OutgoingContent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import run.ostrom.core.api.OnBehalfOf
 import run.ostrom.core.api.models.CloudTransferStates
 import run.ostrom.core.api.models.CreateCloudTransferRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -66,5 +68,21 @@ class CloudTransfersClientTest {
         assertEquals("k-1", asked.headers["Idempotency-Key"])
         val body = (asked.body as OutgoingContent.ByteArrayContent).bytes().decodeToString()
         assertEquals(Json.parseToJsonElement("""{"toMemberId":"bob","resume":true}"""), Json.parseToJsonElement(body))
+    }
+
+    @Test
+    fun anAdministratorAsksAndDecidesTransfersOnBehalfOfAMember() = runTest {
+        val server = ScriptedServer { json(transfer) }
+        server.client().use { client ->
+            client.cloudTransfers.request("cs_1", CreateCloudTransferRequest("bob"), "k-1", onBehalfOf = "ada")
+            client.cloudTransfers.accept("tr_1", onBehalfOf = "bob")
+            client.cloudTransfers.decline("tr_1", onBehalfOf = "bob")
+            client.cloudTransfers.cancel("tr_1", onBehalfOf = "ada")
+            client.cloudTransfers.cancel("tr_1")
+            assertFailsWith<IllegalArgumentException> { client.cloudTransfers.decline("tr_1", onBehalfOf = "a b") }
+        }
+        assertEquals(5, server.requests.size)
+        assertEquals(listOf("ada", "bob", "bob", "ada", null), server.requests.map { it.headers[OnBehalfOf.HEADER] })
+        assertEquals("k-1", server.requests[0].headers["Idempotency-Key"])
     }
 }

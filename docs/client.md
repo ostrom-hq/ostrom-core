@@ -78,12 +78,12 @@ client.close()
 | `workflowSettings` | `get()`, `save(editors)` | `GET` and `PUT /api/v1/workflows/settings` |
 | `environment` | `names()` (names and unavailable names only, values dropped), `listMine()`, `createMine(variant)`, `updateMine(id, update)`, `deleteMine(id)` | `GET /api/v1/environment`, `GET` and `POST /api/v1/me/environment/variants`, `PATCH` and `DELETE /api/v1/me/environment/variants/{id}` |
 | `myMcpServers` | `list()`, `create(server)`, `save(name, server)`, `delete(name)` | `GET` and `POST /api/v1/me/mcp/servers`, `PUT` and `DELETE /api/v1/me/mcp/servers/{name}` |
-| `cloudSessions` | `list(status, before, limit)`, `get(id)`, `create(request, idempotencyKey, onBehalfOf)`, `pause(id, onBehalfOf)`, `resume(id, onBehalfOf)`, `stop(id, onBehalfOf)` | `GET` and `POST /api/v1/cloud/sessions`, `GET` and `DELETE /api/v1/cloud/sessions/{id}`, `POST /api/v1/cloud/sessions/{id}/pause`, `POST /api/v1/cloud/sessions/{id}/resume` |
+| `cloudSessions` | `list(status, before, limit, kinds, owner)`, `get(id)`, `create(request, idempotencyKey, onBehalfOf)`, `pause(id, onBehalfOf)`, `resume(id, onBehalfOf)`, `stop(id, onBehalfOf)`, `setModel(id, model, onBehalfOf)`, `setEffort(id, effort, onBehalfOf)` | `GET` and `POST /api/v1/cloud/sessions`, `GET` and `DELETE /api/v1/cloud/sessions/{id}`, `POST /api/v1/cloud/sessions/{id}/pause`, `POST /api/v1/cloud/sessions/{id}/resume` |
 | `cloudSessions` (GitHub access) | `setGitHubAccess(id, access)` | `PUT /api/v1/cloud/sessions/{id}/github` (`runners.cloud.github.v1`, `owner`, `shared` or `none`) |
 | `cloudSessions` (conversation) | `setPermissionBypass(id, enabled)`, `setModel(id, model)`, `setEffort(id, effort)` | `PUT /api/v1/cloud/sessions/{id}/permission-bypass`, `.../model`, `.../effort` |
 | `cloudTranscripts` (`runners.cloud.conversation.v1`) | `events(id, after, before, limit, feed)`, `followEvents(id, after)`, `agents(id)` | `GET /api/v1/cloud/sessions/{id}/events`, `.../events/stream`, `.../agents` |
 | `cloudMessages` (`runners.cloud.conversation.v1`) | `send(id, request, idempotencyKey)`, `inputs(id, before, limit)`, `input(id, input)`, `interrupt(id)`, `answerPermission(id, request, idempotencyKey)`, `stopTask(id, taskId)` | `/api/v1/cloud/sessions/{id}/messages`, `.../messages/{input}`, `.../interrupt`, `.../permissions`, `.../tasks/stop` |
-| `cloudTransfers` (planned) | `recipients()`, `request(sessionId, request, idempotencyKey)`, `list(direction, states, session, before, limit)`, `get(id)`, `accept(id, resume)`, `decline(id)`, `cancel(id)` | `/api/v1/cloud/transfer-recipients`, `.../sessions/{id}/transfer`, `/api/v1/cloud/transfers`, `.../transfers/{id}` and `/accept`, `/decline`, `/cancel` |
+| `cloudTransfers` (planned) | `recipients()`, `request(sessionId, request, idempotencyKey, onBehalfOf)`, `list(direction, states, session, before, limit)`, `get(id)`, `accept(id, resume, onBehalfOf)`, `decline(id, onBehalfOf)`, `cancel(id, onBehalfOf)` | `/api/v1/cloud/transfer-recipients`, `.../sessions/{id}/transfer`, `/api/v1/cloud/transfers`, `.../transfers/{id}` and `/accept`, `/decline`, `/cancel` |
 | `cloudFiles` (planned, `runners.cloud.files.v1`) | `upload(id, name, bytes, idempotencyKey)`, `policy()` | `POST /api/v1/cloud/sessions/{id}/files`, `GET /api/v1/cloud/files/policy` |
 | `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
 
@@ -133,6 +133,9 @@ sent in `Ostrom-On-Behalf-Of`, for an owner or an admin (or an administrator's `
 sessions. A malformed reference throws `IllegalArgumentException` before any request; the server's refusals are
 `on_behalf_forbidden` (403), `invalid_effective_member` (422) and `invalid_on_behalf` (400). A server without the
 capability ignores the header: check the capability first. `CloudSession.createdBy` says who created a session.
+With `runners.cloud.onbehalf.writes.v1` (planned), `cloudSessions.setModel` and `setEffort` and `cloudTransfers.request`,
+`accept`, `decline` and `cancel` take `onBehalfOf` too, as every TeamCode cloud write does. `cloudSessions.list(owner)`
+sends TeamCode's `owner` (`runners.cloud.sessions.owner.v1`): only the caller's own member id lists anything.
 
 ## The CLI
 

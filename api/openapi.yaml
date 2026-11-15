@@ -12965,7 +12965,18 @@ paths:
       summary: The organization's cloud profiles
       description: 'A member of the organization: an owner or an admin sees every profile, a member the ones assigned
         to them (TeamCode''s `cloud_profiles`). A profile names the cluster and namespace a session runs in and the
-        session image the team chose: Ostrom imposes none'
+        session image the team chose: Ostrom imposes none. Planned (`runners.cloud.profiles.member.v1`, TeamCode''s
+        `cloud.profiles.member.v1`): `member` (an id or a login) lists the profiles that member can use, every profile
+        for an owner or an admin; another member than the caller needs an owner or an admin of the organization, or
+        an administrator''s `cloud:admin` service key (403 `forbidden`), and a member who is not an active member of
+        the organization is 422 `invalid_effective_member`; sent twice, 400 `invalid_query`'
+      parameters:
+      - name: member
+        in: query
+        required: false
+        description: "Planned (`runners.cloud.profiles.member.v1`): the member, by id or login, whose profiles are listed"
+        schema:
+          type: string
       responses:
         '200':
           description: OK
@@ -12973,11 +12984,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CloudProfileList'
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
     post:
       operationId: createCloudProfile
@@ -13129,8 +13144,16 @@ paths:
       summary: The caller's cloud agent sessions, newest first
       description: "With `runners.cloud.remote.v1`, `kind` (repeatable) chooses the kinds listed, `cloud` or
         `remote` (400 `invalid_kind` otherwise); without it, cloud sessions only, so a client from before remote sessions
-        never lists one it cannot show"
+        never lists one it cannot show. Planned (`runners.cloud.sessions.owner.v1`, TeamCode's `owner`): `owner` is the
+        caller's member id, or absent; another member's id, or `all`, is 403 `forbidden`, administrators included,
+        since a role opens nobody else's session (TeamCode's rule)"
       parameters:
+      - name: owner
+        in: query
+        required: false
+        description: "Planned (`runners.cloud.sessions.owner.v1`): the caller's member id; anything else is 403"
+        schema:
+          type: string
       - name: kind
         in: query
         required: false
@@ -13344,8 +13367,9 @@ paths:
       tags:
       - runners
       summary: "Give one of the caller's cloud sessions to another member"
-      description: "`runners.cloud.transfer.v1`. Only the owner asks. An administrator's transfer is `accepted` at once; a member's is `offered` and the recipient accepts within 7 days (403 `transfer_disabled` when the instance's `memberTransfers` is `disabled`). Accepting pauses the session (the agent stops, its pod is gone); the owner changes only then, and the workspace is marked untrusted for the recipient. At most one open transfer per session (409 `transfer_pending`); a session still being created is 409 `session_preparing`, an ended one 409 `session_not_running`; a recipient who cannot own the session (disabled, not a member, at their cloud session limit) is 422 `recipient_ineligible` naming every reason. `Idempotency-Key` is required (400 `idempotency_key_required`): a retry returns the first transfer (`Idempotency-Replayed: true`), the same key with another request is 422 `idempotency_conflict`"
+      description: "`runners.cloud.transfer.v1`. Only the owner asks. An administrator's transfer is `accepted` at once; a member's is `offered` and the recipient accepts within 7 days (403 `transfer_disabled` when the instance's `memberTransfers` is `disabled`). Accepting pauses the session (the agent stops, its pod is gone); the owner changes only then, and the workspace is marked untrusted for the recipient. At most one open transfer per session (409 `transfer_pending`); a session still being created is 409 `session_preparing`, an ended one 409 `session_not_running`; a recipient who cannot own the session (disabled, not a member, at their cloud session limit) is 422 `recipient_ineligible` naming every reason. `Idempotency-Key` is required (400 `idempotency_key_required`): a retry returns the first transfer (`Idempotency-Replayed: true`), the same key with another request is 422 `idempotency_conflict`. With `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential. A transfer write stays a person's, signed in: a service key never names a member here"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -13486,8 +13510,9 @@ paths:
       tags:
       - runners
       summary: "Accept a session offered to the caller"
-      description: "`runners.cloud.transfer.v1`. Only the recipient. The session pauses, then becomes the recipient's; before it runs again the runner resets the agent's settings and the repositories' Git configuration (`untrustedWorkspace`). Idempotent. 409 `transfer_expired`, `transfer_not_open`; 422 `recipient_ineligible`"
+      description: "`runners.cloud.transfer.v1`. Only the recipient. The session pauses, then becomes the recipient's; before it runs again the runner resets the agent's settings and the repositories' Git configuration (`untrustedWorkspace`). Idempotent. 409 `transfer_expired`, `transfer_not_open`; 422 `recipient_ineligible`. With `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -13527,8 +13552,9 @@ paths:
       tags:
       - runners
       summary: "Decline an offered session"
-      description: "`runners.cloud.transfer.v1`. Only the recipient; only an offered transfer"
+      description: "`runners.cloud.transfer.v1`. Only the recipient; only an offered transfer. With `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -13550,6 +13576,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/transfers/{id}/cancel:
     parameters:
@@ -13560,8 +13588,9 @@ paths:
       tags:
       - runners
       summary: "Withdraw an offer, or cancel an accepted transfer before the owner change starts"
-      description: "`runners.cloud.transfer.v1`. Only the session's former owner; an accepted transfer only by an administrator, and not once the session is `transferring` (409 `transfer_in_progress`)"
+      description: "`runners.cloud.transfer.v1`. Only the session's former owner; an accepted transfer only by an administrator, and not once the session is `transferring` (409 `transfer_in_progress`). With `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator acts for the member it names, journaled with the effective member and the credential"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -13583,6 +13612,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/pause:
     parameters:
@@ -14809,8 +14840,10 @@ paths:
         `model_not_allowed`). Recorded at once (audited `cloud.session.model_changed`, the same model writes
         nothing), so a paused session starts with it; a running conversation agent also gets a `set_model` input,
         taken at its next turn. A terminal session's agent gets it at its next start. 409 `session_not_running` once
-        terminated"
+        terminated. With `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`),
+        an administrator acts for the member it names, journaled with the effective member and the credential"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -14839,6 +14872,8 @@ paths:
           $ref: '#/components/responses/Error'
         '409':
           $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/effort:
     parameters:
     - $ref: '#/components/parameters/OstromOrg'
@@ -14851,8 +14886,11 @@ paths:
       description: "`runners.cloud.effort.v1` (TeamCode's `PUT /cloud/sessions/{id}/effort`), as `setCloudSessionModel`
         for the effort: 1 to 120 letters, digits and `. _ : / -` (400 `invalid_agent`), no policy. Clients suggest
         `low`, `medium`, `high`, `xhigh` and `max` for Claude Code, `low`, `medium`, `high` and `xhigh` for Codex.
-        Audited `cloud.session.effort_changed`; a running conversation agent gets a `set_effort` input"
+        Audited `cloud.session.effort_changed`; a running conversation agent gets a `set_effort` input. With
+        `Ostrom-On-Behalf-Of` (planned, `runners.cloud.onbehalf.writes.v1`, TeamCode's `actor()`), an administrator
+        acts for the member it names, journaled with the effective member and the credential"
       parameters:
+      - $ref: '#/components/parameters/OstromOnBehalfOf'
       - name: id
         in: path
         required: true
@@ -14880,6 +14918,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
         '409':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
   /api/v1/cloud/sessions/{id}/tasks/stop:
     parameters:
@@ -19661,7 +19701,11 @@ components:
         journaled (`cloud.session.created`, `.paused`, `.resumed`, `.deleted`) with the caller as the actor, the
         effective member and the credential (`effectiveMemberId`, `credentialId` of `listAudit`). GitHub access and the permission bypass are the owner's alone
         (403 `github_owner_only`, `bypass_owner_only`). A server that does not announce the capability ignores the
-        header: a client checks the capability before sending it"
+        header: a client checks the capability before sending it. Planned (`runners.cloud.onbehalf.writes.v1`): the
+        header is also read on the model, the effort and the transfer writes (`setCloudSessionModel`,
+        `setCloudSessionEffort`, `transferCloudSession`, `acceptCloudTransfer`, `declineCloudTransfer`,
+        `cancelCloudTransfer`), as on every TeamCode cloud write, and each `cloud.session.*` entry is written in the
+        transaction of the change it tells (TeamCode's `CloudWrite`): a write that cannot be journaled does not happen"
       schema:
         type: string
         minLength: 1
@@ -22706,7 +22750,7 @@ components:
         compatibility; additive changes keep it. Feature keys are `<domain>.v<n>` (`ServerFeatures` in ostrom-core):
         `admin.settings.v1`, `artifacts.v1`, `audit.v1`, `automations.v1`, `billing.v1`, `budgets.v1`, `capacity.apiprices.v1`, `capacity.budgetoverrides.v1`, `capacity.forecasts.v1`, `capacity.pacing.v1`, `capacity.poolsize.v1`, `capacity.usagereconciliation.v1`, `cloud.admin.v1`, `devices.v1`, `environment.v1`, `gates.v1`, `github.v1`,
         `github.link.v1`, `governance.v1`, `hooks.v1`, `import.teamcode.v1`, `inference.v1`, `inference.queue.v1`, `inference.cancel.v1`, `mcp.v1`, `mcp.personal.v1`, `memory.v1`, `notifications.v1`, `notifications.push.v1`, `notifications.push.test.v1`,
-        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.inference.v1`, `runners.cloud.model.v1`, `runners.cloud.onbehalf.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
+        `packages.v1`, `receipts.v1`, `reports.v1`, `rules.v1`, `runners.v1`, `runners.cloud.v1`, `runners.cloud.agent.v1`, `runners.cloud.conversation.v1`, `runners.cloud.effort.v1`, `runners.cloud.environment.v1`, `runners.cloud.files.v1`, `runners.cloud.github.v1`, `runners.cloud.hooks.v1`, `runners.cloud.idempotency.v1`, `runners.cloud.inference.v1`, `runners.cloud.model.v1`, `runners.cloud.onbehalf.v1`, `runners.cloud.onbehalf.writes.v1`, `runners.cloud.permissions.v1`, `runners.cloud.permissions.bypass.v1`, `runners.cloud.profiles.v1`, `runners.cloud.profiles.member.v1`, `runners.cloud.remote.v1`, `runners.cloud.remote.daemon.v1`, `runners.cloud.remote.resume.v1`, `runners.cloud.retention.v1`, `runners.cloud.sessions.owner.v1`, `runners.cloud.skills.v1`, `runners.cloud.tasks.v1`, `runners.cloud.transcript.feeds.v1`, `runners.cloud.transcript.live.v1`, `runners.cloud.variables.v1`, `secrets.v1`,
         `sessions.v1`, `sessions.activity.v1`, `sessions.labels.v1`, `launches.limits.v1`, `servicekeys.scopes.v1`, `sharing.v1`, `sharing.handover.v1`, `skills.v1`, `slack.v1`, `discord.v1`, `todos.v1`, `usage.v1`, `waits.v1`, `waits.wake.v1`, `waits.timed.v1`, `waits.secrets.v1`,
         `workflows.v1`, `workflows.deliver.v1`, `workflows.settings.v1`,
         `license.v1`. A client

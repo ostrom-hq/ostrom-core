@@ -33,17 +33,21 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
      * @param limit The page size (1 to 50); the server's default when null.
      * @param kinds The kinds listed (`runners.cloud.remote.v1`, [run.ostrom.core.api.models.CloudSessionKinds]); cloud
      *   sessions only when empty.
+     * @param owner The owner whose sessions are listed (`runners.cloud.sessions.owner.v1`, TeamCode's `owner`): only
+     *   the caller's own member id is listed, another member's or `all` is refused (403); the caller's when null.
      */
     public suspend fun list(
         status: String? = null,
         before: String? = null,
         limit: Int? = null,
         kinds: List<String> = emptyList(),
+        owner: String? = null,
     ): CloudSessionPage =
         transport.json(
             HttpMethod.Get,
             "/api/v1/cloud/sessions",
-            kinds.map { "kind" to it } + query("status" to status, "before" to before, "limit" to limit?.toString()),
+            kinds.map { "kind" to it } +
+                query("owner" to owner, "status" to status, "before" to before, "limit" to limit?.toString()),
         )
 
     /** One cloud session (`GET /api/v1/cloud/sessions/{id}`). */
@@ -109,13 +113,23 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
     public suspend fun setPermissionBypass(id: String, enabled: Boolean): CloudSession =
         transport.jsonBody(HttpMethod.Put, "${path(id)}/permission-bypass", SetCloudPermissionBypassRequest(enabled))
 
-    /** Changes the agent's model, while it runs too (`PUT .../model`, `runners.cloud.model.v1`). */
-    public suspend fun setModel(id: String, model: String): CloudSession =
-        transport.jsonBody(HttpMethod.Put, "${path(id)}/model", SetCloudModelRequest(model))
+    /**
+     * Changes the agent's model, while it runs too (`PUT .../model`, `runners.cloud.model.v1`).
+     *
+     * @param onBehalfOf The session's owner, for an administrator's call on their behalf
+     *   (`runners.cloud.onbehalf.writes.v1`, see [create]).
+     */
+    public suspend fun setModel(id: String, model: String, onBehalfOf: String? = null): CloudSession =
+        onBehalf(HttpMethod.Put, "${path(id)}/model", onBehalfOf, SetCloudModelRequest(model))
 
-    /** Changes the agent's effort, while it runs too (`PUT .../effort`, `runners.cloud.effort.v1`). */
-    public suspend fun setEffort(id: String, effort: String): CloudSession =
-        transport.jsonBody(HttpMethod.Put, "${path(id)}/effort", SetCloudEffortRequest(effort))
+    /**
+     * Changes the agent's effort, while it runs too (`PUT .../effort`, `runners.cloud.effort.v1`).
+     *
+     * @param onBehalfOf The session's owner, for an administrator's call on their behalf
+     *   (`runners.cloud.onbehalf.writes.v1`, see [create]).
+     */
+    public suspend fun setEffort(id: String, effort: String, onBehalfOf: String? = null): CloudSession =
+        onBehalf(HttpMethod.Put, "${path(id)}/effort", onBehalfOf, SetCloudEffortRequest(effort))
 
     /**
      * Chooses whose instructions the agent follows with the owner's GitHub token (`PUT .../github`,
@@ -139,7 +153,26 @@ public class CloudSessionsClient internal constructor(private val transport: Tra
         }.body()
     }
 
-    private fun requireReference(onBehalfOf: String?) = require(onBehalfOf == null || OnBehalfOf.isValid(onBehalfOf)) {
-        "A member is named by id or login: 1 to ${OnBehalfOf.MAX_LENGTH} characters of A-Za-z0-9._-."
+    private suspend inline fun <reified B : Any> onBehalf(
+        method: HttpMethod,
+        path: String,
+        onBehalfOf: String?,
+        body: B,
+    ): CloudSession {
+        requireReference(onBehalfOf)
+        return transport.send(method, path) {
+            if (onBehalfOf != null) header(OnBehalfOf.HEADER, onBehalfOf)
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }.body()
     }
+}
+
+/**
+ * Refuses a malformed member reference before any request.
+ *
+ * @throws IllegalArgumentException When [onBehalfOf] is not a valid [OnBehalfOf] reference.
+ */
+internal fun requireReference(onBehalfOf: String?) = require(onBehalfOf == null || OnBehalfOf.isValid(onBehalfOf)) {
+    "A member is named by id or login: 1 to ${OnBehalfOf.MAX_LENGTH} characters of A-Za-z0-9._-."
 }
