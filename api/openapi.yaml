@@ -26863,6 +26863,8 @@ components:
       properties:
         path:
           type: string
+          description: "Relative, unique in its version ignoring case; the catalog refuses an absolute path, `..` or a
+            duplicate as on publication, and the report says the item skipped"
         mode:
           type: string
           enum: [file, executable]
@@ -26908,6 +26910,7 @@ components:
           description: Retired in TeamCode; it is not imported
         pinnedVersion:
           type: string
+          description: "One of `versions` (the CLI always sends it); absent, the skill stays unpinned as in TeamCode"
         versions:
           type: array
           items:
@@ -26938,7 +26941,9 @@ components:
       x-ostrom-kotlin: pending
     TeamCodeHook:
       type: object
-      description: "A TeamCode hook with the versions the CLI read (its pinned one, or its latest)"
+      description: "A TeamCode hook with the versions the CLI read (its pinned one, or its latest). TeamCode's hooks are
+        the team's only (no personal hook, no retirement); a hook reaches members only through its pinned version and
+        its audience, as in TeamCode"
       properties:
         id:
           type: string
@@ -26969,6 +26974,7 @@ components:
           type: string
         events:
           type: array
+          description: Claude Code's event names; one Ostrom does not run makes the report skip the hook
           items:
             type: string
         matcher:
@@ -27009,7 +27015,8 @@ components:
           type: string
           writeOnly: true
           format: password
-          description: The shared value, in clear; absent for a per-member variant
+          description: "The shared value, in clear: required for `shared`, refused for `perMember` (the report skips
+            the variant, as the environment module refuses it on creation)"
       required:
       - id
       - variable
@@ -27030,13 +27037,16 @@ components:
           type: string
           writeOnly: true
           format: password
-          description: The member's own value, for a per-member variant, in clear
+          description: "The member's own value, for a per-member variant, in clear (required there; ignored for a
+            shared variant)"
       required:
       - memberId
       - variantId
       x-ostrom-kotlin: pending
     TeamCodeVariableExclusion:
       type: object
+      description: "A member excluded from an environment variable, by its exact name (as TeamCode keys it); a
+        reserved name is refused as on an exclusion in Ostrom"
       properties:
         memberId:
           type: string
@@ -29707,7 +29717,8 @@ components:
             $ref: '#/components/schemas/TeamCodeProfile'
         skills:
           type: array
-          description: "TeamCode's skills (`skills`, `skill_versions`, `skill_files`, `skill_assignments`); the server
+          description: "TeamCode's skills (the CLI sends the skills and hooks in several requests when they would pass
+            the import's body limit: each run imports what its request holds and removes nothing else). TeamCode's skills (`skills`, `skill_versions`, `skill_files`, `skill_assignments`); the server
             publishes them through the skill catalog, idempotently (a version already published with the same content
             is unchanged)"
           items:
