@@ -1,23 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package run.ostrom.core.api
 
-import run.ostrom.core.api.models.ResumableSessionPage
-import run.ostrom.core.api.models.ResumableSession
-import run.ostrom.core.api.models.RefuseDaemonOrderRequest
-import run.ostrom.core.api.models.PublishDeviceFoldersRequest
-import run.ostrom.core.api.models.LocalResumableSessions
-import run.ostrom.core.api.models.LocalKnownFolders
-import run.ostrom.core.api.models.LocalKnownFolder
-import run.ostrom.core.api.models.DeviceFolders
-import run.ostrom.core.api.models.DeviceFolder
-import run.ostrom.core.api.models.DaemonPresence
-import run.ostrom.core.api.models.DaemonPollRequest
-import run.ostrom.core.api.models.DaemonPoll
-import run.ostrom.core.api.models.DaemonOrder
-import run.ostrom.core.api.models.DaemonListingAnswer
-import run.ostrom.core.api.models.DaemonListing
-import run.ostrom.core.api.models.CloudSessionHost
-import run.ostrom.core.api.models.CloudHost
 import run.ostrom.core.api.models.Account
 import run.ostrom.core.api.models.AccountEmail
 import run.ostrom.core.api.models.ActivityActor
@@ -55,6 +38,8 @@ import run.ostrom.core.api.models.AutomationTrigger
 import run.ostrom.core.api.models.AutomationVariable
 import run.ostrom.core.api.models.Capabilities
 import run.ostrom.core.api.models.CheckRun
+import run.ostrom.core.api.models.CloudHost
+import run.ostrom.core.api.models.CloudSessionHost
 import run.ostrom.core.api.models.CompiledHook
 import run.ostrom.core.api.models.CompiledNode
 import run.ostrom.core.api.models.CompiledNotify
@@ -62,6 +47,12 @@ import run.ostrom.core.api.models.CompiledScript
 import run.ostrom.core.api.models.CompiledTrigger
 import run.ostrom.core.api.models.CompleteTodoItemRequest
 import run.ostrom.core.api.models.CreateTodoRequest
+import run.ostrom.core.api.models.DaemonListing
+import run.ostrom.core.api.models.DaemonListingAnswer
+import run.ostrom.core.api.models.DaemonOrder
+import run.ostrom.core.api.models.DaemonPoll
+import run.ostrom.core.api.models.DaemonPollRequest
+import run.ostrom.core.api.models.DaemonPresence
 import run.ostrom.core.api.models.Decision
 import run.ostrom.core.api.models.DecisionSubject
 import run.ostrom.core.api.models.DeliverRequest
@@ -70,6 +61,8 @@ import run.ostrom.core.api.models.Deliverable
 import run.ostrom.core.api.models.Dev
 import run.ostrom.core.api.models.Device
 import run.ostrom.core.api.models.DeviceCode
+import run.ostrom.core.api.models.DeviceFolder
+import run.ostrom.core.api.models.DeviceFolders
 import run.ostrom.core.api.models.DevicePage
 import run.ostrom.core.api.models.DeviceLoginStart
 import run.ostrom.core.api.models.DeviceTokenRequest
@@ -92,6 +85,9 @@ import run.ostrom.core.api.models.GovernanceConfirmationPending
 import run.ostrom.core.api.models.KeyRotation
 import run.ostrom.core.api.models.LaunchLimits
 import run.ostrom.core.api.models.LinkTodoItemRequest
+import run.ostrom.core.api.models.LocalKnownFolder
+import run.ostrom.core.api.models.LocalKnownFolders
+import run.ostrom.core.api.models.LocalResumableSessions
 import run.ostrom.core.api.models.Me
 import run.ostrom.core.api.models.Member
 import run.ostrom.core.api.models.MemberInvite
@@ -114,6 +110,10 @@ import run.ostrom.core.api.models.NotificationPreferences
 import run.ostrom.core.api.models.GitHubDeviceLink
 import run.ostrom.core.api.models.GitHubDeviceLinkPoll
 import run.ostrom.core.api.models.GitHubLink
+import run.ostrom.core.api.models.PublishDeviceFoldersRequest
+import run.ostrom.core.api.models.RefuseDaemonOrderRequest
+import run.ostrom.core.api.models.ResumableSession
+import run.ostrom.core.api.models.ResumableSessionPage
 import run.ostrom.core.api.models.SlackLink
 import run.ostrom.core.api.models.Organization
 import run.ostrom.core.api.models.PackageEnvelope
@@ -395,10 +395,6 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     GitHubDeviceLink.serializer(),
     GitHubDeviceLinkPoll.serializer(),
     GitHubLink.serializer(),
-    PublishDeviceFoldersRequest.serializer(),
-    RefuseDaemonOrderRequest.serializer(),
-    ResumableSession.serializer(),
-    ResumableSessionPage.serializer(),
     SlackLink.serializer(),
     Organization.serializer(),
     PackageEnvelope.serializer(),
@@ -410,6 +406,7 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     PackageWorkflow.serializer(),
     Produced.serializer(),
     PublicKey.serializer(),
+    PublishDeviceFoldersRequest.serializer(),
     PushDevice.serializer(),
     PushDeviceList.serializer(),
     PushPayload.serializer(),
@@ -432,10 +429,13 @@ internal val apiModels: List<KSerializer<*>> = listOf(
     ReceiptPage.serializer(),
     ReceiptRule.serializer(),
     ReceiptSubject.serializer(),
+    RefuseDaemonOrderRequest.serializer(),
     RegisterPushDeviceRequest.serializer(),
     RenameDeviceRequest.serializer(),
     ReportCheckRequest.serializer(),
     ResetTodoRequest.serializer(),
+    ResumableSession.serializer(),
+    ResumableSessionPage.serializer(),
     Rule.serializer(),
     RuleGate.serializer(),
     RuleGateCheck.serializer(),

@@ -304,6 +304,9 @@ public object DaemonLimits {
     /** How long a member waits for a daemon's listing before `504 device_no_answer`. */
     public const val LISTING_WAIT_MILLIS: Long = 10_000
 
+    /** How long a listing waits for the daemon's answer before `404 listing_not_found`. */
+    public const val LISTING_TTL_MILLIS: Long = 30_000
+
     /** A folder's id, the daemon's own key. */
     public val FOLDER_ID: Regex = Regex("[A-Za-z0-9_-]{1,64}")
 

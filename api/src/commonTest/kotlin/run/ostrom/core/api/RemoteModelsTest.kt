@@ -54,6 +54,7 @@ class RemoteModelsTest {
     fun theDaemonsBoundsAreTeamCodes() {
         val waits = listOf(DaemonLimits.ONLINE_TTL_MILLIS, DaemonLimits.MAX_WAIT_MILLIS)
         assertEquals(listOf(60_000L, 20_000L, 10_000L), waits + DaemonLimits.LISTING_WAIT_MILLIS)
+        assertEquals(30_000L, DaemonLimits.LISTING_TTL_MILLIS)
         val counts = listOf(DaemonLimits.ORDER_BATCH, DaemonLimits.MAX_FOLDERS, DaemonLimits.MAX_FEATURES)
         assertEquals(listOf(16, 64, 8), counts)
         assertTrue(DaemonLimits.FOLDER_ID.matches("f_1-A"))
