@@ -146,6 +146,7 @@ GET /api/v1/me/notifications
 GET /api/v1/me/organizations
 GET /api/v1/me/skills
 GET /api/v1/me/skills/{}/versions
+GET /api/v1/members/{}/budget-overrides
 GET /api/v1/members/{}/hook-delivery
 GET /api/v1/members/{}/skill-delivery
 GET /api/v1/members/{}/skill-installations
@@ -316,6 +317,8 @@ POST /api/v1/me/environment/variants
 POST /api/v1/me/mcp/servers
 POST /api/v1/me/skills/{}/restore
 POST /api/v1/me/skills/{}/versions
+POST /api/v1/members/{}/budget-overrides
+POST /api/v1/members/{}/budget-overrides/{}/revoke
 POST /api/v1/memory
 POST /api/v1/memory/proposals/{}/accept
 POST /api/v1/memory/proposals/{}/reject

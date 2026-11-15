@@ -11773,7 +11773,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     get:
       operationId: listBudgetOverrides
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Budget overrides of a member (`capacity.budgetoverrides.v1`)
@@ -11823,7 +11823,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: createBudgetOverride
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Grant a temporary daily budget (`capacity.budgetoverrides.v1`)
@@ -11898,7 +11898,7 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: revokeBudgetOverride
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - budgets
       summary: Revoke a temporary daily budget (`capacity.budgetoverrides.v1`)
@@ -27137,8 +27137,8 @@ components:
       x-ostrom-kotlin: pending
     MyBudget:
       type: object
-      description: "The caller's budget this month, in millionths of a US dollar. Planned (`capacity.budgetoverrides.v1`):
-        `override`, the temporary daily budget in force, and `baseLimitMicros`; the server does not send them yet"
+      description: "The caller's budget this month, in millionths of a US dollar, with `override`, the temporary daily
+        budget in force (`capacity.budgetoverrides.v1`), and `baseLimitMicros`"
       properties:
         limitMicros:
           type: integer
@@ -27162,9 +27162,8 @@ components:
           $ref: '#/components/schemas/BudgetOverrideSummary'
         baseLimitMicros:
           type: integer
-          x-ostrom-status: planned
-          description: "Planned (`capacity.budgetoverrides.v1`, with `override`, the temporary daily budget in force:
-            while it lasts the caller's own daily limit that stops is its `usd`): the daily limit in force without it,
+          description: "With `override`, the temporary daily budget in force (`capacity.budgetoverrides.v1`: while it
+            lasts the caller's own daily limit that stops is its `micros`): the daily limit that stops without it,
             absent when the caller had none"
         period:
           type: string
