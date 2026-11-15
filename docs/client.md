@@ -84,7 +84,7 @@ client.close()
 | `cloudTranscripts` (`runners.cloud.conversation.v1`) | `events(id, after, before, limit, feed)`, `followEvents(id, after)`, `agents(id)` | `GET /api/v1/cloud/sessions/{id}/events`, `.../events/stream`, `.../agents` |
 | `cloudMessages` (`runners.cloud.conversation.v1`) | `send(id, request, idempotencyKey)`, `inputs(id, before, limit)`, `input(id, input)`, `interrupt(id)`, `answerPermission(id, request, idempotencyKey)`, `stopTask(id, taskId)` | `/api/v1/cloud/sessions/{id}/messages`, `.../messages/{input}`, `.../interrupt`, `.../permissions`, `.../tasks/stop` |
 | `cloudTransfers` (planned) | `recipients()`, `request(sessionId, request, idempotencyKey, onBehalfOf)`, `list(direction, states, session, before, limit)`, `get(id)`, `accept(id, resume, onBehalfOf)`, `decline(id, onBehalfOf)`, `cancel(id, onBehalfOf)` | `/api/v1/cloud/transfer-recipients`, `.../sessions/{id}/transfer`, `/api/v1/cloud/transfers`, `.../transfers/{id}` and `/accept`, `/decline`, `/cancel` |
-| `cloudFiles` (`runners.cloud.files.v1`) | `upload(id, name, bytes, idempotencyKey)`, `policy()` | `POST /api/v1/cloud/sessions/{id}/files`, `GET /api/v1/cloud/files/policy` |
+| `cloudFiles` (`runners.cloud.files.v1`) | `upload(id, name, bytes, idempotencyKey)`, `upload(id, name, source, idempotencyKey, attempts, onRetry, onProgress)` (streamed in 64 KiB chunks, retried under one key, stored SHA-256 checked), `policy()` | `POST /api/v1/cloud/sessions/{id}/files`, `GET /api/v1/cloud/files/policy` |
 | `events` | `follow(after, types, onGap, onOpen, onEvent)` | `GET /api/v1/events` (planned) |
 
 Every parameter left null is not sent, so the server's default applies. The models are those of
