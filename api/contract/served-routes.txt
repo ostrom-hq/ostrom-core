@@ -12,6 +12,7 @@ DELETE /api/v1/artifacts/{}/members/{}
 DELETE /api/v1/auth/sessions/{}
 DELETE /api/v1/automations/{}
 DELETE /api/v1/cloud/sessions/{}
+DELETE /api/v1/devices/current/daemon
 DELETE /api/v1/devices/{}
 DELETE /api/v1/discord/link
 DELETE /api/v1/environment/assignments/{}/{}
@@ -105,6 +106,7 @@ GET /api/v1/cloud/transfers/{}
 GET /api/v1/confirmations/{}
 GET /api/v1/decisions
 GET /api/v1/devices
+GET /api/v1/devices/{}/folders
 GET /api/v1/directives/current
 GET /api/v1/directives/preview
 GET /api/v1/discord/link
@@ -235,8 +237,8 @@ GET /api/v1/webhooks
 GET /api/v1/webhooks/{}
 GET /api/v1/webhooks/{}/deliveries
 GET /api/v1/workflows
-GET /api/v1/workflows/settings
 GET /api/v1/workflows/session/pending
+GET /api/v1/workflows/settings
 GET /api/v1/workflows/{}
 GET /api/v1/workflows/{}/runs
 GET /health
@@ -273,12 +275,12 @@ POST /api/v1/auth/email
 POST /api/v1/auth/email/verify
 POST /api/v1/auth/launcher/login
 POST /api/v1/auth/link
-POST /api/v1/auth/signup-grant
 POST /api/v1/auth/links
 POST /api/v1/auth/logout
 POST /api/v1/auth/logout/everywhere
 POST /api/v1/auth/mobile/token
 POST /api/v1/auth/mobile/unlock
+POST /api/v1/auth/signup-grant
 POST /api/v1/auth/{}/link
 POST /api/v1/automations
 POST /api/v1/automations/{}/disable
@@ -322,6 +324,9 @@ POST /api/v1/cloud/transfers/{}/accept
 POST /api/v1/cloud/transfers/{}/cancel
 POST /api/v1/cloud/transfers/{}/decline
 POST /api/v1/confirmations/{}/answer
+POST /api/v1/devices/current/daemon/listings/{}
+POST /api/v1/devices/current/daemon/poll
+POST /api/v1/devices/current/daemon/sessions/{}/refuse
 POST /api/v1/directives/claim
 POST /api/v1/directives/current
 POST /api/v1/directives/receipt
@@ -447,6 +452,7 @@ PUT /api/v1/cloud/sessions/{}/github
 PUT /api/v1/cloud/sessions/{}/model
 PUT /api/v1/cloud/sessions/{}/permission-bypass
 PUT /api/v1/cloud/settings
+PUT /api/v1/devices/current/folders
 PUT /api/v1/environment/assignments/{}/{}
 PUT /api/v1/environment/exclusions/{}/{}
 PUT /api/v1/gates/policy
