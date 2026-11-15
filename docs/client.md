@@ -78,7 +78,7 @@ client.close()
 | `workflowSettings` | `get()`, `save(editors)` | `GET` and `PUT /api/v1/workflows/settings` |
 | `environment` | `names()` (names and unavailable names only, values dropped), `listMine()`, `createMine(variant)`, `updateMine(id, update)`, `deleteMine(id)` | `GET /api/v1/environment`, `GET` and `POST /api/v1/me/environment/variants`, `PATCH` and `DELETE /api/v1/me/environment/variants/{id}` |
 | `myMcpServers` | `list()`, `create(server)`, `save(name, server)`, `delete(name)` | `GET` and `POST /api/v1/me/mcp/servers`, `PUT` and `DELETE /api/v1/me/mcp/servers/{name}` |
-| `cloudSessions` | `list(status, before, limit)`, `get(id)`, `create(request)`, `pause(id)`, `resume(id)`, `stop(id)` | `GET` and `POST /api/v1/cloud/sessions`, `GET` and `DELETE /api/v1/cloud/sessions/{id}`, `POST /api/v1/cloud/sessions/{id}/pause`, `POST /api/v1/cloud/sessions/{id}/resume` |
+| `cloudSessions` | `list(status, before, limit)`, `get(id)`, `create(request, idempotencyKey, onBehalfOf)`, `pause(id, onBehalfOf)`, `resume(id, onBehalfOf)`, `stop(id, onBehalfOf)` | `GET` and `POST /api/v1/cloud/sessions`, `GET` and `DELETE /api/v1/cloud/sessions/{id}`, `POST /api/v1/cloud/sessions/{id}/pause`, `POST /api/v1/cloud/sessions/{id}/resume` |
 | `cloudSessions` (GitHub access) | `setGitHubAccess(id, access)` | `PUT /api/v1/cloud/sessions/{id}/github` (`runners.cloud.github.v1`, `owner`, `shared` or `none`) |
 | `cloudSessions` (conversation) | `setPermissionBypass(id, enabled)`, `setModel(id, model)`, `setEffort(id, effort)` | `PUT /api/v1/cloud/sessions/{id}/permission-bypass`, `.../model`, `.../effort` |
 | `cloudTranscripts` (`runners.cloud.conversation.v1`) | `events(id, after, before, limit, feed)`, `followEvents(id, after)`, `agents(id)` | `GET /api/v1/cloud/sessions/{id}/events`, `.../events/stream`, `.../agents` |
@@ -126,6 +126,13 @@ idempotencyKey)` sends it, and the server returns the first run (`200` and `Idem
 key throws `IllegalArgumentException` before any request. `cloudSessions.create(request, idempotencyKey)` does the same
 for a cloud session (`runners.cloud.idempotency.v1`): a replay answers `202` with the session as it is now, and the
 same key with another request is `422 idempotency_conflict`.
+
+`OnBehalfOf` (in `api`) names the effective member of a cloud session write (`runners.cloud.onbehalf.v1`, TeamCode's
+`TeamCode-On-Behalf-Of`): `cloudSessions.create`, `pause`, `resume` and `stop` take `onBehalfOf`, a member id or login
+sent in `Ostrom-On-Behalf-Of`, for an owner or an admin (or an administrator's `cloud:admin` key) acting on a member's
+sessions. A malformed reference throws `IllegalArgumentException` before any request; the server's refusals are
+`on_behalf_forbidden` (403), `invalid_effective_member` (422) and `invalid_on_behalf` (400). A server without the
+capability ignores the header: check the capability first. `CloudSession.createdBy` says who created a session.
 
 ## The CLI
 

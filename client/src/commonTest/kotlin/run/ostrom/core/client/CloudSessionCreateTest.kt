@@ -5,6 +5,7 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import run.ostrom.core.api.Idempotency
+import run.ostrom.core.api.OnBehalfOf
 import run.ostrom.core.api.models.CloudAgentKind
 import run.ostrom.core.api.models.CreateCloudSessionRequest
 import kotlin.test.Test
@@ -36,5 +37,34 @@ class CloudSessionCreateTest {
         assertEquals(2, server.requests.size)
         assertNull(server.requests[1].headers[Idempotency.KEY_HEADER])
         assertJson("""{"agent":"claude","prompt":"Fix it"}""", server.requests[1].bodyText())
+    }
+
+    @Test
+    fun aWriteOnBehalfOfAMemberNamesThemAndAMalformedNameIsRefusedBeforeAnyRequest() = runTest {
+        val server = ScriptedServer { json(cloudSession, HttpStatusCode.Created) }
+        val request = CreateCloudSessionRequest(CloudAgentKind.CLAUDE)
+        server.client().use { client ->
+            client.cloudSessions.create(request, onBehalfOf = "ada")
+            client.cloudSessions.pause("cs_1", onBehalfOf = "ada")
+            client.cloudSessions.resume("cs_1", onBehalfOf = "ada")
+            client.cloudSessions.stop("cs_1", onBehalfOf = "ada")
+            client.cloudSessions.pause("cs_1")
+            assertFailsWith<IllegalArgumentException> { client.cloudSessions.create(request, onBehalfOf = "a b") }
+            assertFailsWith<IllegalArgumentException> { client.cloudSessions.stop("cs_1", onBehalfOf = "") }
+        }
+        assertEquals(5, server.requests.size)
+        assertEquals(List(4) { "ada" }, server.requests.take(4).map { it.headers[OnBehalfOf.HEADER] })
+        assertNull(server.requests[4].headers[OnBehalfOf.HEADER])
+    }
+
+    @Test
+    fun aSessionReadsWhoCreatedIt() {
+        val session = Json.decodeFromString<run.ostrom.core.api.models.CloudSession>(
+            """{"id":"cs_1","owner":"m1","agent":"claude","status":"creating","createdAt":"t",""" +
+                """"createdBy":{"initiatorId":"m0","credentialId":null,"effectiveMemberId":"m1"}}""",
+        )
+        assertEquals("m0", session.createdBy?.initiatorId)
+        assertNull(session.createdBy?.credentialId)
+        assertEquals("m1", session.createdBy?.effectiveMemberId)
     }
 }
