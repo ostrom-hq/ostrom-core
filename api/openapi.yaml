@@ -11490,10 +11490,12 @@ paths:
       tags:
       - budgets
       summary: Budgets
-      description: "Owners and admins only: a browser session or a token holding `budgets:read`, one made on the
-        console or the token of `ostrom login` (with or without `--admin`), which holds it for `getMyBudget` and so
-        reads this list too, read only, when its person is an owner or an admin; a member: 403, as a device
-        credential or an agent token (SECURITY-AUDIT S2-03)"
+      description: "Owners and admins only, read by a browser session or a token holding `budgets:read`: one made
+        on the console, or the token of `ostrom login` (with or without `--admin`), which holds it for
+        `getMyBudget` (SECURITY-AUDIT S2-03 kept every member's limits off the CLI's tokens until ostrom-server#587;
+        they now read them, never write them, and only for an owner or an admin). A member, whatever the token:
+        403. A device credential (a machine's, not the CLI's token), a key without the scope or an agent
+        token: 403"
       responses:
         '200':
           description: OK
@@ -11589,7 +11591,8 @@ paths:
       description: "Read by a browser session, a token with `budgets:read`, or an agent session's token. The token
         of `ostrom login`, with or without `--admin`, holds `budgets:read` (`ostrom status` shows this budget): it
         reads the budget of the person it belongs to; the organization's list (`listBudgets`) only when that person
-        is an owner or an admin"
+        is an owner or an admin. A CLI token issued before it held `budgets:read`, `accounts:read`,
+        `inference:read` and `guidance` lacks them (403): `ostrom login` again"
       responses:
         '200':
           description: OK
@@ -16194,7 +16197,7 @@ paths:
       - sharing
       summary: Subscriptions shared with the caller or owned by them
       description: "Read with `accounts:read` (the token of `ostrom login` holds it, for `ostrom status`) or a
-        key's `team:read`"
+        key's `team:read`; an agent's or a device's credential: 403"
       responses:
         '200':
           description: OK
@@ -16451,8 +16454,9 @@ paths:
         passed), `exhausted` (at or above the threshold), `idle` (a rate of zero), `reset_first` or `exhausts_first`.
         Without `account`, the first account by id. Owners and admins of the organization only, signed in (a browser
         session, the unlocked app or the token of `ostrom login`, which holds `accounts:read`); a member, a key, an
-        agent or a device credential: 403. An account of another organization: 404; `account` given twice: 400 `invalid_account`. Bounded: at most 64 accounts listed, 128
-        windows and 8,192 readings, `truncated` true past a bound. Never names a credential or a provider identity
+        agent or a device credential: 403. An account of another organization: 404; `account` given twice: 400
+        `invalid_account`. Bounded: at most 64 accounts listed, 128 windows and 8,192 readings, `truncated` true
+        past a bound. Never names a credential or a provider identity
         beyond the account's label and e-mail. Answered with `Cache-Control: no-store`. The console reads it again
         every 15 seconds while the page is open (TeamCode's live updates)"
       parameters:
@@ -16526,8 +16530,8 @@ paths:
       - inference
       summary: The capacity controller's settings (`capacity.pacing.v1`)
       description: "Any member reads them (`inference:use` or `guidance` on a key; the token of `ostrom login`
-        holds `guidance`). Off by default: `observationOnly` false (the controller spaces admissions and sends its
-        advice to agents) and `autoPoolSize` false (the typed daily budget applies)"
+        holds `guidance`), and an agent token. Off by default: `observationOnly` false (the controller spaces
+        admissions and sends its advice to agents) and `autoPoolSize` false (the typed daily budget applies)"
       responses:
         '200':
           description: OK
@@ -16592,7 +16596,8 @@ paths:
       - inference
       summary: The controller's current advice for the caller, also in observation mode (`capacity.pacing.v1`)
       description: "Informational: the settings and the advice the controller would give the caller now, whether or not
-        it is delivered. Any member (`inference:use` or `guidance` on a key)"
+        it is delivered. Any member (`inference:use` or `guidance` on a key; the token of `ostrom login` holds
+        `guidance`), and an agent token"
       responses:
         '200':
           description: OK
