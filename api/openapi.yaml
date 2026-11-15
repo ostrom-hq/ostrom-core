@@ -6727,14 +6727,14 @@ paths:
       - name: after
         in: query
         required: false
-        description: "The id the previous page ended on, its `next` (planned, TeamCode's `after`; `400 invalid_cursor` for
-          an id the organization has no workflow of)"
+        description: "The id the previous page ended on, its `next`, absent on the last page (TeamCode's `after`;
+          `400 invalid_request` for an id the organization has no workflow of)"
         schema:
           type: string
       - name: limit
         in: query
         required: false
-        description: "1 to 100, 50 by default (planned; every workflow of the organization until the server pages them)"
+        description: "1 to 100, 50 by default; above 100 reads 100, below 1 is a `400`"
         schema:
           type: integer
           minimum: 1
@@ -6995,14 +6995,14 @@ paths:
       - name: all
         in: query
         required: false
-        description: "Every member's runs: an administrator (planned; one's own otherwise)"
+        description: "Every member's runs: an owner, an admin or a service key, `403` for anyone else (one's own
+          otherwise)"
         schema:
           type: boolean
       - name: workflow
         in: query
         required: false
-        description: "Only the runs of this workflow (planned; `404 not_found` for a workflow the organization does not
-          have)"
+        description: "Only the runs of this workflow (`404 not_found` for a workflow the organization does not have)"
         schema:
           type: string
       - name: status
