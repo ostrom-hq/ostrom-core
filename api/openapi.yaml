@@ -22448,7 +22448,7 @@ components:
       x-ostrom-kotlin: pending
       type: object
       description: How cloud sessions run on this instance (TeamCode's cloud runtime and cloud settings)
-      required: [enabled, runnerBinary, workspaceAccessMode, effectiveServerUrl, failedWorkspaceRetentionDays, maxRunningSessionsPerMember, maxRetainedSessionsPerMember, memberTransfers]
+      required: [enabled, runnerBinary, sessionImage, workspaceAccessMode, effectiveServerUrl, failedWorkspaceRetentionDays, maxRunningSessionsPerMember, maxRetainedSessionsPerMember, memberTransfers]
       properties:
         enabled:
           type: boolean
@@ -22461,10 +22461,10 @@ components:
           description: Where the binary is in `runnerImage`, `/usr/local/bin/ostrom` by default
         sessionImage:
           type: string
-          x-ostrom-status: planned
+          minLength: 1
           description: "The image the containers of a Docker or registered session run (the agents, git, the
-            session's accounts): the stored image, else `docker.io/ostromhq/ostrom-session:latest`, so always present
-            once served. Only Docker and registered sessions use it; a Kubernetes session runs its profile's image"
+            session's accounts): the stored image, else `docker.io/ostromhq/ostrom-session:latest`. Only Docker and
+            registered sessions use it; a Kubernetes session runs its profile's image"
         serverUrl:
           type: string
           description: The https origin session pods call back; absent uses the public URL
@@ -22539,9 +22539,8 @@ components:
         sessionImage:
           type: string
           maxLength: 512
-          x-ostrom-status: planned
-          description: The session image of Docker and registered sessions, trimmed; absent or blank stores the default
-            `docker.io/ostromhq/ostrom-session:latest` (the request replaces the whole runtime, as for `runnerBinary`)
+          description: The session image of Docker and registered sessions, trimmed; absent keeps the stored one, blank
+            stores the default `docker.io/ostromhq/ostrom-session:latest`
         serverUrl:
           type: string
           maxLength: 512
