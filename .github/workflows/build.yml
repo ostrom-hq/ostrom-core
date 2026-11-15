@@ -67,7 +67,9 @@ jobs:
           dir="$RUNNER_TEMP/openapi"
           mkdir -p "$dir"
           version="$(tr -d '[:space:]' < client/openapi.version)"
-          (cd "$dir" && npm pack --silent "@ostrom-hq/openapi@$version" && tar -xzf "ostrom-hq-openapi-$version.tgz")
+          # A 403 read_package means this repository is not in the package's Actions access (ostrom-hq → Packages →
+          # openapi → Manage Actions access → ostrom-core, Read).
+          (cd "$dir" && npm pack "@ostrom-hq/openapi@$version" && tar -xzf "ostrom-hq-openapi-$version.tgz")
           test -s "$dir/package/openapi.json"
           echo "OSTROM_OPENAPI_DOCUMENT=$dir/package/openapi.json" >> "$GITHUB_ENV"
           echo "OSTROM_OPENAPI_REQUIRED=true" >> "$GITHUB_ENV"
