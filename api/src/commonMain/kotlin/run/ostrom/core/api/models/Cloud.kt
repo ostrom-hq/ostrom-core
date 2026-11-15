@@ -33,7 +33,7 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  * @property waiting Why the agent waits for a person (`runners.cloud.permissions.v1`); null when it does not.
  * @property kind `cloud` (null: a pod the server starts), `remote` (a member's device, `runners.cloud.remote.v1`) or
  *   `local` (the terminal of a member's `ostrom <agent>`, `runners.cloud.local.v1`), see [CloudSessionKinds].
- * @property host Where a remote session runs; null for a cloud session.
+ * @property host Where a remote session runs; null for a cloud or a local session.
  * @property launchId The `ostrom <agent>` launch a local session is attached to (`runners.cloud.local.v1`); null for
  *   every other kind ([runId] is a workflow run).
  * @property createdBy Who created it (`runners.cloud.onbehalf.v1`); null for a session created before the feature.
