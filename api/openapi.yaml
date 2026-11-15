@@ -15163,7 +15163,7 @@ paths:
         in: query
         required: false
         description: "As TeamCode's gallery tabs: `team` (everything the caller can read, the default), `mine` (the
-          ones they own) or `shared` (personal artifacts of others, shared with them)"
+          ones they own) or `shared` (the ones shared with them)"
         schema:
           type: string
           enum:
