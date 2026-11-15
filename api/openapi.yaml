@@ -13777,12 +13777,12 @@ paths:
     - $ref: '#/components/parameters/OstromOrg'
     post:
       operationId: issueRunnerInference
-      x-ostrom-status: planned
+      x-ostrom-status: served
       tags:
       - runners
       summary: "The runner of a cloud session asks for the execution's inference credential (`runners.cloud.inference.v1`,
-        TeamCode's `POST /cloud/runner/inference`): an agent token of the launch the runner opened for this execution,
-        limited to inference, lasting one hour (`expiresInMillis`). The runner keeps it in memory only, renews it after a
+        TeamCode's `POST /cloud/runner/inference`): an agent token of the launch the runner opened for this execution
+        (`agent:session`, the scope every agent token carries), lasting one hour (`expiresInMillis`). The runner keeps it in memory only, renews it after a
         third of its lifetime and forwards the agent's model calls through its loopback proxy, so the agent only holds
         the proxy's random local token. The server keeps at most the current credential and the one before it per
         execution, deletes them in the write that ends the execution and purges expired ones every minute. Only the

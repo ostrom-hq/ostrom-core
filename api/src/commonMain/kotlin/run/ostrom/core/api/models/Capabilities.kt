@@ -253,9 +253,9 @@ public object ServerFeatures {
 
     /**
      * The agent of a cloud session reaches models through its runner's loopback proxy, as a local `ostrom run` does:
-     * the runner asks `POST /api/v1/cloud/runner/inference` for a one-hour credential of its execution's launch,
-     * limited to inference, renews it after a third of its lifetime, and the agent only holds the proxy's local token
-     * (TeamCode's `cloud.inference.v1`). Only with cloud runners.
+     * the runner asks `POST /api/v1/cloud/runner/inference` for an agent token of its execution's launch
+     * (`agent:session`), lasting one hour, renews it after a third of its lifetime, and the agent only holds the
+     * proxy's local token (TeamCode's `cloud.inference.v1`). Only with cloud runners.
      */
     public const val RUNNERS_CLOUD_INFERENCE: String = "runners.cloud.inference.v1"
 

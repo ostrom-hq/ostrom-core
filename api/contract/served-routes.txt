@@ -297,6 +297,7 @@ POST /api/v1/cloud/runner/github
 POST /api/v1/cloud/runner/heartbeat
 POST /api/v1/cloud/runner/hooks
 POST /api/v1/cloud/runner/hooks/artifact
+POST /api/v1/cloud/runner/inference
 POST /api/v1/cloud/runner/inputs
 POST /api/v1/cloud/runner/inputs/ack
 POST /api/v1/cloud/runner/launch
