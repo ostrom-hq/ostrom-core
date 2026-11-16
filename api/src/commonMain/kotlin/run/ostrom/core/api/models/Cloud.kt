@@ -36,6 +36,8 @@ import run.ostrom.core.api.UnknownFallbackEnumSerializer
  * @property host Where a remote session runs; null for a cloud or a local session.
  * @property launchId The `ostrom <agent>` launch a local session is attached to (`runners.cloud.local.v1`); null for
  *   every other kind.
+ * @property runId The workflow run that started it, when a run did.
+ * @property automationId The automation that started it, when one did.
  * @property createdBy Who created it (`runners.cloud.onbehalf.v1`); null for a session created before the feature.
  */
 @Serializable
@@ -70,6 +72,7 @@ public data class CloudSession(
     val permissionBypass: Boolean? = null,
     val transferId: String? = null,
     val waiting: CloudSessionWaiting? = null,
+    val runId: String? = null,
     val automationId: String? = null,
     val createdAt: String,
     val endedAt: String? = null,
