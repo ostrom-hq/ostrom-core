@@ -29,7 +29,7 @@ class CloudSessionCreateTest {
         val server = ScriptedServer {
             json(cloudSession, HttpStatusCode.Accepted, listOf(Idempotency.REPLAYED_HEADER to "true"))
         }
-        val request = CreateCloudSessionRequest(CloudAgentKind.CLAUDE, prompt = "Fix it")
+        val request = CreateCloudSessionRequest(CloudAgentKind.CLAUDE.value, prompt = "Fix it")
         server.client().use { client ->
             val key = Idempotency.newKey()
             assertEquals("cs_1", client.cloudSessions.create(request, idempotencyKey = key).id)
@@ -45,7 +45,7 @@ class CloudSessionCreateTest {
     @Test
     fun aWriteOnBehalfOfAMemberNamesThemAndAMalformedNameIsRefusedBeforeAnyRequest() = runTest {
         val server = ScriptedServer { json(cloudSession, HttpStatusCode.Created) }
-        val request = CreateCloudSessionRequest(CloudAgentKind.CLAUDE)
+        val request = CreateCloudSessionRequest(CloudAgentKind.CLAUDE.value)
         server.client().use { client ->
             client.cloudSessions.create(request, onBehalfOf = "ada")
             client.cloudSessions.pause("cs_1", onBehalfOf = "ada")

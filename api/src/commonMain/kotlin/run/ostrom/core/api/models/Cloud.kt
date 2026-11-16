@@ -194,7 +194,10 @@ public data class CloudSetup(
     val start: List<String> = emptyList(),
 )
 
-/** The agent a cloud session starts; `shell` is a plain shell, to prepare a workspace or debug an image. */
+/**
+ * The agents a cloud session is known to start, the values of [CreateCloudSessionRequest.agent] and [CloudSession.agent]
+ * this version names; `shell` is a plain shell, to prepare a workspace or debug an image. The list is open.
+ */
 @Serializable(with = CloudAgentKind.Serializer::class)
 public enum class CloudAgentKind(
     /** The JSON value. */
@@ -223,6 +226,8 @@ public enum class CloudAgentKind(
  * The cloud session to start (`POST /api/v1/cloud/sessions`). Give either the legacy single [repo] (with [ref]) or an
  * [environment] recipe, which a server without `runners.cloud.environment.v1` ignores.
  *
+ * @property agent The agent to start: a [CloudAgentKind] value, or another agent the server knows. The list is open, so
+ *   any name is sent as is and the server decides.
  * @property prompt The agent's first message, up to 20,000 characters; an interactive agent when null.
  * @property profileId The organization's cloud profile (`runners.cloud.profiles.v1`, planned).
  * @property image An image instead of the profile's (planned).
@@ -245,7 +250,7 @@ public enum class CloudAgentKind(
  */
 @Serializable
 public data class CreateCloudSessionRequest(
-    val agent: CloudAgentKind,
+    val agent: String,
     val model: String? = null,
     val repo: String? = null,
     val ref: String? = null,
