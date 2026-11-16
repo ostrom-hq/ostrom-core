@@ -60,7 +60,7 @@ client.close()
 | Property | Calls | Routes |
 | --- | --- | --- |
 | (client) | `capabilities()` | `GET /api/v1/capabilities` |
-| `auth` | `signInMethods()`, `githubStartUrl(redirectUri, state, codeChallenge)`, `startUrl(provider, …)`, `exchangeMobileCode(code, codeVerifier, redirectUri)`, `unlock(unlockKey, requestId)`, `me()`, `account()`, `logout()`, `startDeviceLogin(scopes)`, `pollDeviceLogin(deviceCode)` | `/api/v1/auth/providers`, `/api/v1/auth/{provider}/start` (a URL to open, no request), `/api/v1/auth/mobile/token`, `/api/v1/auth/mobile/unlock`, `/api/v1/auth/me`, `/api/v1/auth/me/account`, `/api/v1/auth/logout`, `/api/v1/auth/device`, `/api/v1/auth/device/token` |
+| `auth` | `signInMethods()`, `githubStartUrl(redirectUri, state, codeChallenge)`, `startUrl(provider, …)`, `exchangeMobileCode(code, codeVerifier, redirectUri, installationId, deviceName, platform, osVersion)`, `unlock(unlockKey, requestId)`, `me()`, `account()`, `logout()`, `startDeviceLogin(scopes)`, `pollDeviceLogin(deviceCode)` | `/api/v1/auth/providers`, `/api/v1/auth/{provider}/start` (a URL to open, no request), `/api/v1/auth/mobile/token`, `/api/v1/auth/mobile/unlock`, `/api/v1/auth/me`, `/api/v1/auth/me/account`, `/api/v1/auth/logout`, `/api/v1/auth/device`, `/api/v1/auth/device/token` |
 | `organizations` | `mine()` | `GET /api/v1/me/organizations` |
 | `approvals` | `queue()`, `view(id)`, `answer(id, answer, shownDigest, note)` | `GET /api/v1/approvals/queue`, `GET /api/v1/approvals/{id}/view`, `POST /api/v1/approvals/{id}/answer` |
 | `receipts` | `list(before, limit)`, `get(id)`, `keys()` | `GET /api/v1/receipts`, `GET /api/v1/receipts/{id}`, `GET /api/v1/receipts/keys` |
@@ -109,7 +109,8 @@ throws `403 step_up_required`, with `requestBound` when the unlock is bound to a
 **PKCE.** `Pkce.create(randomBytes)` draws a verifier (32 bytes, unpadded base64url) and its S256 `challenge`;
 `Pkce.base64Url(bytes)` encodes an OAuth `state`. The SHA-256 is Okio's, on every target. The app opens
 `auth.githubStartUrl(redirectUri, state, pkce.challenge)`, checks the `state` of the return, then calls
-`auth.exchangeMobileCode(code, pkce.verifier, redirectUri)`.
+`auth.exchangeMobileCode(code, pkce.verifier, redirectUri)`; with `devices.v1` it adds its installation id, the name
+a new device takes and its platform, as `startDeviceLogin` does for a computer, so the phone is one device.
 
 **Event streams.** An internal reader serves every followed stream: lines bounded at 256 Ki characters and the data
 of one event at 1 Mi characters, comments (keep-alives), `id:` and `retry:` skipped (resumption uses the sequence in

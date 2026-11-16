@@ -95,15 +95,29 @@ public data class DeviceTokenRequest(
 /**
  * The one-time code of the mobile sign-in (PKCE), with the verifier and the exact redirect URI of its start.
  *
+ * With `devices.v1` the app also names its installation, as [DeviceLoginStart] does for the CLI (TeamCode's companion
+ * sends it with its login, docs/devices.md): the server registers the phone once and every later sign-in from it lands
+ * on the same device. A server without it ignores the four fields.
+ *
  * @property code The code the browser came back with.
  * @property codeVerifier The PKCE verifier whose challenge started the sign-in.
  * @property redirectUri The redirect URI of the start, byte for byte.
+ * @property installationId The app's installation, a random lowercase UUID kept in its settings. Never shown and never
+ *   returned.
+ * @property deviceName The name of a device registered by this sign-in ([DeviceLimits.MAX_NAME] characters, no control
+ *   character); a device already registered keeps its name.
+ * @property platform `ios` or `android` for a phone ([DevicePlatforms]).
+ * @property osVersion The system's version, only with [platform] ([DeviceLimits.MAX_OS_VERSION] printable characters).
  */
 @Serializable
 public data class MobileTokenRequest(
     val code: String,
     val codeVerifier: String,
     val redirectUri: String,
+    val installationId: String? = null,
+    val deviceName: String? = null,
+    val platform: String? = null,
+    val osVersion: String? = null,
 )
 
 /**

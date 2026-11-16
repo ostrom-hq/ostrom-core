@@ -59,7 +59,7 @@ public data class RenameDeviceRequest(
     val name: String,
 )
 
-/** The values of [Device.platform] and [DeviceLoginStart.platform]. */
+/** The values of [Device.platform], [DeviceLoginStart.platform] and [MobileTokenRequest.platform]. */
 public object DevicePlatforms {
     /** macOS. */
     public const val MACOS: String = "macos"

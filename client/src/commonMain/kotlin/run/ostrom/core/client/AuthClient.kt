@@ -46,13 +46,27 @@ public class AuthClient internal constructor(private val transport: Transport) {
     /**
      * Exchanges the one-time code of the browser's return for the app's token (`POST /api/v1/auth/mobile/token`).
      * The code works once, for 60 s, with the exact [redirectUri] of the start.
+     *
+     * @param installationId This installation of the app; pass it (and the three below) only to a server that
+     *   announces `devices.v1`, so that the phone is one device.
+     * @param deviceName The name of a device this sign-in registers.
+     * @param platform `ios` or `android`.
+     * @param osVersion The system's version, with [platform].
      */
-    public suspend fun exchangeMobileCode(code: String, codeVerifier: String, redirectUri: String): MobileToken =
-        transport.jsonBody(
-            HttpMethod.Post,
-            "/api/v1/auth/mobile/token",
-            MobileTokenRequest(code, codeVerifier, redirectUri),
-        )
+    @Suppress("LongParameterList") // The code and its proof, then the installation of startDeviceLogin, defaulted.
+    public suspend fun exchangeMobileCode(
+        code: String,
+        codeVerifier: String,
+        redirectUri: String,
+        installationId: String? = null,
+        deviceName: String? = null,
+        platform: String? = null,
+        osVersion: String? = null,
+    ): MobileToken = transport.jsonBody(
+        HttpMethod.Post,
+        "/api/v1/auth/mobile/token",
+        MobileTokenRequest(code, codeVerifier, redirectUri, installationId, deviceName, platform, osVersion),
+    )
 
     /**
      * Records the phone's biometric unlock (`POST /api/v1/auth/mobile/unlock`), after which the app's token answers a
