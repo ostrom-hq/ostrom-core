@@ -6,6 +6,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import run.ostrom.core.api.models.DevicePlatforms
 import run.ostrom.core.api.models.MemberRole
 import run.ostrom.core.api.models.SignUpPolicy
 import kotlin.test.Test
@@ -66,6 +67,30 @@ class AuthClientTest {
         assertEquals(HttpMethod.Post, request.method)
         assertEquals("/api/v1/auth/mobile/token", request.url.encodedPath)
         assertJson("""{"code":"code-1","codeVerifier":"verifier-1","redirectUri":"ostrom://cb"}""", body)
+    }
+
+    @Test
+    fun aPhoneNamesItsInstallationWithTheCode() = runTest {
+        val server = ScriptedServer {
+            json("""{"token":"osm_1","user":{"login":"ada"},"unlockKey":"uk"}""")
+        }
+        server.client(token = null).use {
+            it.auth.exchangeMobileCode(
+                "code-1",
+                "verifier-1",
+                "ostrom://cb",
+                installationId = "0f8fad5b-d9cb-469f-a165-70867728950e",
+                deviceName = "Ostrom iOS · iPhone",
+                platform = DevicePlatforms.IOS,
+                osVersion = "18.1",
+            )
+        }
+        assertJson(
+            """{"code":"code-1","codeVerifier":"verifier-1","redirectUri":"ostrom://cb",""" +
+                """"installationId":"0f8fad5b-d9cb-469f-a165-70867728950e","deviceName":"Ostrom iOS · iPhone",""" +
+                """"platform":"ios","osVersion":"18.1"}""",
+            server.single().second,
+        )
     }
 
     @Test
