@@ -10,9 +10,7 @@ package run.ostrom.core.client.contract
 internal object ServerGaps {
 
     /** `Model.property`: a property of a core model that the document's schema lacks, with why it stays. */
-    val properties: Map<String, String> = mapOf(
-        "ReceiptDecision.note" to "the approver's note, signed on the decision, undeclared",
-    )
+    val properties: Map<String, String> = emptyMap()
 
     /** `client.call?parameter`: a query parameter a client call sends that the document's operation lacks. */
     val queryParameters: Map<String, String> = emptyMap()
