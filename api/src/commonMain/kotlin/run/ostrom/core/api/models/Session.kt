@@ -33,6 +33,7 @@ import kotlinx.serialization.Serializable
  * @property tools Tool calls counted.
  * @property costUsd Inference cost.
  * @property exitCode Exit code of the launcher.
+ * @property runId Workflow run the session belongs to, when a run started it.
  * @property ended True once ended (the answer to a sign of life).
  * @property lost True when closed for lack of a sign of life: its launcher reopens a segment.
  * @property activity Whether the agent works or waits for a person ([SessionActivityStates]), only while the segment
@@ -67,6 +68,7 @@ public data class Session(
     val tools: Int? = null,
     val costUsd: Double? = null,
     val exitCode: Int? = null,
+    val runId: String? = null,
     val ended: Boolean? = null,
     val lost: Boolean? = null,
     val activity: String? = null,

@@ -13,6 +13,7 @@ internal object ServerGaps {
     val properties: Map<String, String> = mapOf(
         "ApprovalView.note" to "the view shows the approver's comment (the server will return it as note)",
         "CloudSession.automationId" to "the automation that started a session",
+        "Session.runId" to "the workflow run a session belongs to: the app opens it from the session",
     )
 
     /** `client.call?parameter`: a query parameter a client call sends that the document's operation lacks. */
