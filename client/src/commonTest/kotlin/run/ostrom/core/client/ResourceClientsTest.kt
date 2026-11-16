@@ -78,7 +78,7 @@ class ResourceClientsTest {
         )
         assertJson("""{"answer":"approve","shownDigest":"sha256:1"}""", server.requests[2].bodyText())
         assertJson(
-            """{"answer":"reject","shownDigest":"sha256:1","comment":"Not on Friday."}""",
+            """{"answer":"reject","shownDigest":"sha256:1","note":"Not on Friday."}""",
             server.requests[3].bodyText(),
         )
     }

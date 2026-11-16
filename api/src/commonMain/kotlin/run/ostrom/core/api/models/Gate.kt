@@ -159,6 +159,7 @@ public data class GateCi(val sha: String? = null, val pr: String? = null)
  * @property askedVia Paths that joined the request (`hook`, `ci`, `mcp`).
  * @property selfApproved True when the yes came from the asker, the only possible approver.
  * @property push Push covered.
+ * @property note What the approver told the agent with the answer, once decided; absent when they said nothing.
  */
 @Serializable
 public data class GateRequest(
@@ -188,6 +189,7 @@ public data class GateRequest(
     val askedVia: List<String>? = null,
     val selfApproved: Boolean? = null,
     val push: GatePush? = null,
+    val note: String? = null,
 )
 
 /**
@@ -315,12 +317,15 @@ public enum class ApprovalAnswer {
  *
  * @property answer Yes or no.
  * @property shownDigest Digest of what the approver saw.
- * @property comment What the approver tells the agent with the answer; sent to its session, written on the receipt.
+ * @property note What the approver tells the agent with the answer, up to 4,000 characters: stored on the gate, sent to
+ *   the asking session, signed on the receipt's decision.
+ * @property comment The first name of [note], which the server still reads when [note] is absent; send [note].
  */
 @Serializable
 public data class AnswerApprovalRequest(
     val answer: ApprovalAnswer,
     val shownDigest: String,
+    val note: String? = null,
     val comment: String? = null,
 )
 

@@ -11,9 +11,7 @@ internal object ServerGaps {
 
     /** `Model.property`: a property of a core model that the document's schema lacks, with why it stays. */
     val properties: Map<String, String> = mapOf(
-        "ApprovalView.note" to "the view shows the approver's comment (the server will return it as note)",
-        "CloudSession.runId" to "the workflow run that started a cloud session",
-        "Session.runId" to "the workflow run a session belongs to: the app opens it from the session",
+        "ReceiptDecision.note" to "the approver's note, signed on the decision, undeclared",
     )
 
     /** `client.call?parameter`: a query parameter a client call sends that the document's operation lacks. */
