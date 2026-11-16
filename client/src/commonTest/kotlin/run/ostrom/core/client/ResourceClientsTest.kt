@@ -600,7 +600,7 @@ class ResourceClientsTest {
         server.client().use { client ->
             client.cloudSessions.create(
                 CreateCloudSessionRequest(
-                    agent = CloudAgentKind.CLAUDE,
+                    agent = CloudAgentKind.CLAUDE.value,
                     prompt = "Fix it",
                     environment = CloudEnvironment(
                         repositories = listOf(
@@ -615,7 +615,7 @@ class ResourceClientsTest {
                 ),
             )
             client.cloudSessions.create(
-                CreateCloudSessionRequest(CloudAgentKind.SHELL, repo = "https://github.com/o/r", ref = "dev"),
+                CreateCloudSessionRequest(CloudAgentKind.SHELL.value, repo = "https://github.com/o/r", ref = "dev"),
             )
             client.cloudSessions.pause("cs_1")
             client.cloudSessions.resume("cs_1")

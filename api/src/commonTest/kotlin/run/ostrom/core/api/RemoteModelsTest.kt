@@ -85,14 +85,22 @@ class RemoteModelsTest {
         assertNull(session.host)
         val device = OstromJson.decodeFromString(Device.serializer(), """{"id":"d1","name":"Laptop"}""")
         assertNull(device.daemon)
-        val request = CreateCloudSessionRequest(CloudAgentKind.CLAUDE)
+        val request = CreateCloudSessionRequest(CloudAgentKind.CLAUDE.value)
         val create = OstromJson.encodeToString(CreateCloudSessionRequest.serializer(), request)
         assertEquals("""{"agent":"claude"}""", create)
     }
 
     @Test
+    fun anAgentThisVersionDoesNotNameIsSentAsIs() {
+        val request = CreateCloudSessionRequest("grok", kind = CloudSessionKinds.LOCAL)
+        val create = OstromJson.encodeToString(CreateCloudSessionRequest.serializer(), request)
+        assertEquals("""{"agent":"grok","kind":"local"}""", create)
+    }
+
+    @Test
     fun aLocalSessionCarriesItsLaunch() {
-        val request = CreateCloudSessionRequest(CloudAgentKind.CODEX, kind = CloudSessionKinds.LOCAL, launchId = "l1")
+        val request =
+            CreateCloudSessionRequest(CloudAgentKind.CODEX.value, kind = CloudSessionKinds.LOCAL, launchId = "l1")
         val create = OstromJson.encodeToString(CreateCloudSessionRequest.serializer(), request)
         assertEquals("""{"agent":"codex","kind":"local","launchId":"l1"}""", create)
         val session = OstromJson.decodeFromString(
