@@ -109,6 +109,7 @@ public data class ReceiptRule(
  * @property at ISO-8601 UTC timestamp of the answer.
  * @property result `approved`, `rejected`, or the action of a decision (`accepted`, `edited`…).
  * @property selfApproved True when the yes came from the person who asked, because nobody else could approve.
+ * @property note What the approver told the agent with the answer, signed with it; absent when they said nothing.
  */
 @Serializable
 public data class ReceiptDecision(
@@ -117,6 +118,7 @@ public data class ReceiptDecision(
     val at: String,
     val result: String,
     val selfApproved: Boolean? = null,
+    val note: String? = null,
 )
 
 /**

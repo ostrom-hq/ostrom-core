@@ -32,6 +32,6 @@ public class ApprovalsClient internal constructor(private val transport: Transpo
     ): ApprovalView = transport.jsonBody(
         HttpMethod.Post,
         "/api/v1/approvals/${segment(id)}/answer",
-        AnswerApprovalRequest(answer, shownDigest, note),
+        AnswerApprovalRequest(answer, shownDigest, note = note),
     )
 }
