@@ -30,7 +30,8 @@
 
 The Kotlin Multiplatform library shared by the Ostrom CLI, server and companion app: the protocol models, the signed
 receipts, the API contract and its typed client. Targets: `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64`
-(Kotlin/Native only, no JVM); `api` and `client` also target Android and iOS for the companion app. Apache 2.0.
+(Kotlin/Native for the CLI, plus the JVM the server runs on); `api` and `client` also target Android and iOS for the
+companion app. Apache 2.0.
 
 | Module | Artifact | Contents |
 |---|---|---|

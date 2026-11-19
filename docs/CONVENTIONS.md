@@ -1,8 +1,10 @@
 # Ostrom engineering conventions
 
 These conventions apply to every Ostrom repository: `ostrom-core`, `ostrom-cli`, `ostrom-server`, `ostrom-web`
-and `ostrom-app`. They are Nathan Fallet's practices, read in his most recent code, adapted to a product that is
-**Kotlin/Native only** (no JVM in production) with a React/TypeScript web app and a Kotlin Multiplatform app.
+and `ostrom-app`. They are Nathan Fallet's practices, read in his most recent code, adapted to a product whose shared
+libraries and CLI are **Kotlin/Native only** (no JVM in production), whose server runs on the JVM on TeamCode's server
+stack (section 10.5, ostrom-server `docs/decisions/0001`, decided 13/11/2026), with a React/TypeScript web app and a
+Kotlin Multiplatform app.
 
 **The app is the exception to "Kotlin/Native only".** `ostrom-app` is a Kotlin Multiplatform module with a Compose
 Multiplatform UI for iOS, Android and the desktop, built like TeamCode's companion and partly ported from it
@@ -502,8 +504,8 @@ it the JDK provider cannot derive a public key from a private key (decision of 3
   (`teamcode:cli/src/commonTest/.../CloudAgentTest.kt`, `FakeProcess`, `FakeChannel`; 40+ fakes in `teamcode`). A shared
   fake used by several test files goes to `src/commonTest/kotlin/.../fakes/`.
 - Filesystem: Okio's `FakeFileSystem` (`okio-fakefilesystem`) in unit tests, the real filesystem in native tests.
-- Database: repository implementations are tested against **real PostgreSQL** (CI service container) and SQLite with the
-  same abstract contract test (`abstract class GatesRepositoryContractTest`, one subclass per database).
+- Database: repository implementations are tested against **real PostgreSQL** (CI service container), never a fake
+  database nor SQLite (ostrom-server `docs/decisions/0001`).
 
 ### 7.4 Naming and shape
 
@@ -588,7 +590,7 @@ literally in the test, not recomputed with the code under test.
 | --- | --- |
 | `ostrom-core` | `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (+ `jvm` for tests; `js` only for a module that must run in the browser) |
 | `ostrom-cli` | `macosArm64`, `linuxX64`, `linuxArm64`, `mingwX64` (BRIEF) |
-| `ostrom-server` | `jvm` (production, `ostrom-server:docs/decisions/0001`); its session runner (`runner/`) alone `linuxX64`, `linuxArm64` |
+| `ostrom-server` | `jvm` (production, `ostrom-server:docs/decisions/0001`); its push relay (`push/`) alone native. The session runner is the CLI's `ostrom cloud runner` |
 
 Every module also has `jvm()` for tests and coverage only (section 7.2), except the server's, where `jvm()` is the
 production target (section 10.5).
@@ -597,9 +599,9 @@ production target (section 10.5).
 
 | Need | Choice | Version | Maturity (checked 30/10/2026) | Nathan used it? |
 | --- | --- | --- | --- | --- |
-| HTTP server | Ktor **CIO** engine | 3.6.1 | Artifacts for the four targets; Netty is JVM-only | Yes: `worker-tutorial`, `teamcode` CLI local server |
+| HTTP server | Ktor **CIO** engine (the CLI's local servers); Ktor **Netty** for the JVM server (section 10.5) | 3.6.1 | Artifacts for the four targets; Netty is JVM-only | Yes: `worker-tutorial`, `teamcode` CLI local server and server |
 | HTTP client | Ktor `ktor-client-engine-defaults` (Darwin on macOS, Curl on Linux, WinHttp on Windows) | 3.6.1 | Used in production by `teamcode` on the four targets; see the TLS caveats below | Yes: `teamcode` |
-| PostgreSQL + SQLite | **sqlx4k** (`io.github.smyrgeorge:sqlx4k-postgres`, `-sqlite`): Rust `sqlx` as a static library, pool, transactions, migrations, `LISTEN/NOTIFY` | 1.17.0 | MIT, 320 stars, 8 releases since July 2026 (last 26/10/2026), native artifacts for the four targets; single maintainer | No (JVM: Exposed). Chosen by the server agent, endorsed here |
+| PostgreSQL (the server only, on the JVM) | **Exposed** + PostgreSQL JDBC + **HikariCP** + **Flyway**, as TeamCode's server (section 10.5). sqlx4k, the native driver first chosen, is gone (ostrom-server#681, #688) | 1.5.0 / — / 5.1.0 / 13.7.0 (ostrom-server's catalog) | TeamCode's production stack | Yes: `teamcode` |
 | Crypto (Ed25519, SHA-256, HKDF, AES-GCM) | **cryptography-kotlin** core + `cryptography-provider-openssl3-prebuilt` (static OpenSSL 3.5 LTS, same bytes on every target) | 0.6.0 | EdDSA since 0.6.0 (02/04/2026); OpenSSL, CryptoKit, JDK, WebCrypto providers | Yes: `flareon` (0.4.0, openssl3-prebuilt) |
 | Files | **Okio** `FileSystem.SYSTEM`, `FakeFileSystem` in tests | 3.18.2 | Stable for years, all targets | Yes: `teamcode` CLI |
 | Byte streams for crypto | `kotlinx-io` only where a library asks for it (`cryptography-kotlin`) | 0.9.1 | Stable | Through `cryptography-kotlin` |
@@ -608,22 +610,22 @@ production target (section 10.5).
 | CLI | **Clikt** + **Mordant** (`mordant-coroutines`) | 5.1.0 / 3.0.2 | Stable; Clikt 5.1.0 needs a Linux debug-cache workaround (below) | Yes: `teamcode` |
 | DI | Koin `koin-core` (no `koin-ktor` plugin, section 1.5) | 4.2.2 | Native supported | Yes: `worker-tutorial`, `teamcode` |
 | Time, ids | `kotlin.time`, `kotlin.uuid` (stdlib); `kotlinx-datetime` only for calendar types | — / 0.8.0 | Stable in stdlib behind opt-ins | Yes: `asonar`, `pkg` |
-| Logs | Ktor logging (`io.ktor.util.logging`) | 3.6.1 | Native supported | Yes: `teamcode` |
+| Logs | Ktor logging (`io.ktor.util.logging`); on the JVM server, its own JSON logs on stdout and logback (1.5.20) as the libraries' SLF4J backend (section 10.5) | 3.6.1 | Native supported | Yes: `teamcode` |
 
-#### Database: rules that come with sqlx4k
+#### Database: the server's rules (Exposed, as TeamCode's)
 
-- sqlx4k types stay in `infrastructure` behind the domain repository interfaces (section 1.4); swapping the driver must
-  only touch `infrastructure`. The fallback, if sqlx4k stalls, is a thin `libpq` cinterop wrapper (the approach of
-  `hfhbd/postgres-native-sqldelight`, itself unmaintained since 2023 and limited to one connection: not usable as is).
-- Queries are written with bound parameters only; never string interpolation of a value into SQL.
-- **Migrations are versioned SQL files**, applied by sqlx4k's migrator in a separate step (`ostrom-server migrate`, its
-  own process and job, with the owner credentials), never by the serving process. The one exception is the local
-  single-user mode (SQLite, no roles, one process), which migrates then serves. A published migration is never edited
-  (`teamcode:AGENTS.md`, the Flyway rule). Each migration exists in a PostgreSQL and a SQLite flavour when the dialects
-  differ, and the contract test suite (section 7.3) runs on both. Row-Level Security exists only in the PostgreSQL
-  flavour (section 16.1).
-- Every new query on a request path comes with its `EXPLAIN ANALYZE` on a table seeded at production scale, before and
-  after, in the pull request (`teamcode:AGENTS.md`).
+- Typed Exposed DSL only in the modules, no hand-written SQL: `exec`, `prepareStatement` and the like are refused by
+  the server's `scripts/check-conventions.py` outside the kernel (TeamCode's `check-module-graph.py`). Values are
+  always bound by Exposed. Exposed and JDBC types stay in `infrastructure`, behind the domain repository interfaces
+  (section 1.4).
+- One transaction per repository call, its block not `suspend`: no network call, no other repository inside it.
+  Exposed never replays a transaction; a retry is a named, idempotent call site's decision.
+- **Migrations are Flyway's**, applied in a separate step (`ostrom-server migrate`, its own process and job, with the
+  owner credentials), never by the serving process. A published migration is never edited (`teamcode:AGENTS.md`).
+  PostgreSQL only: SQLite is dropped (ostrom-server `docs/decisions/0001`).
+- Every list read has a `LIMIT`, every foreign key leads an index, and every new query on a request path comes with its
+  `EXPLAIN (ANALYZE, BUFFERS)` on a table seeded at production scale, before and after, in the pull request
+  (`teamcode:AGENTS.md`; ostrom-server `docs/MODULES.md` section 4 is the detail).
 
 #### TLS and OpenSSL caveats (from `teamcode`)
 
@@ -681,14 +683,14 @@ so native is the right target; on hot paths:
 ### 10.5 The server's exception: JVM-only common code
 
 `ostrom-server` runs on the JVM in production (`ostrom-server:docs/decisions/0001`, on TeamCode's server stack). Its
-server projects declare no native target (`ostrom.nativeTargets` is empty; only `runner/` sets it), so their
+server projects declare no native target (`ostrom.nativeTargets` is empty; only `push/` sets it), so their
 `commonMain` and `commonTest` are compiled for the JVM alone. There, and only there:
 
 - `commonMain` and `commonTest` may import JVM classes (`java.*`, `javax.*`) and JVM-only libraries declared in the
   source set's dependencies: Exposed, JDBC, HikariCP and Flyway, then SLF4J/Logback and Netty with the server's
   step 3 (ostrom-server#520). Koin stays `koin-core` in the composition root, as TeamCode's app: the `koin-ktor` plugin
   remains refused (section 1.5). The rules of sections 6.1 and 15 against those libraries apply to the code that
-  still compiles for Kotlin/Native: ostrom-core, the CLI and the runner.
+  still compiles for Kotlin/Native: ostrom-core, the CLI (its session runner included) and the push relay.
 - The modules stay in `commonMain` (no move to `jvmMain` for the sake of it), and new `expect`/`actual` pairs are not
   written: a declaration with a JVM `actual` alone is folded into plain code when a change touches it.
 - The check is mechanical: the server's `scripts/check-conventions.py` refuses a JVM-only import in a native source
@@ -902,11 +904,11 @@ CREATE POLICY gates_org ON gates
   (`SECURITY DEFINER` functions owned by a dedicated role with explicit schema and table grants, ownership re-asserted
   after every re-creation and checked in CI) is designed and kept in `ostrom-server`'s `docs/tenancy.md`, which lists
   them. Everything else goes through `withOrganization`.
-- The PostgreSQL flavour of a migration that creates a tenant table creates its policies in the same file; the SQLite
-  flavour has no RLS. SQLite (tests, local single-user mode) relies on the same repository code filtering on `org_id`.
+- A migration that creates a tenant table creates its policies in the same file. The repository code filters on
+  `org_id` itself as well, inside `withOrganization`: two walls (ostrom-server `docs/MODULES.md` section 4).
 - **One isolation test per table** in CI (the serving role, another organization set: no row read or written), plus
   **one end-to-end test per resource** proving another organization neither sees nor changes it (list, read, update,
-  delete: 404 and nothing changed), on PostgreSQL and on SQLite, on top of the route tests of section 1.6.
+  delete: 404 and nothing changed), on PostgreSQL, on top of the route tests of section 1.6.
 
 ### 16.2 Credentials and scopes
 

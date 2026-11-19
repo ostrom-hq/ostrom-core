@@ -4,8 +4,9 @@
 //
 // Native targets come from the Gradle property `ostrom.nativeTargets` (gradle.properties of the repository):
 //   ostrom-core, ostrom-cli: macosArm64,linuxX64,linuxArm64,mingwX64
-//   ostrom-server:           linuxX64,linuxArm64,macosArm64
-// The jvm() target is for tests and Kover coverage of commonMain only: never published, never shipped.
+//   ostrom-server:           none but its push relay's (the server runs on the JVM, CONVENTIONS section 10.5)
+// The jvm() target runs the tests and Kover coverage of commonMain; its published variant is what the JVM server
+// compiles against.
 
 import io.gitlab.arturbosch.detekt.Detekt
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
