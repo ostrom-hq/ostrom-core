@@ -599,9 +599,9 @@ production target (section 10.5).
 
 | Need | Choice | Version | Maturity (checked 30/10/2026) | Nathan used it? |
 | --- | --- | --- | --- | --- |
-| HTTP server | Ktor **CIO** engine | 3.6.1 | Artifacts for the four targets; Netty is JVM-only | Yes: `worker-tutorial`, `teamcode` CLI local server |
+| HTTP server | Ktor **CIO** engine (the CLI's local servers); Ktor **Netty** for the JVM server (section 10.5) | 3.6.1 | Artifacts for the four targets; Netty is JVM-only | Yes: `worker-tutorial`, `teamcode` CLI local server and server |
 | HTTP client | Ktor `ktor-client-engine-defaults` (Darwin on macOS, Curl on Linux, WinHttp on Windows) | 3.6.1 | Used in production by `teamcode` on the four targets; see the TLS caveats below | Yes: `teamcode` |
-| PostgreSQL (the server only, on the JVM) | **Exposed** + PostgreSQL JDBC + **HikariCP** + **Flyway**, as TeamCode's server (section 10.5). sqlx4k, the native driver first chosen, is gone (ostrom-server#681, #688) | as the server's catalog | TeamCode's production stack | Yes: `teamcode` |
+| PostgreSQL (the server only, on the JVM) | **Exposed** + PostgreSQL JDBC + **HikariCP** + **Flyway**, as TeamCode's server (section 10.5). sqlx4k, the native driver first chosen, is gone (ostrom-server#681, #688) | 1.5.0 / — / 5.1.0 / 13.7.0 (ostrom-server's catalog) | TeamCode's production stack | Yes: `teamcode` |
 | Crypto (Ed25519, SHA-256, HKDF, AES-GCM) | **cryptography-kotlin** core + `cryptography-provider-openssl3-prebuilt` (static OpenSSL 3.5 LTS, same bytes on every target) | 0.6.0 | EdDSA since 0.6.0 (02/04/2026); OpenSSL, CryptoKit, JDK, WebCrypto providers | Yes: `flareon` (0.4.0, openssl3-prebuilt) |
 | Files | **Okio** `FileSystem.SYSTEM`, `FakeFileSystem` in tests | 3.18.2 | Stable for years, all targets | Yes: `teamcode` CLI |
 | Byte streams for crypto | `kotlinx-io` only where a library asks for it (`cryptography-kotlin`) | 0.9.1 | Stable | Through `cryptography-kotlin` |
@@ -610,7 +610,7 @@ production target (section 10.5).
 | CLI | **Clikt** + **Mordant** (`mordant-coroutines`) | 5.1.0 / 3.0.2 | Stable; Clikt 5.1.0 needs a Linux debug-cache workaround (below) | Yes: `teamcode` |
 | DI | Koin `koin-core` (no `koin-ktor` plugin, section 1.5) | 4.2.2 | Native supported | Yes: `worker-tutorial`, `teamcode` |
 | Time, ids | `kotlin.time`, `kotlin.uuid` (stdlib); `kotlinx-datetime` only for calendar types | — / 0.8.0 | Stable in stdlib behind opt-ins | Yes: `asonar`, `pkg` |
-| Logs | Ktor logging (`io.ktor.util.logging`) | 3.6.1 | Native supported | Yes: `teamcode` |
+| Logs | Ktor logging (`io.ktor.util.logging`); on the JVM server, its own JSON logs on stdout and logback (1.5.20) as the libraries' SLF4J backend (section 10.5) | 3.6.1 | Native supported | Yes: `teamcode` |
 
 #### Database: the server's rules (Exposed, as TeamCode's)
 
@@ -904,8 +904,8 @@ CREATE POLICY gates_org ON gates
   (`SECURITY DEFINER` functions owned by a dedicated role with explicit schema and table grants, ownership re-asserted
   after every re-creation and checked in CI) is designed and kept in `ostrom-server`'s `docs/tenancy.md`, which lists
   them. Everything else goes through `withOrganization`.
-- A migration that creates a tenant table creates its policies in the same file, and the repository code filters on
-  `org_id` itself as well (the typed organization filter of ostrom-server `docs/decisions/0001`, audit SD-08).
+- A migration that creates a tenant table creates its policies in the same file. The repository code filters on
+  `org_id` itself as well, inside `withOrganization`: two walls (ostrom-server `docs/MODULES.md` section 4).
 - **One isolation test per table** in CI (the serving role, another organization set: no row read or written), plus
   **one end-to-end test per resource** proving another organization neither sees nor changes it (list, read, update,
   delete: 404 and nothing changed), on PostgreSQL, on top of the route tests of section 1.6.
